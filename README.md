@@ -11,6 +11,9 @@ The **OSPSuite.ParameterIdentification** R-package provides the functionality of
 - [rClr](https://github.com/Open-Systems-Pharmacology/rClr/releases/latest)
 - [ospsuite](https://github.com/Open-Systems-Pharmacology/OSPSuite-R)
 - [R6](https://github.com/r-lib/R6)
+- [FME](https://cran.r-project.org/web/packages/FME/index.html)
+- [hash](https://cran.r-project.org/web/packages/hash/)
+- esqlabsR (deprecated, must be removed in future)
 
 ## Code of conduct
 
