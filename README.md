@@ -2,7 +2,7 @@
 R package for parameter identification for OSPS models
 
 # Overview
-The **OSPSuite.ParameterIdentification** R-package provides the functionality of for performing parameter identification (i.e., fitting the model to observed data) with simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. The packare requires the [**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) package to run the simulations.
+The **OSPSuite.ParameterIdentification** R-package provides the functionality of performing parameter identification (i.e., fitting the model to observed data) with simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. The packare requires the [**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) package to run the simulations.
 
 # Installation
 
