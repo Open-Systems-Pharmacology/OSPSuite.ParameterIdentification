@@ -8,12 +8,24 @@ The **OSPSuite.ParameterIdentification** R-package provides the functionality of
 
 **OSPSuite.ParameterIdentification** requires following packages to be installed:
 
-- [rClr](https://github.com/Open-Systems-Pharmacology/rClr/releases/latest)
-- [ospsuite](https://github.com/Open-Systems-Pharmacology/OSPSuite-R)
+- [rClr](https://github.com/Open-Systems-Pharmacology/rClr/releases/latest) >0.9
+- [ospsuite](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) >10
 - [R6](https://github.com/r-lib/R6)
 - [FME](https://cran.r-project.org/web/packages/FME/index.html)
 - [hash](https://cran.r-project.org/web/packages/hash/)
 - esqlabsR (deprecated, must be removed in future)
+
+### For building from source and developing
+- Rtools (https://cran.r-project.org/bin/windows/Rtools/)
+  - After installation, add the folder to your $PATH: In start menu, type in "PATH", select "Change path environment for user", and add the path to Rtools folder.
+- roxygen2 (CRAN)
+- devtools (CRAN)
+- rmarkdown (CRAN)
+- testthat (CRAN)
+- pander (CRAN)
+- knitr (CRAN)
+- styler (CARN)
+
 
 ## Code of conduct
 
