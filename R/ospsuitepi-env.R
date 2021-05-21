@@ -5,7 +5,7 @@
 
 # Environment that holds various global variables and settings for the ospsuite.parameteridentification,
 # It is not exported and should not be directly manipulated by other packages.
-piEnv<- new.env(parent = emptyenv())
+piEnv <- new.env(parent = emptyenv())
 
 # name of the package. This will be used to retrieve information on the package at run time
 piEnv$packageName <- "ospsuite.parameteridentification"

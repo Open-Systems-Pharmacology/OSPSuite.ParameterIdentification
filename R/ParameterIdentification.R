@@ -1,7 +1,7 @@
 #' @title ParameterIdentification
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation outputs and observed data
-#' @import ospsuite
+#' @import ospsuite R6
 #' @export
 #' @import FME hash esqlabsR
 #' @format NULL
@@ -79,7 +79,7 @@ ParameterIdentification <- R6::R6Class(
         # Simulate steady-states if specified
         if (configuration$simulateSteadyState) {
           initialValues <- getSteadyState(
-            quantities = private$.stateVariables[[simulation$root$id]],
+            quantitiesPaths = private$.stateVariables[[simulation$root$id]],
             simulation = simulation, steadyStateTime = configuration$steadyStateTime
           )
           for (i in seq_along(initialValues$quantities)) {
@@ -110,7 +110,8 @@ ParameterIdentification <- R6::R6Class(
           paths = x$quantity$path,
           outputValues = getOutputValues(
             simulationResults = simulationResults[[simId]],
-            quantitiesOrPaths = x$quantity$path
+            quantitiesOrPaths = x$quantity$path,
+            addMetaData = TRUE
           ),
           labels = "Simulation",
           simulation = simulation,
@@ -218,7 +219,7 @@ ParameterIdentification <- R6::R6Class(
     },
     #' @description
     #' Clean up upon object removal
-    finalize = function(){
+    finalize = function() {
       hash::clear(private$.simulations)
     },
 
