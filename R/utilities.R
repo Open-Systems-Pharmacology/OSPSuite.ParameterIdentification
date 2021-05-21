@@ -14,6 +14,7 @@ getSimulationContainer <- function(entity) {
 }
 
 #' Convenience function to avoid testing for null. It returns the first object if it is not null otherwise the second object
+#' @name OR
 #'
 #' @param lhs Object that will be returned if not NULL
 #' @param rhs Object that will be returned if \code{lhs} is NULL. It maybe well be NULL

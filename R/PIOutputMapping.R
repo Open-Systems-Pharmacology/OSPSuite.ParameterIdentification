@@ -2,7 +2,7 @@
 #' @docType class
 #' @description An object that combines simulation output with observed data. The parameter identification minimizes the
 #' distance between the simulation output and the observed data.
-#' @import ospsuite hash
+#' @import ospsuite hash R6
 #' @export
 #' @format NULL
 PIOutputMapping <- R6::R6Class(
@@ -44,7 +44,7 @@ PIOutputMapping <- R6::R6Class(
       }
     }
 
-    #'# @field residualsScaling Defines if the residuals are calculated based on the absolute distance (Simulation value - Observed value, scaling = "lin")
+    #' # @field residualsScaling Defines if the residuals are calculated based on the absolute distance (Simulation value - Observed value, scaling = "lin")
     #' or as log(Simulation value) - log(Observed value) (scaling = "log"). Default is "lin".
     # residualsScaling = function(value) {
     #   if (missing(value)) {
@@ -77,7 +77,7 @@ PIOutputMapping <- R6::R6Class(
     },
     #' @description
     #' Clean up upon object removal
-    finalize = function(){
+    finalize = function() {
       hash::clear(private$.observedXYData)
     },
 

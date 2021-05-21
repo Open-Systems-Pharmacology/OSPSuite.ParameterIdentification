@@ -1,6 +1,7 @@
 #' @title PIParameters
 #' @docType class
 #' @description A parameter to be optimized in a parameter identification routine
+#' @import R6
 #' @export
 #' @format NULL
 PIParameters <- R6::R6Class(
