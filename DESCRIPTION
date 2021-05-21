@@ -1,0 +1,32 @@
+Package: ospsuite.parameteridentification
+Type: Package
+Title: Open Systems Pharmacology Parameter Identification package
+Version: 1.1.0.9002
+Authors@R: 
+    c(person(given = "Open-Systems-Pharmacology Community",
+             role = "cph"),
+      person(given = "Pavel",
+             family = "Balazki",
+             role = c("aut", "cre"),
+             email = "pavel.balazki@esqlabs.com"))
+Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
+Description: R package for performing parameter identification for the 
+    Open Systems Pharmacology models.
+License: GPL-2 | file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    rClr,
+    ospsuite (>= 10.0)
+Imports:
+    esqlabsR,
+    parallel,
+    FME,
+    hash,
+    R6
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 2.1.0),
+    pander
+RoxygenNote: 7.1.1
