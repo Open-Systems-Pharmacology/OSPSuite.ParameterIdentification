@@ -24,7 +24,7 @@ The **OSPSuite.ParameterIdentification** R-package provides the functionality of
 - testthat (CRAN)
 - pander (CRAN)
 - knitr (CRAN)
-- styler (CARN)
+- styler (CRAN)
 
 
 ## Code of conduct
