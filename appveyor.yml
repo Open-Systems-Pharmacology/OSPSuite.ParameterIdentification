@@ -1,0 +1,86 @@
+image: Visual Studio 2019
+
+version: '{build}'
+
+# Download script file from GitHub
+init:
+  - ps: Update-AppveyorBuild -Version "$($env:ospsuite_version).$($env:appveyor_build_version)"
+  - ps: |
+      $ErrorActionPreference = "Stop"
+      Invoke-WebRequest http://raw.github.com/krlmlr/r-appveyor/master/scripts/appveyor-tool.ps1 -OutFile "..\appveyor-tool.ps1"
+      Import-Module '..\appveyor-tool.ps1'
+
+install:
+  - ps: Bootstrap
+  - git submodule update --init --recursive
+
+environment:
+  USE_RTOOLS: true
+  NOT_CRAN: true
+  KEEP_VIGNETTES: true
+  R_ARCH: x64
+  R_VERSION: "3.6.3"
+  # TODO ENABLE 
+  # COVERALLS_TOKEN:
+  #   secure: Qo8To6hV3C2ghrS0Z+pPyvaBaEpE24Pwr7LF8AbiMO9HL+pkwX1U3kYGUNzJF5EU
+
+before_build:
+  - rake "prepare_for_build[%APPVEYOR_BUILD_VERSION%]"
+
+build_script:
+  - Rscript -e "install.packages('./tools/rClr_0.9.1.zip', repos = NULL, type = 'binary')"
+  - Rscript -e "install.packages('./tools/esqlabsR_1.4.6.9016.zip', repos = NULL, type = 'binary')"
+  - Rscript -e "remotes::install_github('Open-Systems-Pharmacology/TLF-Library', ref ='develop')"
+  - Rscript -e "remotes::install_github('Open-Systems-Pharmacology/OSPSuite-R', ref ='develop')"
+  - travis-tool.sh install_deps
+  - travis-tool.sh r_binary_install curl
+  - Rscript -e "install.packages('covr', repos = 'http://cran.us.r-project.org')"
+
+before_test:
+  - cinst pandoc
+  - ps: $env:Path += ";C:\Program Files (x86)\Pandoc\"
+  - pandoc -v
+
+# TODO Enable
+# on_success:
+#  - Rscript -e "covr::codecov(function_exclusions = c('print.*', '\\.onLoad'))"
+
+test_script:
+  - travis-tool.sh run_tests
+
+on_failure:
+  - 7z a failure.zip *.Rcheck\*
+  - appveyor PushArtifact failure.zip
+
+artifacts:
+  - path: '*.Rcheck\**\*.log'
+    name: Logs
+
+  - path: '*.Rcheck\**\*.out'
+    name: Logs
+
+  - path: '*.Rcheck\**\*.fail'
+    name: Logs
+
+  - path: '*.Rcheck\**\*.Rout'
+    name: Logs
+
+  - path: '\*_*.zip'
+    name: Win
+
+platform: x64
+
+skip_commits:
+  files:
+    - "*.md"
+
+skip_branch_with_pr: true
+
+skip_tags: true
+
+branches:
+  only:
+    - develop
+
+pull_requests:
+  do_not_increment_build_number: true
