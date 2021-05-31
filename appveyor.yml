@@ -18,9 +18,8 @@ environment:
   KEEP_VIGNETTES: true
   R_ARCH: x64
   R_VERSION: "4.0.5"
-  # TODO ENABLE 
-  # COVERALLS_TOKEN:
-  #   secure: Qo8To6hV3C2ghrS0Z+pPyvaBaEpE24Pwr7LF8AbiMO9HL+pkwX1U3kYGUNzJF5EU
+  COVERALLS_TOKEN:
+     secure: oalu+A24LCfXr0AU0xQ/doYNZ5Z9EJ4Iy3y7MfS/Gbp2gN6LSrTUtIxo0eBLeHMk
 
 version: "$(app_version).{build}"
 
@@ -42,9 +41,8 @@ before_test:
   - ps: $env:Path += ";C:\Program Files (x86)\Pandoc\"
   - pandoc -v
 
-# TODO Enable
-# on_success:
-#  - Rscript -e "covr::codecov(function_exclusions = c('print.*', '\\.onLoad'))"
+on_success:
+  - Rscript -e "covr::codecov(function_exclusions = c('print.*', '\\.onLoad'))"
 
 test_script:
   - travis-tool.sh run_tests
