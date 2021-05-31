@@ -1,7 +1,5 @@
 image: Visual Studio 2019
 
-version: '{build}'
-
 # Download script file from GitHub
 init:
   - ps: |
