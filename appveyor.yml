@@ -30,7 +30,7 @@ build_script:
   - Rscript -e "install.packages('devtools', repos = 'http://cran.us.r-project.org', type='binary')"
   - Rscript -e "install.packages('./tools/rClr_0.9.1.zip', repos = NULL, type = 'binary')"
   - Rscript -e "install.packages('./tools/esqlabsR_1.4.6.9016.zip', repos = NULL, type = 'binary')"
-  - Rscript -e "remotes::install_github('Open-Systems-Pharmacology/TLF-Library', ref ='develop')"
+#  - Rscript -e "remotes::install_github('Open-Systems-Pharmacology/TLF-Library', ref ='develop')"
   - Rscript -e "remotes::install_github('Open-Systems-Pharmacology/OSPSuite-R', ref ='develop')"
   - travis-tool.sh install_deps
   - travis-tool.sh r_binary_install curl
