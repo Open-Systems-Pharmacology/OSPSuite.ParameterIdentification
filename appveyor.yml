@@ -4,7 +4,6 @@ version: '{build}'
 
 # Download script file from GitHub
 init:
-  - ps: Update-AppveyorBuild -Version "$($env:ospsuite_version).$($env:appveyor_build_version)"
   - ps: |
       $ErrorActionPreference = "Stop"
       Invoke-WebRequest http://raw.github.com/krlmlr/r-appveyor/master/scripts/appveyor-tool.ps1 -OutFile "..\appveyor-tool.ps1"
@@ -15,6 +14,7 @@ install:
   - git submodule update --init --recursive
 
 environment:
+  app_version: "1.2"
   USE_RTOOLS: true
   NOT_CRAN: true
   KEEP_VIGNETTES: true
@@ -23,6 +23,8 @@ environment:
   # TODO ENABLE 
   # COVERALLS_TOKEN:
   #   secure: Qo8To6hV3C2ghrS0Z+pPyvaBaEpE24Pwr7LF8AbiMO9HL+pkwX1U3kYGUNzJF5EU
+
+version: "$(app_version).{build}"
 
 before_build:
   - rake "prepare_for_build[%APPVEYOR_BUILD_VERSION%]"
