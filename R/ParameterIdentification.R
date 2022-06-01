@@ -80,8 +80,8 @@ ParameterIdentification <- R6::R6Class(
         if (configuration$simulateSteadyState) {
           initialValues <- getSteadyState(
             quantitiesPaths = private$.stateVariables[[simulation$root$id]],
-            simulation = simulation, steadyStateTime = configuration$steadyStateTime
-          )
+            simulations = simulation, steadyStateTime = configuration$steadyStateTime
+          )[[simulation$id]]
           for (i in seq_along(initialValues$quantities)) {
             quantity <- initialValues$quantities[[i]]
             quantity$value <- initialValues$values[[i]]
