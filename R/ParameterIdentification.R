@@ -18,7 +18,7 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorPropertyReadOnly("simulations"))
       }
     },
-
+    
     #' @field parameters List of \code{PIParameters} objects to be optimized. Read-only
     parameters = function(value) {
       if (missing(value)) {
@@ -27,7 +27,7 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorPropertyReadOnly("parameters"))
       }
     },
-
+    
     #' @field configuration An object of \code{PIConfiguration}
     configuration = function(value) {
       if (missing(value)) {
@@ -37,7 +37,7 @@ ParameterIdentification <- R6::R6Class(
         private$.configuration <- value
       }
     },
-
+    
     #' @field outputMappings List of \code{PIOutputMapping} objects. Each mapping assigns a set of observed data
     #' given by \code{XYData}-objects
     outputMappings = function(value) {
@@ -54,7 +54,7 @@ ParameterIdentification <- R6::R6Class(
     .parameters = NULL,
     .outputMappings = NULL,
     .configuration = NULL,
-
+    
     # Perform one iteration of the optimization workflow and calculate the residuals
     # @param currVals Numerical vector of the parameter values to be applied
     # @return Residuals, based on the selected objective function
@@ -63,7 +63,7 @@ ParameterIdentification <- R6::R6Class(
       dataMappings <- private$.evaluate(currVals)
       return(private$.calculateResiduals(dataMappings))
     },
-
+    
     # Evaluate all simulations with given parameter values
     # @param currVals Numerical vector of the parameter values to be applied
     # @return A list of \code{DataMapping} objects - one DataMapping for one output mapping.
@@ -74,7 +74,7 @@ ParameterIdentification <- R6::R6Class(
         piParameter <- private$.parameters[[idx]]
         piParameter$setValue(currVals[[idx]])
       }
-
+      
       singleRun <- function(simulation, configuration) {
         # Simulate steady-states if specified
         if (configuration$simulateSteadyState) {
@@ -87,17 +87,17 @@ ParameterIdentification <- R6::R6Class(
             quantity$value <- initialValues$values[[i]]
           }
         }
-
+        
         simulationResult <- ospsuite::runSimulation(simulation)
         return(simulationResult)
       }
-
+      
       # Run simulations
       simulationResults <- lapply(private$.simulations, function(x) {
         singleRun(x, private$.configuration)
       })
-
-
+      
+      
       # Create data mappings for each output mapping
       dataMappings <- lapply(private$.outputMappings, function(x) {
         # Find the simulation that is the parent of the output quantity
@@ -117,16 +117,16 @@ ParameterIdentification <- R6::R6Class(
           simulation = simulation,
           groups = "PI"
         )
-
+        
         # Manipulate simulated results with a used defined function
         if (!is.null(x$transformResultsFunction)) {
           xyData <- dataMapping$xySeries[["Simulation"]]
           transformedResults <- x$transformResultsFunction(xyData$xValues, xyData$yValues)
-
+          
           xyData$xValues <- transformedResults$xVals
           xyData$yValues <- transformedResults$yVals
         }
-
+        
         # Add observed data
         for (observedData in x$observedXYData) {
           dataMapping$addOSPSTimeValues(
@@ -138,7 +138,7 @@ ParameterIdentification <- R6::R6Class(
       })
       return(dataMappings)
     },
-
+    
     # Calculate residuals between simulated and observed values.
     #
     # @param dataMappingList A \code{DataMapping} or a list of \code{DataMapping} objects.
@@ -150,7 +150,7 @@ ParameterIdentification <- R6::R6Class(
       cost <- NULL
       for (dataMapping in dataMappingList) {
         simulatedResult <- list()
-
+        
         combinedResults <- lapply(dataMapping$xySeries, function(xySeries) {
           if (xySeries$dataType == XYDataTypes$Simulated) {
             simulatedResult <<- xySeries
@@ -163,7 +163,7 @@ ParameterIdentification <- R6::R6Class(
             dataError = xySeries$yErrorProcessed(dataMapping$yUnit)
           ))
         })
-
+        
         dataPointsX <- unlist(lapply(combinedResults, function(x) {
           x$dataPointsX
         }), use.names = FALSE)
@@ -173,19 +173,21 @@ ParameterIdentification <- R6::R6Class(
         dataError <- unlist(lapply(combinedResults, function(x) {
           x$dataError
         }), use.names = FALSE)
-
+        
         # Calculate the distance between each point of the observed data to the simulated result
         modelDf <- data.frame("Time" = simulatedResult$xValues, "Values" = simulatedResult$yValues)
-        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY)
-
+        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY, "Error" = dataError)
+        errorDf <- data.frame("Time" = dataPointsX, "Values" = dataError)
+        
         # Error is not used so far as the cost function is buggy - if the error is 0, it tries to divide by zero.
-        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost)
+        
+        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = "Error")
       }
-
+      
       if (private$.configuration$printIterationFeedback) {
         print(cost)
       }
-
+      
       return(cost)
     }
   ),
@@ -209,7 +211,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite:::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
       private$.simulations <- hash::hash()
-
+      
       for (simulation in c(simulations)) {
         id <- simulation$root$id
         private$.simulations[[id]] <- simulation
@@ -222,7 +224,7 @@ ParameterIdentification <- R6::R6Class(
     finalize = function() {
       hash::clear(private$.simulations)
     },
-
+    
     #' @description
     #' Start identification of parameters
     #' @details When the identification if finished, the best identified values of the parameters are accessible via the \code{currValue}-field of the \code{PIParameters}-object.
@@ -241,20 +243,20 @@ ParameterIdentification <- R6::R6Class(
         }
         return()
       })
-
+      
       for (outputMapping in private$.outputMappings) {
         simId <- getSimulationContainer(outputMapping$quantity)$id
         simulation <- private$.simulations[[simId]]
         ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
         for (observedData in outputMapping$observedXYData) {
           xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
-            unit = observedData$xUnit
+                                        values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
+                                        unit = observedData$xUnit
           )
           simulation$outputSchema$addTimePoints(round(xVals))
         }
       }
-
+      
       startValues <- unlist(lapply(self$parameters, function(x) {
         x$startValue
       }), use.names = FALSE)
@@ -264,11 +266,11 @@ ParameterIdentification <- R6::R6Class(
       upper <- unlist(lapply(self$parameters, function(x) {
         x$maxValue
       }), use.names = FALSE)
-
+      
       results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
       return(results)
     },
-
+    
     #' Plot the current results
     #'
     #' @details Runs all simulations with current parameter values and creates plots of every output mapping
@@ -277,15 +279,15 @@ ParameterIdentification <- R6::R6Class(
         x$currValue
       }), use.names = FALSE)
       dataMappings <- private$.evaluate(parValues)
-
+      
       lapply(dataMappings, function(x) {
         x$plot()
       })
-
+      
       invisible(self)
     },
-
-
+    
+    
     #' @description
     #' Print the object to the console
     #' @param ... Rest arguments.
