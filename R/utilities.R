@@ -4,8 +4,8 @@
 #'
 #' @return The root container that is the parent of the entity.
 getSimulationContainer <- function(entity) {
-  ospsuite:::validateIsOfType(entity, "Entity")
-  if (ospsuite:::isOfType(entity, "Container")) {
+  ospsuite.utils::validateIsOfType(entity, "Entity")
+  if (ospsuite.utils::isOfType(entity, "Container")) {
     if (entity$containerType == "Simulation") {
       return(entity)
     }

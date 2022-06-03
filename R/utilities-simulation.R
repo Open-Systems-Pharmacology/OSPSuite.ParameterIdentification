@@ -8,7 +8,7 @@
 #' @import ospsuite
 #' @export
 getAllStateVariablesPaths <- function(simulation) {
-  ospsuite:::validateIsOfType(simulation, type = "Simulation")
+  ospsuite.utils::validateIsOfType(simulation, type = "Simulation")
   allMoleculesPaths <- ospsuite:::getAllEntityPathsIn(container = simulation, entityType = ospsuite:::Molecule)
   allStateVariableParamsPaths <- ospsuite:::getAllEntityPathsIn(container = simulation, entityType = ospsuite:::Parameter, method = "AllStateVariableParameterPathsIn")
   allQantitiesPaths <- append(allMoleculesPaths, allStateVariableParamsPaths)
@@ -34,22 +34,22 @@ getAllStateVariablesPaths <- function(simulation) {
 #' @import ospsuite rClr hash
 #' @export
 getSteadyState <- function(quantitiesPaths = NULL, simulations, steadyStateTime, ignoreIfFormula = TRUE, stopIfNotFound = TRUE, lowerThreshold = 1e-15) {
-  ospsuite:::validateIsOfType(simulations, type = "Simulation")
-  ospsuite:::validateIsString(object = quantitiesPaths, nullAllowed = TRUE)
-  simulations <- ospsuite:::toList(simulations)
+  ospsuite.utils::validateIsOfType(simulations, type = "Simulation")
+  ospsuite.utils::validateIsString(object = quantitiesPaths, nullAllowed = TRUE)
+  simulations <- ospsuite.utils::toList(simulations)
 
   if (steadyStateTime <= 0) {
     stop(messages$steadyStateTimeNotPositive(steadyStateTime))
   }
 
-  #First prepare all simulations by setting their outputs and time intervals
-  #Create hash maps for the output intervals, time points, and output selections of the simulations in their initial state.
+  # First prepare all simulations by setting their outputs and time intervals
+  # Create hash maps for the output intervals, time points, and output selections of the simulations in their initial state.
   oldOutputIntervals <- hash::hash()
   oldTimePoints <- hash::hash()
   oldOutputSelections <- hash::hash()
-  #If no quantities have been specified, the quantities paths may be different for each simulation and must be stored separately
+  # If no quantities have been specified, the quantities paths may be different for each simulation and must be stored separately
   quantitiesPathsMap <- hash::hash()
-  for (simulation in simulations){
+  for (simulation in simulations) {
     simId <- simulation$id
     # Have to reset both the output intervals and the time points!
     oldOutputIntervals[[simId]] <- simulation$outputSchema$intervals
@@ -60,21 +60,20 @@ getSteadyState <- function(quantitiesPaths = NULL, simulations, steadyStateTime,
     # If no quantities are explicitly specified, simulate all outputs.
     if (is.null(quantitiesPaths)) {
       quantitiesPathsMap[[simId]] <- getAllStateVariablesPaths(simulation)
-    }
-    else {
+    } else {
       quantitiesPathsMap[[simId]] <- quantitiesPaths
     }
     ospsuite::addOutputs(quantitiesOrPaths = quantitiesPathsMap[[simId]], simulation = simulation)
   }
 
-  #Run simulations concurrently
+  # Run simulations concurrently
   simulationResults <- ospsuite::runSimulationsConcurrently(simulations = simulations)
   # Container task is required for checking the "isFormula" property
   task <- ospsuite:::getContainerTask()
 
-  #Iterate through simulations and get their outputs
+  # Iterate through simulations and get their outputs
   outputMap <- hash::hash()
-  for (simulation in simulations){
+  for (simulation in simulations) {
     simId <- simulation$id
 
     allOutputs <- ospsuite::getOutputValues(simulationResults[[simId]], quantitiesOrPaths = quantitiesPathsMap[[simId]], stopIfNotFound = stopIfNotFound, addMetaData = FALSE)
