@@ -7,7 +7,7 @@
 #' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
-  inherit = ospsuite:::Printable,
+  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     #' @field simulations Named list with simulation objects, where names are IDs of the root container of the simulation
@@ -33,7 +33,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        ospsuite:::validateIsOfType(configuration, "PIConfiguration")
+        ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -104,17 +104,12 @@ ParameterIdentification <- R6::R6Class(
         simId <- getSimulationContainer(x$quantity)$id
         simulation <- private$.simulations[[simId]]
         # Create new DataMapping
-        dataMapping <- esqlabsR::DataMapping$new()
+        dataMapping <- esqlabsRLegacy::DataMapping$new()
         # Add simulation results to the mapping.
         dataMapping$addModelOutputs(
           paths = x$quantity$path,
-          outputValues = getOutputValues(
-            simulationResults = simulationResults[[simId]],
-            quantitiesOrPaths = x$quantity$path,
-            addMetaData = TRUE
-          ),
+          simulationResults = simulationResults[[simId]],
           labels = "Simulation",
-          simulation = simulation,
           groups = "PI"
         )
 
@@ -129,8 +124,8 @@ ParameterIdentification <- R6::R6Class(
 
         # Add observed data
         for (observedData in x$observedXYData) {
-          dataMapping$addOSPSTimeValues(
-            OSPSTimeValues = observedData,
+          dataMapping$addXYData(
+            XYData = observedData,
             groups = "PI"
           )
         }
@@ -146,7 +141,7 @@ ParameterIdentification <- R6::R6Class(
     #
     # @return Vector of residuals
     .calculateResiduals = function(dataMappingList) {
-      dataMappingList <- ospsuite:::toList(dataMappingList)
+      dataMappingList <- ospsuite.utils::toList(dataMappingList)
       cost <- NULL
       for (dataMapping in dataMappingList) {
         simulatedResult <- list()
@@ -176,10 +171,14 @@ ParameterIdentification <- R6::R6Class(
 
         # Calculate the distance between each point of the observed data to the simulated result
         modelDf <- data.frame("Time" = simulatedResult$xValues, "Values" = simulatedResult$yValues)
-        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY)
+        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY, "Error" = dataError)
 
-        # Error is not used so far as the cost function is buggy - if the error is 0, it tries to divide by zero.
-        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost)
+        # Only use error if it does not contain 0, otherwise the cost function fails
+        err = "Error"
+        if (any(dataError == 0)){
+          err = NULL
+        }
+        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = err)
       }
 
       if (private$.configuration$printIterationFeedback) {
@@ -203,10 +202,10 @@ ParameterIdentification <- R6::R6Class(
     #' is used.
     #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
-      ospsuite:::validateIsOfType(simulations, "Simulation")
-      ospsuite:::validateIsOfType(parameters, "PIParameters")
-      ospsuite:::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
-      ospsuite:::validateIsOfType(outputMappings, "PIOutputMapping")
+      ospsuite.utils::validateIsOfType(simulations, "Simulation")
+      ospsuite.utils::validateIsOfType(parameters, "PIParameters")
+      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
+      ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
       private$.simulations <- hash::hash()
 

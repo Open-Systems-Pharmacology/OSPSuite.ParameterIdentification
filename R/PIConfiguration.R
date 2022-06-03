@@ -6,7 +6,7 @@
 #' @format NULL
 PIConfiguration <- R6::R6Class(
   "PIConfiguration",
-  inherit = ospsuite:::Printable,
+  inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
     #' @field simulateSteadyState Boolean representing whether the simulation will be brought to a steady-state first
@@ -14,7 +14,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.simulateSteadyState
       } else {
-        ospsuite:::validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.simulateSteadyState <- value
       }
     },
@@ -23,7 +23,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.steadyStateTime
       } else {
-        ospsuite:::validateIsNumeric(value)
+        ospsuite.utils::validateIsNumeric(value)
         if (value < 0) {
           stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
         }
@@ -36,7 +36,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.printIterationFeedback
       } else {
-        ospsuite:::validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.printIterationFeedback <- value
       }
     },
@@ -48,7 +48,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.numberOfCores
       } else {
-        ospsuite:::validateIsInteger(value)
+        ospsuite.utils::validateIsInteger(value)
         if (value < 1) {
           stop(messages(errorNumberOfCoresNotPositive)())
         }
@@ -61,7 +61,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.parallelize
       } else {
-        ospsuite:::validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.parallelize <- value
       }
     }

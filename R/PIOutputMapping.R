@@ -7,7 +7,7 @@
 #' @format NULL
 PIOutputMapping <- R6::R6Class(
   "PIOutputMapping",
-  inherit = ospsuite:::Printable,
+  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     #' @field observedXYData Named list with the \code{XYData} that will be
@@ -69,7 +69,7 @@ PIOutputMapping <- R6::R6Class(
     #' @param quantity An object of the type \code{Quantity}
     #' @return A new `PIOutputMapping` object.
     initialize = function(quantity) {
-      ospsuite:::validateIsOfType(quantity, "Quantity")
+      ospsuite.utils::validateIsOfType(quantity, "Quantity")
 
       private$.quantity <- quantity
       private$.observedXYData <- hash::hash()
@@ -87,8 +87,8 @@ PIOutputMapping <- R6::R6Class(
     #' be of the same dimension as the simulation quantity of the mapping.
     #' @export
     addObservedData = function(OSPSTimeValues) {
-      ospsuite:::validateIsOfType(OSPSTimeValues, "XYData")
-      OSPSTimeValues <- ospsuite:::toList(OSPSTimeValues)
+      ospsuite.utils::validateIsOfType(OSPSTimeValues, "XYData")
+      OSPSTimeValues <- ospsuite.utils::toList(OSPSTimeValues)
       for (idx in seq_along(OSPSTimeValues)) {
         # Test if the dimension of the data to be added can be converted to the dimension of the quantity of this Output Mapping.
         invisible(ospsuite::toBaseUnit(
@@ -114,9 +114,9 @@ PIOutputMapping <- R6::R6Class(
     #' @param labels A list of label of \code{XYData}
     #' @param xFactors Numeric values that will be multiplied by the x-values
     setXFactors = function(labels, xFactors) {
-      ospsuite:::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite:::validateIsNumeric(xFactors, nullAllowed = TRUE)
-      ospsuite:::validateIsSameLength(labels, xFactors)
+      ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
+      ospsuite.utils::validateIsSameLength(labels, xFactors)
 
       for (idx in seq_along(labels)) {
         xySeries <- self$observedXYData[[labels[[idx]]]]
@@ -131,9 +131,9 @@ PIOutputMapping <- R6::R6Class(
     #' @param labels A list of label of \code{XYData}
     #' @param yFactors Numeric values that will be multiplied by the y-values
     setYFactors = function(labels, yFactors) {
-      ospsuite:::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite:::validateIsNumeric(yFactors, nullAllowed = TRUE)
-      ospsuite:::validateIsSameLength(labels, yFactors)
+      ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(yFactors, nullAllowed = TRUE)
+      ospsuite.utils::validateIsSameLength(labels, yFactors)
 
       for (idx in seq_along(labels)) {
         xySeries <- self$observedXYData[[labels[[idx]]]]
@@ -148,9 +148,9 @@ PIOutputMapping <- R6::R6Class(
     #' @param labels A list of label of \code{XYData}
     #' @param xOffset Numeric values that will be added to the x-values
     setXOffset = function(labels, xOffset) {
-      ospsuite:::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite:::validateIsNumeric(xOffset, nullAllowed = TRUE)
-      ospsuite:::validateIsSameLength(labels, xOffset)
+      ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xOffset, nullAllowed = TRUE)
+      ospsuite.utils::validateIsSameLength(labels, xOffset)
 
       for (idx in seq_along(labels)) {
         xySeries <- self$observedXYData[[labels[[idx]]]]
