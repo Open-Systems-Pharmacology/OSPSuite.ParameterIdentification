@@ -72,8 +72,11 @@ artifacts:
   - path: '*.Rcheck\**\*.Rout'
     name: Logs
 
-  - path: '\*_*.zip'
-    name: Win
+  - path: '\*_*.tar.gz'
+    name: Bits
+
+  - path: 'ospsuite.parameteridentification*.zip'
+    name: Bits
 
 platform: x64
 
