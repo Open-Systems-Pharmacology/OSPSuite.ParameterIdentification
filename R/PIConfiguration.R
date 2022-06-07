@@ -1,20 +1,21 @@
 #' @title PIConfiguration
 #' @docType class
 #' @description An object storing configuration for the parameter identification
-#' @import R6
+#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
   "PIConfiguration",
   inherit = ospsuite.utils::Printable,
-  cloneable = FALSE,
+  cloneable = TRUE,
   active = list(
-    #' @field simulateSteadyState Boolean representing whether the simulation will be brought to a steady-state first
+    #' @field simulateSteadyState Boolean representing whether the simulation
+    #' should be brought to a steady-state first
     simulateSteadyState = function(value) {
       if (missing(value)) {
         private$.simulateSteadyState
       } else {
-        ospsuite.utils::validateIsLogical(value)
+        validateIsLogical(value)
         private$.simulateSteadyState <- value
       }
     },
@@ -23,55 +24,29 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.steadyStateTime
       } else {
-        ospsuite.utils::validateIsNumeric(value)
+        validateIsNumeric(value)
         if (value < 0) {
           stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
         }
         private$.steadyStateTime <- value
       }
     },
-    #' @field printIterationFeedback Boolean. If TRUE, the output of the residuals calculation will be printed after each iteration.
-    #' Default is FALSE
+    #' @field printIterationFeedback Boolean. If `TRUE`, the output of the
+    #' residuals calculation will be printed after each iteration.
+    #' Default is `FALSE`
     printIterationFeedback = function(value) {
       if (missing(value)) {
         private$.printIterationFeedback
       } else {
-        ospsuite.utils::validateIsLogical(value)
+        validateIsLogical(value)
         private$.printIterationFeedback <- value
-      }
-    },
-
-    #' @field numberOfCores (Maximal) number of cores to be used. This is only relevant when \code{parallellize}
-    #' is \code{TRUE}.
-    #' Default is getOSPSuitePISetting("maxNumberOfCores").
-    numberOfCores = function(value) {
-      if (missing(value)) {
-        private$.numberOfCores
-      } else {
-        ospsuite.utils::validateIsInteger(value)
-        if (value < 1) {
-          stop(messages(errorNumberOfCoresNotPositive)())
-        }
-        private$.numberOfCores <- value
-      }
-    },
-
-    #' @field parallelize Logical. If \code{TRUE} (default), simulations for each evaluation are executed in parallel.
-    parallelize = function(value) {
-      if (missing(value)) {
-        private$.parallelize
-      } else {
-        ospsuite.utils::validateIsLogical(value)
-        private$.parallelize <- value
       }
     }
   ),
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
-    .printIterationFeedback = NULL,
-    .parallelize = NULL,
-    .numberOfCores = NULL
+    .printIterationFeedback = NULL
   ),
   public = list(
     #' @description
@@ -81,8 +56,6 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printIterationFeedback <- FALSE
-      private$.parallelize <- FALSE
-      private$.numberOfCores <- getOSPSuitePISetting("maxNumberOfCores")
     },
 
     #' @description
@@ -93,8 +66,6 @@ PIConfiguration <- R6::R6Class(
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.printIterationFeedback)
-      private$printLine("Execute in parallel", private$.parallelize)
-      private$printLine("Maximal number of cores", private$.numberOfCores)
       invisible(self)
     }
   )

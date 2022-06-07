@@ -8,14 +8,15 @@
 A parameter to be optimized in a parameter identification routine
 }
 \section{Super class}{
-\code{\link[ospsuite:Printable]{ospsuite::Printable}} -> \code{PIParameters}
+\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIParameters}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{parameters}}{List of parameter object. Adding or removing parameters is currently not supported.}
 
-\item{\code{currValue}}{Current value of the parameters as used in the simulation. The unit of the value is \code{PIParameters$unit}.}
+\item{\code{currValue}}{Current value of the parameters as used in the
+simulation. The unit of the value is \code{PIParameters$unit}.}
 
 \item{\code{startValue}}{Start value in the optimization.}
 
@@ -31,21 +32,21 @@ adjusted automatically.}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{PIParameters$new()}}
-\item \href{#method-setValue}{\code{PIParameters$setValue()}}
-\item \href{#method-print}{\code{PIParameters$print()}}
-\item \href{#method-clone}{\code{PIParameters$clone()}}
+\item \href{#method-PIParameters-new}{\code{PIParameters$new()}}
+\item \href{#method-PIParameters-setValue}{\code{PIParameters$setValue()}}
+\item \href{#method-PIParameters-print}{\code{PIParameters$print()}}
+\item \href{#method-PIParameters-clone}{\code{PIParameters$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-PIParameters-new"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a new instance of the class
 The start value is set to the value of the first parameter at time of creation
@@ -63,12 +64,12 @@ All parameters will be optimized using the same value.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new `PIParameters` object.
+A new \code{PIParameters} object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-setValue"></a>}}
-\if{latex}{\out{\hypertarget{method-setValue}{}}}
+\if{html}{\out{<a id="method-PIParameters-setValue"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-setValue}{}}}
 \subsection{Method \code{setValue()}}{
 Change the value of the parameter(s)
 The unit of the value is $unit
@@ -85,8 +86,8 @@ The unit of the value is $unit
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-PIParameters-print"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-print}{}}}
 \subsection{Method \code{print()}}{
 Print the object to the console
 \subsection{Usage}{
@@ -102,8 +103,8 @@ Print the object to the console
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-PIParameters-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

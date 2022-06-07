@@ -8,42 +8,39 @@
 An object storing configuration for the parameter identification
 }
 \section{Super class}{
-\code{\link[ospsuite:Printable]{ospsuite::Printable}} -> \code{PIConfiguration}
+\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIConfiguration}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulateSteadyState}}{Boolean representing whether the simulation will be brought to a steady-state first}
+\item{\code{simulateSteadyState}}{Boolean representing whether the simulation
+should be brought to a steady-state first}
 
 \item{\code{steadyStateTime}}{Time in minutes to simulate if simulating steady-state. May be NULL}
 
-\item{\code{printIterationFeedback}}{Boolean. If TRUE, the output of the residuals calculation will be printed after each iteration.
-Default is FALSE}
-
-\item{\code{numberOfCores}}{(Maximal) number of cores to be used. This is only relevant when \code{parallellize}
-is \code{TRUE}.
-Default is getOSPSuitePISetting("maxNumberOfCores").}
-
-\item{\code{parallelize}}{Logical. If \code{TRUE} (default), simulations for each evaluation are executed in parallel.}
+\item{\code{printIterationFeedback}}{Boolean. If \code{TRUE}, the output of the
+residuals calculation will be printed after each iteration.
+Default is \code{FALSE}}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{PIConfiguration$new()}}
-\item \href{#method-print}{\code{PIConfiguration$print()}}
+\item \href{#method-PIConfiguration-new}{\code{PIConfiguration$new()}}
+\item \href{#method-PIConfiguration-print}{\code{PIConfiguration$print()}}
+\item \href{#method-PIConfiguration-clone}{\code{PIConfiguration$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-PIConfiguration-new"></a>}}
+\if{latex}{\out{\hypertarget{method-PIConfiguration-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a new instance of the class
 \subsection{Usage}{
@@ -51,12 +48,12 @@ Initialize a new instance of the class
 }
 
 \subsection{Returns}{
-A new `PIConfiguration` object.
+A new \code{PIConfiguration} object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-PIConfiguration-print"></a>}}
+\if{latex}{\out{\hypertarget{method-PIConfiguration-print}{}}}
 \subsection{Method \code{print()}}{
 Print the object to the console
 \subsection{Usage}{
@@ -67,6 +64,23 @@ Print the object to the console
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{...}}{Rest arguments.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PIConfiguration-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-PIConfiguration-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
 }
 \if{html}{\out{</div>}}
 }

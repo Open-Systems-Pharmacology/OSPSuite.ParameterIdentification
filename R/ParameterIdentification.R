@@ -1,14 +1,13 @@
 #' @title ParameterIdentification
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation outputs and observed data
-#' @import ospsuite R6
 #' @export
-#' @import FME hash esqlabsR
+#' @import FME hash ospsuite.utils
 #' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
   inherit = ospsuite.utils::Printable,
-  cloneable = TRUE,
+  cloneable = FALSE,
   active = list(
     #' @field simulations Named list with simulation objects, where names are IDs of the root container of the simulation
     simulations = function(value) {
@@ -33,13 +32,13 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
+        validateIsOfType(configuration, "PIConfiguration")
         private$.configuration <- value
       }
     },
 
-    #' @field outputMappings List of \code{PIOutputMapping} objects. Each mapping assigns a set of observed data
-    #' given by \code{XYData}-objects
+    #' @field outputMappings List of \code{PIOutputMapping} objects. Each
+    #' mapping assigns a set of observed data to a simulation output
     outputMappings = function(value) {
       if (missing(value)) {
         private$.outputMappings
@@ -82,6 +81,7 @@ ParameterIdentification <- R6::R6Class(
             quantitiesPaths = private$.stateVariables[[simulation$root$id]],
             simulations = simulation, steadyStateTime = configuration$steadyStateTime
           )[[simulation$id]]
+
           for (i in seq_along(initialValues$quantities)) {
             quantity <- initialValues$quantities[[i]]
             quantity$value <- initialValues$values[[i]]
@@ -97,11 +97,10 @@ ParameterIdentification <- R6::R6Class(
         singleRun(x, private$.configuration)
       })
 
-
       # Create data mappings for each output mapping
       dataMappings <- lapply(private$.outputMappings, function(x) {
         # Find the simulation that is the parent of the output quantity
-        simId <- getSimulationContainer(x$quantity)$id
+        simId <- .getSimulationContainer(x$quantity)$id
         simulation <- private$.simulations[[simId]]
         # Create new DataMapping
         dataMapping <- esqlabsRLegacy::DataMapping$new()
@@ -137,7 +136,6 @@ ParameterIdentification <- R6::R6Class(
     # Calculate residuals between simulated and observed values.
     #
     # @param dataMappingList A \code{DataMapping} or a list of \code{DataMapping} objects.
-    # @param userFunction
     #
     # @return Vector of residuals
     .calculateResiduals = function(dataMappingList) {
@@ -177,12 +175,13 @@ ParameterIdentification <- R6::R6Class(
         err = "Error"
         if (any(dataError == 0)){
           err = NULL
+          obsDf$Error <- NULL
         }
         cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = err)
       }
 
       if (private$.configuration$printIterationFeedback) {
-        print(cost)
+        print(paste0("Current error: ", cost$model))
       }
 
       return(cost)
@@ -229,20 +228,23 @@ ParameterIdentification <- R6::R6Class(
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {
       # Prepare simulations
+      # If steady-state should be simulated, get the set of all state variables for each simulation
+      if (private$.configuration$simulateSteadyState) {
+        private$.stateVariables <- lapply(private$.simulations, function(simulation) {
+        return(getAllStateVariables(simulation))
+        })
+        names(private$.stateVariables) <- lapply(private$.simulations, function(x){x$root$id})
+      }
+
       # Clear output intervals of all simulations and only add points that are present in the observed data.
       # Also add output quantities.
-      # If steady-state should be simulated, get the set of all state variables for each simulation
-      private$.stateVariables <- lapply(private$.simulations, function(simulation) {
-        simulation$outputSchema$clear()
+      for (simulation in simulations){
+        clearOutputIntervals(simulation)
         clearOutputs(simulation)
-        if (private$.configuration$simulateSteadyState) {
-          return(getAllStateVariables(simulation))
-        }
-        return()
-      })
+      }
 
       for (outputMapping in private$.outputMappings) {
-        simId <- getSimulationContainer(outputMapping$quantity)$id
+        simId <- .getSimulationContainer(outputMapping$quantity)$id
         simulation <- private$.simulations[[simId]]
         ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
         for (observedData in outputMapping$observedXYData) {
@@ -270,7 +272,8 @@ ParameterIdentification <- R6::R6Class(
 
     #' Plot the current results
     #'
-    #' @details Runs all simulations with current parameter values and creates plots of every output mapping
+    #' @details Runs all simulations with current parameter values and creates
+    #' plots of every output mapping
     plotCurrentResults = function() {
       parValues <- unlist(lapply(self$parameters, function(x) {
         x$currValue
@@ -297,8 +300,6 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)
-      private$printLine("Execute in parallel", private$.configuration$parallelize)
-      private$printLine("Maximal number of cores", private$.configuration$numberOfCores)
       invisible(self)
     }
   )

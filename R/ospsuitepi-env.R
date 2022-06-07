@@ -13,8 +13,9 @@ piEnv$packageName <- "ospsuite.parameteridentification"
 # Version of the package
 piEnv$packageVersion <- .getPackageVersion()
 
-# Default maximal number of cores to use for parallel executions
-piEnv$maxNumberOfCores <- parallel::detectCores() - 1
+#' Names of the settings stored in piEnv Can be used with `getOSPSuitePISetting()`
+#' @export
+ospsuitePIRSettingNames <- enum(names(piEnv))
 
 #' Get the value of a global ospsuite.parameteridentification setting.
 #'

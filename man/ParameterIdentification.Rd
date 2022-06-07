@@ -8,7 +8,7 @@
 A task to identify optimal parameter values based on simulation outputs and observed data
 }
 \section{Super class}{
-\code{\link[ospsuite:Printable]{ospsuite::Printable}} -> \code{ParameterIdentification}
+\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{ParameterIdentification}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -19,31 +19,30 @@ A task to identify optimal parameter values based on simulation outputs and obse
 
 \item{\code{configuration}}{An object of \code{PIConfiguration}}
 
-\item{\code{outputMappings}}{List of \code{PIOutputMapping} objects. Each mapping assigns a set of observed data
-given by \code{XYData}-objects}
+\item{\code{outputMappings}}{List of \code{PIOutputMapping} objects. Each
+mapping assigns a set of observed data to a simulation output}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{ParameterIdentification$new()}}
-\item \href{#method-finalize}{\code{ParameterIdentification$finalize()}}
-\item \href{#method-run}{\code{ParameterIdentification$run()}}
-\item \href{#method-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
-\item \href{#method-print}{\code{ParameterIdentification$print()}}
-\item \href{#method-clone}{\code{ParameterIdentification$clone()}}
+\item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
+\item \href{#method-ParameterIdentification-finalize}{\code{ParameterIdentification$finalize()}}
+\item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
+\item \href{#method-ParameterIdentification-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
+\item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-ParameterIdentification-new"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a new instance of the class
 \subsection{Usage}{
@@ -73,12 +72,12 @@ further options of the parameter identification. If no \code{PIConfiguration} is
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new `ParameterIdentification` object.
+A new \code{ParameterIdentification} object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-finalize}{}}}
+\if{html}{\out{<a id="method-ParameterIdentification-finalize"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-finalize}{}}}
 \subsection{Method \code{finalize()}}{
 Clean up upon object removal
 \subsection{Usage}{
@@ -87,8 +86,8 @@ Clean up upon object removal
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-run"></a>}}
-\if{latex}{\out{\hypertarget{method-run}{}}}
+\if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
 \subsection{Method \code{run()}}{
 Start identification of parameters
 \subsection{Usage}{
@@ -105,21 +104,22 @@ Plot the current results
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotCurrentResults"></a>}}
-\if{latex}{\out{\hypertarget{method-plotCurrentResults}{}}}
+\if{html}{\out{<a id="method-ParameterIdentification-plotCurrentResults"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotCurrentResults}{}}}
 \subsection{Method \code{plotCurrentResults()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotCurrentResults()}\if{html}{\out{</div>}}
 }
 
 \subsection{Details}{
-Runs all simulations with current parameter values and creates plots of every output mapping
+Runs all simulations with current parameter values and creates
+plots of every output mapping
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-print}{}}}
 \subsection{Method \code{print()}}{
 Print the object to the console
 \subsection{Usage}{
@@ -130,23 +130,6 @@ Print the object to the console
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{...}}{Rest arguments.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
 }
 \if{html}{\out{</div>}}
 }

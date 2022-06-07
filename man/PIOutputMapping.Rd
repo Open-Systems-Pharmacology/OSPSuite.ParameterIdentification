@@ -5,11 +5,12 @@
 \alias{PIOutputMapping}
 \title{PIOutputMapping}
 \description{
-An object that combines simulation output with observed data. The parameter identification minimizes the
-distance between the simulation output and the observed data.
+An object that combines simulation output with observed data.
+The parameter identification minimizes the distance between the simulation
+output and the observed data.
 }
 \section{Super class}{
-\code{\link[ospsuite:Printable]{ospsuite::Printable}} -> \code{PIOutputMapping}
+\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIOutputMapping}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -17,41 +18,39 @@ distance between the simulation output and the observed data.
 \item{\code{observedXYData}}{Named list with the \code{XYData} that will be
 compared with simulation results. Names are the labels of the \code{xySeries} objects}
 
-\item{\code{quantity}}{Simulation quantity which results are to be compared to observed data. Read-only.}
+\item{\code{quantity}}{Simulation quantity which results are to be compared to
+observed data. Read-only.}
 
 \item{\code{transformResultsFunction}}{Function that will be applied to simulated results. Allows to manipulate simulated values before
 calculating the residuals. The function should manipulate numeric vectors 'xVals' and 'yVals' (that being the simulated time- and observation values)
 that will be than assigned to the x- and y-values of the simulated result.
-The function must return a named list with key 'xVals' and 'yVals'.
-# @field residualsScaling Defines if the residuals are calculated based on the absolute distance (Simulation value - Observed value, scaling = "lin")
-or as log(Simulation value) - log(Observed value) (scaling = "log"). Default is "lin".}
+The function must return a named list with key 'xVals' and 'yVals'.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{PIOutputMapping$new()}}
-\item \href{#method-finalize}{\code{PIOutputMapping$finalize()}}
-\item \href{#method-addObservedData}{\code{PIOutputMapping$addObservedData()}}
-\item \href{#method-removeXYSeries}{\code{PIOutputMapping$removeXYSeries()}}
-\item \href{#method-setXFactors}{\code{PIOutputMapping$setXFactors()}}
-\item \href{#method-setYFactors}{\code{PIOutputMapping$setYFactors()}}
-\item \href{#method-setXOffset}{\code{PIOutputMapping$setXOffset()}}
-\item \href{#method-setConfiguration}{\code{PIOutputMapping$setConfiguration()}}
-\item \href{#method-print}{\code{PIOutputMapping$print()}}
-\item \href{#method-clone}{\code{PIOutputMapping$clone()}}
+\item \href{#method-PIOutputMapping-new}{\code{PIOutputMapping$new()}}
+\item \href{#method-PIOutputMapping-finalize}{\code{PIOutputMapping$finalize()}}
+\item \href{#method-PIOutputMapping-addObservedData}{\code{PIOutputMapping$addObservedData()}}
+\item \href{#method-PIOutputMapping-removeXYSeries}{\code{PIOutputMapping$removeXYSeries()}}
+\item \href{#method-PIOutputMapping-setXFactors}{\code{PIOutputMapping$setXFactors()}}
+\item \href{#method-PIOutputMapping-setYFactors}{\code{PIOutputMapping$setYFactors()}}
+\item \href{#method-PIOutputMapping-setXOffset}{\code{PIOutputMapping$setXOffset()}}
+\item \href{#method-PIOutputMapping-print}{\code{PIOutputMapping$print()}}
+\item \href{#method-PIOutputMapping-clone}{\code{PIOutputMapping$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-new"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a new instance of the class
 \subsection{Usage}{
@@ -66,44 +65,46 @@ Initialize a new instance of the class
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new `PIOutputMapping` object.
+A new \code{PIOutputMapping} object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-finalize}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-finalize"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-finalize}{}}}
 \subsection{Method \code{finalize()}}{
 Clean up upon object removal
-Add observed data as \code{OSPSTimeValues} object(s).
+Add observed data as \code{XYData} object(s).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$finalize()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addObservedData"></a>}}
-\if{latex}{\out{\hypertarget{method-addObservedData}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-addObservedData"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-addObservedData}{}}}
 \subsection{Method \code{addObservedData()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedData(OSPSTimeValues)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedData(XYData)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{OSPSTimeValues}}{Object or a list of objects of the type \code{OSPSTimeValues}. Each data set must
-be of the same dimension as the simulation quantity of the mapping.}
+\item{\code{XYData}}{Object or a list of objects of the type
+\code{XYData}. Each data set must be of the same dimension as the simulation
+quantity of the mapping.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If an observed data object with the same label already exists, it will be overwritten.
+If an observed data object with the same label already exists,
+it will be overwritten.
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeXYSeries"></a>}}
-\if{latex}{\out{\hypertarget{method-removeXYSeries}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-removeXYSeries"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-removeXYSeries}{}}}
 \subsection{Method \code{removeXYSeries()}}{
 Remove the observed data.
 \subsection{Usage}{
@@ -119,8 +120,8 @@ Remove the observed data.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-setXFactors"></a>}}
-\if{latex}{\out{\hypertarget{method-setXFactors}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-setXFactors"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setXFactors}{}}}
 \subsection{Method \code{setXFactors()}}{
 Set the X-factors of x-y values by labels.
 \subsection{Usage}{
@@ -138,8 +139,8 @@ Set the X-factors of x-y values by labels.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-setYFactors"></a>}}
-\if{latex}{\out{\hypertarget{method-setYFactors}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-setYFactors"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setYFactors}{}}}
 \subsection{Method \code{setYFactors()}}{
 Set the y-factors of x-y values by labels.
 \subsection{Usage}{
@@ -157,8 +158,8 @@ Set the y-factors of x-y values by labels.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-setXOffset"></a>}}
-\if{latex}{\out{\hypertarget{method-setXOffset}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-setXOffset"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setXOffset}{}}}
 \subsection{Method \code{setXOffset()}}{
 Set the X-offset of x-y values by labels.
 \subsection{Usage}{
@@ -176,25 +177,8 @@ Set the X-offset of x-y values by labels.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-setConfiguration"></a>}}
-\if{latex}{\out{\hypertarget{method-setConfiguration}{}}}
-\subsection{Method \code{setConfiguration()}}{
-Apply settings stored in a dataMappingConfiguration
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setConfiguration(dataMappingConfiguration)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{dataMappingConfiguration}}{An object of type \code{DataMappingConfiguration}}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-print"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-print}{}}}
 \subsection{Method \code{print()}}{
 Print the object to the console
 \subsection{Usage}{
@@ -210,8 +194,8 @@ Print the object to the console
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-PIOutputMapping-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
