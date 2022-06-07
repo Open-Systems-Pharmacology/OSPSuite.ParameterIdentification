@@ -38,8 +38,7 @@ build_script:
   - Rscript -e "install.packages('https://ci.appveyor.com/api/projects/open-systems-pharmacology-ci/ospsuite-r/artifacts/ospsuite.zip', repos = NULL, type = 'binary')"
    - Rscript -e "install.packages('https://ci.appveyor.com/api/projects/open-systems-pharmacology-ci/ospsuite-rutils/artifacts/ospsuite.utils.zip', repos = NULL, type = 'binary')"
    - Rscript -e "install.packages('https://ci.appveyor.com/api/projects/open-systems-pharmacology-ci/tlf-library/artifacts/tlf.zip', repos = NULL, type = 'binary')"
-   - Rscript -e "install.packages('https:
-   //ci.appveyor.com/api/projects/StephanSchaller/esqlabsr/artifacts/esqlabsR.zip, repos = NULL, type = 'binary')"
+   - Rscript -e "install.packages('https://ci.appveyor.com/api/projects/StephanSchaller/esqlabsr/artifacts/esqlabsR.zip, repos = NULL, type = 'binary')"
   - travis-tool.sh install_deps
   - travis-tool.sh r_binary_install curl
 
