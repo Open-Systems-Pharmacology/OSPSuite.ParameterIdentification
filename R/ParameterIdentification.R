@@ -172,9 +172,9 @@ ParameterIdentification <- R6::R6Class(
         obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY, "Error" = dataError)
 
         # Only use error if it does not contain 0, otherwise the cost function fails
-        err = "Error"
-        if (any(dataError == 0)){
-          err = NULL
+        err <- "Error"
+        if (any(dataError == 0)) {
+          err <- NULL
           obsDf$Error <- NULL
         }
         cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = err)
@@ -231,14 +231,16 @@ ParameterIdentification <- R6::R6Class(
       # If steady-state should be simulated, get the set of all state variables for each simulation
       if (private$.configuration$simulateSteadyState) {
         private$.stateVariables <- lapply(private$.simulations, function(simulation) {
-        return(getAllStateVariables(simulation))
+          return(getAllStateVariables(simulation))
         })
-        names(private$.stateVariables) <- lapply(private$.simulations, function(x){x$root$id})
+        names(private$.stateVariables) <- lapply(private$.simulations, function(x) {
+          x$root$id
+        })
       }
 
       # Clear output intervals of all simulations and only add points that are present in the observed data.
       # Also add output quantities.
-      for (simulation in simulations){
+      for (simulation in simulations) {
         clearOutputIntervals(simulation)
         clearOutputs(simulation)
       }

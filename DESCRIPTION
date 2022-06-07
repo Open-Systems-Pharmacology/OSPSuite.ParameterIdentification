@@ -20,12 +20,14 @@ Depends:
     ospsuite (>= 11.0)
 Imports:
     FME,
-    hash
+    hash,
+    R6,
+    rClr,
+    ospsuite.utils
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0),
-    pander
+    testthat (>= 3.0.0)
 RoxygenNote: 7.2.0
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
