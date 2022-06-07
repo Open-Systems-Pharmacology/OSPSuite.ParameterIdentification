@@ -3,8 +3,8 @@
 #' @param quantities Quantities which dimensions are compared
 #'
 #' @return TRUE if the dimension of all quantities are equal, otherwise FALSE
-#' @export
-isSameDimension <- function(quantities) {
+#' @keywords internal
+.isSameDimension <- function(quantities) {
   dims <- lapply(quantities, function(x) {
     x$dimension
   })
@@ -15,9 +15,9 @@ isSameDimension <- function(quantities) {
 #' Check if the dimensions of the quantities are equal.
 #'
 #' @param quantities Quantities which dimensions are compared
-#' @export
-validateIsSameDimension <- function(quantities) {
-  if (!isSameDimension(quantities)) {
+#' @keywords internal
+.validateIsSameDimension <- function(quantities) {
+  if (!.isSameDimension(quantities)) {
     stop(messages$errorDimensionsNotEqual())
   }
 }

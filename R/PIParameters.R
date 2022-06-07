@@ -1,7 +1,7 @@
 #' @title PIParameters
 #' @docType class
 #' @description A parameter to be optimized in a parameter identification routine
-#' @import R6
+#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIParameters <- R6::R6Class(
@@ -18,7 +18,8 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field currValue Current value of the parameters as used in the simulation. The unit of the value is \code{PIParameters$unit}.
+    #' @field currValue Current value of the parameters as used in the
+    #' simulation. The unit of the value is `PIParameters$unit`.
     currValue = function(value) {
       if (missing(value)) {
         toUnit(
@@ -36,7 +37,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.startValue
       } else {
-        ospsuite.utils::validateIsNumeric(value)
+        validateIsNumeric(value)
         private$.startValue <- value
       }
     },
@@ -46,7 +47,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.minValue
       } else {
-        ospsuite.utils::validateIsNumeric(value)
+        validateIsNumeric(value)
         if (value > private$.startValue) {
           stop(paste0("The minimal value cannot be greater than the start value!
           Provided minimal value: ", value, ". Current start value: ", private$.startValue))
@@ -61,7 +62,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.maxValue
       } else {
-        ospsuite.utils::validateIsNumeric(value)
+        validateIsNumeric(value)
         if (value < private$.startValue) {
           stop(paste0("The maximal value cannot be smaller than the start value!
           Provided maximal value: ", value, ". Current start value: ", private$.startValue))
@@ -99,8 +100,8 @@ PIParameters <- R6::R6Class(
     #' @return A new `PIParameters` object.
     initialize = function(parameters) {
       parameters <- c(parameters)
-      ospsuite.utils::validateIsOfType(parameters, "Parameter")
-      validateIsSameDimension(parameters)
+      validateIsOfType(parameters, "Parameter")
+      .validateIsSameDimension(parameters)
 
       private$.parameters <- parameters
       private$.startValue <- parameters[[1]]$value
@@ -109,16 +110,12 @@ PIParameters <- R6::R6Class(
       private$.unit <- parameters[[1]]$unit
     },
 
-    # addParameter = function(parameter){
-    # TODO. Will have to somehow hash the parameters to check if it already has been added
-    # }
-
     #' @description
     #' Change the value of the parameter(s)
     #' The unit of the value is $unit
     #' @param value Numerical value.
     setValue = function(value) {
-      ospsuite.utils::validateIsNumeric(value)
+      validateIsNumeric(value)
       for (param in private$.parameters) {
         param$setValue(value, private$.unit)
       }
