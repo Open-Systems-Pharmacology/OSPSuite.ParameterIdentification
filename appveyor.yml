@@ -51,8 +51,7 @@ on_success:
   - Rscript -e "covr::codecov(function_exclusions = c('print.*', '\\.onLoad'))"
 
 after_test:
-  - ps: copy ospsuite.parameteridentification_*.zip ospsuite.parameteridentification
-.zip
+  - ps: copy ospsuite.parameteridentification_*.zip ospsuite.parameteridentification.zip
   
 test_script:
   - travis-tool.sh run_tests
