@@ -256,7 +256,7 @@ ParameterIdentification <- R6::R6Class(
             values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
             unit = observedData$xUnit
           )
-          simulation$outputSchema$addTimePoints(round(xVals))
+          simulation$outputSchema$addTimePoints(xVals)
         }
       }
 
