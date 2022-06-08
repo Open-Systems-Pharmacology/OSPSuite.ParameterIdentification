@@ -20,7 +20,7 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field parameters List of \code{PIParameters} objects to be optimized. Read-only
+    #' @field parameters List of `PIParameters` objects to be optimized. Read-only
     parameters = function(value) {
       if (missing(value)) {
         private$.parameters
@@ -29,7 +29,7 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field configuration An object of \code{PIConfiguration}
+    #' @field configuration An object of `PIConfiguration`
     configuration = function(value) {
       if (missing(value)) {
         private$.configuration
@@ -39,7 +39,7 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field outputMappings List of \code{PIOutputMapping} objects. Each
+    #' @field outputMappings List of `PIOutputMapping` objects. Each
     #' mapping assigns a set of observed data to a simulation output
     outputMappings = function(value) {
       if (missing(value)) {
@@ -198,13 +198,13 @@ ParameterIdentification <- R6::R6Class(
     #' @description
     #' Initialize a new instance of the class
     #'
-    #' @param simulations An object or a list of objects of class \code{Simulation}.
+    #' @param simulations An object or a list of objects of class `Simulation`.
     #' Parameters of the simulation object will be varied and the results simulated
-    #' @param parameters An object or a list of objects of class \code{PIParameter}. These parameters will be varied.
-    #' @param configuration Optional. Object of type \code{PIConfiguration} defining
-    #' further options of the parameter identification. If no \code{PIConfiguration} is passed, a default one
-    #' @param outputMappings List of objects of the class \code{PIOutputMapping}. Each objects
-    #' maps a model output (represented by a \code{Quantity}) with a set of observed data given as \code{XYData} objects.
+    #' @param parameters An object or a list of objects of class `PIParameter`. These parameters will be varied.
+    #' @param configuration Optional. Object of type `PIConfiguration` defining
+    #' further options of the parameter identification. If no `PIConfiguration` is passed, a default one
+    #' @param outputMappings List of objects of the class `PIOutputMapping`. Each objects
+    #' maps a model output (represented by a `Quantity`) with a set of observed data given as `XYData` objects.
     #' is used.
     #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
@@ -225,7 +225,7 @@ ParameterIdentification <- R6::R6Class(
 
     #' @description
     #' Start identification of parameters
-    #' @details When the identification if finished, the best identified values of the parameters are accessible via the \code{currValue}-field of the \code{PIParameters}-object.
+    #' @details When the identification if finished, the best identified values of the parameters are accessible via the `currValue`-field of the `PIParameters`-object.
     #'
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {

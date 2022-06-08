@@ -62,7 +62,7 @@ PIOutputMapping <- R6::R6Class(
   public = list(
     #' @description
     #' Initialize a new instance of the class
-    #' @param quantity An object of the type \code{Quantity}
+    #' @param quantity An object of the type `Quantity`
     #' @return A new `PIOutputMapping` object.
     initialize = function(quantity) {
       validateIsOfType(quantity, "Quantity")
@@ -103,7 +103,7 @@ PIOutputMapping <- R6::R6Class(
 
     #' @description Set the X-factors of x-y values by labels.
     #'
-    #' @param labels A list of label of \code{XYData}
+    #' @param labels A list of label of `XYData`
     #' @param xFactors Numeric values that will be multiplied by the x-values
     setXFactors = function(labels, xFactors) {
       validateIsString(labels, nullAllowed = TRUE)
@@ -120,7 +120,7 @@ PIOutputMapping <- R6::R6Class(
 
     #' @description Set the y-factors of x-y values by labels.
     #'
-    #' @param labels A list of label of \code{XYData}
+    #' @param labels A list of label of `XYData`
     #' @param yFactors Numeric values that will be multiplied by the y-values
     setYFactors = function(labels, yFactors) {
       validateIsString(labels, nullAllowed = TRUE)
@@ -137,7 +137,7 @@ PIOutputMapping <- R6::R6Class(
 
     #' @description Set the X-offset of x-y values by labels.
     #'
-    #' @param labels A list of label of \code{XYData}
+    #' @param labels A list of label of `XYData`
     #' @param xOffset Numeric values that will be added to the x-values
     setXOffset = function(labels, xOffset) {
       validateIsString(labels, nullAllowed = TRUE)
