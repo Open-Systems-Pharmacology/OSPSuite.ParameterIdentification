@@ -94,8 +94,8 @@ PIParameters <- R6::R6Class(
     #' @description
     #' Initialize a new instance of the class
     #' The start value is set to the value of the first parameter at time of creation
-    #' and can be changed with \code{PIParameters$startValue}
-    #' @param parameters A list of objects of class \code{Parameter}.
+    #' and can be changed with `PIParameters$startValue`
+    #' @param parameters A list of objects of class `Parameter`.
     #' All parameters will be optimized using the same value.
     #' @return A new `PIParameters` object.
     initialize = function(parameters) {
