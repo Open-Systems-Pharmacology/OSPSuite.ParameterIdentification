@@ -56,7 +56,7 @@ for (parameterPath in parameterPaths) {
   parameters <- c(parameters, piParameter)
 }
 
-######### Define otput mappings#######
+######### Define output mappings#######
 piOutputMappings <- list()
 
 # Create a PIOutputMapping setting the quantity of a model
