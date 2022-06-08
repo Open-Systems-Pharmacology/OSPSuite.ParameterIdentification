@@ -1,15 +1,17 @@
 #' @title ParameterIdentification
 #' @docType class
-#' @description A task to identify optimal parameter values based on simulation outputs and observed data
-#' @export
+#' @description A task to identify optimal parameter values based on simulation
+#'   outputs and observed data
 #' @import FME hash ospsuite.utils
 #' @format NULL
+#' @export
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
   inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
-    #' @field simulations Named list with simulation objects, where names are IDs of the root container of the simulation
+    #' @field simulations Named list with simulation objects, where names are
+    #'   IDs of the root container of the simulation
     simulations = function(value) {
       if (missing(value)) {
         as.list(private$.simulations)
@@ -185,6 +187,11 @@ ParameterIdentification <- R6::R6Class(
       }
 
       return(cost)
+    },
+
+    # Clean up upon object removal
+    finalize = function() {
+      hash::clear(private$.simulations)
     }
   ),
   public = list(
@@ -214,11 +221,6 @@ ParameterIdentification <- R6::R6Class(
       }
       private$.parameters <- parameters
       private$.outputMappings <- c(outputMappings)
-    },
-    #' @description
-    #' Clean up upon object removal
-    finalize = function() {
-      hash::clear(private$.simulations)
     },
 
     #' @description

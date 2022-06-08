@@ -5,7 +5,8 @@
 \alias{ParameterIdentification}
 \title{ParameterIdentification}
 \description{
-A task to identify optimal parameter values based on simulation outputs and observed data
+A task to identify optimal parameter values based on simulation
+outputs and observed data
 }
 \section{Super class}{
 \code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{ParameterIdentification}
@@ -13,7 +14,8 @@ A task to identify optimal parameter values based on simulation outputs and obse
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulations}}{Named list with simulation objects, where names are IDs of the root container of the simulation}
+\item{\code{simulations}}{Named list with simulation objects, where names are
+IDs of the root container of the simulation}
 
 \item{\code{parameters}}{List of \code{PIParameters} objects to be optimized. Read-only}
 
@@ -28,7 +30,6 @@ mapping assigns a set of observed data to a simulation output}
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
-\item \href{#method-ParameterIdentification-finalize}{\code{ParameterIdentification$finalize()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
 \item \href{#method-ParameterIdentification-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
@@ -74,16 +75,6 @@ further options of the parameter identification. If no \code{PIConfiguration} is
 \subsection{Returns}{
 A new \code{ParameterIdentification} object.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-finalize}{}}}
-\subsection{Method \code{finalize()}}{
-Clean up upon object removal
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$finalize()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}

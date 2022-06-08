@@ -11,8 +11,8 @@ PIOutputMapping <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field observedXYData Named list with the `XYData` that will be
-    #' compared with simulation results. Names are the labels of the `xySeries` objects
+    #' @field observedXYData Named list with the `XYData` that will be compared
+    #'   with simulation results. Names are the labels of the `xySeries` objects
     observedXYData = function(value) {
       if (missing(value)) {
         as.list(private$.observedXYData)
@@ -31,10 +31,13 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field transformResultsFunction Function that will be applied to simulated results. Allows to manipulate simulated values before
-    #' calculating the residuals. The function should manipulate numeric vectors 'xVals' and 'yVals' (that being the simulated time- and observation values)
-    #' that will be than assigned to the x- and y-values of the simulated result.
-    #' The function must return a named list with key 'xVals' and 'yVals'.
+    #' @field transformResultsFunction Function that will be applied to
+    #'   simulated results. Allows to manipulate simulated values before
+    #'   calculating the residuals. The function should manipulate numeric
+    #'   vectors 'xVals' and 'yVals' (that being the simulated time- and
+    #'   observation values) that will be than assigned to the x- and y-values
+    #'   of the simulated result. The function must return a named list with key
+    #'   'xVals' and 'yVals'.
     transformResultsFunction = function(value) {
       if (missing(value)) {
         private$.transformResultsFunction
@@ -49,7 +52,12 @@ PIOutputMapping <- R6::R6Class(
   private = list(
     .quantity = NULL,
     .observedXYData = NULL,
-    .transformResultsFunction = NULL
+    .transformResultsFunction = NULL,
+
+    # Clean up upon object removal
+    finalize = function() {
+      hash::clear(private$.observedXYData)
+    }
   ),
   public = list(
     #' @description
@@ -60,11 +68,6 @@ PIOutputMapping <- R6::R6Class(
       validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
       private$.observedXYData <- hash::hash()
-    },
-    #' @description
-    #' Clean up upon object removal
-    finalize = function() {
-      hash::clear(private$.observedXYData)
     },
 
     #' Add observed data as `XYData` object(s).
@@ -78,7 +81,8 @@ PIOutputMapping <- R6::R6Class(
       validateIsOfType(XYData, "XYData")
       XYData <- toList(XYData)
       for (idx in seq_along(XYData)) {
-        # Test if the dimension of the data to be added can be converted to the dimension of the quantity of this Output Mapping.
+        # Test if the dimension of the data to be added can be converted to the
+        # dimension of the quantity of this Output Mapping.
         invisible(ospsuite::toBaseUnit(
           quantityOrDimension = private$.quantity,
           values = 1,
