@@ -15,16 +15,19 @@ output and the observed data.
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{observedXYData}}{Named list with the \code{XYData} that will be
-compared with simulation results. Names are the labels of the \code{xySeries} objects}
+\item{\code{observedXYData}}{Named list with the \code{XYData} that will be compared
+with simulation results. Names are the labels of the \code{xySeries} objects}
 
 \item{\code{quantity}}{Simulation quantity which results are to be compared to
 observed data. Read-only.}
 
-\item{\code{transformResultsFunction}}{Function that will be applied to simulated results. Allows to manipulate simulated values before
-calculating the residuals. The function should manipulate numeric vectors 'xVals' and 'yVals' (that being the simulated time- and observation values)
-that will be than assigned to the x- and y-values of the simulated result.
-The function must return a named list with key 'xVals' and 'yVals'.}
+\item{\code{transformResultsFunction}}{Function that will be applied to
+simulated results. Allows to manipulate simulated values before
+calculating the residuals. The function should manipulate numeric
+vectors 'xVals' and 'yVals' (that being the simulated time- and
+observation values) that will be than assigned to the x- and y-values
+of the simulated result. The function must return a named list with key
+'xVals' and 'yVals'.}
 }
 \if{html}{\out{</div>}}
 }
@@ -32,7 +35,6 @@ The function must return a named list with key 'xVals' and 'yVals'.}
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-PIOutputMapping-new}{\code{PIOutputMapping$new()}}
-\item \href{#method-PIOutputMapping-finalize}{\code{PIOutputMapping$finalize()}}
 \item \href{#method-PIOutputMapping-addObservedData}{\code{PIOutputMapping$addObservedData()}}
 \item \href{#method-PIOutputMapping-removeXYSeries}{\code{PIOutputMapping$removeXYSeries()}}
 \item \href{#method-PIOutputMapping-setXFactors}{\code{PIOutputMapping$setXFactors()}}
@@ -66,18 +68,8 @@ Initialize a new instance of the class
 }
 \subsection{Returns}{
 A new \code{PIOutputMapping} object.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-finalize}{}}}
-\subsection{Method \code{finalize()}}{
-Clean up upon object removal
 Add observed data as \code{XYData} object(s).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$finalize()}\if{html}{\out{</div>}}
 }
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIOutputMapping-addObservedData"></a>}}
