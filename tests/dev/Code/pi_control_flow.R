@@ -1,3 +1,4 @@
+library(ospsuite)
 library(ospsuite.parameteridentification)
 
 ##### VARIABLE DEFINITION#####
@@ -8,8 +9,8 @@ dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-observedData <- readObservedData(dataFolder, dataFile, ...)
-# should return an object of class ospsuite::DataSet
+observedData <- readObservedData(dataFolder, dataFile, groupingColumns = c("PK"), sheets = list("Boswell_2012"))
+# should return a list of objects of class ospsuite::DataSet
 
 ####### LOAD SIMULATIONS and put them in a named list######
 simNames <- c("Vehicle.pkml", "0.75 mg_kg.pkml", "2.5 mg_kg.pkml")
