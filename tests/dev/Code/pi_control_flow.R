@@ -9,8 +9,8 @@ dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-observedData <- readObservedData(dataFolder, dataFile, groupingColumns = c("PK"), sheets = list("Boswell_2012"))
-# should return a list of objects of class ospsuite::DataSet
+observedData <- readObservedData(dataFolder, dataFile, groupingColumns = c("PK"), sheets = c("Boswell_2012"))
+# returns a list of objects of class ospsuite::DataSet
 
 ####### LOAD SIMULATIONS and put them in a named list######
 simNames <- c("Vehicle.pkml", "0.75 mg_kg.pkml", "2.5 mg_kg.pkml")
@@ -18,6 +18,7 @@ simulations <- lapply(simNames, function(x) {
   ospsuite::loadSimulation(file.path(modelFolder, x))
 })
 names(simulations) <- simNames
+# a named list of Simulation class instances
 
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
@@ -37,10 +38,11 @@ for (parameterPath in parameterPaths) {
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
 }
+# parameters is a list of PIParameters class instances
 
 # Create a DataCombined object based on observedData and simulations
 # and a ParameterIdentification object based on these
-mapping <- createDataMapping(observedData$Boswell_2012$IV_0.75mgKg_ADC =
+mapping <- createDataMapping(observedData[[1]] =
                                getQuantity("Organism|Tumor|Weight (tissue)",
                                            container = simulations$`0.75 mg_kg.pkml`))
 pi <- ParameterIdentification$new(mapping = mapping,

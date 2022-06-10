@@ -9,6 +9,11 @@
 #' @param sheets a list of sheet names to read. If NULL, all sheets are read
 #' from file
 #'
+#' @examples
+#' dataFolder <- file.path(getwd(), "../Data")
+#' dataFile <- "DataSet.xlsx"
+#' readObservedData(dataFolder, dataFile, groupingColumns = c("PK"), sheets = c("Boswell_2012"))
+#'
 readObservedData <- function(dataFolder, dataFile, groupingColumns = NULL, sheets = NULL) {
   if (!file.exists(file.path(dataFolder, dataFile))) {
     stop("No file found at ", file.path(dataFolder, dataFile))
