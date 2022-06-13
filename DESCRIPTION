@@ -8,7 +8,12 @@ Authors@R:
       person(given = "Pavel",
              family = "Balazki",
              role = c("aut", "cre"),
-             email = "pavel.balazki@esqlabs.com"))
+             email = "pavel.balazki@esqlabs.com"),
+      person(given = "Indrajeet",
+             family = "Patil",
+             role = "ctb",
+             email = "patilindrajeet.science@gmail.com",
+             comment = c(ORCID = "0000-0003-1995-6531", Twitter = "@patilindrajeets")))
 Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
 Description: R package for performing parameter identification for the 
     Open Systems Pharmacology models.
