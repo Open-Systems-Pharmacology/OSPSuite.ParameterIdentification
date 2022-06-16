@@ -41,12 +41,24 @@ PIConfiguration <- R6::R6Class(
         validateIsLogical(value)
         private$.printIterationFeedback <- value
       }
+    },
+
+    #' @field simulationRunOptions Object of type `SimulationRunOptions` that will be passed
+    #' to simulation runs. If `NULL`, default options are used.
+    simulationRunOptions = function(value) {
+      if (missing(value)) {
+        private$.simulationRunOptions
+      } else {
+        validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
+        private$.simulationRunOptions <- value
+      }
     }
   ),
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
-    .printIterationFeedback = NULL
+    .printIterationFeedback = NULL,
+    .simulationRunOptions = NULL
   ),
   public = list(
     #' @description
