@@ -44,7 +44,7 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field simulationRunOptions Object of type `SimulationRunOptions` that will be passed
-    #' to simulation runs. If `NULL`, default options are used
+    #' to simulation runs. If `NULL`, default options are used.
     simulationRunOptions = function(value) {
       if (missing(value)) {
         private$.simulationRunOptions
