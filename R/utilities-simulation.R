@@ -22,6 +22,8 @@
 #' Any steady-state values below this value are considered as numerical noise
 #' and replaced by 0. If `lowerThreshold` is `NULL`, no cut-off is applied.
 #' Default value is 1e-15.
+#' @param simulationRunOptions Optional instance of a `SimulationRunOptions`
+#'  used during the simulation run.
 #'
 #' @return A named list, where the names are the IDs of the simulations and the
 #'   entries are lists containing `paths` and their `values` at the end of the
@@ -33,7 +35,8 @@ getSteadyState <- function(quantitiesPaths = NULL,
                            steadyStateTime,
                            ignoreIfFormula = TRUE,
                            stopIfNotFound = TRUE,
-                           lowerThreshold = 1e-15) {
+                           lowerThreshold = 1e-15,
+                           simulationRunOptions = NULL) {
   validateIsOfType(simulations, type = "Simulation")
   validateIsString(object = quantitiesPaths, nullAllowed = TRUE)
   simulations <- toList(simulations)
@@ -69,7 +72,8 @@ getSteadyState <- function(quantitiesPaths = NULL,
   }
 
   # Run simulations concurrently
-  simulationResults <- ospsuite::runSimulations(simulations = simulations)
+  simulationResults <- ospsuite::runSimulations(simulations = simulations,
+                                                simulationRunOptions = simulationRunOptions)
   # Container task is required for checking the "isFormula" property
   task <- ospsuite:::getContainerTask()
 

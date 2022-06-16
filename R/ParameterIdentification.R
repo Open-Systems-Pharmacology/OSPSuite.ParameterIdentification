@@ -81,7 +81,8 @@ ParameterIdentification <- R6::R6Class(
         if (configuration$simulateSteadyState) {
           initialValues <- getSteadyState(
             quantitiesPaths = private$.stateVariables[[simulation$root$id]],
-            simulations = simulation, steadyStateTime = configuration$steadyStateTime
+            simulations = simulation, steadyStateTime = configuration$steadyStateTime,
+            simulationRunOptions = configuration$simulationRunOptions
           )[[simulation$id]]
 
           for (i in seq_along(initialValues$quantities)) {
@@ -90,7 +91,8 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        simulationResult <- ospsuite::runSimulation(simulation)
+        simulationResult <- ospsuite::runSimulation(simulation,
+                                                    simulationRunOptions = configuration$simulationRunOptions)
         return(simulationResult)
       }
 
