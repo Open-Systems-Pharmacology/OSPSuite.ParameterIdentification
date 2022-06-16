@@ -92,7 +92,8 @@ ParameterIdentification <- R6::R6Class(
         }
 
         simulationResult <- ospsuite::runSimulation(simulation,
-                                                    simulationRunOptions = configuration$simulationRunOptions)
+          simulationRunOptions = configuration$simulationRunOptions
+        )
         return(simulationResult)
       }
 
