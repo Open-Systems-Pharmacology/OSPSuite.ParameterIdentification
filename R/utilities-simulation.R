@@ -38,7 +38,7 @@ getSteadyState <- function(quantitiesPaths = NULL,
                            lowerThreshold = 1e-15,
                            simulationRunOptions = NULL) {
   validateIsOfType(simulations, type = "Simulation")
-  validateIsString(object = quantitiesPaths, nullAllowed = TRUE)
+  validateIsString(quantitiesPaths, nullAllowed = TRUE)
   simulations <- toList(simulations)
 
   if (steadyStateTime <= 0) {
