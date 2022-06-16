@@ -49,7 +49,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.simulationRunOptions
       } else {
-        validateIsOfType(value, SimulationRunOptions, nullAllowed = TRUE)
+        validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
         private$.simulationRunOptions <- value
       }
     }
