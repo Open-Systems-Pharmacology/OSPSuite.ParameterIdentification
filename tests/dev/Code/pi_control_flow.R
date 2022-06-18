@@ -2,14 +2,33 @@ library(ospsuite)
 library(ospsuite.parameteridentification)
 
 ##### VARIABLE DEFINITION#####
+rm(list = ls())
 # Path to the folder where the model file is located.
 modelFolder <- file.path(getwd(), "../Models/Simulations")
 # Path to the folder where experimental data files are located
 dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
+sheets <- "Boswell_2012"
+groupingColumns <- c("PK")
 
-observedData <- readObservedData(dataFolder, dataFile, groupingColumns = c("PK"), sheets = c("Boswell_2012"))
+if (!file.exists(file.path(dataFolder, dataFile))) {
+  warning("No file found at ", file.path(dataFolder, dataFile))
+}
+dataConfiguration <- createImporterConfigurationForFile(filePath = file.path(dataFolder, dataFile))
+dataConfiguration$sheets <- sheets
+for (columnName in groupingColumns) {
+  dataConfiguration$addGroupingColumn(columnName)
+}
+dataConfiguration$namingPattern <- paste0("{", paste0(groupingColumns, collapse = "}.{"), "}")
+if (dataConfiguration$namingPattern == "{}") {
+  dataConfiguration$namingPattern <- "{Source}.{Sheet}"
+}
+observedData <- NULL
+try(
+  observedData <- loadDataSetsFromExcel(xlsFilePath = file.path(dataFolder, dataFile), importerConfigurationOrPath = dataConfiguration)
+)
+
 # returns a list of objects of class ospsuite::DataSet
 
 ####### LOAD SIMULATIONS and put them in a named list######
@@ -40,12 +59,19 @@ for (parameterPath in parameterPaths) {
 }
 # parameters is a list of PIParameters class instances
 
+object <- ParameterIdentification$new(data = observedData,
+                                      models = simulations,
+                                      parameters = parameters,
+                                      configuration = piConfiguration)
 # Create a DataCombined object based on observedData and simulations
 # and a ParameterIdentification object based on these
-mapping <- createDataMapping(observedData[[1]] =
+dataCombined <- ospsuite::DataCombined$new()
+dataCombined$addDataSets(observedData)
+dataCombined$addSimulationResults()
+dataCombined <- combineData(observedData[[1]] =
                                getQuantity("Organism|Tumor|Weight (tissue)",
                                            container = simulations$`0.75 mg_kg.pkml`))
-pi <- ParameterIdentification$new(mapping = mapping,
+pi <- ParameterIdentification$new(data = dataCombined,
                                   parameters = parameters,
                                   configuration = piConfiguration)
 

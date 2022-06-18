@@ -20,6 +20,7 @@ readObservedData <- function(dataFolder, dataFile, groupingColumns = NULL, sheet
   }
   dataConfiguration <- createImporterConfigurationForFile(filePath = file.path(dataFolder, dataFile))
   dataConfiguration$sheets <- sheets
+  dataConfiguration$namingPattern <- "{Source}.{Sheet}.{Study Id}.{Patient Id}"
   for (columnName in groupingColumns) {
     dataConfiguration$addGroupingColumn(columnName)
   }
