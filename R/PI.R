@@ -66,10 +66,16 @@ PI <- R6::R6Class(
     .evaluate = function(p) {
       obsVsPred <- DataCombined$new()
       obsVsPred$addDataSets(private$.data)
+      groupNames <- list()
+      groupValues <- list()
       for (item in private$.data) {
-        model <- private$.models[[private$.mapping[[item$name]]]]
-        predictedResults <- runSimulation(model)
-        obsVsPred$addSimulationResults(predictedResults)
+        if (!is.null(private$.mapping[[item$name]])) {
+          model <- private$.models[[private$.mapping[[item$name]]]]
+          predictedResults <- runSimulation(model)
+          obsVsPred$addSimulationResults(predictedResults)
+          groupNames <- c(groupNames, item$name, model$name)
+          groupValues <- c(groupValues, item$name, item$name)
+        }
       }
       return (obsVsPred)
     }
@@ -113,9 +119,19 @@ PI <- R6::R6Class(
       #    x$root$id
       #  })
       #}
-      for (simulation in models) {
-        ospsuite::clearOutputIntervals(simulation)
-        ospsuite::clearOutputs(simulation)
+      for (item in private$.models) {
+        ospsuite::clearOutputIntervals(item)
+        ospsuite::clearOutputs(item)
+      }
+      for (item in private$.data) {
+        if (!is.null(private$.mapping[[item$name]])) {
+          model <- private$.models[[private$.mapping[[item$name]]]]
+          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+                                        values = item$xValues, # need transformation here?
+                                        unit = item$xUnit
+          )
+          model$outputSchema$addTimePoints(xVals)
+        }
       }
 
 
