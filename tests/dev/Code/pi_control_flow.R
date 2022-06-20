@@ -63,17 +63,6 @@ object <- ParameterIdentification$new(data = observedData,
                                       models = simulations,
                                       parameters = parameters,
                                       configuration = piConfiguration)
-# Create a DataCombined object based on observedData and simulations
-# and a ParameterIdentification object based on these
-dataCombined <- ospsuite::DataCombined$new()
-dataCombined$addDataSets(observedData)
-dataCombined$addSimulationResults()
-dataCombined <- combineData(observedData[[1]] =
-                               getQuantity("Organism|Tumor|Weight (tissue)",
-                                           container = simulations$`0.75 mg_kg.pkml`))
-pi <- ParameterIdentification$new(data = dataCombined,
-                                  parameters = parameters,
-                                  configuration = piConfiguration)
 
 # Plot results before optimization
 pi$plotCurrentResults()

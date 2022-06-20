@@ -71,7 +71,25 @@ PI <- R6::R6Class(
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
           model <- private$.models[[private$.mapping[[item$name]]]]
+
+          if (private$.configuration$simulateSteadyState) {
+            initialValues <- getSteadyState(
+              quantitiesPaths = private$.stateVariables[[model$root$id]],
+              simulations = model, steadyStateTime = configuration$steadyStateTime
+            )[[model$id]]
+
+            for (i in seq_along(initialValues$quantities)) {
+              quantity <- initialValues$quantities[[i]]
+              quantity$value <- initialValues$values[[i]]
+            }
+          }
+
+          simulationResult <- ospsuite::runSimulation(simulation)
+          return(simulationResult)
+
           predictedResults <- runSimulation(model)
+
+
           obsVsPred$addSimulationResults(predictedResults)
           groupNames <- c(groupNames, item$name, model$name)
           groupValues <- c(groupValues, item$name, item$name)
@@ -97,7 +115,7 @@ PI <- R6::R6Class(
     initialize = function(data, models, parameters, configuration, mapping) {
       ospsuite.utils::validateIsOfType(models, "Simulation")
       ospsuite.utils::validateIsOfType(data, "DataSet")
-      ospsuite.utils::validateIsOfType(parameters, "PIParameter")
+      ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
       for (name in names(mapping)) {
         stopifnot(name %in% names(data))
@@ -113,15 +131,15 @@ PI <- R6::R6Class(
     }
 
     run = function() {
-      #if (private$.configuration$simulateSteadyState) {
-      #  private$.stateVariables <- lapply(private$.models, getAllStateVariables)
-      #  names(private$.stateVariables) <- lapply(private$.models, function(x) {
-      #    x$root$id
-      #  })
-      #}
-      for (item in private$.models) {
-        ospsuite::clearOutputIntervals(item)
-        ospsuite::clearOutputs(item)
+      if (private$.configuration$simulateSteadyState) {
+        private$.stateVariables <- lapply(private$models, getAllStateVariables)
+        names(private$.stateVariables) <- lapply(private$.models, function(x) {
+          x$root$id
+        })
+      }
+      for (model in private$.models) {
+        ospsuite::clearOutputIntervals(model)
+        ospsuite::clearOutputs(model)
       }
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
