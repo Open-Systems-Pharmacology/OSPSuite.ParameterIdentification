@@ -112,12 +112,15 @@ PI <- R6::R6Class(
     #' is passed, a default one is used
     #' @param data An object of class `DataSet`
     #' @return A new `ParameterIdentification` object.
-    initialize = function(data, models, parameters, configuration, mapping) {
+    initialize = function(data, models, parameters, configuration, mapping, quantities) {
       ospsuite.utils::validateIsOfType(models, "Simulation")
       ospsuite.utils::validateIsOfType(data, "DataSet")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
       for (name in names(mapping)) {
+        stopifnot(name %in% names(data))
+      }
+      for (name in names(quantities)) {
         stopifnot(name %in% names(data))
       }
       for (name in mapping) {
@@ -128,15 +131,10 @@ PI <- R6::R6Class(
       private$.data <- data
       private$.parameters <- parameters
       private$.mapping <- mapping
+      private$.quantities <- quantities
     }
 
     run = function() {
-      if (private$.configuration$simulateSteadyState) {
-        private$.stateVariables <- lapply(private$models, getAllStateVariables)
-        names(private$.stateVariables) <- lapply(private$.models, function(x) {
-          x$root$id
-        })
-      }
       for (model in private$.models) {
         ospsuite::clearOutputIntervals(model)
         ospsuite::clearOutputs(model)
@@ -149,6 +147,11 @@ PI <- R6::R6Class(
                                         unit = item$xUnit
           )
           model$outputSchema$addTimePoints(xVals)
+        }
+        if (!is.null(private$.quantities[[item$name]])) {
+          model <- private$.models[[private$.mapping[[item$name]]]]
+          ospsuite::addOutputs(quantitiesOrPaths = private$.quantities[[item$name]],
+                               simulation = model)
         }
       }
 
