@@ -65,34 +65,12 @@ PI <- R6::R6Class(
 
     .evaluate = function(p) {
       obsVsPred <- DataCombined$new()
-      obsVsPred$addDataSets(private$.data)
-      groupNames <- list()
-      groupValues <- list()
+      obsVsPred$addDataSets(private$.data, names = names(data), groups = names(data))
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
           model <- private$.models[[private$.mapping[[item$name]]]]
-
-          if (private$.configuration$simulateSteadyState) {
-            initialValues <- getSteadyState(
-              quantitiesPaths = private$.stateVariables[[model$root$id]],
-              simulations = model, steadyStateTime = configuration$steadyStateTime
-            )[[model$id]]
-
-            for (i in seq_along(initialValues$quantities)) {
-              quantity <- initialValues$quantities[[i]]
-              quantity$value <- initialValues$values[[i]]
-            }
-          }
-
-          simulationResult <- ospsuite::runSimulation(simulation)
-          return(simulationResult)
-
-          predictedResults <- runSimulation(model)
-
-
-          obsVsPred$addSimulationResults(predictedResults)
-          groupNames <- c(groupNames, item$name, model$name)
-          groupValues <- c(groupValues, item$name, item$name)
+          simulationResult <- ospsuite::runSimulation(model)
+          obsVsPred$addSimulationResults(simulationResult, names = model$name, groups = item$name)
         }
       }
       return (obsVsPred)
@@ -154,8 +132,25 @@ PI <- R6::R6Class(
                                simulation = model)
         }
       }
-
-
+      for (model in models) {
+        ospsuite::clearOutputIntervals(model)
+        ospsuite::clearOutputs(model)
+      }
+      for (item in data) {
+        if (!is.null(mapping[[item$name]])) {
+          model <- models[[mapping[[item$name]]]]
+          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+                                        values = item$xValues, # need transformation here?
+                                        unit = item$xUnit
+          )
+          model$outputSchema$addTimePoints(xVals)
+        }
+        if (!is.null(quantities[[item$name]])) {
+          model <- models[[mapping[[item$name]]]]
+          ospsuite::addOutputs(quantitiesOrPaths = quantities[[item$name]],
+                               simulation = model)
+        }
+      }
 
       results <- FME::modFit(f = private$.targetFunction,
                              p = private$.startValues,
