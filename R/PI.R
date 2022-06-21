@@ -69,11 +69,28 @@ PI <- R6::R6Class(
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
           model <- private$.models[[private$.mapping[[item$name]]]]
+          # change model parameters here
           simulationResult <- ospsuite::runSimulation(model)
           obsVsPred$addSimulationResults(simulationResult, names = model$name, groups = item$name)
         }
       }
       return (obsVsPred)
+    },
+
+    .LSQ <- function(combinedData) {
+      return(combinedData$toDataFrame() %>%
+        rowwise() %>%
+        mutate(xValues_base = ospsuite::toBaseUnit(ospsuite::ospDimensions[[xDimension]],
+                                                   xValues, xUnit)) %>%
+        mutate(yValues_base = ospsuite::toBaseUnit(ospsuite::ospDimensions[[yDimension]],
+                                                   yValues, yUnit)) %>%
+        select(group, dataType, xValues_base, yValues_base) %>%
+        spread(key = dataType, value = yValues_base) %>%
+        filter(!is.na(observed) & !is.na(simulated)) %>%
+        mutate(residual = (observed - simulated)^2) %>%
+        ungroup() %>%
+        pull(residual) %>%
+        sum())
     }
 
   ),
@@ -132,25 +149,7 @@ PI <- R6::R6Class(
                                simulation = model)
         }
       }
-      for (model in models) {
-        ospsuite::clearOutputIntervals(model)
-        ospsuite::clearOutputs(model)
-      }
-      for (item in data) {
-        if (!is.null(mapping[[item$name]])) {
-          model <- models[[mapping[[item$name]]]]
-          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-                                        values = item$xValues, # need transformation here?
-                                        unit = item$xUnit
-          )
-          model$outputSchema$addTimePoints(xVals)
-        }
-        if (!is.null(quantities[[item$name]])) {
-          model <- models[[mapping[[item$name]]]]
-          ospsuite::addOutputs(quantitiesOrPaths = quantities[[item$name]],
-                               simulation = model)
-        }
-      }
+
 
       results <- FME::modFit(f = private$.targetFunction,
                              p = private$.startValues,
