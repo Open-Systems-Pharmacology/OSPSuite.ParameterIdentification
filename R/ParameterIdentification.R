@@ -51,7 +51,9 @@ ParameterIdentification <- R6::R6Class(
   ),
   private = list(
     .simulations = NULL,
-    .stateVariables = NULL,
+    .simulationBatches = NULL,
+    .variableMoleculePaths = NULL,
+    .variableParametersPaths = NULL,
     .parameters = NULL,
     .outputMappings = NULL,
     .configuration = NULL,
@@ -81,7 +83,7 @@ ParameterIdentification <- R6::R6Class(
         if (configuration$simulateSteadyState) {
           initialValues <- getSteadyState(
             quantitiesPaths = private$.stateVariables[[simulation$root$id]],
-            simulations = simulation, 
+            simulations = simulation,
             steadyStateTime = configuration$steadyStateTime,
             simulationRunOptions = configuration$simulationRunOptions
           )[[simulation$id]]
@@ -212,19 +214,30 @@ ParameterIdentification <- R6::R6Class(
     #' is used.
     #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
+      browser()
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
-      private$.simulations <- hash::hash()
 
+      private$.simulations <- hash::hash()
       for (simulation in c(simulations)) {
         id <- simulation$root$id
         private$.simulations[[id]] <- simulation
       }
       private$.parameters <- parameters
       private$.outputMappings <- c(outputMappings)
+
+      private$.variableMoleculePaths <- vector("list", length(simulations))
+      private$.variableParametersPaths <- vector("list", length(simulations))
+      private$.simulationBatches <- vector("list", length(simulations))
+
+      names(private$.variableMoleculePaths) <- lapply(simulations, function(x) {
+        x$root$id
+      })
+      names(private$.variableParametersPaths) <- names(private$.variableMoleculePaths)
+      names(private$.simulationBatches) <- names(private$.variableMoleculePaths)
     },
 
     #' @description
@@ -233,14 +246,15 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {
+      browser()
       # Prepare simulations
       # If steady-state should be simulated, get the set of all state variables for each simulation
       if (private$.configuration$simulateSteadyState) {
-        private$.stateVariables <- lapply(private$.simulations, function(simulation) {
-          return(getAllStateVariables(simulation))
+        private$.variableMoleculePaths <- lapply(private$.simulations, function(simulation) {
+          return(getAllMoleculePathsIn(container = simulation))
         })
-        names(private$.stateVariables) <- lapply(private$.simulations, function(x) {
-          x$root$id
+        private$.variableParametersPaths <- lapply(private$.simulations, function(simulation) {
+          return(getAllStateVariableParametersPaths(simulation = simulation))
         })
       }
 
@@ -262,6 +276,27 @@ ParameterIdentification <- R6::R6Class(
           )
           simulation$outputSchema$addTimePoints(xVals)
         }
+      }
+
+      #Create simulation batches
+      browser()
+      # Add parameters that will be optimized to the list of variable parameters
+      for (piParameter in private$.parameters){
+        for (parameter in piParameter$parameters){
+          simId <- .getSimulationContainer(parameter)$id
+          # Only add parameter path if it is not in the list.
+          # A parameter selected for optimization could be present in the list
+          # if steady-state is enabled and the parameter is a state variable
+          if (!parameter$path %in% private$.variableParametersPaths[[simId]]){
+            private$.variableParametersPaths[[simId]] <- c(private$.variableParametersPaths[[simId]],
+                                                           parameter$path)
+          }
+        }
+      }
+
+      # Create simulation batches for identification runs
+      for (simulation in private$.simulations){
+
       }
 
       startValues <- unlist(lapply(self$parameters, function(x) {
