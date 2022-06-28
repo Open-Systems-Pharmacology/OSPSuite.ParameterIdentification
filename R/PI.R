@@ -66,6 +66,10 @@ PI <- R6::R6Class(
     .evaluate = function(p) {
       obsVsPred <- DataCombined$new()
       obsVsPred$addDataSets(private$.data, names = names(data), groups = names(data))
+      for (i in seq_along(p)) {
+        parameter <- private$.parameters[[i]]
+        parameter$setValue(p[[i]])
+      }
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
           model <- private$.models[[private$.mapping[[item$name]]]]
@@ -77,18 +81,18 @@ PI <- R6::R6Class(
       return (obsVsPred)
     },
 
+    .convertToBaseUnits <- function(dimension, value, unit) {
+      return(ospsuite::toBaseUnit(ospsuite::ospDimensions[[dimension]], value, unit))
+    }
+
     .LSQ <- function(combinedData) {
       return(combinedData$toDataFrame() %>%
-        rowwise() %>%
-        mutate(xValues_base = ospsuite::toBaseUnit(ospsuite::ospDimensions[[xDimension]],
-                                                   xValues, xUnit)) %>%
-        mutate(yValues_base = ospsuite::toBaseUnit(ospsuite::ospDimensions[[yDimension]],
-                                                   yValues, yUnit)) %>%
+        mutate(xValues_base = pmap_dbl(list(xDimension, xValues, xUnit), .convertToBaseUnits),
+               yValues_base = pmap_dbl(list(yDimension, yValues, yUnit), .convertToBaseUnits)) %>%
         select(group, dataType, xValues_base, yValues_base) %>%
         spread(key = dataType, value = yValues_base) %>%
         filter(!is.na(observed) & !is.na(simulated)) %>%
         mutate(residual = (observed - simulated)^2) %>%
-        ungroup() %>%
         pull(residual) %>%
         sum())
     }
