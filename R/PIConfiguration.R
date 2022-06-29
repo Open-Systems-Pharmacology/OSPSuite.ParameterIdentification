@@ -41,12 +41,24 @@ PIConfiguration <- R6::R6Class(
         validateIsLogical(value)
         private$.printIterationFeedback <- value
       }
+    },
+    #' @field targetFunction String. Accepts any of "lsq" or "least-squares" for
+    #' least squares estimation, "mle", "likelihood" or "maximal likelihood
+    #' estimation" for maximal likelihood estimation.
+    targetFunction = function(value) {
+      if (missing(value)) {
+        private$.targetFunction
+      } else {
+        validateIsString(value)
+        private$.targetFunction <- value
+      }
     }
   ),
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
-    .printIterationFeedback = NULL
+    .printIterationFeedback = NULL,
+    .targetFunction = NULL
   ),
   public = list(
     #' @description
@@ -56,6 +68,7 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printIterationFeedback <- FALSE
+      private$.targetFunction <- "lsq"
     },
 
     #' @description
@@ -66,6 +79,7 @@ PIConfiguration <- R6::R6Class(
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.printIterationFeedback)
+      private$printLine("Target function specified as", private$.targetFunction)
       invisible(self)
     }
   )
