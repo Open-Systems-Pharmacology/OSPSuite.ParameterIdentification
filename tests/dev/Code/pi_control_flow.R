@@ -1,3 +1,4 @@
+library(tidyverse)
 library(ospsuite)
 library(ospsuite.parameteridentification)
 
@@ -42,6 +43,7 @@ names(simulations) <- simNames
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
 piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$targetFunction <- "lsq"
 
 ######### Define parameters to optimize#######
 parameters <- list()
@@ -58,6 +60,11 @@ for (parameterPath in parameterPaths) {
   parameters <- c(parameters, piParameter)
 }
 # parameters is a list of PIParameters class instances
+
+object <- PI$new(data = observedData, models = simulations,
+                 parameters = parameters, configuration = piConfiguration,
+                 mapping = list("IV_Vehicle" = "Vehicle.pkml", "IV_2.50mgKg_ADC" = "2.5 mg_kg.pkml", "IV_0.75mgKg_ADC" = "0.75 mg_kg.pkml"),
+                 quantities = list("IV_Vehicle" = getQuantity("Organism|Tumor|Weight (tissue)", container = simulations[["Vehicle.pkml"]]), "IV_2.50mgKg_ADC" = getQuantity("Organism|Tumor|Weight (tissue)", container = simulations[["2.5 mg_kg.pkml"]]), "IV_0.75mgKg_ADC" = getQuantity("Organism|Tumor|Weight (tissue)", container = simulations[["0.75 mg_kg.pkml"]])))
 
 object <- ParameterIdentification$new(data = observedData,
                                       models = simulations,

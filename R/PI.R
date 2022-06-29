@@ -27,7 +27,7 @@ PI <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(configuration, "PIConfiguration")
+        validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -38,8 +38,31 @@ PI <- R6::R6Class(
       if (missing(value)) {
         private$.data
       } else {
-        validateIsOfType(data, "DataSet")
+        validateIsOfType(value, "DataSet")
         private$.data <- value
+      }
+    },
+
+    #' @field mapping A named list of strings with names corresponding to
+    #' datasets and values corresponding to model names
+    mapping = function(value) {
+      if (missing(value)) {
+        private$.mapping
+      } else {
+        validateIsOfType(value, "list")
+        private$.mapping <- value
+      }
+    },
+
+    #' @field quantities A named list of objects of class Quantity
+    #' with names corresponding to datasets and values corresponding to
+    #' quantities in PK-Sim models
+    quantities = function(value) {
+      if (missing(value)) {
+        private$.quantities
+      } else {
+        validateIsOfType(value, "Quantity")
+        private$.quantities <- value
       }
     }
   ),
@@ -49,6 +72,8 @@ PI <- R6::R6Class(
     .data = NULL,
     .configuration = NULL,
     .stateVariables = NULL,
+    .mapping = NULL,
+    .quantities = NULL,
 
     .targetFunction = function(p) {
       #' @param p Vector of parameters
@@ -73,23 +98,24 @@ PI <- R6::R6Class(
       for (item in private$.data) {
         if (!is.null(private$.mapping[[item$name]])) {
           model <- private$.models[[private$.mapping[[item$name]]]]
-          # change model parameters here
           simulationResult <- ospsuite::runSimulation(model)
           obsVsPred$addSimulationResults(simulationResult, names = model$name, groups = item$name)
+          obsVsPred$setGroups(names = c(item$name, model$name), groups = c(item$name, item$name)) # ask Indra why this line is needed?
         }
       }
       return (obsVsPred)
     },
 
-    .convertToBaseUnits <- function(dimension, value, unit) {
+    .convertToBaseUnits = function(dimension, value, unit) {
       return(ospsuite::toBaseUnit(ospsuite::ospDimensions[[dimension]], value, unit))
-    }
+    },
 
-    .LSQ <- function(combinedData) {
+    .LSQ = function(combinedData) {
       return(combinedData$toDataFrame() %>%
         mutate(xValues_base = pmap_dbl(list(xDimension, xValues, xUnit), .convertToBaseUnits),
                yValues_base = pmap_dbl(list(yDimension, yValues, yUnit), .convertToBaseUnits)) %>%
         select(group, dataType, xValues_base, yValues_base) %>%
+        filter(!is.na(group)) %>%
         spread(key = dataType, value = yValues_base) %>%
         filter(!is.na(observed) & !is.na(simulated)) %>%
         mutate(residual = (observed - simulated)^2) %>%
@@ -131,7 +157,7 @@ PI <- R6::R6Class(
       private$.parameters <- parameters
       private$.mapping <- mapping
       private$.quantities <- quantities
-    }
+    },
 
     run = function() {
       for (model in private$.models) {
@@ -153,14 +179,10 @@ PI <- R6::R6Class(
                                simulation = model)
         }
       }
-
-
-      results <- FME::modFit(f = private$.targetFunction,
-                             p = private$.startValues,
-                             lower = ,
-                             upper = ,
-                             method = ,
-                             control = list())
+      print("Setup complete, checking if .evaluate returns a value")
+      #print(private$.evaluate(c(1e-4, 1e-4)))
+      print("Checking if .targetFunction returns a value")
+      return(private$.targetFunction(c(1e-5, 1e-5)))
     }
   )
 )
