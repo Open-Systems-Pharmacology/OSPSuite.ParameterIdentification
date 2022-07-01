@@ -80,13 +80,18 @@ ParameterIdentification <- R6::R6Class(
       #' @param p Vector of parameters
       obsVsPred <- private$.evaluate(p)
       if (tolower(private$.configuration$targetFunction) %in% c("lsq", "least squares")) {
-        return(private$.LSQ(obsVsPred))
+        target <- private$.LSQ(obsVsPred)
+      } else if (tolower(private$.configuration$targetFunction) %in% c("mle", "likelihood", "maximal likelihood estimation")) {
+        target <- private$.MLE(obsVsPred)
+      } else {
+        warning("Target function not recognized by ParameterIdentification class, NA returned")
+        target <- NA_real_
       }
-      if (tolower(private$.configuration$targetFunction) %in% c("mle", "likelihood", "maximal likelihood estimation")) {
-        return(private$.MLE(obsVsPred))
+      if (private$.configuration$printIterationFeedback) {
+        print(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(p, 3), collapse = "; "), ", target function ", signif(target, 3)))
       }
-      warning("Target function not recognized by ParameterIdentification class, NA returned")
-      return(NA_real_)
+      private$.iteration = private$.iteration + 1
+      return(target)
     },
 
     .evaluate = function(p) {
@@ -113,8 +118,8 @@ ParameterIdentification <- R6::R6Class(
 
     .LSQ = function(combinedData) {
       sum_residuals <- combinedData$toDataFrame() %>%
-        mutate(xValues_base = pmap_dbl(list(xDimension, xValues, xUnit), .convertToBaseUnits),
-               yValues_base = pmap_dbl(list(yDimension, yValues, yUnit), .convertToBaseUnits)) %>%
+        mutate(xValues_base = pmap_dbl(list(xDimension, xValues, xUnit), private$.convertToBaseUnits),
+               yValues_base = pmap_dbl(list(yDimension, yValues, yUnit), private$.convertToBaseUnits)) %>%
         select(group, dataType, xValues_base, yValues_base) %>%
         filter(!is.na(group)) %>%
         spread(key = dataType, value = yValues_base) %>%
@@ -122,10 +127,6 @@ ParameterIdentification <- R6::R6Class(
         mutate(residual = (observed - simulated)^2) %>%
         pull(residual) %>%
         sum()
-      if (private$.configuration$printIterationFeedback) {
-        print(paste0("iter ", private$.iteration, ": target function ", signif(sum_residuals, 3)))
-      }
-      private$.iteration = private$.iteration + 1
       return(sum_residuals)
     }
 
