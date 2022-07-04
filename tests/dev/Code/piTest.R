@@ -80,11 +80,13 @@ piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|We
 piOutputMapping$addObservedData(observedData$Boswell_2012$IV_2.50mgKg_ADC)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
+piConfiguration$simulateSteadyState <- TRUE
 # Create new parameter identification. This PI would optimize all three simulations.
 pi <- ParameterIdentification$new(simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
                                   configuration = piConfiguration)
 # Plot results before optimization
 pi$plotCurrentResults()
+results <- pi$run()
 
 # OR
 

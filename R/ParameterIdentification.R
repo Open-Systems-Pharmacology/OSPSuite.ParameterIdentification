@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME hash ospsuite.utils
+#' @import FME ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -50,9 +50,20 @@ ParameterIdentification <- R6::R6Class(
     }
   ),
   private = list(
+    # Named list of simulations, with names being the IDs of the root container
     .simulations = NULL,
+    # Simulation batches for calculation of results
     .simulationBatches = NULL,
-    .variableMoleculePaths = NULL,
+    # Separate batches for calculation of steady state. Required as they have
+    # other output paths and simulation time that actual simulations
+    .steadyStateBatches = NULL,
+    # A named list with names being the IDs of the root container of the
+    # simulations. Each entry is a named list, with names being the paths of the
+    # variable molecules, and values being the start values.
+    .variableMolecules = NULL,
+    # A named list with names being the IDs of the root container of the
+    # simulations. Each entry is a named list, with names being the paths of the
+    # variable parameters, and values being the start values.
     .variableParametersPaths = NULL,
     .parameters = NULL,
     .outputMappings = NULL,
@@ -193,11 +204,6 @@ ParameterIdentification <- R6::R6Class(
       }
 
       return(cost)
-    },
-
-    # Clean up upon object removal
-    finalize = function() {
-      hash::clear(private$.simulations)
     }
   ),
   public = list(
@@ -214,30 +220,36 @@ ParameterIdentification <- R6::R6Class(
     #' is used.
     #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
-      browser()
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
 
-      private$.simulations <- hash::hash()
-      for (simulation in c(simulations)) {
+      # We have to use the id of the root container of the simulation instead of
+      # the id of the simulation itself, because later we have to find the
+      # simulations based on the id of the root when assigning quantities to
+      # simulations
+      ids <- vector("list", length(simulations))
+      private$.simulations <- vector("list", length(simulations))
+      for (idx in seq_along(c(simulations))) {
+        simulation <- simulations[[idx]]
         id <- simulation$root$id
-        private$.simulations[[id]] <- simulation
+        private$.simulations[[idx]] <- simulation
+        ids[[idx]] <- id
       }
+      names(private$.simulations) <- ids
       private$.parameters <- parameters
       private$.outputMappings <- c(outputMappings)
 
-      private$.variableMoleculePaths <- vector("list", length(simulations))
+      private$.variableMolecules <- vector("list", length(simulations))
       private$.variableParametersPaths <- vector("list", length(simulations))
       private$.simulationBatches <- vector("list", length(simulations))
-
-      names(private$.variableMoleculePaths) <- lapply(simulations, function(x) {
-        x$root$id
-      })
-      names(private$.variableParametersPaths) <- names(private$.variableMoleculePaths)
-      names(private$.simulationBatches) <- names(private$.variableMoleculePaths)
+      private$.steadyStateBatches <- vector("list", length(simulations))
+      names(private$.variableMolecules) <- ids
+      names(private$.variableParametersPaths) <- ids
+      names(private$.simulationBatches) <- ids
+      names(private$.steadyStateBatches) <- ids
     },
 
     #' @description
@@ -246,17 +258,21 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {
-      browser()
       # Prepare simulations
       # If steady-state should be simulated, get the set of all state variables for each simulation
       if (private$.configuration$simulateSteadyState) {
-        private$.variableMoleculePaths <- lapply(private$.simulations, function(simulation) {
-          return(getAllMoleculePathsIn(container = simulation))
-        })
-        private$.variableParametersPaths <- lapply(private$.simulations, function(simulation) {
-          return(getAllStateVariableParametersPaths(simulation = simulation))
-        })
+        for (simulation in private$.simulations){
+          id <- simulation$root$id
+          moleculePaths <- getAllMoleculePathsIn(container = simulation)
+          moleculesStartValues <-
+          private$.variableMoleculePaths[[id]] <-
+          private$.variableParametersPaths[[id]] <- getAllStateVariableParametersPaths(simulation = simulation)
+        }
       }
+
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      simulationState <- .storeSimulationState(private$.simulations)
 
       # Clear output intervals of all simulations and only add points that are present in the observed data.
       # Also add output quantities.
@@ -278,8 +294,6 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
-      #Create simulation batches
-      browser()
       # Add parameters that will be optimized to the list of variable parameters
       for (piParameter in private$.parameters){
         for (parameter in piParameter$parameters){
@@ -296,7 +310,32 @@ ParameterIdentification <- R6::R6Class(
 
       # Create simulation batches for identification runs
       for (simulation in private$.simulations){
+        simId <- simulation$root$id
+        simBatch <- createSimulationBatch(simulation = simulation,
+                                          parametersOrPaths = private$.variableParametersPaths[[simId]],
+                                          moleculesOrPaths = private$.variableMoleculePaths[[simId]])
+        private$.simulationBatches[[simId]] <- simBatch
+      }
 
+      # If steady-state should be simulated, create new batches for ss simulation
+      # Add all state variables to the outputs and set the simulation time to
+      # steady state time
+      if (private$.configuration$simulateSteadyState) {
+        for (simulation in private$.simulations){
+          simId <- simulation$root$id
+          clearOutputIntervals(simulation)
+          clearOutputs(simulation)
+
+          simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
+          # If no quantities are explicitly specified, simulate all outputs.
+          ospsuite::addOutputs(quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
+                               simulation = simulation)
+
+          simBatch <- createSimulationBatch(simulation = simulation,
+                                            parametersOrPaths = private$.variableParametersPaths[[simId]],
+                                            moleculesOrPaths = private$.variableMoleculePaths[[simId]])
+          private$.steadyStateBatches[[simId]] <- simBatch
+        }
       }
 
       startValues <- unlist(lapply(self$parameters, function(x) {
@@ -310,6 +349,9 @@ ParameterIdentification <- R6::R6Class(
       }), use.names = FALSE)
 
       results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+
+      # Reset simulation output intervals and output selections
+      .restoreSimulationState(simulations, simulationState)
       return(results)
     },
 
