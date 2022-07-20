@@ -23,7 +23,7 @@ residuals calculation will be printed after each iteration.
 Default is \code{FALSE}}
 
 \item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
-to simulation runs. If \code{NULL}, default options are used}
+to simulation runs. If \code{NULL}, default options are used.}
 }
 \if{html}{\out{</div>}}
 }
@@ -35,12 +35,6 @@ to simulation runs. If \code{NULL}, default options are used}
 \item \href{#method-PIConfiguration-clone}{\code{PIConfiguration$clone()}}
 }
 }
-\if{html}{\out{
-<details open><summary>Inherited methods</summary>
-<ul>
-</ul>
-</details>
-}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-new"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-new}{}}}

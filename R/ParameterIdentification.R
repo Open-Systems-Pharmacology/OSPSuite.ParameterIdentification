@@ -52,10 +52,12 @@ ParameterIdentification <- R6::R6Class(
   private = list(
     # Named list of simulations, with names being the IDs of the root container
     .simulations = NULL,
-    # Simulation batches for calculation of results
+    # Simulation batches for calculation of results. Names are the IDs of the
+    # root container of the underlying simulations.
     .simulationBatches = NULL,
     # Separate batches for calculation of steady state. Required as they have
-    # other output paths and simulation time that actual simulations
+    # other output paths and simulation time that actual simulations. Names are
+    # the IDs of the root container of the underlying simulations.
     .steadyStateBatches = NULL,
     # A named list with names being the IDs of the root container of the
     # simulations. Each entry is a named list, with names being the paths of the
@@ -64,10 +66,119 @@ ParameterIdentification <- R6::R6Class(
     # A named list with names being the IDs of the root container of the
     # simulations. Each entry is a named list, with names being the paths of the
     # variable parameters, and values being the start values.
-    .variableParametersPaths = NULL,
+    .variableParameters = NULL,
     .parameters = NULL,
     .outputMappings = NULL,
     .configuration = NULL,
+    # Flag if simulation batches must be created from simulations. Used for
+    # plotting current results.
+    .needBatchInitialization = TRUE,
+
+    # Creates simulation batches from simulations.
+    .batchInitialization = function() {
+      # Prepare simulations
+      # If steady-state should be simulated, get the set of all state variables for each simulation
+      if (private$.configuration$simulateSteadyState) {
+        for (simulation in private$.simulations) {
+          id <- simulation$root$id
+          moleculePaths <- getAllMoleculePathsIn(container = simulation)
+          # Only keep molecules that are not defined by formula
+          moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
+          moleculesStartValues <- getQuantityValuesByPath(
+            quantityPaths = moleculePaths,
+            simulation = simulation
+          )
+          # Save molecule start  values for this simulation ID
+          private$.variableMolecules[[id]] <- moleculesStartValues
+          names(private$.variableMolecules[[id]]) <- moleculePaths
+
+          variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
+          # Only keep parameters that initial values are not defined by formula
+          variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
+          variableParametersValues <- getQuantityValuesByPath(
+            quantityPaths = variableParametersPaths,
+            simulation = simulation
+          )
+          # Save parameter values for this simulation ID
+          private$.variableParameters[[id]] <- variableParametersValues
+          names(private$.variableParameters[[id]]) <- variableParametersPaths
+        }
+      }
+
+      # Clear output intervals and output quantities of all simulations
+      for (simulation in simulations) {
+        clearOutputIntervals(simulation)
+        clearOutputs(simulation)
+      }
+
+      # Add time points to the output schema that are present in the observed data.
+      # Also add output quantities.
+      for (outputMapping in private$.outputMappings) {
+        # The the parent simulation of the quantity of the mapping.
+        simId <- .getSimulationContainer(outputMapping$quantity)$id
+        simulation <- private$.simulations[[simId]]
+        # Add the quantity to the outputs of the simulations.
+        ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
+        # Add time points present in the observed data of this mapping.
+        for (observedData in outputMapping$observedXYData) {
+          # Time values can be stored in units different from the base unit
+          # and must be converted to the base unit first.
+          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+            values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
+            unit = observedData$xUnit
+          )
+          simulation$outputSchema$addTimePoints(xVals)
+        }
+      }
+
+      # Add parameters that will be optimized to the list of variable parameters
+      for (piParameter in private$.parameters) {
+        for (parameter in piParameter$parameters) {
+          simId <- .getSimulationContainer(parameter)$id
+          # Set the current value of this parameter to the start value of the
+          # PIParameter.
+          private$.variableParameters[[simId]][[parameter$path]] <- piParameter$startValue
+        }
+      }
+
+      # Create simulation batches for identification runs
+      for (simulation in private$.simulations) {
+        simId <- simulation$root$id
+        # Parameters and molecules defined in the previous steps will be variable.
+        simBatch <- createSimulationBatch(
+          simulation = simulation,
+          parametersOrPaths = names(private$.variableParameters[[simId]]),
+          moleculesOrPaths = names(private$.variableMolecules[[simId]])
+        )
+        private$.simulationBatches[[simId]] <- simBatch
+      }
+
+      # If steady-state should be simulated, create new batches for ss simulation
+      # Add all state variables to the outputs and set the simulation time to
+      # steady state time
+      if (private$.configuration$simulateSteadyState) {
+        for (simulation in private$.simulations) {
+          simId <- simulation$root$id
+          clearOutputIntervals(simulation)
+          clearOutputs(simulation)
+
+          # WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
+          simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
+          # If no quantities are explicitly specified, simulate all outputs.
+          ospsuite::addOutputs(
+            quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
+            simulation = simulation
+          )
+
+          simBatch <- createSimulationBatch(
+            simulation = simulation,
+            parametersOrPaths = names(private$.variableParameters[[simId]]),
+            moleculesOrPaths = names(private$.variableMolecules[[simId]])
+          )
+          private$.steadyStateBatches[[simId]] <- simBatch
+        }
+      }
+    },
 
     # Perform one iteration of the optimization workflow and calculate the residuals
     # @param currVals Numerical vector of the parameter values to be applied
@@ -78,55 +189,85 @@ ParameterIdentification <- R6::R6Class(
       return(private$.calculateResiduals(dataMappings))
     },
 
+    # Apply final identified values to simulation parameter objects.
+    .applyFinalValues = function(values) {
+      # Iterate through PIParameters
+
+      # THE LOGIC WOULD PROBABLY DEPEND ON THE TYPE OF RESULTS OUTPUT RETURNED
+      # BY THE SELECTED METHOD, UNLESS WE USE OUR OWN CONSISTENT RESULTS STRUCTURE
+      for (idx in seq_along(values)) {
+        # The order of the values corresponds to the order of PIParameters in
+        # $parameters list
+        piParameter <- private$.parameters[[idx]]
+        piParameter$setValue(values[[idx]])
+      }
+    },
+
     # Evaluate all simulations with given parameter values
     # @param currVals Numerical vector of the parameter values to be applied
     # @return A list of \code{DataMapping} objects - one DataMapping for one output mapping.
     .evaluate = function(currVals) {
-      # Iterate through the values and apply them to the parameter instances
+      # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
-        # The order of the values corresponds to the order of PIParameters in $parameters
+        # The order of the values corresponds to the order of PIParameters in
+        # $parameters list
         piParameter <- private$.parameters[[idx]]
-        piParameter$setValue(currVals[[idx]])
-      }
-
-      singleRun <- function(simulation, configuration) {
-        # Simulate steady-states if specified
-        if (configuration$simulateSteadyState) {
-          initialValues <- getSteadyState(
-            quantitiesPaths = private$.stateVariables[[simulation$root$id]],
-            simulations = simulation,
-            steadyStateTime = configuration$steadyStateTime,
-            simulationRunOptions = configuration$simulationRunOptions
-          )[[simulation$id]]
-
-          for (i in seq_along(initialValues$quantities)) {
-            quantity <- initialValues$quantities[[i]]
-            quantity$value <- initialValues$values[[i]]
-          }
+        # Update the values of the parameters
+        for (parameter in piParameter$parameters) {
+          simId <- .getSimulationContainer(parameter)$id
+          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[idx]]
         }
-
-        simulationResult <- ospsuite::runSimulation(simulation,
-          simulationRunOptions = configuration$simulationRunOptions
-        )
-        return(simulationResult)
       }
 
-      # Run simulations
-      simulationResults <- lapply(private$.simulations, function(x) {
-        singleRun(x, private$.configuration)
-      })
+      ##### 2DO - implement Steady-State when issue in Core is fixed
+      # # Simulate steady-states if specified
+      # if (configuration$simulateSteadyState) {
+      #
+      #   steadyStateResults <- vector("list", length(private$.steadyStateBatches))
+      #   #Set values for each simulation batch
+      #   for (simBatchIdx in seq_along(private$.steadyStateBatches)){
+      #     simId <- names(private$.steadyStateBatches)[[simBatchIdx]]
+      #     simBatch <- private$.steadyStateBatches[[simBatchIdx]]
+      #     resultsId <- simBatch$addRunValues(parameterValues = private$.variableParameters[[simId]],
+      #                           initialValues = private$.variableMolecules[[simId]])
+      #
+      #     names(steadyStateResults)[[simBatchIdx]] <- resultsId
+      #   }
+      #
+      #   # Run steady-state batches
+      #   ssResults <- runSimulationBatches(simulationBatches = private$.steadyStateBatches,
+      #                        simulationRunOptions = private$.configuration$simulationRunOptions)
+      #####
+
+      # Apply initial and parameter values to simulation batches
+      for (simId in names(private$.simulationBatches)) {
+        simBatch <- private$.simulationBatches[[simId]]
+        resultsId <- simBatch$addRunValues(
+          parameterValues = unlist(private$.variableParameters[[simId]], use.names = FALSE),
+          initialValues = unlist(private$.variableMolecules[[simId]], use.names = FALSE)
+        )
+      }
+      # Run simulation batches
+      simulationResults <- runSimulationBatches(
+        simulationBatches = private$.simulationBatches,
+        simulationRunOptions = private$.configuration$simulationRunOptions
+      )
 
       # Create data mappings for each output mapping
       dataMappings <- lapply(private$.outputMappings, function(x) {
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(x$quantity)$id
-        simulation <- private$.simulations[[simId]]
+        # Find the simulation batch that corrensponds to the simulation
+        simBatch <- private$.simulationBatches[[simId]]
+
         # Create new DataMapping
         dataMapping <- esqlabsRLegacy::DataMapping$new()
         # Add simulation results to the mapping.
+        # Selecting the first entry from simulationResults[[simBatch$id]] as
+        # in this setting, every simulation batch only has one simulated results.
         dataMapping$addModelOutputs(
           paths = x$quantity$path,
-          simulationResults = simulationResults[[simId]],
+          simulationResults = simulationResults[[simBatch$id]][[1]],
           labels = "Simulation",
           groups = "PI"
         )
@@ -150,6 +291,22 @@ ParameterIdentification <- R6::R6Class(
         return(dataMapping)
       })
       return(dataMappings)
+    },
+
+    # Runs the optimization algorithm and returns the results produced by the
+    # algorithms. Called from public $run() method.
+    .runAlgorithm = function() {
+      startValues <- unlist(lapply(self$parameters, function(x) {
+        x$startValue
+      }), use.names = FALSE)
+      lower <- unlist(lapply(self$parameters, function(x) {
+        x$minValue
+      }), use.names = FALSE)
+      upper <- unlist(lapply(self$parameters, function(x) {
+        x$maxValue
+      }), use.names = FALSE)
+
+      results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
     },
 
     # Calculate residuals between simulated and observed values.
@@ -243,11 +400,11 @@ ParameterIdentification <- R6::R6Class(
       private$.outputMappings <- c(outputMappings)
 
       private$.variableMolecules <- vector("list", length(simulations))
-      private$.variableParametersPaths <- vector("list", length(simulations))
+      private$.variableParameters <- vector("list", length(simulations))
       private$.simulationBatches <- vector("list", length(simulations))
       private$.steadyStateBatches <- vector("list", length(simulations))
       names(private$.variableMolecules) <- ids
-      names(private$.variableParametersPaths) <- ids
+      names(private$.variableParameters) <- ids
       names(private$.simulationBatches) <- ids
       names(private$.steadyStateBatches) <- ids
     },
@@ -258,100 +415,28 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {
-      # Prepare simulations
-      # If steady-state should be simulated, get the set of all state variables for each simulation
-      if (private$.configuration$simulateSteadyState) {
-        for (simulation in private$.simulations){
-          id <- simulation$root$id
-          moleculePaths <- getAllMoleculePathsIn(container = simulation)
-          moleculesStartValues <-
-          private$.variableMoleculePaths[[id]] <-
-          private$.variableParametersPaths[[id]] <- getAllStateVariableParametersPaths(simulation = simulation)
-        }
-      }
-
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       simulationState <- .storeSimulationState(private$.simulations)
 
-      # Clear output intervals of all simulations and only add points that are present in the observed data.
-      # Also add output quantities.
-      for (simulation in simulations) {
-        clearOutputIntervals(simulation)
-        clearOutputs(simulation)
-      }
-
-      for (outputMapping in private$.outputMappings) {
-        simId <- .getSimulationContainer(outputMapping$quantity)$id
-        simulation <- private$.simulations[[simId]]
-        ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
-        for (observedData in outputMapping$observedXYData) {
-          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
-            unit = observedData$xUnit
-          )
-          simulation$outputSchema$addTimePoints(xVals)
-        }
-      }
-
-      # Add parameters that will be optimized to the list of variable parameters
-      for (piParameter in private$.parameters){
-        for (parameter in piParameter$parameters){
-          simId <- .getSimulationContainer(parameter)$id
-          # Only add parameter path if it is not in the list.
-          # A parameter selected for optimization could be present in the list
-          # if steady-state is enabled and the parameter is a state variable
-          if (!parameter$path %in% private$.variableParametersPaths[[simId]]){
-            private$.variableParametersPaths[[simId]] <- c(private$.variableParametersPaths[[simId]],
-                                                           parameter$path)
-          }
-        }
-      }
-
-      # Create simulation batches for identification runs
-      for (simulation in private$.simulations){
-        simId <- simulation$root$id
-        simBatch <- createSimulationBatch(simulation = simulation,
-                                          parametersOrPaths = private$.variableParametersPaths[[simId]],
-                                          moleculesOrPaths = private$.variableMoleculePaths[[simId]])
-        private$.simulationBatches[[simId]] <- simBatch
-      }
-
-      # If steady-state should be simulated, create new batches for ss simulation
-      # Add all state variables to the outputs and set the simulation time to
-      # steady state time
-      if (private$.configuration$simulateSteadyState) {
-        for (simulation in private$.simulations){
-          simId <- simulation$root$id
-          clearOutputIntervals(simulation)
-          clearOutputs(simulation)
-
-          simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
-          # If no quantities are explicitly specified, simulate all outputs.
-          ospsuite::addOutputs(quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
-                               simulation = simulation)
-
-          simBatch <- createSimulationBatch(simulation = simulation,
-                                            parametersOrPaths = private$.variableParametersPaths[[simId]],
-                                            moleculesOrPaths = private$.variableMoleculePaths[[simId]])
-          private$.steadyStateBatches[[simId]] <- simBatch
-        }
-      }
-
-      startValues <- unlist(lapply(self$parameters, function(x) {
-        x$startValue
-      }), use.names = FALSE)
-      lower <- unlist(lapply(self$parameters, function(x) {
-        x$minValue
-      }), use.names = FALSE)
-      upper <- unlist(lapply(self$parameters, function(x) {
-        x$maxValue
-      }), use.names = FALSE)
-
-      results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
-
+      # Every time the user starts an optimization run, new batches should be
+      # created, because `simulateSteadyState` flag can change and defines the
+      # variables of the batches.
+      private$.batchInitialization()
+      # Run optimization algorithm
+      results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
-      .restoreSimulationState(simulations, simulationState)
+      .restoreSimulationState(private$.simulations, simulationState)
+
+      # Apply identified values to the parameter objects. Should be an option?
+      private$.applyFinalValues(values = results$par)
+      # Since the batches have been initialized already, this will not be
+      # required before plotting current results
+      private$.needBatchInitialization <- FALSE
+
+      # Trigger .NET gc
+      ospsuite::clearMemory()
+
       return(results)
     },
 
@@ -360,6 +445,17 @@ ParameterIdentification <- R6::R6Class(
     #' @details Runs all simulations with current parameter values and creates
     #' plots of every output mapping
     plotCurrentResults = function() {
+      simulationState <- NULL
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      if (private$.needBatchInitialization) {
+        # Store simulation outputs and time intervals to reset them at the end
+        # of the run.
+        simulationState <- .storeSimulationState(private$.simulations)
+        private$.batchInitialization()
+      }
+
+      # Run evaluate once with the current values of the parameters
       parValues <- unlist(lapply(self$parameters, function(x) {
         x$currValue
       }), use.names = FALSE)
@@ -369,9 +465,14 @@ ParameterIdentification <- R6::R6Class(
         x$plot()
       })
 
+      # Mark that the batches have been initialized and restore simulation state
+      private$.needBatchInitialization <- FALSE
+      if (!is.null(simulationState)) {
+        .restoreSimulationState(private$.simulations, simulationState)
+      }
+
       invisible(self)
     },
-
 
     #' @description
     #' Print the object to the console

@@ -87,9 +87,11 @@ getSteadyState <- function(quantitiesPaths = NULL,
     # Get the end values of all outputs
     endValues <- lapply(quantitiesPathsMap[[simId]], function(path) {
       # Check if the quantity is defined by an explicit formula
-      isFormulaExplicit <- ospsuite::isExplicitFormulaByPath(path =  enc2utf8(path),
-                                                             simulation = simulation,
-                                                             stopIfNotFound = stopIfNotFound)
+      isFormulaExplicit <- ospsuite::isExplicitFormulaByPath(
+        path = enc2utf8(path),
+        simulation = simulation,
+        stopIfNotFound = stopIfNotFound
+      )
 
       if (ignoreIfFormula && isFormulaExplicit) {
         return(NULL)
@@ -144,7 +146,7 @@ getSteadyState <- function(quantitiesPaths = NULL,
 #' `outputSelections`. Every entry is a named list with names being the IDs
 #' of the simulations.
 #' @keywords internal
-.storeSimulationState <- function(simulations){
+.storeSimulationState <- function(simulations) {
   simulations <- c(simulations)
   # Create named vectors for the output intervals, time points, and output
   # selections of the simulations in their initial state. Names are IDs of
@@ -167,9 +169,11 @@ getSteadyState <- function(quantitiesPaths = NULL,
   names(oldTimePoints) <- ids
   names(oldOutputSelections) <- ids
 
-  return(list(outputIntervals = oldOutputIntervals,
-              timePoints = oldTimePoints,
-              outputSelections = oldOutputSelections))
+  return(list(
+    outputIntervals = oldOutputIntervals,
+    timePoints = oldTimePoints,
+    outputSelections = oldOutputSelections
+  ))
 }
 
 
@@ -184,11 +188,11 @@ getSteadyState <- function(quantitiesPaths = NULL,
 #' @keywords internal
 .restoreSimulationState <- function(simulations, simStateList) {
   simulations <- c(simulations)
-  for (simulation in simulations){
+  for (simulation in simulations) {
     simId <- simulation$id
     # reset the output intervals
     simulation$outputSchema$clear()
-    for (outputInterval in simStateList$utputIntervals[[simId]]) {
+    for (outputInterval in simStateList$outputIntervals[[simId]]) {
       ospsuite::addOutputInterval(
         simulation = simulation, startTime = outputInterval$startTime$value,
         endTime = outputInterval$endTime$value,
