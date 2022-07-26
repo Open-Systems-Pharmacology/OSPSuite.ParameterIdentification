@@ -61,11 +61,8 @@ ParameterIdentification <- R6::R6Class(
     .steadyStateBatches = NULL,
     # A named list with names being the IDs of the root container of the
     # simulations. Each entry is a named list, with names being the paths of the
-    # variable molecules, and values being the start values.
+    # variable molecules/parameters, and values being the start values.
     .variableMolecules = NULL,
-    # A named list with names being the IDs of the root container of the
-    # simulations. Each entry is a named list, with names being the paths of the
-    # variable parameters, and values being the start values.
     .variableParameters = NULL,
     .parameters = NULL,
     .outputMappings = NULL,
