@@ -159,7 +159,7 @@ ParameterIdentification <- R6::R6Class(
           clearOutputIntervals(simulation)
           clearOutputs(simulation)
 
-          # WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
+          # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
           simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
           # If no quantities are explicitly specified, simulate all outputs.
           ospsuite::addOutputs(
