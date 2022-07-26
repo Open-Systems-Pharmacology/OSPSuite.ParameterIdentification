@@ -8,7 +8,7 @@
 #' @param stopIfNotFound Boolean. If `TRUE` (default), an error is thrown when
 #'   a path is not found in the simulation.
 #'
-#' @return List f quantity paths that are not defined by explicit formula
+#' @return List of quantity paths that are not defined by explicit formula.
 #' @keywords internal
 .removeFormulaPaths <- function(paths, simulation, stopIfNotFound = TRUE) {
   unlist(lapply(paths, function(path) {
