@@ -2,7 +2,7 @@
 % Please edit documentation in R/utilities-simulation.R
 \name{.restoreSimulationState}
 \alias{.restoreSimulationState}
-\title{Title}
+\title{Restore simulation output state}
 \usage{
 .restoreSimulationState(simulations, simStateList)
 }
@@ -15,6 +15,6 @@ A named list with entries \code{outputIntervals}, \code{timePoints}, and
 the simulations.}
 }
 \description{
-Title
+Restore simulation output state
 }
 \keyword{internal}

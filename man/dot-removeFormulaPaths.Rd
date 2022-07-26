@@ -15,7 +15,7 @@
 a path is not found in the simulation.}
 }
 \value{
-List f quantity paths that are not defined by explicit formula
+List of quantity paths that are not defined by explicit formula.
 }
 \description{
 Removes paths to quantities that are defined by an explicit

@@ -396,14 +396,15 @@ ParameterIdentification <- R6::R6Class(
       private$.parameters <- parameters
       private$.outputMappings <- c(outputMappings)
 
-      private$.variableMolecules <- vector("list", length(simulations))
-      private$.variableParameters <- vector("list", length(simulations))
-      private$.simulationBatches <- vector("list", length(simulations))
-      private$.steadyStateBatches <- vector("list", length(simulations))
-      names(private$.variableMolecules) <- ids
-      names(private$.variableParameters) <- ids
-      names(private$.simulationBatches) <- ids
-      names(private$.steadyStateBatches) <- ids
+      private$.variableMolecules <-
+        private$.variableParameters <-
+        private$.simulationBatches <-
+        private$.steadyStateBatches <- vector("list", length(simulations))
+
+      names(private$.variableMolecules) <-
+        names(private$.variableParameters) <-
+        names(private$.simulationBatches) <-
+        names(private$.steadyStateBatches) <- ids
     },
 
     #' @description

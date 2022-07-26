@@ -151,10 +151,10 @@ getSteadyState <- function(quantitiesPaths = NULL,
   # Create named vectors for the output intervals, time points, and output
   # selections of the simulations in their initial state. Names are IDs of
   # simulations.
-  oldOutputIntervals <- vector("list", length(simulations))
-  oldTimePoints <- vector("list", length(simulations))
-  oldOutputSelections <- vector("list", length(simulations))
-  ids <- vector("list", length(simulations))
+  oldOutputIntervals <-
+    oldTimePoints <-
+    oldOutputSelections <-
+    ids <- vector("list", length(simulations))
 
   for (idx in seq_along(simulations)) {
     simulation <- simulations[[idx]]
@@ -165,9 +165,9 @@ getSteadyState <- function(quantitiesPaths = NULL,
     oldOutputSelections[[idx]] <- simulation$outputSelections$allOutputs
     ids[[idx]] <- simId
   }
-  names(oldOutputIntervals) <- ids
-  names(oldTimePoints) <- ids
-  names(oldOutputSelections) <- ids
+  names(oldOutputIntervals) <-
+    names(oldTimePoints) <-
+    names(oldOutputSelections) <- ids
 
   return(list(
     outputIntervals = oldOutputIntervals,
@@ -177,9 +177,9 @@ getSteadyState <- function(quantitiesPaths = NULL,
 }
 
 
-#' Title
+#' Restore simulation output state
 #'
-#' @param simulations List of `Simulation` objects
+#' @inheritParams .storeSimulationState
 #' @param simStateList Output of the function `.storeSimulationState`.
 #' A named list with entries `outputIntervals`, `timePoints`, and
 #' `outputSelections`. Every entry is a named list with names being the IDs of
@@ -194,7 +194,7 @@ getSteadyState <- function(quantitiesPaths = NULL,
     simulation$outputSchema$clear()
     for (outputInterval in simStateList$outputIntervals[[simId]]) {
       ospsuite::addOutputInterval(
-        simulation = simulation, 
+        simulation = simulation,
         startTime = outputInterval$startTime$value,
         endTime = outputInterval$endTime$value,
         resolution = outputInterval$resolution$value
