@@ -194,7 +194,8 @@ getSteadyState <- function(quantitiesPaths = NULL,
     simulation$outputSchema$clear()
     for (outputInterval in simStateList$outputIntervals[[simId]]) {
       ospsuite::addOutputInterval(
-        simulation = simulation, startTime = outputInterval$startTime$value,
+        simulation = simulation, 
+        startTime = outputInterval$startTime$value,
         endTime = outputInterval$endTime$value,
         resolution = outputInterval$resolution$value
       )
