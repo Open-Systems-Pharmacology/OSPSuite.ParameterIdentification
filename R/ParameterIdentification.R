@@ -111,7 +111,7 @@ ParameterIdentification <- R6::R6Class(
       # Add time points to the output schema that are present in the observed data.
       # Also add output quantities.
       for (outputMapping in private$.outputMappings) {
-        # The the parent simulation of the quantity of the mapping.
+        # The parent simulation of the quantity of the mapping.
         simId <- .getSimulationContainer(outputMapping$quantity)$id
         simulation <- private$.simulations[[simId]]
         # Add the quantity to the outputs of the simulations.
