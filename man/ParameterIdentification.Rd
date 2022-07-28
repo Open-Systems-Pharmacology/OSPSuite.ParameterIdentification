@@ -35,12 +35,6 @@ mapping assigns a set of observed data to a simulation output}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
-\if{html}{\out{
-<details open><summary>Inherited methods</summary>
-<ul>
-</ul>
-</details>
-}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-new}{}}}

@@ -46,28 +46,22 @@ getSteadyState <- function(quantitiesPaths = NULL,
   }
 
   # First prepare all simulations by setting their outputs and time intervals
-  # Create hash maps for the output intervals, time points, and output
-  # selections of the simulations in their initial state.
-  oldOutputIntervals <- hash::hash()
-  oldTimePoints <- hash::hash()
-  oldOutputSelections <- hash::hash()
   # If no quantities have been specified, the quantities paths may be different
   # for each simulation and must be stored separately
+  simulationState <- .storeSimulationState(simulations)
   quantitiesPathsMap <- hash::hash()
   for (simulation in simulations) {
     simId <- simulation$id
-    # Have to reset both the output intervals and the time points!
-    oldOutputIntervals[[simId]] <- simulation$outputSchema$intervals
-    oldTimePoints[[simId]] <- simulation$outputSchema$timePoints
-    oldOutputSelections[[simId]] <- simulation$outputSelections$allOutputs
     # Set simulation time to the steady-state value.
-    ospsuite::setOutputInterval(simulation = simulation, startTime = 0, endTime = steadyStateTime, resolution = 1 / steadyStateTime)
+    ospsuite::clearOutputIntervals(simulation = simulation)
+    simulation$outputSchema$addTimePoints(timePoints = steadyStateTime)
     # If no quantities are explicitly specified, simulate all outputs.
     if (is.null(quantitiesPaths)) {
       quantitiesPathsMap[[simId]] <- ospsuite::getAllStateVariablesPaths(simulation)
     } else {
       quantitiesPathsMap[[simId]] <- quantitiesPaths
     }
+    ospsuite::clearOutputs(simulation)
     ospsuite::addOutputs(quantitiesOrPaths = quantitiesPathsMap[[simId]], simulation = simulation)
   }
 
@@ -76,8 +70,6 @@ getSteadyState <- function(quantitiesPaths = NULL,
     simulations = simulations,
     simulationRunOptions = simulationRunOptions
   )
-  # Container task is required for checking the "isFormula" property
-  task <- ospsuite:::getContainerTask()
 
   # Iterate through simulations and get their outputs
   outputMap <- hash::hash()
@@ -95,7 +87,11 @@ getSteadyState <- function(quantitiesPaths = NULL,
     # Get the end values of all outputs
     endValues <- lapply(quantitiesPathsMap[[simId]], function(path) {
       # Check if the quantity is defined by an explicit formula
-      isFormulaExplicit <- rClr::clrCall(task, "IsExplicitFormulaByPath", simulation$ref, enc2utf8(path))
+      isFormulaExplicit <- ospsuite::isExplicitFormulaByPath(
+        path = enc2utf8(path),
+        simulation = simulation,
+        stopIfNotFound = stopIfNotFound
+      )
 
       if (ignoreIfFormula && isFormulaExplicit) {
         return(NULL)
@@ -116,23 +112,8 @@ getSteadyState <- function(quantitiesPaths = NULL,
     # Get the indices for which the outputs have been calculated
     indices <- which(lengths(endValues) != 0)
 
-    # reset the output intervals
-    simulation$outputSchema$clear()
-    for (outputInterval in oldOutputIntervals[[simId]]) {
-      ospsuite::addOutputInterval(
-        simulation = simulation, startTime = outputInterval$startTime$value,
-        endTime = outputInterval$endTime$value,
-        resolution = outputInterval$resolution$value
-      )
-    }
-    if (length(oldTimePoints[[simId]]) > 0) {
-      simulation$outputSchema$addTimePoints(oldTimePoints[[simId]])
-    }
-    # Reset output selections
-    ospsuite::clearOutputs(simulation)
-    for (outputSelection in oldOutputSelections[[simId]]) {
-      ospsuite::addOutputs(quantitiesOrPaths = outputSelection$path, simulation = simulation)
-    }
+    # Reset simulation output intervals and output selections
+    .restoreSimulationState(simulations, simulationState)
     outputMap[[simId]] <- list(paths = quantitiesPathsMap[[simId]][indices], values = endValues[indices])
   }
   return(outputMap)
@@ -152,4 +133,80 @@ getSteadyState <- function(quantitiesPaths = NULL,
     }
   }
   return(.getSimulationContainer(entity$parentContainer))
+}
+
+#' Stores current simulation output state
+#'
+#' @description Stores simulation output intervals, output time points,
+#' and output selections in the current state.
+#'
+#' @param simulations List of `Simulation` objects
+#'
+#' @return A named list with entries `outputIntervals`, `timePoints`, and
+#' `outputSelections`. Every entry is a named list with names being the IDs
+#' of the simulations.
+#' @keywords internal
+.storeSimulationState <- function(simulations) {
+  simulations <- c(simulations)
+  # Create named vectors for the output intervals, time points, and output
+  # selections of the simulations in their initial state. Names are IDs of
+  # simulations.
+  oldOutputIntervals <-
+    oldTimePoints <-
+    oldOutputSelections <-
+    ids <- vector("list", length(simulations))
+
+  for (idx in seq_along(simulations)) {
+    simulation <- simulations[[idx]]
+    simId <- simulation$id
+    # Have to reset both the output intervals and the time points!
+    oldOutputIntervals[[idx]] <- simulation$outputSchema$intervals
+    oldTimePoints[[idx]] <- simulation$outputSchema$timePoints
+    oldOutputSelections[[idx]] <- simulation$outputSelections$allOutputs
+    ids[[idx]] <- simId
+  }
+  names(oldOutputIntervals) <-
+    names(oldTimePoints) <-
+    names(oldOutputSelections) <- ids
+
+  return(list(
+    outputIntervals = oldOutputIntervals,
+    timePoints = oldTimePoints,
+    outputSelections = oldOutputSelections
+  ))
+}
+
+
+#' Restore simulation output state
+#'
+#' @inheritParams .storeSimulationState
+#' @param simStateList Output of the function `.storeSimulationState`.
+#' A named list with entries `outputIntervals`, `timePoints`, and
+#' `outputSelections`. Every entry is a named list with names being the IDs of
+#' the simulations.
+#'
+#' @keywords internal
+.restoreSimulationState <- function(simulations, simStateList) {
+  simulations <- c(simulations)
+  for (simulation in simulations) {
+    simId <- simulation$id
+    # reset the output intervals
+    simulation$outputSchema$clear()
+    for (outputInterval in simStateList$outputIntervals[[simId]]) {
+      ospsuite::addOutputInterval(
+        simulation = simulation,
+        startTime = outputInterval$startTime$value,
+        endTime = outputInterval$endTime$value,
+        resolution = outputInterval$resolution$value
+      )
+    }
+    if (length(simStateList$timePoints[[simId]]) > 0) {
+      simulation$outputSchema$addTimePoints(simStateList$timePoints[[simId]])
+    }
+    # Reset output selections
+    ospsuite::clearOutputs(simulation)
+    for (outputSelection in simStateList$outputSelections[[simId]]) {
+      ospsuite::addOutputs(quantitiesOrPaths = outputSelection$path, simulation = simulation)
+    }
+  }
 }

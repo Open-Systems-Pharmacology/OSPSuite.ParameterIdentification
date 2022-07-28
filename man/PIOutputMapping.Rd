@@ -44,12 +44,6 @@ of the simulated result. The function must return a named list with key
 \item \href{#method-PIOutputMapping-clone}{\code{PIOutputMapping$clone()}}
 }
 }
-\if{html}{\out{
-<details open><summary>Inherited methods</summary>
-<ul>
-</ul>
-</details>
-}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIOutputMapping-new"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-new}{}}}
