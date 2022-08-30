@@ -1,9 +1,9 @@
 #' @title PIOutputMapping
 #' @docType class
-#' @description An object that combines simulation output with observed data.
-#' The parameter identification minimizes the distance between the simulation
-#' output and the observed data.
-#' @import ospsuite.utils hash R6
+#' @description An object that links together quantities from the simulation
+#' and observed data. This object is passed to the ParameterIdentification
+#' objects
+#' @import ospsuite.utils R6
 #' @export
 #' @format NULL
 PIOutputMapping <- R6::R6Class(
@@ -11,18 +11,18 @@ PIOutputMapping <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field observedXYData Named list with the `XYData` that will be compared
-    #'   with simulation results. Names are the labels of the `xySeries` objects
-    observedXYData = function(value) {
+    #' @field observedData Named list of `DataSet` objects that will be compared
+    #' to simulation results.
+    observedData = function(value) {
       if (missing(value)) {
-        as.list(private$.observedXYData)
+        as.list(private$.observedData)
       } else {
-        stop(messages$errorPropertyReadOnly("observedXYData"))
+        stop(messages$errorPropertyReadOnly("observedData"))
       }
     },
 
-    #' @field quantity Simulation quantity which results are to be compared to
-    #' observed data. Read-only.
+    #' @field quantity Simulation quantities which values are matched to the
+    #' observed data
     quantity = function(value) {
       if (missing(value)) {
         private$.quantity
@@ -51,13 +51,8 @@ PIOutputMapping <- R6::R6Class(
   ),
   private = list(
     .quantity = NULL,
-    .observedXYData = NULL,
-    .transformResultsFunction = NULL,
-
-    # Clean up upon object removal
-    finalize = function() {
-      hash::clear(private$.observedXYData)
-    }
+    .observedData = NULL,
+    .transformResultsFunction = NULL
   ),
   public = list(
     #' @description
@@ -67,88 +62,37 @@ PIOutputMapping <- R6::R6Class(
     initialize = function(quantity) {
       validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
-      private$.observedXYData <- hash::hash()
+      private$.observedData <- list()
     },
 
-    #' Add observed data as `XYData` object(s).
+    #' Add observed data as `DataSet` objects
     #' @details If an observed data object with the same label already exists,
     #' it will be overwritten.
-    #' @param XYData Object or a list of objects of the type
-    #' `XYData`. Each data set must be of the same dimension as the simulation
+    #' @param data Object or a list of objects of the type
+    #' `DataSet`. Each data set must be of the same dimension as the simulation
     #' quantity of the mapping.
     #' @export
-    addObservedData = function(XYData) {
-      validateIsOfType(XYData, "XYData")
-      XYData <- toList(XYData)
-      for (idx in seq_along(XYData)) {
+    addObservedData = function(data) {
+      validateIsOfType(data, "DataSet")
+      data <- toList(data)
+      for (idx in seq_along(data)) {
         # Test if the dimension of the data to be added can be converted to the
         # dimension of the quantity of this Output Mapping.
         invisible(ospsuite::toBaseUnit(
           quantityOrDimension = private$.quantity,
           values = 1,
-          unit = XYData[[idx]]$yUnit,
-          molWeight = XYData[[idx]]$MW
+          unit = data[[idx]]$yUnit,
+          molWeight = data[[idx]]$molWeight
         ))
-        private$.observedXYData[[XYData[[idx]]$label]] <- XYData[[idx]]
+        private$.observedData[[data[[idx]]$name]] <- data[[idx]]
       }
     },
 
     #' @param label label of the x-y values series to be removed
     #' @description
     #' Remove the observed data.
-    removeXYSeries = function(label) {
-      hash::del(x = label, hash = private$.observedXYData)
-      invisible(self)
-    },
-
-    #' @description Set the X-factors of x-y values by labels.
-    #'
-    #' @param labels A list of label of `XYData`
-    #' @param xFactors Numeric values that will be multiplied by the x-values
-    setXFactors = function(labels, xFactors) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(xFactors, nullAllowed = TRUE)
-      validateIsSameLength(labels, xFactors)
-
-      for (idx in seq_along(labels)) {
-        xySeries <- self$observedXYData[[labels[[idx]]]]
-        xySeries$xFactor <- xFactors[[idx]]
-      }
-
-      invisible(self)
-    },
-
-    #' @description Set the y-factors of x-y values by labels.
-    #'
-    #' @param labels A list of label of `XYData`
-    #' @param yFactors Numeric values that will be multiplied by the y-values
-    setYFactors = function(labels, yFactors) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(yFactors, nullAllowed = TRUE)
-      validateIsSameLength(labels, yFactors)
-
-      for (idx in seq_along(labels)) {
-        xySeries <- self$observedXYData[[labels[[idx]]]]
-        xySeries$yFactor <- yFactors[[idx]]
-      }
-
-      invisible(self)
-    },
-
-    #' @description Set the X-offset of x-y values by labels.
-    #'
-    #' @param labels A list of label of `XYData`
-    #' @param xOffset Numeric values that will be added to the x-values
-    setXOffset = function(labels, xOffset) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(xOffset, nullAllowed = TRUE)
-      validateIsSameLength(labels, xOffset)
-
-      for (idx in seq_along(labels)) {
-        xySeries <- self$observedXYData[[labels[[idx]]]]
-        xySeries$xOffset <- xOffset[[idx]]
-      }
-
+    removeObservedData = function(label) {
+      private$.observedData[[label]] <- NULL
       invisible(self)
     },
 
@@ -158,7 +102,7 @@ PIOutputMapping <- R6::R6Class(
     print = function(...) {
       private$printClass()
       private$printLine("Output path", private$.quantity$path)
-      private$printLine("Observed data labels", hash::keys(private$.observedXYData))
+      private$printLine("Observed data labels", names(private$.observedData))
       invisible(self)
     }
   )
