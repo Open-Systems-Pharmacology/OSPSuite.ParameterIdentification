@@ -85,7 +85,7 @@ ParameterIdentification <- R6::R6Class(
             quantityPaths = moleculePaths,
             simulation = simulation
           )
-          # Save molecule start  values for this simulation ID
+          # Save molecule start values for this simulation ID
           private$.variableMolecules[[id]] <- moleculesStartValues
           names(private$.variableMolecules[[id]]) <- moleculePaths
 
@@ -177,14 +177,28 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # Calculate the lsq target function
+    .targetFunction = function(currVals) {
+      obsVsPred <- private$.evaluate(currVals)
+      if (tolower(private$.configuration$targetFunctionType %in% c("lsq", "least squares"))) {
+        target <- private$.LSQ(obsVsPred)
+      }
+      private$.iteration <- private$.iteration + 1
+      target <- private$.LSQ(obsVsPred)
+      if (private$.configuration$printIterationFeedback) {
+        print(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3)))
+      }
+      return(target)
+    },
+
     # Perform one iteration of the optimization workflow and calculate the residuals
     # @param currVals Numerical vector of the parameter values to be applied
     # @return Residuals, based on the selected objective function
-    .iterate = function(currVals) {
-      # Simulate with new parameter values and return the data mappings from which the error will be calculated.
-      dataMappings <- private$.evaluate(currVals)
-      return(private$.calculateResiduals(dataMappings))
-    },
+    #.iterate = function(currVals) {
+    #  # Simulate with new parameter values and return the data mappings from which the error will be calculated.
+    #  dataMappings <- private$.evaluate(currVals)
+    #  return(private$.calculateResiduals(dataMappings))
+    #},
 
     # Apply final identified values to simulation parameter objects.
     .applyFinalValues = function(values) {
@@ -204,6 +218,7 @@ ParameterIdentification <- R6::R6Class(
     # @param currVals Numerical vector of the parameter values to be applied
     # @return A list of \code{DataMapping} objects - one DataMapping for one output mapping.
     .evaluate = function(currVals) {
+      obsVsPred <- DataCombined$new()
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -250,44 +265,19 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
-      # Create data mappings for each output mapping
-      dataMappings <- lapply(private$.outputMappings, function(x) {
+      browser()
+
+      for (idx in seq_along(private$.outputMappings)) {
         # Find the simulation that is the parent of the output quantity
-        simId <- .getSimulationContainer(x$quantity)$id
-        # Find the simulation batch that corrensponds to the simulation
+        simId <- .getSimulationContainer(private$.outputMappings[[idx]]$quantity)$id
+        # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
+        obsVsPred$addSimulationResults(simulationResults[[simBatch$id]][[1]], names = simBatch$id, groups = simId)
+        obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedData, names = names(private$.outputMappings[[idx]]$observedData), groups = simId)
 
-        # Create new DataMapping
-        dataMapping <- esqlabsRLegacy::DataMapping$new()
-        # Add simulation results to the mapping.
-        # Selecting the first entry from simulationResults[[simBatch$id]] as
-        # in this setting, every simulation batch only has one simulated results.
-        dataMapping$addModelOutputs(
-          paths = x$quantity$path,
-          simulationResults = simulationResults[[simBatch$id]][[1]],
-          labels = "Simulation",
-          groups = "PI"
-        )
+      }
 
-        # Manipulate simulated results with a used defined function
-        if (!is.null(x$transformResultsFunction)) {
-          xyData <- dataMapping$xySeries[["Simulation"]]
-          transformedResults <- x$transformResultsFunction(xyData$xValues, xyData$yValues)
-
-          xyData$xValues <- transformedResults$xVals
-          xyData$yValues <- transformedResults$yVals
-        }
-
-        # Add observed data
-        for (observedData in x$observedXYData) {
-          dataMapping$addXYData(
-            XYData = observedData,
-            groups = "PI"
-          )
-        }
-        return(dataMapping)
-      })
-      return(dataMappings)
+      return(obsVsPred)
     },
 
     # Runs the optimization algorithm and returns the results produced by the
@@ -302,8 +292,9 @@ ParameterIdentification <- R6::R6Class(
       upper <- unlist(lapply(self$parameters, function(x) {
         x$maxValue
       }), use.names = FALSE)
+      browser()
 
-      results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
     },
 
     # Calculate residuals between simulated and observed values.
@@ -387,10 +378,8 @@ ParameterIdentification <- R6::R6Class(
       ids <- vector("list", length(simulations))
       private$.simulations <- vector("list", length(simulations))
       for (idx in seq_along(c(simulations))) {
-        simulation <- simulations[[idx]]
-        id <- simulation$root$id
-        private$.simulations[[idx]] <- simulation
-        ids[[idx]] <- id
+        private$.simulations[[idx]] <- simulations[[idx]]
+        ids[[idx]] <- simulation$root$id
       }
       names(private$.simulations) <- ids
       private$.parameters <- parameters

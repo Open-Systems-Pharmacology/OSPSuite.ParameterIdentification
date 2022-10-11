@@ -1,4 +1,3 @@
-rm(list = ls())
 library(ospsuite.parameteridentification)
 simulations <- c(loadSimulation("tests/dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
@@ -31,7 +30,8 @@ outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Peripheral
 outputMapping$addObservedData(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
 outputMappings = c(outputMapping)
 
-task <- ParameterIdentification$new(simulations = sim,
-                                    parameters = parameterPaths,
+task <- ParameterIdentification$new(simulations = simulations,
+                                    parameters = parameters,
                                     outputMappings = outputMapping,
                                     configuration = piConfiguration)
+task$run()
