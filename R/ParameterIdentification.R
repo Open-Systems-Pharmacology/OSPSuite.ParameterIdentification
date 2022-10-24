@@ -75,35 +75,39 @@ ParameterIdentification <- R6::R6Class(
     .batchInitialization = function() {
       # Prepare simulations
       # If steady-state should be simulated, get the set of all state variables for each simulation
-      if (private$.configuration$simulateSteadyState) {
-        for (simulation in private$.simulations) {
-          id <- simulation$root$id
-          moleculePaths <- getAllMoleculePathsIn(container = simulation)
-          # Only keep molecules that are not defined by formula
-          moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
-          moleculesStartValues <- getQuantityValuesByPath(
-            quantityPaths = moleculePaths,
-            simulation = simulation
-          )
-          # Save molecule start values for this simulation ID
-          private$.variableMolecules[[id]] <- moleculesStartValues
-          names(private$.variableMolecules[[id]]) <- moleculePaths
-
-          variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
-          # Only keep parameters that initial values are not defined by formula
-          variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
-          variableParametersValues <- getQuantityValuesByPath(
-            quantityPaths = variableParametersPaths,
-            simulation = simulation
-          )
-          # Save parameter values for this simulation ID
-          private$.variableParameters[[id]] <- variableParametersValues
-          names(private$.variableParameters[[id]]) <- variableParametersPaths
-        }
-      }
+      # if (private$.configuration$simulateSteadyState) {
+      #   for (simulation in private$.simulations) {
+      #     id <- simulation$root$id
+      #     moleculePaths <- getAllMoleculePathsIn(container = simulation)
+      #     # Only keep molecules that are not defined by formula
+      #     moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
+      #     moleculesStartValues <- getQuantityValuesByPath(
+      #       quantityPaths = moleculePaths,
+      #       simulation = simulation
+      #     )
+      #     # Save molecule start  values for this simulation ID
+      #     private$.variableMolecules[[id]] <- moleculesStartValues
+      #     names(private$.variableMolecules[[id]]) <- moleculePaths
+      #
+      #     variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
+      #     # Only keep parameters that initial values are not defined by formula
+      #     variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
+      #     # If the simulation does not contain any state variable parameters,
+      #     # do not try to retrieve the values.
+      #     if (!is.null(variableParametersPaths)){
+      #       variableParametersValues <- getQuantityValuesByPath(
+      #         quantityPaths = variableParametersPaths,
+      #         simulation = simulation
+      #       )
+      #       # Save parameter values for this simulation ID
+      #       private$.variableParameters[[id]] <- variableParametersValues
+      #       names(private$.variableParameters[[id]]) <- variableParametersPaths
+      #     }
+      #   }
+      # }
 
       # Clear output intervals and output quantities of all simulations
-      for (simulation in simulations) {
+      for (simulation in private$.simulations) {
         clearOutputIntervals(simulation)
         clearOutputs(simulation)
       }
@@ -153,28 +157,28 @@ ParameterIdentification <- R6::R6Class(
       # If steady-state should be simulated, create new batches for ss simulation
       # Add all state variables to the outputs and set the simulation time to
       # steady state time
-      if (private$.configuration$simulateSteadyState) {
-        for (simulation in private$.simulations) {
-          simId <- simulation$root$id
-          clearOutputIntervals(simulation)
-          clearOutputs(simulation)
-
-          # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
-          simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
-          # If no quantities are explicitly specified, simulate all outputs.
-          ospsuite::addOutputs(
-            quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
-            simulation = simulation
-          )
-
-          simBatch <- createSimulationBatch(
-            simulation = simulation,
-            parametersOrPaths = names(private$.variableParameters[[simId]]),
-            moleculesOrPaths = names(private$.variableMolecules[[simId]])
-          )
-          private$.steadyStateBatches[[simId]] <- simBatch
-        }
-      }
+      # if (private$.configuration$simulateSteadyState) {
+      #   for (simulation in private$.simulations) {
+      #     simId <- simulation$root$id
+      #     clearOutputIntervals(simulation)
+      #     clearOutputs(simulation)
+      #
+      #     # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
+      #     simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
+      #     # If no quantities are explicitly specified, simulate all outputs.
+      #     ospsuite::addOutputs(
+      #       quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
+      #       simulation = simulation
+      #     )
+      #
+      #     simBatch <- createSimulationBatch(
+      #       simulation = simulation,
+      #       parametersOrPaths = names(private$.variableParameters[[simId]]),
+      #       moleculesOrPaths = names(private$.variableMolecules[[simId]])
+      #     )
+      #     private$.steadyStateBatches[[simId]] <- simBatch
+      #   }
+      # }
     },
 
     # Calculate the lsq target function
@@ -371,14 +375,19 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
 
+      simulations <- toList(simulations)
+      parameters <- toList(parameters)
+      outputMappings <- toList(outputMappings)
+
       # We have to use the id of the root container of the simulation instead of
       # the id of the simulation itself, because later we have to find the
       # simulations based on the id of the root when assigning quantities to
       # simulations
       ids <- vector("list", length(simulations))
       private$.simulations <- vector("list", length(simulations))
-      for (idx in seq_along(c(simulations))) {
-        private$.simulations[[idx]] <- simulations[[idx]]
+      for (idx in seq_along(simulations)) {
+        simulation <- simulations[[idx]]
+        private$.simulations[[idx]] <- simulation
         ids[[idx]] <- simulation$root$id
       }
       names(private$.simulations) <- ids
