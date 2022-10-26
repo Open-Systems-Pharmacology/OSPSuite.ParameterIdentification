@@ -21,6 +21,42 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field xFactors Named list of numeric values
+    xFactors = function(value) {
+      if (missing(value)) {
+        private$.xFactors
+      } else {
+        stop(messages$errorPropertyReadOnly("xFactors"))
+      }
+    },
+
+    #' @field yFactors Named list of numeric values
+    yFactors = function(value) {
+      if (missing(value)) {
+        private$.yFactors
+      } else {
+        stop(messages$errorPropertyReadOnly("yFactors"))
+      }
+    },
+
+    #' @field xOffsets Named list of numeric values
+    xOffsets = function(value) {
+      if (missing(value)) {
+        private$.xOffsets
+      } else {
+        stop(messages$errorPropertyReadOnly("xOffsets"))
+      }
+    },
+
+    #' @field yOffsets Named list of numeric values
+    yOffsets = function(value) {
+      if (missing(value)) {
+        private$.yOffsets
+      } else {
+        stop(messages$errorPropertyReadOnly("yOffsets"))
+      }
+    },
+
     #' @field quantity Simulation quantities which values are matched to the
     #' observed data
     quantity = function(value) {
@@ -52,7 +88,11 @@ PIOutputMapping <- R6::R6Class(
   private = list(
     .quantity = NULL,
     .observedData = NULL,
-    .transformResultsFunction = NULL
+    .transformResultsFunction = NULL,
+    .xFactors = NULL,
+    .yFactors = NULL,
+    .xOffsets = NULL,
+    .yOffsets = NULL
   ),
   public = list(
     #' @description
@@ -63,6 +103,10 @@ PIOutputMapping <- R6::R6Class(
       validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
       private$.observedData <- list()
+      private$.xFactors <- list()
+      private$.yFactors <- list()
+      private$.xOffsets <- list()
+      private$.yOffsets <- list()
     },
 
     #' Add observed data as `DataSet` objects
@@ -93,6 +137,62 @@ PIOutputMapping <- R6::R6Class(
     #' Remove the observed data.
     removeObservedData = function(label) {
       private$.observedData[[label]] <- NULL
+      invisible(self)
+    },
+
+    #' @description Set the X-factors
+    #' @param labels A list of labels
+    #' @param factors
+    setXFactors = function(labels, factors) {
+      validateIsString(labels, nullAllowed = TRUE)
+      validateIsNumeric(factors, nullAllowed = TRUE)
+      validateIsSameLength(labels, factors)
+
+      for (idx in seq_along(labels)) {
+        private$.xFactors[[labels[[idx]]]] <- factors[[idx]]
+      }
+      invisible(self)
+    },
+
+    #' @description Set the Y-factors
+    #' @param labels A list of labels
+    #' @param factors
+    setYFactors = function(labels, factors) {
+      validateIsString(labels, nullAllowed = TRUE)
+      validateIsNumeric(factors, nullAllowed = TRUE)
+      validateIsSameLength(labels, factors)
+
+      for (idx in seq_along(labels)) {
+        private$.yFactors[[labels[[idx]]]] <- factors[[idx]]
+      }
+      invisible(self)
+    },
+
+    #' @description Set the X-offsets
+    #' @param labels A list of labels
+    #' @param offsets
+    setXOffsets = function(labels, offsets) {
+      validateIsString(labels, nullAllowed = TRUE)
+      validateIsNumeric(offsets, nullAllowed = TRUE)
+      validateIsSameLength(labels, offsets)
+
+      for (idx in seq_along(labels)) {
+        private$.xOffsets[[labels[[idx]]]] <- offsets[[idx]]
+      }
+      invisible(self)
+    },
+
+    #' @description Set the Y-offsets
+    #' @param labels A list of labels
+    #' @param offsets
+    setYOffsets = function(labels, offsets) {
+      validateIsString(labels, nullAllowed = TRUE)
+      validateIsNumeric(offsets, nullAllowed = TRUE)
+      validateIsSameLength(labels, offsets)
+
+      for (idx in seq_along(labels)) {
+        private$.yOffsets[[labels[[idx]]]] <- offsets[[idx]]
+      }
       invisible(self)
     },
 
