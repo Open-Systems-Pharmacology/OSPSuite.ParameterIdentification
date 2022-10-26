@@ -121,11 +121,20 @@ ParameterIdentification <- R6::R6Class(
         # Add the quantity to the outputs of the simulations.
         ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
         # Add time points present in the observed data of this mapping.
-        for (observedData in outputMapping$observedXYData) {
+        for (observedData in outputMapping$observedData) {
           # Time values can be stored in units different from the base unit
           # and must be converted to the base unit first.
+          label <- observedData$name
+          xFactor <- outputMapping$xFactors[[label]]
+          if (is.null(xFactor)) {
+            xFactor <- 1
+          }
+          xOffset <- outputMapping$xOffsets[[label]]
+          if (is.null(xOffset)) {
+            xOffset <- 0
+          }
           xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
+            values = (observedData$xValues + xOffset) * xFactor,
             unit = observedData$xUnit
           )
           simulation$outputSchema$addTimePoints(xVals)
@@ -296,7 +305,6 @@ ParameterIdentification <- R6::R6Class(
       upper <- unlist(lapply(self$parameters, function(x) {
         x$maxValue
       }), use.names = FALSE)
-      browser()
 
       results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
     },
