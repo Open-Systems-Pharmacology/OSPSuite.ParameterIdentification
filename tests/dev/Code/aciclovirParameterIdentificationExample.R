@@ -6,6 +6,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$targetFunctionType <- "lsq"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters = list()

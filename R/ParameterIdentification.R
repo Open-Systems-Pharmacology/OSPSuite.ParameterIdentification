@@ -70,6 +70,7 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
+    .iteration = 0,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -204,15 +205,6 @@ ParameterIdentification <- R6::R6Class(
       return(target)
     },
 
-    # Perform one iteration of the optimization workflow and calculate the residuals
-    # @param currVals Numerical vector of the parameter values to be applied
-    # @return Residuals, based on the selected objective function
-    #.iterate = function(currVals) {
-    #  # Simulate with new parameter values and return the data mappings from which the error will be calculated.
-    #  dataMappings <- private$.evaluate(currVals)
-    #  return(private$.calculateResiduals(dataMappings))
-    #},
-
     # Apply final identified values to simulation parameter objects.
     .applyFinalValues = function(values) {
       # Iterate through PIParameters
@@ -289,6 +281,12 @@ ParameterIdentification <- R6::R6Class(
       }
 
       return(obsVsPred)
+    },
+
+    # Calculate the least-squares measure of discrepancy between observed and predicted data
+    .LSQ = function(obsVsPred) {
+      residuals <- calculateResiduals(obsVsPred, scaling = "lin")
+      return(sum(residuals$residualValues**2, na.rm = TRUE))
     },
 
     # Runs the optimization algorithm and returns the results produced by the
