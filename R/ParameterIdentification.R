@@ -278,8 +278,6 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
-      browser()
-
       for (idx in seq_along(private$.outputMappings)) {
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(private$.outputMappings[[idx]]$quantity)$id
