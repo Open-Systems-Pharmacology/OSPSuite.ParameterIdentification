@@ -200,7 +200,7 @@ ParameterIdentification <- R6::R6Class(
       private$.iteration <- private$.iteration + 1
       target <- private$.LSQ(obsVsPred)
       if (private$.configuration$printIterationFeedback) {
-        print(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3)))
+        cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3), "\n"))
       }
       return(target)
     },
@@ -303,60 +303,6 @@ ParameterIdentification <- R6::R6Class(
       }), use.names = FALSE)
 
       results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "L-BFGS-B")
-    },
-
-    # Calculate residuals between simulated and observed values.
-    #
-    # @param dataMappingList A \code{DataMapping} or a list of \code{DataMapping} objects.
-    #
-    # @return Vector of residuals
-    .calculateResiduals = function(dataMappingList) {
-      dataMappingList <- ospsuite.utils::toList(dataMappingList)
-      cost <- NULL
-      for (dataMapping in dataMappingList) {
-        simulatedResult <- list()
-
-        combinedResults <- lapply(dataMapping$xySeries, function(xySeries) {
-          if (xySeries$dataType == XYDataTypes$Simulated) {
-            simulatedResult <<- xySeries
-            return()
-          }
-          # Collapse all observed data
-          return(list(
-            dataPointsX = xySeries$xValuesProcessed(dataMapping$xUnit),
-            dataPointsY = xySeries$yValuesProcessed(dataMapping$yUnit),
-            dataError = xySeries$yErrorProcessed(dataMapping$yUnit)
-          ))
-        })
-
-        dataPointsX <- unlist(lapply(combinedResults, function(x) {
-          x$dataPointsX
-        }), use.names = FALSE)
-        dataPointsY <- unlist(lapply(combinedResults, function(x) {
-          x$dataPointsY
-        }), use.names = FALSE)
-        dataError <- unlist(lapply(combinedResults, function(x) {
-          x$dataError
-        }), use.names = FALSE)
-
-        # Calculate the distance between each point of the observed data to the simulated result
-        modelDf <- data.frame("Time" = simulatedResult$xValues, "Values" = simulatedResult$yValues)
-        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY, "Error" = dataError)
-
-        # Only use error if it does not contain 0, otherwise the cost function fails
-        err <- "Error"
-        if (any(dataError == 0)) {
-          err <- NULL
-          obsDf$Error <- NULL
-        }
-        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = err)
-      }
-
-      if (private$.configuration$printIterationFeedback) {
-        print(paste0("Current error: ", cost$model))
-      }
-
-      return(cost)
     }
   ),
   public = list(
