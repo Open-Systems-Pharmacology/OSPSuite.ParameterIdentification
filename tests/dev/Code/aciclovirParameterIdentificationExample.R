@@ -35,4 +35,4 @@ task <- ParameterIdentification$new(simulations = simulations,
                                     parameters = parameters,
                                     outputMappings = outputMapping,
                                     configuration = piConfiguration)
-task$run()
+task_results <- task$run()

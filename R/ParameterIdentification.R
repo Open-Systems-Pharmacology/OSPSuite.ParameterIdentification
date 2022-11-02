@@ -302,7 +302,7 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "L-BFGS-B")
     },
 
     # Calculate residuals between simulated and observed values.
