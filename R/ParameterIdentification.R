@@ -67,7 +67,9 @@ ParameterIdentification <- R6::R6Class(
     # List of PIParameter objects defining the simulation parameters to be
     # optimized
     .piParameters = NULL,
+    # List of PIOutputMapping objects
     .outputMappings = NULL,
+    # PIConfiguration
     .configuration = NULL,
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
@@ -118,7 +120,7 @@ ParameterIdentification <- R6::R6Class(
       # Add time points to the output schema that are present in the observed data.
       # Also add output quantities.
       for (outputMapping in private$.outputMappings) {
-        # The parent simulation of the quantity of the mapping.
+        # ID of the and the parent simulation of the quantity of the mapping.
         simId <- .getSimulationContainer(outputMapping$quantity)$id
         simulation <- private$.simulations[[simId]]
         # Add the quantity to the outputs of the simulations.
@@ -279,7 +281,6 @@ ParameterIdentification <- R6::R6Class(
         simBatch <- private$.simulationBatches[[simId]]
         obsVsPred$addSimulationResults(simulationResults[[simBatch$id]][[1]], names = simBatch$id, groups = simId)
         obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedData, names = names(private$.outputMappings[[idx]]$observedData), groups = simId)
-
       }
 
       return(obsVsPred)
