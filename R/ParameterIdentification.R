@@ -23,7 +23,7 @@ ParameterIdentification <- R6::R6Class(
     #' @field parameters List of `PIParameters` objects to be optimized. Read-only
     parameters = function(value) {
       if (missing(value)) {
-        private$.parameters
+        private$.piParameters
       } else {
         stop(messages$errorPropertyReadOnly("parameters"))
       }
@@ -64,7 +64,9 @@ ParameterIdentification <- R6::R6Class(
     # variable molecules/parameters, and values being the start values.
     .variableMolecules = NULL,
     .variableParameters = NULL,
-    .parameters = NULL,
+    # List of PIParameter objects defining the simulation parameters to be
+    # optimized
+    .piParameters = NULL,
     .outputMappings = NULL,
     .configuration = NULL,
     # Flag if simulation batches must be created from simulations. Used for
@@ -143,7 +145,7 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Add parameters that will be optimized to the list of variable parameters
-      for (piParameter in private$.parameters) {
+      for (piParameter in private$.piParameters) {
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
           # Set the current value of this parameter to the start value of the
@@ -214,7 +216,7 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(values)) {
         # The order of the values corresponds to the order of PIParameters in
         # $parameters list
-        piParameter <- private$.parameters[[idx]]
+        piParameter <- private$.piParameters[[idx]]
         piParameter$setValue(values[[idx]])
       }
     },
@@ -228,7 +230,7 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
         # $parameters list
-        piParameter <- private$.parameters[[idx]]
+        piParameter <- private$.piParameters[[idx]]
         # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
@@ -341,7 +343,7 @@ ParameterIdentification <- R6::R6Class(
         ids[[idx]] <- simulation$root$id
       }
       names(private$.simulations) <- ids
-      private$.parameters <- parameters
+      private$.piParameters <- parameters
       private$.outputMappings <- c(outputMappings)
 
       private$.variableMolecules <-
@@ -428,7 +430,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Simulations", unlist(lapply(private$.simulations, function(x) {
         x$sourceFile
       }), use.names = FALSE))
-      private$printLine("Number of parameters", length(private$.parameters))
+      private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)

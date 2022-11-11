@@ -1,7 +1,7 @@
 #' @title PIOutputMapping
 #' @docType class
 #' @description An object that links together quantities from the simulation
-#' and observed data. This object is passed to the ParameterIdentification
+#' to observed data. This object is passed to the ParameterIdentification
 #' objects
 #' @import ospsuite.utils R6
 #' @export

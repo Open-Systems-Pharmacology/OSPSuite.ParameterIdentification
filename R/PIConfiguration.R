@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
 #' @description An object storing configuration for the parameter identification
-#' @import R6 ospsuite.utils
+#' @import ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(

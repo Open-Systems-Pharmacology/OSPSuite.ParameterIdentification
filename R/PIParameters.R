@@ -9,7 +9,7 @@ PIParameters <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field parameters List of parameter object. Adding or removing parameters is currently not supported.
+    #' @field parameters List of parameter object. Adding or removing parameters is not supported.
     parameters = function(value) {
       if (missing(value)) {
         private$.parameters
