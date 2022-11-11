@@ -1,5 +1,4 @@
-library(ospsuite.parameteridentification)
-library(esqlabsRLegacy)
+#library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
 modelFolder <- file.path(getwd(), "../Models/Simulations")
@@ -8,25 +7,18 @@ dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-# DataConfiguration is an object that describes how to read observed data from an excel file
-dataConfiguration <- DataConfiguration$new(
-  dataFolder = dataFolder,
-  dataFile = dataFile,
-  compoundPropertiesFile = NULL,
-  dataSheets = c(
-    "Boswell_2012"
-  )
+###########Load observed data########
+dataSheets <- c("Boswell_2012")
+
+importerConfiguration <- ospsuite::loadDataImporterConfiguration(
+  configurationFilePath = file.path(getwd(), "../Data", "dataImporter_configuration.xml")
 )
+importerConfiguration$sheets <- dataSheets
 
-# To test with error:
-# dataConfiguration <- DataConfiguration$new(dataFolder = dataFolder,
-#                                            dataFile = dataFile,
-#                                            compoundPropertiesFile = NULL,
-#                                            dataSheets = c(
-#                                              "Boswell_2012_error"
-#                                            ))
-
-observedData <- readOSPSTimeValues(dataConfiguration)
+dataSets <- ospsuite::loadDataSetsFromExcel(
+  xlsFilePath = file.path(dataFolder, dataFile),
+  importerConfigurationOrPath = importerConfiguration
+)
 
 ####### LOAD SIMULATIONS and put them in a named list######
 simNames <- c("Vehicle.pkml", "0.75 mg_kg.pkml", "2.5 mg_kg.pkml")
@@ -64,20 +56,20 @@ piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|We
   container = simulations$Vehicle.pkml
 ))
 # Add observed data. Multiple data can be added to the same mapping
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_Vehicle)
+piOutputMapping$addObservedData(dataSets$`________IV_Vehicle`)
 # Add the mapping to the list of all mappings
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`0.75 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_0.75mgKg_ADC)
+piOutputMapping$addObservedData(dataSets$`________IV_0.75mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`2.5 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_2.50mgKg_ADC)
+piOutputMapping$addObservedData(dataSets$`________IV_2.50mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 # piConfiguration$simulateSteadyState <- TRUE
