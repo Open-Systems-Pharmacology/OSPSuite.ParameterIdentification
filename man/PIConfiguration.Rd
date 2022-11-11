@@ -24,6 +24,9 @@ Default is \code{FALSE}}
 
 \item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
 to simulation runs. If \code{NULL}, default options are used.}
+
+\item{\code{targetFunctionType}}{a string describing the target function for
+parameter estimation. Can be "lsq" or "mle".}
 }
 \if{html}{\out{</div>}}
 }

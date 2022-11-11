@@ -13,7 +13,8 @@ Authors@R:
              family = "Patil",
              role = "ctb",
              email = "patilindrajeet.science@gmail.com",
-             comment = c(ORCID = "0000-0003-1995-6531", Twitter = "@patilindrajeets")))
+             comment = c(ORCID = "0000-0003-1995-6531", Twitter = "@patilindrajeets")),
+             person("Sergei", "Vavilov", , "https://github.com/svavil", role = "aut"))
 Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
 Description: R package for performing parameter identification for the 
     Open Systems Pharmacology models.
@@ -22,11 +23,10 @@ URL: https://github.com/open-systems-pharmacology/ospsuite.parameteridentificati
 Encoding: UTF-8
 LazyData: true
 Depends:
+    R (>= 4.1),
     ospsuite (>= 11.0)
 Imports:
     FME,
-    hash,
-    R6,
     rClr,
     ospsuite.utils
 Suggests: 
