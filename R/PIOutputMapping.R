@@ -141,8 +141,8 @@ PIOutputMapping <- R6::R6Class(
     },
 
     #' @description Set the X-factors
-    #' @param labels A list of labels
-    #' @param factors
+    #' @param labels A list of labels, each corresponding to one of the datasets
+    #' @param factors A numeric list of X-factors with the same length as `labels`
     setXFactors = function(labels, factors) {
       validateIsString(labels, nullAllowed = TRUE)
       validateIsNumeric(factors, nullAllowed = TRUE)
@@ -155,8 +155,8 @@ PIOutputMapping <- R6::R6Class(
     },
 
     #' @description Set the Y-factors
-    #' @param labels A list of labels
-    #' @param factors
+    #' @param labels A list of labels, each corresponding to one of the datasets
+    #' @param factors A numeric list of Y-factors with the same length as `labels`
     setYFactors = function(labels, factors) {
       validateIsString(labels, nullAllowed = TRUE)
       validateIsNumeric(factors, nullAllowed = TRUE)
@@ -169,8 +169,8 @@ PIOutputMapping <- R6::R6Class(
     },
 
     #' @description Set the X-offsets
-    #' @param labels A list of labels
-    #' @param offsets
+    #' @param labels A list of labels, each corresponding to one of the datasets
+    #' @param factors A numeric list of X-offsets with the same length as `labels`
     setXOffsets = function(labels, offsets) {
       validateIsString(labels, nullAllowed = TRUE)
       validateIsNumeric(offsets, nullAllowed = TRUE)
@@ -183,8 +183,8 @@ PIOutputMapping <- R6::R6Class(
     },
 
     #' @description Set the Y-offsets
-    #' @param labels A list of labels
-    #' @param offsets
+    #' @param labels A list of labels, each corresponding to one of the datasets
+    #' @param factors A numeric list of Y-offsets with the same length as `labels`
     setYOffsets = function(labels, offsets) {
       validateIsString(labels, nullAllowed = TRUE)
       validateIsNumeric(offsets, nullAllowed = TRUE)
