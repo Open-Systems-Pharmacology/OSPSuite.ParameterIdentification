@@ -75,6 +75,8 @@ ParameterIdentification <- R6::R6Class(
     # plotting current results.
     .needBatchInitialization = TRUE,
     .iteration = 0,
+    # possible target functions for minimization and their user-friendly names
+    .targetFunctionNames <- list("lsq" = private$.LSQ, "least squares" = private$.LSQ),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -195,14 +197,18 @@ ParameterIdentification <- R6::R6Class(
       # }
     },
 
-    # Calculate the lsq target function
+    # Calculate the target function that is going to be minimized during
+    # parameter estimation. This can be a sum of residuals or a more complex function,
+    # such as a likelihood function
     .targetFunction = function(currVals) {
       obsVsPred <- private$.evaluate(currVals)
-      if (tolower(private$.configuration$targetFunctionType %in% c("lsq", "least squares"))) {
-        target <- private$.LSQ(obsVsPred)
+      if (tolower(private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames))) {
+        target <- private$.targetFunctionNames[[tolower(private$.configuration$targetFunctionType)]](obsVsPred)
+      } else {
+        warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
+        return(NA_real_)
       }
       private$.iteration <- private$.iteration + 1
-      target <- private$.LSQ(obsVsPred)
       if (private$.configuration$printIterationFeedback) {
         cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3), "\n"))
       }
