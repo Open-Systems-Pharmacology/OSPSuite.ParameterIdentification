@@ -76,7 +76,7 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     .iteration = 0,
     # possible target functions for minimization and their user-friendly names
-    .targetFunctionNames = list("lsq" = private$.LSQ, "least squares" = private$.LSQ),
+    .targetFunctionNames = list("lsq" = ".LSQ", "least squares" = ".LSQ"),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -132,13 +132,13 @@ ParameterIdentification <- R6::R6Class(
           # Time values can be stored in units different from the base unit
           # and must be converted to the base unit first.
           label <- observedData$name
-          xFactor <- outputMapping$xFactors[[label]]
-          if (is.null(xFactor)) {
-            xFactor <- 1
+          xFactor <- outputMapping$dataTransformations$xFactors
+          if (length(xFactor) != 1) {
+            xFactor <- xFactor[[label]]
           }
-          xOffset <- outputMapping$xOffsets[[label]]
-          if (is.null(xOffset)) {
-            xOffset <- 0
+          xOffset <- outputMapping$dataTransformations$xOffsets
+          if (length(xOffset) != 1) {
+            xOffset <- xOffset[[label]]
           }
           xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
             values = (observedData$xValues + xOffset) * xFactor,
@@ -203,7 +203,9 @@ ParameterIdentification <- R6::R6Class(
     .targetFunction = function(currVals) {
       obsVsPred <- private$.evaluate(currVals)
       if (tolower(private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames))) {
-        target <- private$.targetFunctionNames[[tolower(private$.configuration$targetFunctionType)]](obsVsPred)
+        if (private$.targetFunctionNames[[tolower(private$.configuration$targetFunctionType)]] == ".LSQ") {
+          target <- private$.LSQ(obsVsPred)
+        }
 
         if (private$.configuration$printIterationFeedback) {
           private$.iteration <- private$.iteration + 1
@@ -280,8 +282,6 @@ ParameterIdentification <- R6::R6Class(
         simulationBatches = private$.simulationBatches,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
-
-      browser()
 
       for (idx in seq_along(private$.outputMappings)) {
         # Find the simulation that is the parent of the output quantity

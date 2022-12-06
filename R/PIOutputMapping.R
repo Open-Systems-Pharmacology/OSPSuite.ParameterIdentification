@@ -21,39 +21,12 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field xFactors Named list of numeric values
-    xFactors = function(value) {
+    #' @field dataTransformations a named list of factors and offsets
+    dataTransformations = function(value) {
       if (missing(value)) {
-        private$.xFactors
+        private$.dataTransformations
       } else {
-        stop(messages$errorPropertyReadOnly("xFactors"))
-      }
-    },
-
-    #' @field yFactors Named list of numeric values
-    yFactors = function(value) {
-      if (missing(value)) {
-        private$.yFactors
-      } else {
-        stop(messages$errorPropertyReadOnly("yFactors"))
-      }
-    },
-
-    #' @field xOffsets Named list of numeric values
-    xOffsets = function(value) {
-      if (missing(value)) {
-        private$.xOffsets
-      } else {
-        stop(messages$errorPropertyReadOnly("xOffsets"))
-      }
-    },
-
-    #' @field yOffsets Named list of numeric values
-    yOffsets = function(value) {
-      if (missing(value)) {
-        private$.yOffsets
-      } else {
-        stop(messages$errorPropertyReadOnly("yOffsets"))
+        stop(messages$errorPropertyReadOnly("dataTransformations"))
       }
     },
 
@@ -89,10 +62,7 @@ PIOutputMapping <- R6::R6Class(
     .quantity = NULL,
     .observedData = NULL,
     .transformResultsFunction = NULL,
-    .xFactors = NULL,
-    .yFactors = NULL,
-    .xOffsets = NULL,
-    .yOffsets = NULL
+    .dataTransformations = NULL
   ),
   public = list(
     #' @description
@@ -103,10 +73,7 @@ PIOutputMapping <- R6::R6Class(
       validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
       private$.observedData <- list()
-      private$.xFactors <- list()
-      private$.yFactors <- list()
-      private$.xOffsets <- list()
-      private$.yOffsets <- list()
+      private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
     },
 
     #' Add observed data as `DataSet` objects
@@ -140,58 +107,38 @@ PIOutputMapping <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Set the X-factors
-    #' @param labels A list of labels, each corresponding to one of the datasets
-    #' @param factors A numeric list of X-factors with the same length as `labels`
-    setXFactors = function(labels, factors) {
+    #' @description Set the data transformations
+    #' @param labels A list of labels, each corresponding to one of the datasets. If labels are not specified, data transformations are set across all datasets
+    #' @param xOffsets A numeric list or a value of X-offsets
+    #' @param yOffsets A numeric list or a value of Y-offsets
+    #' @param xFactors A numeric list or a value of X-factors
+    #' @param yFactors A numeric list or a value of Y-factors
+    setDataTransformations = function(labels = NULL,
+                                      xOffsets = 0,
+                                      yOffsets = 0,
+                                      xFactors = 1,
+                                      yFactors = 1) {
       validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(factors, nullAllowed = TRUE)
-      validateIsSameLength(labels, factors)
+      validateIsNumeric(xOffsets, nullAllowed = TRUE)
+      validateIsNumeric(xFactors, nullAllowed = TRUE)
+      validateIsNumeric(yFactors, nullAllowed = TRUE)
+      validateIsNumeric(yOffsets, nullAllowed = TRUE)
 
-      for (idx in seq_along(labels)) {
-        private$.xFactors[[labels[[idx]]]] <- factors[[idx]]
+      if (missing(labels)) {
+        # if no labels are given to the function, the same parameters will be used across datasets
+        private$.dataTransformations$xFactors <- xFactors
+        private$.dataTransformations$yFactors <- yFactors
+        private$.dataTransformations$xOffsets <- xOffsets
+        private$.dataTransformations$yOffsets <- yOffsets
+        return(invisible(self))
       }
-      invisible(self)
-    },
 
-    #' @description Set the Y-factors
-    #' @param labels A list of labels, each corresponding to one of the datasets
-    #' @param factors A numeric list of Y-factors with the same length as `labels`
-    setYFactors = function(labels, factors) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(factors, nullAllowed = TRUE)
-      validateIsSameLength(labels, factors)
-
+      # otherwise, we only assign data transformations to specific labels
       for (idx in seq_along(labels)) {
-        private$.yFactors[[labels[[idx]]]] <- factors[[idx]]
-      }
-      invisible(self)
-    },
-
-    #' @description Set the X-offsets
-    #' @param labels A list of labels, each corresponding to one of the datasets
-    #' @param factors A numeric list of X-offsets with the same length as `labels`
-    setXOffsets = function(labels, offsets) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(offsets, nullAllowed = TRUE)
-      validateIsSameLength(labels, offsets)
-
-      for (idx in seq_along(labels)) {
-        private$.xOffsets[[labels[[idx]]]] <- offsets[[idx]]
-      }
-      invisible(self)
-    },
-
-    #' @description Set the Y-offsets
-    #' @param labels A list of labels, each corresponding to one of the datasets
-    #' @param factors A numeric list of Y-offsets with the same length as `labels`
-    setYOffsets = function(labels, offsets) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(offsets, nullAllowed = TRUE)
-      validateIsSameLength(labels, offsets)
-
-      for (idx in seq_along(labels)) {
-        private$.yOffsets[[labels[[idx]]]] <- offsets[[idx]]
+        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[idx]]
+        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[idx]]
+        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[idx]]
+        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[idx]]
       }
       invisible(self)
     },
