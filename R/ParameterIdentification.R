@@ -76,7 +76,7 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     .iteration = 0,
     # possible target functions for minimization and their user-friendly names
-    .targetFunctionNames <- list("lsq" = private$.LSQ, "least squares" = private$.LSQ),
+    .targetFunctionNames = list("lsq" = private$.LSQ, "least squares" = private$.LSQ),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -204,15 +204,15 @@ ParameterIdentification <- R6::R6Class(
       obsVsPred <- private$.evaluate(currVals)
       if (tolower(private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames))) {
         target <- private$.targetFunctionNames[[tolower(private$.configuration$targetFunctionType)]](obsVsPred)
-      } else {
-        warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
-        return(NA_real_)
+
+        if (private$.configuration$printIterationFeedback) {
+          private$.iteration <- private$.iteration + 1
+          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3), "\n"))
+        }
+        return(target)
       }
-      private$.iteration <- private$.iteration + 1
-      if (private$.configuration$printIterationFeedback) {
-        cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(target, 3), "\n"))
-      }
-      return(target)
+      warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
+      return(NA_real_)
     },
 
     # Apply final identified values to simulation parameter objects.
@@ -231,7 +231,8 @@ ParameterIdentification <- R6::R6Class(
 
     # Evaluate all simulations with given parameter values
     # @param currVals Numerical vector of the parameter values to be applied
-    # @return A list of \code{DataMapping} objects - one DataMapping for one output mapping.
+    # @return An object of `DataCombined` class that includes values simulated
+    # with the given parameters, and corresponding datasets with observed data
     .evaluate = function(currVals) {
       obsVsPred <- DataCombined$new()
       # Iterate through the values and update current parameter values
@@ -280,13 +281,15 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
+      browser()
+
       for (idx in seq_along(private$.outputMappings)) {
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(private$.outputMappings[[idx]]$quantity)$id
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
         obsVsPred$addSimulationResults(simulationResults[[simBatch$id]][[1]], names = simBatch$id, groups = simId)
-        obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedData, names = names(private$.outputMappings[[idx]]$observedData), groups = simId)
+        obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedData, groups = simId)
       }
 
       return(obsVsPred)
