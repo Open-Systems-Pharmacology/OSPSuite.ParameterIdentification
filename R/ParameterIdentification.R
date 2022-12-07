@@ -128,10 +128,10 @@ ParameterIdentification <- R6::R6Class(
         # Add the quantity to the outputs of the simulations.
         ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
         # Add time points present in the observed data of this mapping.
-        for (observedData in outputMapping$observedData) {
+        for (dataset in outputMapping$observedDataSets) {
           # Time values can be stored in units different from the base unit
           # and must be converted to the base unit first.
-          label <- observedData$name
+          label <- dataset$name
           xFactor <- outputMapping$dataTransformations$xFactors
           if (length(xFactor) != 1) {
             xFactor <- xFactor[[label]]
@@ -141,8 +141,8 @@ ParameterIdentification <- R6::R6Class(
             xOffset <- xOffset[[label]]
           }
           xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (observedData$xValues + xOffset) * xFactor,
-            unit = observedData$xUnit
+            values = (dataset$xValues + xOffset) * xFactor,
+            unit = dataset$xUnit
           )
           simulation$outputSchema$addTimePoints(xVals)
         }
@@ -289,7 +289,7 @@ ParameterIdentification <- R6::R6Class(
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
         obsVsPred$addSimulationResults(simulationResults[[simBatch$id]][[1]], names = simBatch$id, groups = simId)
-        obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedData, groups = simId)
+        obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedDataSets, groups = simId)
       }
 
       return(obsVsPred)

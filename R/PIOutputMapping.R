@@ -11,13 +11,13 @@ PIOutputMapping <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field observedData Named list of `DataSet` objects that will be compared
+    #' @field observedDataSets Named list of `DataSet` objects that will be compared
     #' to simulation results.
-    observedData = function(value) {
+    observedDataSets = function(value) {
       if (missing(value)) {
-        as.list(private$.observedData)
+        as.list(private$.observedDataSets)
       } else {
-        stop(messages$errorPropertyReadOnly("observedData"))
+        stop(messages$errorPropertyReadOnly("observedDataSets"))
       }
     },
 
@@ -60,7 +60,7 @@ PIOutputMapping <- R6::R6Class(
   ),
   private = list(
     .quantity = NULL,
-    .observedData = NULL,
+    .observedDataSets = NULL,
     .transformResultsFunction = NULL,
     .dataTransformations = NULL
   ),
@@ -72,7 +72,7 @@ PIOutputMapping <- R6::R6Class(
     initialize = function(quantity) {
       validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
-      private$.observedData <- list()
+      private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
     },
 
@@ -83,7 +83,7 @@ PIOutputMapping <- R6::R6Class(
     #' `DataSet`. Each data set must be of the same dimension as the simulation
     #' quantity of the mapping.
     #' @export
-    addObservedData = function(data) {
+    addObservedDataSets = function(data) {
       validateIsOfType(data, "DataSet")
       data <- toList(data)
       for (idx in seq_along(data)) {
@@ -95,15 +95,15 @@ PIOutputMapping <- R6::R6Class(
           unit = data[[idx]]$yUnit,
           molWeight = data[[idx]]$molWeight
         ))
-        private$.observedData[[data[[idx]]$name]] <- data[[idx]]
+        private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
     },
 
     #' @param label label of the x-y values series to be removed
     #' @description
     #' Remove the observed data.
-    removeObservedData = function(label) {
-      private$.observedData[[label]] <- NULL
+    removeObservedDataSet = function(label) {
+      private$.observedDataSets[[label]] <- NULL
       invisible(self)
     },
 
@@ -161,7 +161,7 @@ PIOutputMapping <- R6::R6Class(
     print = function(...) {
       private$printClass()
       private$printLine("Output path", private$.quantity$path)
-      private$printLine("Observed data labels", names(private$.observedData))
+      private$printLine("Observed data labels", names(private$.observedDataSets))
       invisible(self)
     }
   )

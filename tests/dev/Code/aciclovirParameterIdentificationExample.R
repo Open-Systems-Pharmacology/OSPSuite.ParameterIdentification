@@ -28,7 +28,7 @@ observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurat
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
                                                             container = simulations$Aciclovir
 ))
-outputMapping$addObservedData(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
 outputMappings = c(outputMapping)
 
 task <- ParameterIdentification$new(simulations = simulations,
