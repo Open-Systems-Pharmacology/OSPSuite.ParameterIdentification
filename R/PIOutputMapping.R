@@ -135,6 +135,18 @@ PIOutputMapping <- R6::R6Class(
 
       # otherwise, we only assign data transformations to specific labels
       for (idx in seq_along(labels)) {
+        if (length(xFactors) == 1) {
+          xFactors <- rep(xFactors, length(labels))
+        }
+        if (length(xOffsets) == 1) {
+          xOffsets <- rep(xOffsets, length(labels))
+        }
+        if (length(yFactors) == 1) {
+          yFactors <- rep(yFactors, length(labels))
+        }
+        if (length(yOffsets) == 1) {
+          yOffsets <- rep(yOffsets, length(labels))
+        }
         private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[idx]]
         private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[idx]]
         private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[idx]]

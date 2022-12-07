@@ -39,3 +39,17 @@ test_that("If not set, the offsets and factors observe their default values", {
   expect_equal(outputMapping$dataTransformations$xOffsets, 0)
   expect_equal(outputMapping$dataTransformations$yOffsets, 0)
 })
+
+test_that("X-factors can be set in a dataset-specific manner, with labels", {
+  outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+                                                              container = simulations$Aciclovir))
+  outputMapping$setDataTransformations(labels = c("data1", "data2"), xFactors = c(2, 3))
+  expect_equal(outputMapping$dataTransformations$xFactors[["data1"]], 2)
+  expect_equal(outputMapping$dataTransformations$xFactors[["data2"]], 3)
+  expect_equal(outputMapping$dataTransformations$yFactors[["data1"]], 1)
+  expect_equal(outputMapping$dataTransformations$yFactors[["data2"]], 1)
+  expect_equal(outputMapping$dataTransformations$xOffsets[["data1"]], 0)
+  expect_equal(outputMapping$dataTransformations$xOffsets[["data2"]], 0)
+  expect_equal(outputMapping$dataTransformations$yOffsets[["data1"]], 0)
+  expect_equal(outputMapping$dataTransformations$yOffsets[["data2"]], 0)
+})
