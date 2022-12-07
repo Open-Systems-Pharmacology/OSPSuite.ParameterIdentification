@@ -288,8 +288,18 @@ ParameterIdentification <- R6::R6Class(
         simId <- .getSimulationContainer(private$.outputMappings[[idx]]$quantity)$id
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
-        obsVsPred$addSimulationResults(simulationResults[[simBatch$id]][[1]], names = simBatch$id, groups = simId)
+        for (resultIndex in seq_along(simulationResults[[simBatch$id]])) {
+          resultObject = simulationResults[[simBatch$id]][[resultIndex]]
+          resultId = names(simulationResults[[simBatch$id]])[[resultIndex]]
+          obsVsPred$addSimulationResults(resultObject, names = resultId, groups = simId)
+        }
         obsVsPred$addDataSets(private$.outputMappings[[idx]]$observedDataSets, groups = simId)
+        # apply data transformations stored in corresponding outputMapping
+        obsVsPred$setDataTransformations(forNames = names(private$.outputMappings[[idx]]$observedDataSets),
+                                         xOffsets = private$.outputMappings[[idx]]$dataTransformations$xOffsets,
+                                         xScaleFactors = private$.outputMappings[[idx]]$dataTransformations$xFactors,
+                                         yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
+                                         yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors)
       }
 
       return(obsVsPred)
