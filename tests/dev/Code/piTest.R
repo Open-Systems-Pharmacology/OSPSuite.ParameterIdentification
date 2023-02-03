@@ -1,7 +1,7 @@
 #library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../Models/Simulations")
+modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
 # Path to the folder where experimental data files are located
 dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
@@ -56,20 +56,20 @@ piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|We
   container = simulations$Vehicle.pkml
 ))
 # Add observed data. Multiple data can be added to the same mapping
-piOutputMapping$addObservedData(dataSets$`________IV_Vehicle`)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_Vehicle`)
 # Add the mapping to the list of all mappings
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`0.75 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(dataSets$`________IV_0.75mgKg_ADC`)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_0.75mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`2.5 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(dataSets$`________IV_2.50mgKg_ADC`)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_2.50mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 # piConfiguration$simulateSteadyState <- TRUE
