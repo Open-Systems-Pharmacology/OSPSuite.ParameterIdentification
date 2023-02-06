@@ -28,7 +28,9 @@ Depends:
 Imports:
     FME,
     rClr,
-    ospsuite.utils
+    ospsuite.utils,
+    hash,
+    R6
 Suggests: 
     knitr,
     rmarkdown,

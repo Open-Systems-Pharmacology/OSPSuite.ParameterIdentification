@@ -1,5 +1,6 @@
 context("PIOutputMapping")
-simulations <- c(loadSimulation("tests/dev/Models/Simulations/Aciclovir.pkml"))
+simFilePath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+simulations <- c(loadSimulation(simFilePath))
 names(simulations) <- "Aciclovir"
 
 test_that("Output mappings can be safely created with aciclovir simulations", {
@@ -12,8 +13,13 @@ outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Peripheral
   container = simulations$Aciclovir
 ))
 
-test_that("A newly created output mapping has an empty list for its data transformations", {
-  expect_equal(outputMapping$dataTransformations, list())
+test_that("A newly created output mapping has default data transformations", {
+  expect_equal(outputMapping$dataTransformations, list(
+    xOffsets = 0,
+    yOffsets = 0,
+    xFactors = 1,
+    yFactors = 1
+  ))
 })
 
 test_that("X-offsets can be set up across different datasets", {
