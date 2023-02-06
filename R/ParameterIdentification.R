@@ -23,7 +23,7 @@ ParameterIdentification <- R6::R6Class(
     #' @field parameters List of `PIParameters` objects to be optimized. Read-only
     parameters = function(value) {
       if (missing(value)) {
-        private$.parameters
+        private$.piParameters
       } else {
         stop(messages$errorPropertyReadOnly("parameters"))
       }
@@ -64,12 +64,22 @@ ParameterIdentification <- R6::R6Class(
     # variable molecules/parameters, and values being the start values.
     .variableMolecules = NULL,
     .variableParameters = NULL,
-    .parameters = NULL,
+    # List of PIParameter objects defining the simulation parameters to be
+    # optimized
+    .piParameters = NULL,
+    # List of PIOutputMapping objects
     .outputMappings = NULL,
+    # PIConfiguration
     .configuration = NULL,
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
+    .iteration = 0,
+    # possible target functions for minimization and their user-friendly names
+    .targetFunctionNames = list(
+      "lsq" = ".LSQ", "least squares" = ".LSQ",
+      "FME_modCost" = ".FMEmodCost"
+    ),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -115,25 +125,34 @@ ParameterIdentification <- R6::R6Class(
       # Add time points to the output schema that are present in the observed data.
       # Also add output quantities.
       for (outputMapping in private$.outputMappings) {
-        # The parent simulation of the quantity of the mapping.
+        # ID of the and the parent simulation of the quantity of the mapping.
         simId <- .getSimulationContainer(outputMapping$quantity)$id
         simulation <- private$.simulations[[simId]]
         # Add the quantity to the outputs of the simulations.
         ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
         # Add time points present in the observed data of this mapping.
-        for (observedData in outputMapping$observedXYData) {
+        for (dataset in outputMapping$observedDataSets) {
           # Time values can be stored in units different from the base unit
           # and must be converted to the base unit first.
+          label <- dataset$name
+          xFactor <- outputMapping$dataTransformations$xFactors
+          if (length(xFactor) != 1) {
+            xFactor <- xFactor[[label]]
+          }
+          xOffset <- outputMapping$dataTransformations$xOffsets
+          if (length(xOffset) != 1) {
+            xOffset <- xOffset[[label]]
+          }
           xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (observedData$xValues + observedData$xOffset) * observedData$xFactor,
-            unit = observedData$xUnit
+            values = (dataset$xValues + xOffset) * xFactor,
+            unit = dataset$xUnit
           )
           simulation$outputSchema$addTimePoints(xVals)
         }
       }
 
       # Add parameters that will be optimized to the list of variable parameters
-      for (piParameter in private$.parameters) {
+      for (piParameter in private$.piParameters) {
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
           # Set the current value of this parameter to the start value of the
@@ -181,13 +200,35 @@ ParameterIdentification <- R6::R6Class(
       # }
     },
 
-    # Perform one iteration of the optimization workflow and calculate the residuals
-    # @param currVals Numerical vector of the parameter values to be applied
-    # @return Residuals, based on the selected objective function
-    .iterate = function(currVals) {
-      # Simulate with new parameter values and return the data mappings from which the error will be calculated.
-      dataMappings <- private$.evaluate(currVals)
-      return(private$.calculateResiduals(dataMappings))
+    # Calculate the target function that is going to be minimized during
+    # parameter estimation. This can be a sum of residuals or a more complex function,
+    # such as a likelihood function
+    .targetFunction = function(currVals) {
+      obsVsPred <- private$.evaluate(currVals)
+
+      if (private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames)) {
+        if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".LSQ") {
+          target <- private$.LSQ(obsVsPred)
+          totalError <- target
+        } else if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".FMEmodCost") {
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPred$toDataFrame())
+          simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
+          observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
+          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
+
+          target <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = NULL)
+          totalError <- target$model
+        }
+
+        if (private$.configuration$printIterationFeedback) {
+          private$.iteration <- private$.iteration + 1
+          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(totalError, 3), "\n"))
+        }
+        return(target)
+      }
+      warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
+      return(NA_real_)
     },
 
     # Apply final identified values to simulation parameter objects.
@@ -199,20 +240,22 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(values)) {
         # The order of the values corresponds to the order of PIParameters in
         # $parameters list
-        piParameter <- private$.parameters[[idx]]
+        piParameter <- private$.piParameters[[idx]]
         piParameter$setValue(values[[idx]])
       }
     },
 
     # Evaluate all simulations with given parameter values
     # @param currVals Numerical vector of the parameter values to be applied
-    # @return A list of \code{DataMapping} objects - one DataMapping for one output mapping.
+    # @return An object of `DataCombined` class that includes values simulated
+    # with the given parameters, and corresponding datasets with observed data
     .evaluate = function(currVals) {
+      obsVsPred <- DataCombined$new()
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
         # $parameters list
-        piParameter <- private$.parameters[[idx]]
+        piParameter <- private$.piParameters[[idx]]
         # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
@@ -254,44 +297,41 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
-      # Create data mappings for each output mapping
-      dataMappings <- lapply(private$.outputMappings, function(x) {
+      for (idx in seq_along(private$.outputMappings)) {
+        currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
-        simId <- .getSimulationContainer(x$quantity)$id
-        # Find the simulation batch that corrensponds to the simulation
+        simId <- .getSimulationContainer(currOutputMapping$quantity)$id
+        # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
-
-        # Create new DataMapping
-        dataMapping <- esqlabsRLegacy::DataMapping$new()
-        # Add simulation results to the mapping.
-        # Selecting the first entry from simulationResults[[simBatch$id]] as
-        # in this setting, every simulation batch only has one simulated results.
-        dataMapping$addModelOutputs(
-          paths = x$quantity$path,
-          simulationResults = simulationResults[[simBatch$id]][[1]],
-          labels = "Simulation",
-          groups = "PI"
+        # Construct group names out of output path and simulation id
+        groupName <- paste0(currOutputMapping$quantity$path, "_", simId)
+        # In each iteration, only one values set per simulation batch is simulated.
+        # Therefore we always need the first results entry
+        resultObject <- simulationResults[[simBatch$id]][[1]]
+        resultId <- names(simulationResults[[simBatch$id]])[[1]]
+        obsVsPred$addSimulationResults(resultObject,
+          quantitiesOrPaths = currOutputMapping$quantity$path,
+          names = resultId, groups = groupName
         )
 
-        # Manipulate simulated results with a used defined function
-        if (!is.null(x$transformResultsFunction)) {
-          xyData <- dataMapping$xySeries[["Simulation"]]
-          transformedResults <- x$transformResultsFunction(xyData$xValues, xyData$yValues)
+        obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
+        # apply data transformations stored in corresponding outputMapping
+        obsVsPred$setDataTransformations(
+          forNames = names(private$.outputMappings[[idx]]$observedDataSets),
+          xOffsets = private$.outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = private$.outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
+        )
+      }
 
-          xyData$xValues <- transformedResults$xVals
-          xyData$yValues <- transformedResults$yVals
-        }
+      return(obsVsPred)
+    },
 
-        # Add observed data
-        for (observedData in x$observedXYData) {
-          dataMapping$addXYData(
-            XYData = observedData,
-            groups = "PI"
-          )
-        }
-        return(dataMapping)
-      })
-      return(dataMappings)
+    # Calculate the least-squares measure of discrepancy between observed and predicted data
+    .LSQ = function(obsVsPred) {
+      residuals <- calculateResiduals(obsVsPred, scaling = "lin")
+      return(sum(residuals$residualValues**2, na.rm = TRUE))
     },
 
     # Runs the optimization algorithm and returns the results produced by the
@@ -307,61 +347,7 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      results <- FME::modFit(f = private$.iterate, p = startValues, lower = lower, upper = upper, method = "bobyqa")
-    },
-
-    # Calculate residuals between simulated and observed values.
-    #
-    # @param dataMappingList A \code{DataMapping} or a list of \code{DataMapping} objects.
-    #
-    # @return Vector of residuals
-    .calculateResiduals = function(dataMappingList) {
-      dataMappingList <- ospsuite.utils::toList(dataMappingList)
-      cost <- NULL
-      for (dataMapping in dataMappingList) {
-        simulatedResult <- list()
-
-        combinedResults <- lapply(dataMapping$xySeries, function(xySeries) {
-          if (xySeries$dataType == XYDataTypes$Simulated) {
-            simulatedResult <<- xySeries
-            return()
-          }
-          # Collapse all observed data
-          return(list(
-            dataPointsX = xySeries$xValuesProcessed(dataMapping$xUnit),
-            dataPointsY = xySeries$yValuesProcessed(dataMapping$yUnit),
-            dataError = xySeries$yErrorProcessed(dataMapping$yUnit)
-          ))
-        })
-
-        dataPointsX <- unlist(lapply(combinedResults, function(x) {
-          x$dataPointsX
-        }), use.names = FALSE)
-        dataPointsY <- unlist(lapply(combinedResults, function(x) {
-          x$dataPointsY
-        }), use.names = FALSE)
-        dataError <- unlist(lapply(combinedResults, function(x) {
-          x$dataError
-        }), use.names = FALSE)
-
-        # Calculate the distance between each point of the observed data to the simulated result
-        modelDf <- data.frame("Time" = simulatedResult$xValues, "Values" = simulatedResult$yValues)
-        obsDf <- data.frame("Time" = dataPointsX, "Values" = dataPointsY, "Error" = dataError)
-
-        # Only use error if it does not contain 0, otherwise the cost function fails
-        err <- "Error"
-        if (any(dataError == 0)) {
-          err <- NULL
-          obsDf$Error <- NULL
-        }
-        cost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = cost, err = err)
-      }
-
-      if (private$.configuration$printIterationFeedback) {
-        print(paste0("Current error: ", cost$model))
-      }
-
-      return(cost)
+      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
     }
   ),
   public = list(
@@ -396,12 +382,11 @@ ParameterIdentification <- R6::R6Class(
       private$.simulations <- vector("list", length(simulations))
       for (idx in seq_along(simulations)) {
         simulation <- simulations[[idx]]
-        id <- simulation$root$id
         private$.simulations[[idx]] <- simulation
-        ids[[idx]] <- id
+        ids[[idx]] <- simulation$root$id
       }
       names(private$.simulations) <- ids
-      private$.parameters <- parameters
+      private$.piParameters <- parameters
       private$.outputMappings <- c(outputMappings)
 
       private$.variableMolecules <-
@@ -430,6 +415,8 @@ ParameterIdentification <- R6::R6Class(
       # variables of the batches.
       private$.batchInitialization()
       # Run optimization algorithm
+      # Reset iteration counter
+      private$.iteration <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, simulationState)
@@ -465,11 +452,17 @@ ParameterIdentification <- R6::R6Class(
       parValues <- unlist(lapply(self$parameters, function(x) {
         x$currValue
       }), use.names = FALSE)
-      dataMappings <- private$.evaluate(parValues)
+      dataCombined <- private$.evaluate(parValues)
 
-      lapply(dataMappings, function(x) {
-        x$plot()
-      })
+      # Create figures and plot
+      plotConfiguration <- DefaultPlotConfiguration$new()
+      indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
+      plotConfiguration$legendPosition <- "none"
+      obsVsSim <- plotObservedVsSimulated(dataCombined, plotConfiguration)
+      resVsTime <- plotResidualsVsTime(dataCombined, plotConfiguration)
+      plotGridConfiguration <- PlotGridConfiguration$new()
+      plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
+      multiPlot <- plotGrid(plotGridConfiguration)
 
       # Mark that the batches have been initialized and restore simulation state
       private$.needBatchInitialization <- FALSE
@@ -477,7 +470,7 @@ ParameterIdentification <- R6::R6Class(
         .restoreSimulationState(private$.simulations, simulationState)
       }
 
-      invisible(self)
+      return(multiPlot)
     },
 
     #' @description
@@ -488,7 +481,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Simulations", unlist(lapply(private$.simulations, function(x) {
         x$sourceFile
       }), use.names = FALSE))
-      private$printLine("Number of parameters", length(private$.parameters))
+      private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)

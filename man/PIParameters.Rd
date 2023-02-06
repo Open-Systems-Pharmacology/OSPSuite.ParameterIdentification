@@ -13,7 +13,7 @@ A parameter to be optimized in a parameter identification routine
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{parameters}}{List of parameter object. Adding or removing parameters is currently not supported.}
+\item{\code{parameters}}{List of parameter object. Adding or removing parameters is not supported.}
 
 \item{\code{currValue}}{Current value of the parameters as used in the
 simulation. The unit of the value is \code{PIParameters$unit}.}

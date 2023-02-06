@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
 #' @description An object storing configuration for the parameter identification
-#' @import R6 ospsuite.utils
+#' @import ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
@@ -52,13 +52,25 @@ PIConfiguration <- R6::R6Class(
         validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
         private$.simulationRunOptions <- value
       }
+    },
+
+    #' @field targetFunctionType a string describing the target function for
+    #' parameter estimation. Can be "lsq" or "mle".
+    targetFunctionType = function(value) {
+      if (missing(value)) {
+        private$.targetFunctionType
+      } else {
+        validateIsCharacter(value)
+        private$.targetFunctionType <- value
+      }
     }
   ),
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
     .printIterationFeedback = NULL,
-    .simulationRunOptions = NULL
+    .simulationRunOptions = NULL,
+    .targetFunctionType = NULL
   ),
   public = list(
     #' @description
@@ -68,6 +80,7 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printIterationFeedback <- FALSE
+      private$.targetFunctionType <- "lsq"
     },
 
     #' @description
@@ -78,6 +91,7 @@ PIConfiguration <- R6::R6Class(
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.printIterationFeedback)
+      private$printLine("Target function ", private$.targetFunctionType)
       invisible(self)
     }
   )
