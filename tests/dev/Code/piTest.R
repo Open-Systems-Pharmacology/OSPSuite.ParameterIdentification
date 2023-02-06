@@ -1,4 +1,4 @@
-#library(ospsuite.parameteridentification)
+# library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
 modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
@@ -7,7 +7,7 @@ dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-###########Load observed data########
+########### Load observed data########
 dataSheets <- c("Boswell_2012")
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
@@ -32,6 +32,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$targetFunctionType <- "FME_modCost"
 
 ######### Define parameters to optimize#######
 parameters <- list()
@@ -39,14 +40,6 @@ parameterPaths <- c(
   "Organism|Tumor|Intracellular|k1",
   "Organism|Tumor|Intracellular|k2"
 )
-for (parameterPath in parameterPaths) {
-  modelParams <- list()
-  for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
-  }
-  piParameter <- PIParameters$new(parameters = modelParams)
-  parameters <- c(parameters, piParameter)
-}
 
 ######### Define otput mappings#######
 piOutputMappings <- list()
@@ -72,24 +65,6 @@ piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|We
 piOutputMapping$addObservedDataSets(dataSets$`________IV_2.50mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-# piConfiguration$simulateSteadyState <- TRUE
-# Create new parameter identification. This PI would optimize all three simulations.
-pi <- ParameterIdentification$new(
-  simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
-  configuration = piConfiguration
-)
-# Plot results before optimization
-pi$plotCurrentResults()
-
-gc()
-profvis::profvis({
-  results <- pi$run()
-})
-pi$plotCurrentResults()
-
-
-# OR
-
 # FOR PERFORMANCE REASONS, OPTIMIZE WITH ONE SIMULATION ONLY.
 # IF YOU WANT TO USE ALL THREE SIMULATIONS, USE THE `parameters` LIST
 # CREATED ABOVE AND PASS ALL THREE SIMULATIONS AND MAPPINGS
@@ -105,7 +80,50 @@ pi <- ParameterIdentification$new(
 )
 pi$plotCurrentResults()
 
-results <- pi$run()
+# 45 iterations
+# user  system elapsed
+# 228.65    2.14  239.86
+system.time(
+  results <- pi$run()
+)
+gc()
+# 177k ms
+# 197 mb
+profvis::profvis({
+  results <- pi$run()
+})
 print(results)
 
+pi$plotCurrentResults()
+
+### All simulations###
+
+for (parameterPath in parameterPaths) {
+  modelParams <- list()
+  for (simulation in simulations) {
+    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
+  }
+  piParameter <- PIParameters$new(parameters = modelParams)
+  parameters <- c(parameters, piParameter)
+}
+
+# piConfiguration$simulateSteadyState <- TRUE
+# Create new parameter identification. This PI would optimize all three simulations.
+pi <- ParameterIdentification$new(
+  simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
+  configuration = piConfiguration
+)
+# Plot results before optimization
+pi$plotCurrentResults()
+
+# user  system elapsed
+# 1652.36   13.61  815.54
+system.time(
+  results <- pi$run()
+)
+
+gc()
+profvis::profvis({
+  results <- pi$run()
+})
 pi$plotCurrentResults()

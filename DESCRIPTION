@@ -33,6 +33,6 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr

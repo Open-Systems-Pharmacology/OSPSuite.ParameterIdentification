@@ -6,7 +6,7 @@
 \title{PIOutputMapping}
 \description{
 An object that links together quantities from the simulation
-and observed data. This object is passed to the ParameterIdentification
+to observed data. This object is passed to the ParameterIdentification
 objects
 }
 \section{Super class}{
@@ -15,16 +15,10 @@ objects
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{observedData}}{Named list of \code{DataSet} objects that will be compared
+\item{\code{observedDataSets}}{Named list of \code{DataSet} objects that will be compared
 to simulation results.}
 
-\item{\code{xFactors}}{Named list of numeric values}
-
-\item{\code{yFactors}}{Named list of numeric values}
-
-\item{\code{xOffsets}}{Named list of numeric values}
-
-\item{\code{yOffsets}}{Named list of numeric values}
+\item{\code{dataTransformations}}{a named list of factors and offsets}
 
 \item{\code{quantity}}{Simulation quantities which values are matched to the
 observed data}
@@ -43,12 +37,9 @@ of the simulated result. The function must return a named list with key
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-PIOutputMapping-new}{\code{PIOutputMapping$new()}}
-\item \href{#method-PIOutputMapping-addObservedData}{\code{PIOutputMapping$addObservedData()}}
-\item \href{#method-PIOutputMapping-removeObservedData}{\code{PIOutputMapping$removeObservedData()}}
-\item \href{#method-PIOutputMapping-setXFactors}{\code{PIOutputMapping$setXFactors()}}
-\item \href{#method-PIOutputMapping-setYFactors}{\code{PIOutputMapping$setYFactors()}}
-\item \href{#method-PIOutputMapping-setXOffsets}{\code{PIOutputMapping$setXOffsets()}}
-\item \href{#method-PIOutputMapping-setYOffsets}{\code{PIOutputMapping$setYOffsets()}}
+\item \href{#method-PIOutputMapping-addObservedDataSets}{\code{PIOutputMapping$addObservedDataSets()}}
+\item \href{#method-PIOutputMapping-removeObservedDataSet}{\code{PIOutputMapping$removeObservedDataSet()}}
+\item \href{#method-PIOutputMapping-setDataTransformations}{\code{PIOutputMapping$setDataTransformations()}}
 \item \href{#method-PIOutputMapping-print}{\code{PIOutputMapping$print()}}
 \item \href{#method-PIOutputMapping-clone}{\code{PIOutputMapping$clone()}}
 }
@@ -75,11 +66,11 @@ Add observed data as \code{DataSet} objects
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-addObservedData"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-addObservedData}{}}}
-\subsection{Method \code{addObservedData()}}{
+\if{html}{\out{<a id="method-PIOutputMapping-addObservedDataSets"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-addObservedDataSets}{}}}
+\subsection{Method \code{addObservedDataSets()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedData(data)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedDataSets(data)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -98,12 +89,12 @@ it will be overwritten.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-removeObservedData"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-removeObservedData}{}}}
-\subsection{Method \code{removeObservedData()}}{
+\if{html}{\out{<a id="method-PIOutputMapping-removeObservedDataSet"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-removeObservedDataSet}{}}}
+\subsection{Method \code{removeObservedDataSet()}}{
 Remove the observed data.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$removeObservedData(label)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$removeObservedDataSet(label)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -115,69 +106,32 @@ Remove the observed data.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-setXFactors"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-setXFactors}{}}}
-\subsection{Method \code{setXFactors()}}{
-Set the X-factors
+\if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
+\subsection{Method \code{setDataTransformations()}}{
+Set the data transformations
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setXFactors(labels, factors)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setDataTransformations(
+  labels = NULL,
+  xOffsets = 0,
+  yOffsets = 0,
+  xFactors = 1,
+  yFactors = 1
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{labels}}{A list of labels}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-setYFactors"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-setYFactors}{}}}
-\subsection{Method \code{setYFactors()}}{
-Set the Y-factors
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setYFactors(labels, factors)}\if{html}{\out{</div>}}
-}
+\item{\code{labels}}{A list of labels, each corresponding to one of the datasets. If labels are not specified, data transformations are set across all datasets}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{labels}}{A list of labels}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-setXOffsets"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-setXOffsets}{}}}
-\subsection{Method \code{setXOffsets()}}{
-Set the X-offsets
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setXOffsets(labels, offsets)}\if{html}{\out{</div>}}
-}
+\item{\code{xOffsets}}{A numeric list or a value of X-offsets}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{labels}}{A list of labels}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIOutputMapping-setYOffsets"></a>}}
-\if{latex}{\out{\hypertarget{method-PIOutputMapping-setYOffsets}{}}}
-\subsection{Method \code{setYOffsets()}}{
-Set the Y-offsets
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setYOffsets(labels, offsets)}\if{html}{\out{</div>}}
-}
+\item{\code{yOffsets}}{A numeric list or a value of Y-offsets}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{labels}}{A list of labels}
+\item{\code{xFactors}}{A numeric list or a value of X-factors}
+
+\item{\code{yFactors}}{A numeric list or a value of Y-factors}
 }
 \if{html}{\out{</div>}}
 }

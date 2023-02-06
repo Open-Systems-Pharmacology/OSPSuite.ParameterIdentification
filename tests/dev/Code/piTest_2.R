@@ -1,28 +1,31 @@
-library(ospsuite.parameteridentification)
+# library(ospsuite.parameteridentification)
 library(esqlabsRLegacy)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../Models/Simulations")
+modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
 # Path to the folder where experimental data files are located
 dataFolder <- file.path(getwd(), "../Data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-# DataConfiguration is an object that describes how to read observed data from an excel file
-dataConfiguration <- DataConfiguration$new(
-  dataFolder = dataFolder,
-  dataFile = dataFile,
-  compoundPropertiesFile = NULL,
-  dataSheets = c(
-    "Backer_1989",
-    "McClain_1988",
-    "Marshall_1984",
-    "DoseResponse",
-    "Cedersund_2008"
-  )
+########### Load observed data########
+dataSheets <- c(
+  "Backer_1989",
+  "McClain_1988",
+  "Marshall_1984",
+  "DoseResponse",
+  "Cedersund_2008"
 )
 
-observedData <- readOSPSTimeValues(dataConfiguration)
+importerConfiguration <- ospsuite::loadDataImporterConfiguration(
+  configurationFilePath = file.path(getwd(), "../Data", "dataImporter_configuration.xml")
+)
+importerConfiguration$sheets <- dataSheets
+
+dataSets <- ospsuite::loadDataSetsFromExcel(
+  xlsFilePath = file.path(dataFolder, dataFile),
+  importerConfigurationOrPath = importerConfiguration
+)
 
 ####### LOAD SIMULATIONS and put them in a named list######
 simNames <- c(
@@ -37,6 +40,7 @@ names(simulations) <- simNames
 
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
+piConfiguration$targetFunctionType <- "FME_modCost"
 piConfiguration$simulateSteadyState <- TRUE
 piConfiguration$steadyStateTime <- 1000
 

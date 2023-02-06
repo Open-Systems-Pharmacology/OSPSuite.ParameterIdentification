@@ -9,7 +9,7 @@ piConfiguration$printIterationFeedback <- TRUE
 piConfiguration$targetFunctionType <- "lsq"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
-parameters = list()
+parameters <- list()
 for (parameterPath in parameterPaths) {
   modelParams <- list()
   for (simulation in simulations) {
@@ -19,20 +19,22 @@ for (parameterPath in parameterPaths) {
   parameters <- c(parameters, piParameter)
 }
 
-filePath = "tests/data/AciclovirLaskinData.xlsx"
+filePath <- "tests/data/AciclovirLaskinData.xlsx"
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
 dataConfiguration$sheets <- "Laskin 1982.Group A"
 dataConfiguration$namingPattern <- "{Source}.{Sheet}"
 observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
 
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-                                                            container = simulations$Aciclovir
+  container = simulations$Aciclovir
 ))
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
-outputMappings = c(outputMapping)
+outputMappings <- c(outputMapping)
 
-task <- ParameterIdentification$new(simulations = simulations,
-                                    parameters = parameters,
-                                    outputMappings = outputMapping,
-                                    configuration = piConfiguration)
+task <- ParameterIdentification$new(
+  simulations = simulations,
+  parameters = parameters,
+  outputMappings = outputMapping,
+  configuration = piConfiguration
+)
 task_results <- task$run()

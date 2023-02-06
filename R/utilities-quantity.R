@@ -11,17 +11,18 @@
 #' @return List of quantity paths that are not defined by explicit formula.
 #' @keywords internal
 .removeFormulaPaths <- function(paths, simulation, stopIfNotFound = TRUE) {
-  unlist(lapply(paths, function(path) {
-    isFormulaExplicit <- ospsuite::isExplicitFormulaByPath(
-      path = enc2utf8(path),
-      simulation = simulation,
-      stopIfNotFound = stopIfNotFound
-    )
-    if (isFormulaExplicit) {
-      return(NULL)
-    }
-    return(path)
-  }),
-  use.names = FALSE
+  unlist(
+    lapply(paths, function(path) {
+      isFormulaExplicit <- ospsuite::isExplicitFormulaByPath(
+        path = enc2utf8(path),
+        simulation = simulation,
+        stopIfNotFound = stopIfNotFound
+      )
+      if (isFormulaExplicit) {
+        return(NULL)
+      }
+      return(path)
+    }),
+    use.names = FALSE
   )
 }
