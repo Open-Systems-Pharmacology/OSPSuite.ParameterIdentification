@@ -348,6 +348,12 @@ ParameterIdentification <- R6::R6Class(
       }), use.names = FALSE)
 
       results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+      # additional calculation of confidence intervals
+      sigma <- summary(results)[["par"]][,"Std. Error"]
+      results$lwr <- results$par - 1.96 * sigma
+      results$upr <- results$par + 1.96 * sigma
+      results$cv <- sigma / results$par * 100
+      return(results)
     }
   ),
   public = list(
