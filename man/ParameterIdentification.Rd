@@ -32,6 +32,7 @@ mapping assigns a set of observed data to a simulation output}
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
 \item \href{#method-ParameterIdentification-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
+\item \href{#method-ParameterIdentification-plotParameterValues}{\code{ParameterIdentification$plotParameterValues()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -101,6 +102,26 @@ Runs all simulations with current parameter values and creates
 plots of every output mapping
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ParameterIdentification-plotParameterValues"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotParameterValues}{}}}
+\subsection{Method \code{plotParameterValues()}}{
+Plot the comparison between the simulation (with a set of parameters
+supplied as the argument) and the observed data
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotParameterValues(par, config)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{par}}{current vector of parameters}
+
+\item{\code{config}}{plot configuration to be passed to \code{{ospsuite}} plotting functions}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}

@@ -349,7 +349,7 @@ ParameterIdentification <- R6::R6Class(
 
       results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
       # additional calculation of confidence intervals
-      sigma <- summary(results)[["par"]][,"Std. Error"]
+      sigma <- as.numeric(summary(results)[["par"]][,"Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
       results$cv <- sigma / results$par * 100
@@ -484,7 +484,7 @@ ParameterIdentification <- R6::R6Class(
     #' supplied as the argument) and the observed data
     #' @param par current vector of parameters
     #' @param config plot configuration to be passed to `{ospsuite}` plotting functions
-    plotParameterValues(par, config) {
+    plotParameterValues = function(par, config) {
       plotIndividualTimeProfile(private$.evaluate(par), defaultPlotConfiguration = config)
     },
 
