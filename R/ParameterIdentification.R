@@ -480,6 +480,15 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
+    #' Plot the comparison between the simulation (with a set of parameters
+    #' supplied as the argument) and the observed data
+    #' @param par current vector of parameters
+    #' @param config plot configuration to be passed to `{ospsuite}` plotting functions
+    plotParameterValues(par, config) {
+      plotIndividualTimeProfile(private$.evaluate(par), defaultPlotConfiguration = config)
+    },
+
+    #' @description
     #' Print the object to the console
     #' @param ... Rest arguments.
     print = function(...) {
