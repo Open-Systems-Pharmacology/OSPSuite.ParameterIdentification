@@ -347,7 +347,10 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+      browser()
+
+      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "Nelder-Mead", control = list(maxit = 50))
+      results <- FME::modFit(f = private$.targetFunction, p = results$par, lower = lower, upper = upper, method = "bobyqa")
       # additional calculation of confidence intervals
       sigma <- as.numeric(summary(results)[["par"]][,"Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
