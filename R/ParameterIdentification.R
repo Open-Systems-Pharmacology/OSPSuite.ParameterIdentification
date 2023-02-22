@@ -347,10 +347,11 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      results <- GenSA::GenSA(par = startValues, fn = private$.targetFunction, lower = lower, upper = upper, control = list(max.time = 60))
+      SAresults <- GenSA::GenSA(par = startValues, fn = private$.targetFunction, lower = lower, upper = upper, control = list(max.time = 60))
       #results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "SANN")
 	    #results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "Nelder-Mead", control = list(maxit = 50))
-      #results <- FME::modFit(f = private$.targetFunction, p = results$par, lower = lower, upper = upper, method = "bobyqa")
+      results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa", control = list(maxfun = 10))
+      results$SAcounts = SAresults$counts
       # additional calculation of confidence intervals
       sigma <- as.numeric(summary(results)[["par"]][,"Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
