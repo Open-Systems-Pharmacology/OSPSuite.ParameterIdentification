@@ -347,6 +347,7 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
+      browser()
       SAresults <- GenSA::GenSA(par = startValues, fn = private$.targetFunction, lower = lower, upper = upper, control = list(max.time = 60))
       #results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "SANN")
 	    #results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "Nelder-Mead", control = list(maxit = 50))
