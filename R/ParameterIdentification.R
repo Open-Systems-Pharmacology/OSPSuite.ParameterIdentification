@@ -347,8 +347,9 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
+      message("Running GenSA and BOBYQA")
       SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = list(max.time = 10, verbose = TRUE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
-      results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa", control = list(maxfun = 10))
+      results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa")
       results$GenSAcounts = SAresults$counts
       # additional calculation of confidence intervals
       sigma <- as.numeric(summary(results)[["par"]][,"Std. Error"])
