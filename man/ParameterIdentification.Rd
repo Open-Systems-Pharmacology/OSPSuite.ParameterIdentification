@@ -22,7 +22,8 @@ IDs of the root container of the simulation}
 \item{\code{configuration}}{An object of \code{PIConfiguration}}
 
 \item{\code{outputMappings}}{List of \code{PIOutputMapping} objects. Each
-mapping assigns a set of observed data to a simulation output}
+mapping assigns a set of observed data to a simulation output
+Evaluate all simulations with given parameter values}
 }
 \if{html}{\out{</div>}}
 }
@@ -64,11 +65,15 @@ is used.}
 
 \item{\code{configuration}}{Optional. Object of type \code{PIConfiguration} defining
 further options of the parameter identification. If no \code{PIConfiguration} is passed, a default one}
+
+\item{\code{currVals}}{Numerical vector of the parameter values to be applied}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new \code{ParameterIdentification} object.
+An list of objects of \code{DataCombined} class that includes values simulated
+with the given parameters, and corresponding datasets with observed data.
+Returns one \code{DataCombined} object for each output mapping.
 }
 }
 \if{html}{\out{<hr>}}
