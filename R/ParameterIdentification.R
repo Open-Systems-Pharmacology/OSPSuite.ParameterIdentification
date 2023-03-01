@@ -228,7 +228,7 @@ ParameterIdentification <- R6::R6Class(
             } else if (private$.outputMappings[[idx]]$scaling == "log") {
               UNITS_EPSILON <- ospsuite::toUnit(
                 quantityOrDimension = simulated$yDimension[[1]],
-                values = getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+                values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
                 targetUnit = simulated$yUnit[[1]],
                 molWeight = 1
               )
