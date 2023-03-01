@@ -1,18 +1,3 @@
-.log_safe <- function(x, base = 10, epsilon = 1e-20) {
-  x <- sapply(X = x, function(element) {
-    element <- ospsuite.utils::toMissingOfType(element, type = "double")
-    if (is.na(element)) {
-      return(NA_real_)
-    } else if (element < epsilon) {
-      return(log(epsilon, base = base))
-    } else {
-      return(log(element, base = base))
-    }
-  })
-
-  return(x)
-}
-
 #' @title ParameterIdentification
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
@@ -224,7 +209,8 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames)) {
         if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".LSQ") {
           target <- private$.LSQ(obsVsPred)
-          totalError <- target
+          runningError <- target
+          runningCost <- target
         } else if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".FMEmodCost") {
           runningCost <- NULL
           # matching output mappings to the results of the .evaluate function
@@ -233,20 +219,21 @@ ParameterIdentification <- R6::R6Class(
             simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
             observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
             # replacing values below LLOQ with LLOQ / 2
-            simulated[(!is.na(simulated$lloq) & (simulated$yValues < simulated$lloq)), "yValues"] <- simulated[(!is.na(simulated$lloq) & (simulated$yValues < simulated$lloq)), "lloq"] / 2
+            # get LLOQ of observed
+            lloq <- min(observed$lloq, na.rm = TRUE)
+            simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
             if (private$.outputMappings[[idx]]$scaling == "lin") {
               modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
               obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
             } else if (private$.outputMappings[[idx]]$scaling == "log") {
-              LOG_SAFE_EPSILON <- 1e-20
               UNITS_EPSILON <- ospsuite::toUnit(
                 quantityOrDimension = simulated$yDimension[[1]],
-                values = LOG_SAFE_EPSILON,
+                values = getOSPSuiteSetting("LOG_SAFE_EPSILON"),
                 targetUnit = simulated$yUnit[[1]],
                 molWeight = 1
               )
-              modelDf <- data.frame("Time" = simulated$xValues, "Values" = .log_safe(simulated$yValues, epsilon = UNITS_EPSILON))
-              obsDf <- data.frame("Time" = observed$xValues, "Values" = .log_safe(observed$yValues, epsilon = UNITS_EPSILON))
+              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite:::.log_safe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite:::.log_safe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
             }
             runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
             runningError <- runningCost$model
@@ -283,7 +270,7 @@ ParameterIdentification <- R6::R6Class(
     #' with the given parameters, and corresponding datasets with observed data.
     #' Returns one `DataCombined` object for each output mapping.
     .evaluate = function(currVals) {
-      obsVsPredList <- list()
+      obsVsPredList <- vector("list", length(private$.outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -338,7 +325,7 @@ ParameterIdentification <- R6::R6Class(
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
         # Construct group names out of output path and simulation id
-        groupName <- paste0(currOutputMapping$quantity$path, "_", simId)
+        groupName <- currOutputMapping$quantity$path
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
@@ -357,7 +344,7 @@ ParameterIdentification <- R6::R6Class(
           yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
           yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
         )
-        obsVsPredList <- c(obsVsPredList, obsVsPred)
+        obsVsPredList[[idx]] <- obsVsPred
       }
 
       return(obsVsPredList)
@@ -500,13 +487,20 @@ ParameterIdentification <- R6::R6Class(
 
       # Create figures and plot
       plotConfiguration <- DefaultPlotConfiguration$new()
-      indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
-      plotConfiguration$legendPosition <- "none"
-      obsVsSim <- plotObservedVsSimulated(dataCombined, plotConfiguration)
-      resVsTime <- plotResidualsVsTime(dataCombined, plotConfiguration)
-      plotGridConfiguration <- PlotGridConfiguration$new()
-      plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
-      multiPlot <- plotGrid(plotGridConfiguration)
+      #Workaroud for a bug in TLF package https://github.com/Open-Systems-Pharmacology/TLF-Library/issues/413
+      plotConfiguration$pointsShape <- plotConfiguration$pointsShape[1:14]
+
+      multiPlot <- lapply(seq_along(dataMappings), function(idx){
+        scaling <- private$.outputMappings[[idx]]$scaling
+        plotConfiguration$yAxisScale <- scaling
+        indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
+        plotConfiguration$legendPosition <- "none"
+        obsVsSim <- plotObservedVsSimulated(dataCombined, plotConfiguration)
+        resVsTime <- plotResidualsVsTime(dataCombined, plotConfiguration)
+        plotGridConfiguration <- PlotGridConfiguration$new()
+        plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
+        return(plotGrid(plotGridConfiguration))
+      })
 
       # Mark that the batches have been initialized and restore simulation state
       private$.needBatchInitialization <- FALSE
