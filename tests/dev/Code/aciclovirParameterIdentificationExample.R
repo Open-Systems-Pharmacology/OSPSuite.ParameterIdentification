@@ -6,7 +6,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
-piConfiguration$targetFunctionType <- "lsq"
+piConfiguration$targetFunctionType <- "FME_modCost"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -29,6 +29,7 @@ outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Peripheral
   container = simulations$Aciclovir
 ))
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+outputMapping$scaling <- "log"
 outputMappings <- c(outputMapping)
 
 task <- ParameterIdentification$new(

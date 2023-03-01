@@ -1,3 +1,18 @@
+.log_safe <- function(x, base = 10, epsilon = 1e-20) {
+  x <- sapply(X = x, function(element) {
+    element <- ospsuite.utils::toMissingOfType(element, type = "double")
+    if (is.na(element)) {
+      return(NA_real_)
+    } else if (element < epsilon) {
+      return(log(epsilon, base = base))
+    } else {
+      return(log(element, base = base))
+    }
+  })
+
+  return(x)
+}
+
 #' @title ParameterIdentification
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
@@ -204,28 +219,45 @@ ParameterIdentification <- R6::R6Class(
     # parameter estimation. This can be a sum of residuals or a more complex function,
     # such as a likelihood function
     .targetFunction = function(currVals) {
-      obsVsPred <- private$.evaluate(currVals)
+      obsVsPredList <- private$.evaluate(currVals)
 
       if (private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames)) {
         if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".LSQ") {
           target <- private$.LSQ(obsVsPred)
           totalError <- target
         } else if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".FMEmodCost") {
-          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPred$toDataFrame())
-          simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-          observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-
-          target <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = NULL)
-          totalError <- target$model
+          runningCost <- NULL
+          # matching output mappings to the results of the .evaluate function
+          for (idx in seq_along(private$.outputMappings)) {
+            obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+            simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
+            observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+            # replacing values below LLOQ with LLOQ / 2
+            simulated[(!is.na(simulated$lloq) & (simulated$yValues < simulated$lloq)), "yValues"] <- simulated[(!is.na(simulated$lloq) & (simulated$yValues < simulated$lloq)), "lloq"] / 2
+            if (private$.outputMappings[[idx]]$scaling == "lin") {
+              modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
+              obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
+            } else if (private$.outputMappings[[idx]]$scaling == "log") {
+              LOG_SAFE_EPSILON <- 1e-20
+              UNITS_EPSILON <- ospsuite::toUnit(
+                quantityOrDimension = simulated$yDimension[[1]],
+                values = LOG_SAFE_EPSILON,
+                targetUnit = simulated$yUnit[[1]],
+                molWeight = 1
+              )
+              modelDf <- data.frame("Time" = simulated$xValues, "Values" = .log_safe(simulated$yValues, epsilon = UNITS_EPSILON))
+              obsDf <- data.frame("Time" = observed$xValues, "Values" = .log_safe(observed$yValues, epsilon = UNITS_EPSILON))
+            }
+            runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
+            runningError <- runningCost$model
+          }
         }
 
         if (private$.configuration$printIterationFeedback) {
           private$.iteration <- private$.iteration + 1
-          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(totalError, 3), "\n"))
+          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(runningError, 3), "\n"))
         }
-        return(target)
+        return(runningCost)
       }
       warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
       return(NA_real_)
@@ -245,12 +277,13 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Evaluate all simulations with given parameter values
-    # @param currVals Numerical vector of the parameter values to be applied
-    # @return An object of `DataCombined` class that includes values simulated
-    # with the given parameters, and corresponding datasets with observed data
+    #' Evaluate all simulations with given parameter values
+    #' @param currVals Numerical vector of the parameter values to be applied
+    #' @return An list of objects of `DataCombined` class that includes values simulated
+    #' with the given parameters, and corresponding datasets with observed data.
+    #' Returns one `DataCombined` object for each output mapping.
     .evaluate = function(currVals) {
-      obsVsPred <- DataCombined$new()
+      obsVsPredList <- list()
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -298,6 +331,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       for (idx in seq_along(private$.outputMappings)) {
+        obsVsPred <- DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
@@ -323,9 +357,10 @@ ParameterIdentification <- R6::R6Class(
           yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
           yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
         )
+        obsVsPredList <- c(obsVsPredList, obsVsPred)
       }
 
-      return(obsVsPred)
+      return(obsVsPredList)
     },
 
     # Calculate the least-squares measure of discrepancy between observed and predicted data
