@@ -499,10 +499,10 @@ ParameterIdentification <- R6::R6Class(
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
-        indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
+        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]])
         plotConfiguration$legendPosition <- "none"
-        obsVsSim <- plotObservedVsSimulated(dataCombined, plotConfiguration)
-        resVsTime <- plotResidualsVsTime(dataCombined, plotConfiguration)
+        obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
         plotGridConfiguration <- PlotGridConfiguration$new()
         plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
         return(plotGrid(plotGridConfiguration))
