@@ -495,13 +495,14 @@ ParameterIdentification <- R6::R6Class(
       plotConfiguration <- DefaultPlotConfiguration$new()
       # Workaroud for a bug in TLF package https://github.com/Open-Systems-Pharmacology/TLF-Library/issues/413
       plotConfiguration$pointsShape <- plotConfiguration$pointsShape[1:14]
-
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
-        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]])
+        plotConfiguration$legendPosition <- NULL
+        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$legendPosition <- "none"
         obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        plotConfiguration$yAxisScale <- "lin"
         resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
         plotGridConfiguration <- PlotGridConfiguration$new()
         plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
