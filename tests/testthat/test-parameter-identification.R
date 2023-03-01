@@ -81,7 +81,7 @@ dataConfiguration$namingPattern <- "{Source}.{Sheet}"
 observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
 
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-                                                            container = simulations$Aciclovir
+  container = simulations$Aciclovir
 ))
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
 outputMappings <- c(outputMapping)

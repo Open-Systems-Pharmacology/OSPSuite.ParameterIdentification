@@ -220,8 +220,12 @@ ParameterIdentification <- R6::R6Class(
             observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
             # replacing values below LLOQ with LLOQ / 2
             # get LLOQ of observed
+
             lloq <- min(observed$lloq, na.rm = TRUE)
-            simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
+            # If no lloq values are specified, min will return Inf.
+            if (is.finite(lloq)) {
+              simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
+            }
             if (private$.outputMappings[[idx]]$scaling == "lin") {
               modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
               obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
@@ -370,11 +374,13 @@ ParameterIdentification <- R6::R6Class(
       }), use.names = FALSE)
 
       message("Running GenSA and BOBYQA")
-      SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = list(max.time = 10, verbose = TRUE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
+      SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {
+        private$.targetFunction(p)$model
+      }, lower = lower, upper = upper, control = list(max.time = 10, verbose = TRUE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
       results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa")
-      results$GenSAcounts = SAresults$counts
+      results$GenSAcounts <- SAresults$counts
       # additional calculation of confidence intervals
-      sigma <- as.numeric(summary(results)[["par"]][,"Std. Error"])
+      sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
       results$cv <- sigma / results$par * 100
@@ -487,10 +493,10 @@ ParameterIdentification <- R6::R6Class(
 
       # Create figures and plot
       plotConfiguration <- DefaultPlotConfiguration$new()
-      #Workaroud for a bug in TLF package https://github.com/Open-Systems-Pharmacology/TLF-Library/issues/413
+      # Workaroud for a bug in TLF package https://github.com/Open-Systems-Pharmacology/TLF-Library/issues/413
       plotConfiguration$pointsShape <- plotConfiguration$pointsShape[1:14]
 
-      multiPlot <- lapply(seq_along(dataMappings), function(idx){
+      multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
