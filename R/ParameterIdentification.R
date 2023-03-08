@@ -236,8 +236,8 @@ ParameterIdentification <- R6::R6Class(
                 targetUnit = simulated$yUnit[[1]],
                 molWeight = 1
               )
-              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite:::.log_safe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite:::.log_safe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::log_safe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::log_safe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
             }
             runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
             runningError <- runningCost$model
