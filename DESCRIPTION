@@ -30,6 +30,7 @@ Imports:
     rClr,
     ospsuite.utils,
     R6, 
+    hash,
     GenSA
 Suggests: 
     knitr,
