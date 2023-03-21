@@ -236,8 +236,8 @@ ParameterIdentification <- R6::R6Class(
                 targetUnit = simulated$yUnit[[1]],
                 molWeight = 1
               )
-              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::log_safe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::log_safe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::logSafe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::logSafe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
             }
             runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
             runningError <- runningCost$model
@@ -493,8 +493,6 @@ ParameterIdentification <- R6::R6Class(
 
       # Create figures and plot
       plotConfiguration <- DefaultPlotConfiguration$new()
-      # Workaroud for a bug in TLF package https://github.com/Open-Systems-Pharmacology/TLF-Library/issues/413
-      plotConfiguration$pointsShape <- plotConfiguration$pointsShape[1:14]
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
