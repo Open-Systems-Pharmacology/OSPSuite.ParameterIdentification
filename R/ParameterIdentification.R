@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME ospsuite.utils
+#' @import FME ospsuite.utils GenSA
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -34,7 +34,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(configuration, "PIConfiguration")
+        validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -75,11 +75,6 @@ ParameterIdentification <- R6::R6Class(
     # plotting current results.
     .needBatchInitialization = TRUE,
     .iteration = 0,
-    # possible target functions for minimization and their user-friendly names
-    .targetFunctionNames = list(
-      "lsq" = ".LSQ", "least squares" = ".LSQ",
-      "FME_modCost" = ".FMEmodCost"
-    ),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -201,32 +196,51 @@ ParameterIdentification <- R6::R6Class(
     },
 
     # Calculate the target function that is going to be minimized during
-    # parameter estimation. This can be a sum of residuals or a more complex function,
-    # such as a likelihood function
+    # parameter estimation. Currently, only an FME-based implementation of
+    # sum of squared residuals is supported. This should be extended with
+    # M3, MLE and Bayesian posterior functions
     .targetFunction = function(currVals) {
-      obsVsPred <- private$.evaluate(currVals)
+      obsVsPredList <- private$.evaluate(currVals)
 
-      if (private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames)) {
-        if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".LSQ") {
-          target <- private$.LSQ(obsVsPred)
-          totalError <- target
-        } else if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".FMEmodCost") {
-          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPred$toDataFrame())
+      if (tolower(private$.configuration$targetFunctionType) == "lsq") {
+        runningCost <- NULL
+        # matching output mappings to the results of the .evaluate function
+        for (idx in seq_along(private$.outputMappings)) {
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
           simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
           observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
 
-          target <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = NULL)
-          totalError <- target$model
+          # replacing values below LLOQ with LLOQ / 2
+          # get LLOQ of observed
+          if (sum(is.finite(observed$lloq)) > 0) {
+            lloq <- min(observed$lloq, na.rm = TRUE)
+            simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
+          }
+
+          if (private$.outputMappings[[idx]]$scaling == "lin") {
+            modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
+            obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
+          } else if (private$.outputMappings[[idx]]$scaling == "log") {
+            UNITS_EPSILON <- ospsuite::toUnit(
+              quantityOrDimension = simulated$yDimension[[1]],
+              values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+              targetUnit = simulated$yUnit[[1]],
+              molWeight = 1
+            )
+            modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::logSafe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+            obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::logSafe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+          }
+          runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
+          runningError <- runningCost$model
         }
-
         if (private$.configuration$printIterationFeedback) {
           private$.iteration <- private$.iteration + 1
-          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(totalError, 3), "\n"))
+          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(runningError, 3), "\n"))
         }
-        return(target)
+        return(runningCost)
       }
+
+      # If targetFunctionType did not match any of the implementations, return NA
       warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
       return(NA_real_)
     },
@@ -245,12 +259,13 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Evaluate all simulations with given parameter values
-    # @param currVals Numerical vector of the parameter values to be applied
-    # @return An object of `DataCombined` class that includes values simulated
-    # with the given parameters, and corresponding datasets with observed data
+    #' Evaluate all simulations with given parameter values
+    #' @param currVals Numerical vector of the parameter values to be applied
+    #' @return An list of objects of `DataCombined` class that includes values simulated
+    #' with the given parameters, and corresponding datasets with observed data.
+    #' Returns one `DataCombined` object for each output mapping.
     .evaluate = function(currVals) {
-      obsVsPred <- DataCombined$new()
+      obsVsPredList <- vector("list", length(private$.outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -298,13 +313,14 @@ ParameterIdentification <- R6::R6Class(
       )
 
       for (idx in seq_along(private$.outputMappings)) {
+        obsVsPred <- DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
         # Construct group names out of output path and simulation id
-        groupName <- paste0(currOutputMapping$quantity$path, "_", simId)
+        groupName <- currOutputMapping$quantity$path
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
@@ -323,9 +339,10 @@ ParameterIdentification <- R6::R6Class(
           yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
           yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
         )
+        obsVsPredList[[idx]] <- obsVsPred
       }
 
-      return(obsVsPred)
+      return(obsVsPredList)
     },
 
     # Calculate the least-squares measure of discrepancy between observed and predicted data
@@ -347,7 +364,28 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = "bobyqa")
+      # Quadratic approximation based algorithms (BOBYQA) may end up in a local minimum
+      # instead of the global minimum. To find the approximate location of the global
+      # minimum, generalized simulated annealing is performed first.
+      # It is intended to run for 10 seconds, but in practice, it runs for one iteration
+      # of simulated annealing (that takes more than 10 seconds). Visiting and acceptance
+      # parameters are set to fast simulated annealing (see doi.org/10.32614/RJ-2013-002).
+      SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {
+        private$.targetFunction(p)$model
+      }, lower = lower, upper = upper, control = list(max.time = 10, verbose = FALSE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
+      results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa")
+      results$GenSAcounts <- SAresults$counts
+      # Calculation of confidence intervals
+      # Sigma values are standard deviations of the estimated parameters. They are
+      # extracted from the estimated hessian matrix through the summary function.
+      # The 95% confidence intervals are defined by two sigma values away from the
+      # point estimate. The coefficient of variation (CV) is the ratio of standard
+      # deviation to the point estimate.
+      sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
+      results$lwr <- results$par - 1.96 * sigma
+      results$upr <- results$par + 1.96 * sigma
+      results$cv <- sigma / results$par * 100
+      return(results)
     }
   ),
   public = list(
@@ -433,11 +471,16 @@ ParameterIdentification <- R6::R6Class(
       return(results)
     },
 
-    #' Plot the current results
+    #' @param par Values of paramterers to be applied to the simulations.
+    #' If `NULL` (default), current parameter values are applied. If custom
+    #' values are supplied, the they must be in the same order as `ParameterIdentification$parameters`
     #'
-    #' @details Runs all simulations with current parameter values and creates
-    #' plots of every output mapping
-    plotCurrentResults = function() {
+    #' @description
+    #' Plot the results of parameter estimation
+    #'
+    #' @details Runs all simulations with current (default) or supplied
+    #' parameter values and creates plots of every output mapping
+    plotResults = function(par = NULL) {
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
@@ -448,21 +491,33 @@ ParameterIdentification <- R6::R6Class(
         private$.batchInitialization()
       }
 
-      # Run evaluate once with the current values of the parameters
+      # Run evaluate once. If the input argument is missing, run with current values.
+      # Otherwise, use the supplied values.
       parValues <- unlist(lapply(self$parameters, function(x) {
         x$currValue
       }), use.names = FALSE)
+      if (!is.null(par)) {
+        parValues <- par
+      }
       dataCombined <- private$.evaluate(parValues)
 
       # Create figures and plot
       plotConfiguration <- DefaultPlotConfiguration$new()
-      indivTimeProfile <- plotIndividualTimeProfile(dataCombined)
-      plotConfiguration$legendPosition <- "none"
-      obsVsSim <- plotObservedVsSimulated(dataCombined, plotConfiguration)
-      resVsTime <- plotResidualsVsTime(dataCombined, plotConfiguration)
-      plotGridConfiguration <- PlotGridConfiguration$new()
-      plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
-      multiPlot <- plotGrid(plotGridConfiguration)
+      multiPlot <- lapply(seq_along(dataCombined), function(idx) {
+        scaling <- private$.outputMappings[[idx]]$scaling
+        plotConfiguration$yAxisScale <- scaling
+        plotConfiguration$legendPosition <- NULL
+        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        plotConfiguration$legendPosition <- "none"
+        plotConfiguration$xAxisScale <- scaling
+        obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        plotConfiguration$xAxisScale <- "lin"
+        plotConfiguration$yAxisScale <- "lin"
+        resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        plotGridConfiguration <- PlotGridConfiguration$new()
+        plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
+        return(plotGrid(plotGridConfiguration))
+      })
 
       # Mark that the batches have been initialized and restore simulation state
       private$.needBatchInitialization <- FALSE

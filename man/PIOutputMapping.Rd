@@ -23,6 +23,8 @@ to simulation results.}
 \item{\code{quantity}}{Simulation quantities which values are matched to the
 observed data}
 
+\item{\code{scaling}}{Linear (default) or logarithmic scaling for this output mapping}
+
 \item{\code{transformResultsFunction}}{Function that will be applied to
 simulated results. Allows to manipulate simulated values before
 calculating the residuals. The function should manipulate numeric

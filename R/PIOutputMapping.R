@@ -40,6 +40,15 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field scaling Linear (default) or logarithmic scaling for this output mapping
+    scaling = function(value) {
+      if (missing(value)) {
+        private$.scaling
+      } else {
+        private$.scaling <- value
+      }
+    },
+
     #' @field transformResultsFunction Function that will be applied to
     #'   simulated results. Allows to manipulate simulated values before
     #'   calculating the residuals. The function should manipulate numeric
@@ -62,7 +71,8 @@ PIOutputMapping <- R6::R6Class(
     .quantity = NULL,
     .observedDataSets = NULL,
     .transformResultsFunction = NULL,
-    .dataTransformations = NULL
+    .dataTransformations = NULL,
+    .scaling = NULL
   ),
   public = list(
     #' @description
@@ -74,6 +84,7 @@ PIOutputMapping <- R6::R6Class(
       private$.quantity <- quantity
       private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+      private$.scaling <- "lin"
     },
 
     #' Add observed data as `DataSet` objects
@@ -162,6 +173,7 @@ PIOutputMapping <- R6::R6Class(
       private$printClass()
       private$printLine("Output path", private$.quantity$path)
       private$printLine("Observed data labels", names(private$.observedDataSets))
+      private$printLine("Scaling", private$.scaling)
       invisible(self)
     }
   )

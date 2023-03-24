@@ -22,7 +22,8 @@ IDs of the root container of the simulation}
 \item{\code{configuration}}{An object of \code{PIConfiguration}}
 
 \item{\code{outputMappings}}{List of \code{PIOutputMapping} objects. Each
-mapping assigns a set of observed data to a simulation output}
+mapping assigns a set of observed data to a simulation output
+Evaluate all simulations with given parameter values}
 }
 \if{html}{\out{</div>}}
 }
@@ -31,7 +32,7 @@ mapping assigns a set of observed data to a simulation output}
 \itemize{
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
-\item \href{#method-ParameterIdentification-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
+\item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -63,11 +64,15 @@ is used.}
 
 \item{\code{configuration}}{Optional. Object of type \code{PIConfiguration} defining
 further options of the parameter identification. If no \code{PIConfiguration} is passed, a default one}
+
+\item{\code{currVals}}{Numerical vector of the parameter values to be applied}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new \code{ParameterIdentification} object.
+An list of objects of \code{DataCombined} class that includes values simulated
+with the given parameters, and corresponding datasets with observed data.
+Returns one \code{DataCombined} object for each output mapping.
 }
 }
 \if{html}{\out{<hr>}}
@@ -85,20 +90,29 @@ When the identification if finished, the best identified values of the parameter
 
 \subsection{Returns}{
 Output of the PI algorithm. Depends on the selected algorithm.
-Plot the current results
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-plotCurrentResults"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotCurrentResults}{}}}
-\subsection{Method \code{plotCurrentResults()}}{
+\if{html}{\out{<a id="method-ParameterIdentification-plotResults"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotResults}{}}}
+\subsection{Method \code{plotResults()}}{
+Plot the results of parameter estimation
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotCurrentResults()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotResults(par = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{par}}{Values of paramterers to be applied to the simulations.
+If \code{NULL} (default), current parameter values are applied. If custom
+values are supplied, the they must be in the same order as \code{ParameterIdentification$parameters}}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Details}{
-Runs all simulations with current parameter values and creates
-plots of every output mapping
+Runs all simulations with current (default) or supplied
+parameter values and creates plots of every output mapping
 }
 
 }

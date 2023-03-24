@@ -14,7 +14,7 @@ Authors@R:
              role = "ctb",
              email = "patilindrajeet.science@gmail.com",
              comment = c(ORCID = "0000-0003-1995-6531", Twitter = "@patilindrajeets")),
-             person("Sergei", "Vavilov", , "https://github.com/svavil", role = "aut"))
+      person("Sergei", "Vavilov", , "https://github.com/svavil", role = "aut"))
 Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
 Description: R package for performing parameter identification for the 
     Open Systems Pharmacology models.
@@ -29,12 +29,14 @@ Imports:
     FME,
     rClr,
     ospsuite.utils,
+    R6, 
     hash,
-    R6
+    GenSA
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    vdiffr
 RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
