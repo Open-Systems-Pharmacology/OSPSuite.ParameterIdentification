@@ -471,6 +471,11 @@ ParameterIdentification <- R6::R6Class(
       return(results)
     },
 
+    #' @param par Values of paramterers to be applied to the simulations.
+    #' If `NULL` (default), current parameter values are applied. If custom
+    #' values are supplied, the they must be in the same order as `ParameterIdentification$parameters`
+    #'
+    #' @description
     #' Plot the results of parameter estimation
     #'
     #' @details Runs all simulations with current (default) or supplied

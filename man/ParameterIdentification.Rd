@@ -32,8 +32,7 @@ Evaluate all simulations with given parameter values}
 \itemize{
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
-\item \href{#method-ParameterIdentification-plotCurrentResults}{\code{ParameterIdentification$plotCurrentResults()}}
-\item \href{#method-ParameterIdentification-plotParameterValues}{\code{ParameterIdentification$plotParameterValues()}}
+\item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -91,42 +90,31 @@ When the identification if finished, the best identified values of the parameter
 
 \subsection{Returns}{
 Output of the PI algorithm. Depends on the selected algorithm.
-Plot the current results
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-plotCurrentResults"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotCurrentResults}{}}}
-\subsection{Method \code{plotCurrentResults()}}{
+\if{html}{\out{<a id="method-ParameterIdentification-plotResults"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotResults}{}}}
+\subsection{Method \code{plotResults()}}{
+Plot the results of parameter estimation
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotCurrentResults()}\if{html}{\out{</div>}}
-}
-
-\subsection{Details}{
-Runs all simulations with current parameter values and creates
-plots of every output mapping
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-plotParameterValues"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-plotParameterValues}{}}}
-\subsection{Method \code{plotParameterValues()}}{
-Plot the comparison between the simulation (with a set of parameters
-supplied as the argument) and the observed data
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotParameterValues(par, config)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotResults(par = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{par}}{current vector of parameters}
-
-\item{\code{config}}{plot configuration to be passed to \code{{ospsuite}} plotting functions}
+\item{\code{par}}{Values of paramterers to be applied to the simulations.
+If \code{NULL} (default), current parameter values are applied. If custom
+values are supplied, the they must be in the same order as \code{ParameterIdentification$parameters}}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Runs all simulations with current (default) or supplied
+parameter values and creates plots of every output mapping
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}

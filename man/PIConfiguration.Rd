@@ -26,7 +26,7 @@ Default is \code{FALSE}}
 to simulation runs. If \code{NULL}, default options are used.}
 
 \item{\code{targetFunctionType}}{a string describing the target function for
-parameter estimation. Can be "lsq" or "mle".}
+parameter estimation. Currently, only "lsq" is implemented.}
 }
 \if{html}{\out{</div>}}
 }
