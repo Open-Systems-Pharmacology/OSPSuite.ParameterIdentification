@@ -97,7 +97,18 @@ task <- ParameterIdentification$new(
   outputMappings = outputMapping,
   configuration = piConfiguration
 )
+test_that("Plotting works before running the parameter estimation task", {
+  vdiffr::expect_doppelganger("before_estimation", task$plotResults()[[1]])
+  # plotResults returns a list of plots, one plot for each output mapping
+  # in this example, we have a single output mapping
+})
 task_results <- task$run()
+test_that("Plotting works after running the parameter estimation task", {
+  vdiffr::expect_doppelganger("after_estimation", task$plotResults()[[1]])
+})
+test_that("Plotting returns a different plot when supplied with input parameters", {
+  vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
+})
 test_that("The results object contains a parameter estimate", {
   expect_equal(task_results$par, -0.009700017)
 })
@@ -116,7 +127,7 @@ outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Peripheral
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
 outputMapping$scaling <- "log"
 outputMappings <- c(outputMapping)
-test_that("Output mappings with log scaling are processed correctly", {
+test_that("Output mappings with log scaling are processed without errors", {
   expect_no_error(task <- ParameterIdentification$new(
     simulations = simulations,
     parameters = parameters,

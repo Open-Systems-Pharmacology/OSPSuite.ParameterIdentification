@@ -209,14 +209,14 @@ ParameterIdentification <- R6::R6Class(
           obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
           simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
           observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+
           # replacing values below LLOQ with LLOQ / 2
           # get LLOQ of observed
-
-          lloq <- min(observed$lloq, na.rm = TRUE)
-          # If no lloq values are specified, min will return Inf.
-          if (is.finite(lloq)) {
+          if (sum(is.finite(observed$lloq)) > 0) {
+            lloq <- min(observed$lloq, na.rm = TRUE)
             simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
           }
+
           if (private$.outputMappings[[idx]]$scaling == "lin") {
             modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
             obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
@@ -471,11 +471,11 @@ ParameterIdentification <- R6::R6Class(
       return(results)
     },
 
-    #' Plot the current results
+    #' Plot the results of parameter estimation
     #'
-    #' @details Runs all simulations with current parameter values and creates
-    #' plots of every output mapping
-    plotCurrentResults = function() {
+    #' @details Runs all simulations with current (default) or supplied
+    #' parameter values and creates plots of every output mapping
+    plotResults = function(par = NULL) {
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
@@ -486,10 +486,14 @@ ParameterIdentification <- R6::R6Class(
         private$.batchInitialization()
       }
 
-      # Run evaluate once with the current values of the parameters
+      # Run evaluate once. If the input argument is missing, run with current values.
+      # Otherwise, use the supplied values.
       parValues <- unlist(lapply(self$parameters, function(x) {
         x$currValue
       }), use.names = FALSE)
+      if (!is.null(par)) {
+        parValues <- par
+      }
       dataCombined <- private$.evaluate(parValues)
 
       # Create figures and plot
@@ -515,15 +519,6 @@ ParameterIdentification <- R6::R6Class(
       }
 
       return(multiPlot)
-    },
-
-    #' @description
-    #' Plot the comparison between the simulation (with a set of parameters
-    #' supplied as the argument) and the observed data
-    #' @param par current vector of parameters
-    #' @param config plot configuration to be passed to `{ospsuite}` plotting functions
-    plotParameterValues = function(par, config) {
-      plotIndividualTimeProfile(private$.evaluate(par), defaultPlotConfiguration = config)
     },
 
     #' @description
