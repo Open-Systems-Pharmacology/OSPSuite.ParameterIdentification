@@ -504,7 +504,9 @@ ParameterIdentification <- R6::R6Class(
         plotConfiguration$legendPosition <- NULL
         indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$legendPosition <- "none"
+        plotConfiguration$xAxisScale <- scaling
         obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
         resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
         plotGridConfiguration <- PlotGridConfiguration$new()
