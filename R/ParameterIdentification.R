@@ -364,13 +364,23 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      message("Running GenSA and BOBYQA")
+      # Quadratic approximation based algorithms (BOBYQA) may end up in a local minimum
+      # instead of the global minimum. To find the approximate location of the global
+      # minimum, generalized simulated annealing is performed first.
+      # It is intended to run for 10 seconds, but in practice, it runs for one iteration
+      # of simulated annealing (that takes more than 10 seconds). Visiting and acceptance
+      # parameters are set to fast simulated annealing (see doi.org/10.32614/RJ-2013-002).
       SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {
         private$.targetFunction(p)$model
       }, lower = lower, upper = upper, control = list(max.time = 10, verbose = TRUE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
       results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa")
       results$GenSAcounts <- SAresults$counts
-      # additional calculation of confidence intervals
+      # Calculation of confidence intervals
+      # Sigma values are standard deviations of the estimated parameters. They are
+      # extracted from the estimated hessian matrix through the summary function.
+      # The 95% confidence intervals are defined by two sigma values away from the
+      # point estimate. The coefficient of variation (CV) is the ratio of standard
+      # deviation to the point estimate.
       sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
