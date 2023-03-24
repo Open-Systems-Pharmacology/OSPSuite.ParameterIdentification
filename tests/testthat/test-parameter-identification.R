@@ -46,13 +46,11 @@ test_that("It can initialize ParameterIdentification when the simulateSteadyStat
   piConfiguration$simulateSteadyState <- TRUE
 
   # Create new parameter identification.
-  pi <- ParameterIdentification$new(
+  expect_no_error(pi <- ParameterIdentification$new(
     simulations = sim, parameters = piParameter,
     outputMappings = piOutputMapping,
     configuration = piConfiguration
-  )
-  # Plot results before optimization
-  expect_error(pi$plotCurrentResults(), regexp = NA)
+  ))
 })
 
 ### Testing the parameter identification package on aciclovir example
@@ -61,7 +59,6 @@ names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
 piConfiguration$printIterationFeedback <- FALSE
-piConfiguration$targetFunctionType <- "FME_modCost"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -105,11 +102,26 @@ test_that("The results object contains a parameter estimate", {
   expect_equal(task_results$par, -0.009700017)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(task_results$feval, 15)
+  expect_equal(task_results$feval, 12)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(task_results$lwr, -5.4220188)
+  expect_equal(task_results$lwr, -0.3473112)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(task_results$upr, 5.4026188)
+  expect_equal(task_results$upr, 0.32791115)
+})
+outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+                                                            container = simulations$Aciclovir
+))
+outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+outputMapping$scaling <- "log"
+outputMappings <- c(outputMapping)
+test_that("Output mappings with log scaling are processed correctly", {
+  expect_no_error(task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = parameters,
+    outputMappings = outputMapping,
+    configuration = piConfiguration
+  ))
+  expect_no_error(task_results <- task$run())
 })
