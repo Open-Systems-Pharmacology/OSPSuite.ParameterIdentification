@@ -55,13 +55,19 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field targetFunctionType a string describing the target function for
-    #' parameter estimation. Can be "lsq" or "mle".
+    #' parameter estimation. Currently, only "lsq" is implemented.
     targetFunctionType = function(value) {
       if (missing(value)) {
         private$.targetFunctionType
       } else {
         validateIsCharacter(value)
-        private$.targetFunctionType <- value
+        # Check that the suggested target function type has an implementation
+        if (tolower(value) == "lsq") {
+          private$.targetFunctionType <- value
+        } else {
+          warning(paste(value, "is not an implemented target function. Target function type has not been changed."))
+        }
+
       }
     }
   ),

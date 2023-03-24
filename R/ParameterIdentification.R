@@ -34,7 +34,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(configuration, "PIConfiguration")
+        validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -75,11 +75,6 @@ ParameterIdentification <- R6::R6Class(
     # plotting current results.
     .needBatchInitialization = TRUE,
     .iteration = 0,
-    # possible target functions for minimization and their user-friendly names
-    .targetFunctionNames = list(
-      "lsq" = ".LSQ", "least squares" = ".LSQ",
-      "FME_modCost" = ".FMEmodCost"
-    ),
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -201,55 +196,51 @@ ParameterIdentification <- R6::R6Class(
     },
 
     # Calculate the target function that is going to be minimized during
-    # parameter estimation. This can be a sum of residuals or a more complex function,
-    # such as a likelihood function
+    # parameter estimation. Currently, only an FME-based implementation of
+    # sum of squared residuals is supported. This should be extended with
+    # M3, MLE and Bayesian posterior functions
     .targetFunction = function(currVals) {
       obsVsPredList <- private$.evaluate(currVals)
 
-      if (private$.configuration$targetFunctionType %in% names(private$.targetFunctionNames)) {
-        if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".LSQ") {
-          target <- private$.LSQ(obsVsPred)
-          runningError <- target
-          runningCost <- target
-        } else if (private$.targetFunctionNames[[private$.configuration$targetFunctionType]] == ".FMEmodCost") {
-          runningCost <- NULL
-          # matching output mappings to the results of the .evaluate function
-          for (idx in seq_along(private$.outputMappings)) {
-            obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-            simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-            observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-            # replacing values below LLOQ with LLOQ / 2
-            # get LLOQ of observed
+      if (tolower(private$.configuration$targetFunctionType) == "lsq") {
+        runningCost <- NULL
+        # matching output mappings to the results of the .evaluate function
+        for (idx in seq_along(private$.outputMappings)) {
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+          simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
+          observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+          # replacing values below LLOQ with LLOQ / 2
+          # get LLOQ of observed
 
-            lloq <- min(observed$lloq, na.rm = TRUE)
-            # If no lloq values are specified, min will return Inf.
-            if (is.finite(lloq)) {
-              simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
-            }
-            if (private$.outputMappings[[idx]]$scaling == "lin") {
-              modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-              obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-            } else if (private$.outputMappings[[idx]]$scaling == "log") {
-              UNITS_EPSILON <- ospsuite::toUnit(
-                quantityOrDimension = simulated$yDimension[[1]],
-                values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-                targetUnit = simulated$yUnit[[1]],
-                molWeight = 1
-              )
-              modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::logSafe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-              obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::logSafe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-            }
-            runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
-            runningError <- runningCost$model
+          lloq <- min(observed$lloq, na.rm = TRUE)
+          # If no lloq values are specified, min will return Inf.
+          if (is.finite(lloq)) {
+            simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
           }
+          if (private$.outputMappings[[idx]]$scaling == "lin") {
+            modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
+            obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
+          } else if (private$.outputMappings[[idx]]$scaling == "log") {
+            UNITS_EPSILON <- ospsuite::toUnit(
+              quantityOrDimension = simulated$yDimension[[1]],
+              values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+              targetUnit = simulated$yUnit[[1]],
+              molWeight = 1
+            )
+            modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::logSafe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+            obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::logSafe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
+          }
+          runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
+          runningError <- runningCost$model
         }
-
         if (private$.configuration$printIterationFeedback) {
           private$.iteration <- private$.iteration + 1
           cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(runningError, 3), "\n"))
         }
         return(runningCost)
       }
+
+      # If targetFunctionType did not match any of the implementations, return NA
       warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
       return(NA_real_)
     },
