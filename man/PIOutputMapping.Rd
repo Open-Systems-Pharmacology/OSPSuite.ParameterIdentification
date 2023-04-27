@@ -125,7 +125,8 @@ Set the data transformations
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{labels}}{A list of labels, each corresponding to one of the datasets. If labels are not specified, data transformations are set across all datasets}
+\item{\code{labels}}{A list of labels, each corresponding to one of the datasets.
+If labels are not specified, data transformations are set across all datasets}
 
 \item{\code{xOffsets}}{A numeric list or a value of X-offsets}
 

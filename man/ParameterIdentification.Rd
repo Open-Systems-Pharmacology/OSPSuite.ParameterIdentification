@@ -85,7 +85,8 @@ Start identification of parameters
 }
 
 \subsection{Details}{
-When the identification if finished, the best identified values of the parameters are accessible via the \code{currValue}-field of the \code{PIParameters}-object.
+When the identification if finished, the best identified values of the parameters
+are accessible via the \code{currValue}-field of the \code{PIParameters}-object.
 }
 
 \subsection{Returns}{
