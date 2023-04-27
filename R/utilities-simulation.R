@@ -5,7 +5,9 @@
 #'   the processes do not (significantly) change.
 #'
 #' @param steadyStateTime Simulation time (minutes). Must be long enough for
-#'   system to reach a steady-state. 1000 by default
+#'   system to reach a steady-state. 1000 by default. Either a single value (will
+#'   be applied for all simulations), or a vector of values specific for each
+#'   simulation. In latter case, must have equal size as `simulations`.
 #' @param quantitiesPaths List of quantity paths (molecules and/or parameters)
 #'   for which the steady-state will be simulated. If `NULL` (default), all
 #'   molecules and state variable parameters are considered. The same list is
@@ -28,7 +30,7 @@
 #' @return A named list, where the names are the IDs of the simulations and the
 #'   entries are lists containing `paths` and their `values` at the end of the
 #'   simulation.
-#' @import ospsuite rClr hash
+#' @import ospsuite rClr ospsuite.utils
 #' @export
 getSteadyState <- function(quantitiesPaths = NULL,
                            simulations,
@@ -37,32 +39,44 @@ getSteadyState <- function(quantitiesPaths = NULL,
                            stopIfNotFound = TRUE,
                            lowerThreshold = 1e-15,
                            simulationRunOptions = NULL) {
-  validateIsOfType(simulations, type = "Simulation")
-  validateIsString(quantitiesPaths, nullAllowed = TRUE)
-  simulations <- toList(simulations)
+  ospsuite.utils::validateIsOfType(simulations, type = "Simulation")
+  ospsuite.utils::validateIsString(quantitiesPaths, nullAllowed = TRUE)
+  ospsuite.utils::validateIsNumeric(steadyStateTime, nullAllowed = FALSE)
+  simulations <- ospsuite.utils::toList(simulations)
 
-  if (steadyStateTime <= 0) {
+  if (any(steadyStateTime <= 0)) {
     stop(messages$steadyStateTimeNotPositive(steadyStateTime))
+  }
+
+  # If `steadyStateTime` is a vector of values, it must be of the same size as
+  # the list of simulations.
+  # Otherwise, repeat the value for the number of simulations
+  if (length(steadyStateTime) > 1) {
+    ospsuite.utils::validateIsSameLength(simulations, steadyStateTime)
+  } else {
+    steadyStateTime <- rep(steadyStateTime, length(simulations))
   }
 
   # First prepare all simulations by setting their outputs and time intervals
   # If no quantities have been specified, the quantities paths may be different
   # for each simulation and must be stored separately
   simulationState <- .storeSimulationState(simulations)
-  quantitiesPathsMap <- hash::hash()
-  for (simulation in simulations) {
+  quantitiesPathsMap <- vector(mode = "list", length = length(simulations))
+  for (idx in seq_along(simulations)) {
+    simulation <- simulations[[idx]]
     simId <- simulation$id
     # Set simulation time to the steady-state value.
     ospsuite::clearOutputIntervals(simulation = simulation)
-    simulation$outputSchema$addTimePoints(timePoints = steadyStateTime)
+    simulation$outputSchema$addTimePoints(timePoints = steadyStateTime[[idx]])
     # If no quantities are explicitly specified, simulate all outputs.
     if (is.null(quantitiesPaths)) {
-      quantitiesPathsMap[[simId]] <- ospsuite::getAllStateVariablesPaths(simulation)
+      quantitiesPathsMap[[idx]] <- ospsuite::getAllStateVariablesPaths(simulation)
     } else {
-      quantitiesPathsMap[[simId]] <- quantitiesPaths
+      quantitiesPathsMap[[idx]] <- quantitiesPaths
     }
+    names(quantitiesPathsMap)[[idx]] <- simId
     ospsuite::clearOutputs(simulation)
-    ospsuite::addOutputs(quantitiesOrPaths = quantitiesPathsMap[[simId]], simulation = simulation)
+    ospsuite::addOutputs(quantitiesOrPaths = quantitiesPathsMap[[idx]], simulation = simulation)
   }
 
   # Run simulations concurrently
@@ -72,8 +86,9 @@ getSteadyState <- function(quantitiesPaths = NULL,
   )
 
   # Iterate through simulations and get their outputs
-  outputMap <- hash::hash()
-  for (simulation in simulations) {
+  outputMap <- vector(mode = "list", length = length(simulations))
+  for (idx in seq_along(simulations)) {
+    simulation <- simulations[[idx]]
     simId <- simulation$id
     simResults <- simulationResults[[simId]]
 
@@ -114,7 +129,8 @@ getSteadyState <- function(quantitiesPaths = NULL,
 
     # Reset simulation output intervals and output selections
     .restoreSimulationState(simulations, simulationState)
-    outputMap[[simId]] <- list(paths = quantitiesPathsMap[[simId]][indices], values = endValues[indices])
+    outputMap[[idx]] <- list(paths = quantitiesPathsMap[[simId]][indices], values = endValues[indices])
+    names(outputMap)[[idx]] <- simId
   }
   return(outputMap)
 }

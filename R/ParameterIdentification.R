@@ -241,7 +241,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # If targetFunctionType did not match any of the implementations, return NA
-      warning(paste0(private$.configuration$targetFunctionType, " is not an implemented target function. Cannot run parameter identification."))
+      warning(paste0(
+        private$.configuration$targetFunctionType,
+        " is not an implemented target function. Cannot run parameter identification."
+      ))
       return(NA_real_)
     },
 
@@ -440,7 +443,8 @@ ParameterIdentification <- R6::R6Class(
 
     #' @description
     #' Start identification of parameters
-    #' @details When the identification if finished, the best identified values of the parameters are accessible via the `currValue`-field of the `PIParameters`-object.
+    #' @details When the identification if finished, the best identified values of the parameters
+    #' are accessible via the `currValue`-field of the `PIParameters`-object.
     #'
     #' @return Output of the PI algorithm. Depends on the selected algorithm.
     run = function() {

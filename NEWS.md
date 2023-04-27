@@ -8,4 +8,6 @@
 
 ### MINOR CHANGES
 
+- `getSteadyState()` accepts steady state time invidiaul for each simulation.
+
 ------

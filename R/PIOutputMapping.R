@@ -119,7 +119,8 @@ PIOutputMapping <- R6::R6Class(
     },
 
     #' @description Set the data transformations
-    #' @param labels A list of labels, each corresponding to one of the datasets. If labels are not specified, data transformations are set across all datasets
+    #' @param labels A list of labels, each corresponding to one of the datasets.
+    #' If labels are not specified, data transformations are set across all datasets
     #' @param xOffsets A numeric list or a value of X-offsets
     #' @param yOffsets A numeric list or a value of Y-offsets
     #' @param xFactors A numeric list or a value of X-factors
