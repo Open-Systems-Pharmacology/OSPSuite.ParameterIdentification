@@ -23,7 +23,9 @@ applied for all simulations.}
 \item{simulations}{\code{Simulation} object or a list of \code{Simulation} objects}
 
 \item{steadyStateTime}{Simulation time (minutes). Must be long enough for
-system to reach a steady-state. 1000 by default}
+system to reach a steady-state. 1000 by default. Either a single value (will
+be applied for all simulations), or a vector of values specific for each
+simulation. In latter case, must have equal size as \code{simulations}.}
 
 \item{ignoreIfFormula}{If \code{TRUE} (default), species and parameters with
 initial values defined by a formula are not included.}

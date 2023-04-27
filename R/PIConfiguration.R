@@ -67,7 +67,6 @@ PIConfiguration <- R6::R6Class(
         } else {
           warning(paste(value, "is not an implemented target function. Target function type has not been changed."))
         }
-
       }
     }
   ),

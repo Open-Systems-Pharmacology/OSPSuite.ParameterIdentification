@@ -122,7 +122,7 @@ test_that("The results object contains an upper bound of the confidence interval
   expect_equal(task_results$upr, 0.32791115)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-                                                            container = simulations$Aciclovir
+  container = simulations$Aciclovir
 ))
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
 outputMapping$scaling <- "log"

@@ -29,8 +29,7 @@ Imports:
     FME,
     rClr,
     ospsuite.utils,
-    R6, 
-    hash,
+    R6,
     GenSA
 Suggests: 
     knitr,
