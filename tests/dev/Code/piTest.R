@@ -1,32 +1,24 @@
-library(ospsuite.parameteridentification)
-library(esqlabsRLegacy)
+# library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
 modelFolder <- file.path(getwd(), "../Models/Simulations")
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../Data")
+dataFolder <- file.path(getwd(), "../../data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
-# DataConfiguration is an object that describes how to read observed data from an excel file
-dataConfiguration <- DataConfiguration$new(
-  dataFolder = dataFolder,
-  dataFile = dataFile,
-  compoundPropertiesFile = NULL,
-  dataSheets = c(
-    "Boswell_2012"
-  )
+########### Load observed data########
+dataSheets <- c("Boswell_2012")
+
+importerConfiguration <- ospsuite::loadDataImporterConfiguration(
+  configurationFilePath = file.path(getwd(), "../../data", "dataImporter_configuration.xml")
 )
+importerConfiguration$sheets <- dataSheets
 
-# To test with error:
-# dataConfiguration <- DataConfiguration$new(dataFolder = dataFolder,
-#                                            dataFile = dataFile,
-#                                            compoundPropertiesFile = NULL,
-#                                            dataSheets = c(
-#                                              "Boswell_2012_error"
-#                                            ))
-
-observedData <- readOSPSTimeValues(dataConfiguration)
+dataSets <- ospsuite::loadDataSetsFromExcel(
+  xlsFilePath = file.path(dataFolder, dataFile),
+  importerConfigurationOrPath = importerConfiguration
+)
 
 ####### LOAD SIMULATIONS and put them in a named list######
 simNames <- c("Vehicle.pkml", "0.75 mg_kg.pkml", "2.5 mg_kg.pkml")
@@ -40,6 +32,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$targetFunctionType <- "lsq"
 
 ######### Define parameters to optimize#######
 parameters <- list()
@@ -47,14 +40,6 @@ parameterPaths <- c(
   "Organism|Tumor|Intracellular|k1",
   "Organism|Tumor|Intracellular|k2"
 )
-for (parameterPath in parameterPaths) {
-  modelParams <- list()
-  for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
-  }
-  piParameter <- PIParameters$new(parameters = modelParams)
-  parameters <- c(parameters, piParameter)
-}
 
 ######### Define otput mappings#######
 piOutputMappings <- list()
@@ -64,29 +49,21 @@ piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|We
   container = simulations$Vehicle.pkml
 ))
 # Add observed data. Multiple data can be added to the same mapping
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_Vehicle)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_Vehicle`)
 # Add the mapping to the list of all mappings
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`0.75 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_0.75mgKg_ADC)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_0.75mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
   container = simulations$`2.5 mg_kg.pkml`
 ))
-piOutputMapping$addObservedData(observedData$Boswell_2012$IV_2.50mgKg_ADC)
+piOutputMapping$addObservedDataSets(dataSets$`________IV_2.50mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
-
-# Create new parameter identification. This PI would optimize all three simulations.
-# pi <- ParameterIdentification$new(simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
-#                                   configuration = piConfiguration)
-# Plot results before optimization
-pi$plotCurrentResults()
-
-# OR
 
 # FOR PERFORMANCE REASONS, OPTIMIZE WITH ONE SIMULATION ONLY.
 # IF YOU WANT TO USE ALL THREE SIMULATIONS, USE THE `parameters` LIST
@@ -101,9 +78,52 @@ pi <- ParameterIdentification$new(
   simulations = simulations$`2.5 mg_kg.pkml`, parameters = parameters, outputMappings = piOutputMappings[[3]],
   configuration = piConfiguration
 )
-pi$plotCurrentResults()
+pi$plotResults()
 
-results <- pi$run()
+# 45 iterations
+# user  system elapsed
+# 228.65    2.14  239.86
+system.time(
+  results <- pi$run()
+)
+gc()
+# 177k ms
+# 197 mb
+profvis::profvis({
+  results <- pi$run()
+})
 print(results)
 
-pi$plotCurrentResults()
+pi$plotResults()
+
+### All simulations###
+
+for (parameterPath in parameterPaths) {
+  modelParams <- list()
+  for (simulation in simulations) {
+    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
+  }
+  piParameter <- PIParameters$new(parameters = modelParams)
+  parameters <- c(parameters, piParameter)
+}
+
+# piConfiguration$simulateSteadyState <- TRUE
+# Create new parameter identification. This PI would optimize all three simulations.
+pi <- ParameterIdentification$new(
+  simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
+  configuration = piConfiguration
+)
+# Plot results before optimization
+pi$plotResults()
+
+# user  system elapsed
+# 1652.36   13.61  815.54
+system.time(
+  results <- pi$run()
+)
+
+gc()
+profvis::profvis({
+  results <- pi$run()
+})
+pi$plotResults()

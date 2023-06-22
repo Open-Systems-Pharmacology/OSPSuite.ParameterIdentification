@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
 #' @description An object storing configuration for the parameter identification
-#' @import R6 ospsuite.utils
+#' @import ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
@@ -52,13 +52,58 @@ PIConfiguration <- R6::R6Class(
         validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
         private$.simulationRunOptions <- value
       }
+    },
+
+    #' @field targetFunctionType Type of the target function used for error
+    #' calculation. Supported target functions  are listed  in
+    #' `ospsuite.parameteridentification::ObjectiveFunctions`.
+    targetFunctionType = function(value) {
+      if (missing(value)) {
+        private$.targetFunctionType
+      } else {
+        validateIsCharacter(value)
+        validateEnumValue(tolower(value), ObjectiveFunctions)
+        private$.targetFunctionType <- value
+      }
+    },
+
+    #' @field algorithm a string describing the optimization algorithm, as passed
+    #' to the `FME::modFit()` function.
+    #' Supported algorithms are listed  in
+    #' `ospsuite.parameteridentification::Algorithms`.
+    algorithm = function(value) {
+      if (missing(value)) {
+        private$.algorithm
+      } else {
+        validateIsCharacter(value)
+        validateEnumValue(value, Algorithms)
+        private$.algorithm <- value
+      }
+    },
+
+    #' @field algorithmOptions a list of named parameters describing method-specific
+    #' control arguments, as passed to the `FME::modFit()` function.
+    #' Supported options are listed  in
+    #' `ospsuite.parameteridentification::AlgorithmOptions`.
+    algorithmOptions = function(value) {
+      if (missing(value)) {
+        private$.algorithmOptions
+      } else {
+        for (name in names(value)) {
+          validateEnumValue(name, AlgorithmOptions)
+        }
+        private$.algorithmOptions <- value
+      }
     }
   ),
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
     .printIterationFeedback = NULL,
-    .simulationRunOptions = NULL
+    .simulationRunOptions = NULL,
+    .targetFunctionType = NULL,
+    .algorithm = NULL,
+    .algorithmOptions = NULL
   ),
   public = list(
     #' @description
@@ -68,6 +113,9 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printIterationFeedback <- FALSE
+      private$.targetFunctionType <- "lsq"
+      private$.algorithm <- "bobyqa"
+      private$.algorithmOptions <- list()
     },
 
     #' @description
@@ -78,6 +126,8 @@ PIConfiguration <- R6::R6Class(
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each iteration", private$.printIterationFeedback)
+      private$printLine("Target function", private$.targetFunctionType)
+      private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)
     }
   )

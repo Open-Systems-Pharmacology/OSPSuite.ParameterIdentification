@@ -1,4 +1,3 @@
-
 getTestDataFilePath <- function(fileName) {
   dataPath <- file.path(getwd(), "..", "data", fsep = .Platform$file.sep)
   file.path(dataPath, fileName, fsep = .Platform$file.sep)
@@ -12,7 +11,8 @@ getSimulationFilePath <- function(simulationName) {
 # new instances should be created unless specifically specified otherwise
 loadTestSimulation <- function(simulationName, loadFromCache = FALSE, addToCache = TRUE) {
   simFile <- getSimulationFilePath(simulationName)
-  sim <- loadSimulation(simFile, loadFromCache = loadFromCache, addToCache = addToCache)
+  sim <- ospsuite::loadSimulation(simFile, loadFromCache = loadFromCache, addToCache = addToCache)
+  return(sim)
 }
 
 executeWithTestFile <- function(actionWithFile) {
