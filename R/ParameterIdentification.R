@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME ospsuite.utils GenSA
+#' @import FME ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
