@@ -11,3 +11,7 @@ messages$errorNotAFunction <- function() {
 messages$steadyStateTimeNotPositive <- function(value) {
   paste0("The value of `steadyStateTime` must be > 0, but it is ", value)
 }
+
+messages$simulationNotSuccessful <- function(values) {
+  paste0("Simulation was not successful for parameter values: ", paste0(values, collapse = ", "))
+}

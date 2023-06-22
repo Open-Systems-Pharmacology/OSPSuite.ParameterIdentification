@@ -2,9 +2,9 @@
 library(esqlabsRLegacy)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
+modelFolder <- file.path(getwd(), "../Models/Simulations")
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../Data")
+dataFolder <- file.path(getwd(), "../../data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
@@ -18,7 +18,7 @@ dataSheets <- c(
 )
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(getwd(), "../Data", "dataImporter_configuration.xml")
+  configurationFilePath = file.path(dataFolder, "dataImporter_configuration.xml")
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -40,7 +40,7 @@ names(simulations) <- simNames
 
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
-piConfiguration$targetFunctionType <- "FME_modCost"
+piConfiguration$targetFunctionType <- "lsq"
 piConfiguration$simulateSteadyState <- TRUE
 piConfiguration$steadyStateTime <- 1000
 

@@ -75,10 +75,19 @@ ParameterIdentification <- R6::R6Class(
     # plotting current results.
     .needBatchInitialization = TRUE,
     .iteration = 0,
+    # CV for M3 target function
+    # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
+    .cvM3 = 0.2,
+    # pre-calculate SD for log-transformed data assuming CV of 20%
+    # Used for M3 target function
+    # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
+    .sdForLogCV = NULL,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
       # Prepare simulations
+
+      # 2DO: Enable steady-state
       # If steady-state should be simulated, get the set of all state variables for each simulation
       # if (private$.configuration$simulateSteadyState) {
       #   for (simulation in private$.simulations) {
@@ -168,6 +177,7 @@ ParameterIdentification <- R6::R6Class(
         private$.simulationBatches[[simId]] <- simBatch
       }
 
+      # 2DO: Enable steady-state
       # If steady-state should be simulated, create new batches for ss simulation
       # Add all state variables to the outputs and set the simulation time to
       # steady state time
@@ -196,56 +206,163 @@ ParameterIdentification <- R6::R6Class(
     },
 
     # Calculate the target function that is going to be minimized during
-    # parameter estimation. Currently, only an FME-based implementation of
-    # sum of squared residuals is supported. This should be extended with
-    # M3, MLE and Bayesian posterior functions
+    # parameter estimation.
     .targetFunction = function(currVals) {
-      obsVsPredList <- private$.evaluate(currVals)
+      # List of DataCombined objects, one for each output mapping
+      # If the simulation was not successful, return `Inf` for the objective function value.
+      obsVsPredList <- tryCatch(
+        {
+          private$.evaluate(currVals)
+        },
+        error = function(cond) {
+          message(messages$simulationNotSuccessful(currVals))
+          message("Original error message:")
+          message(cond)
 
-      if (tolower(private$.configuration$targetFunctionType) == "lsq") {
-        runningCost <- NULL
-        # matching output mappings to the results of the .evaluate function
-        for (idx in seq_along(private$.outputMappings)) {
-          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-          simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-          observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-
-          # replacing values below LLOQ with LLOQ / 2
-          # get LLOQ of observed
-          if (sum(is.finite(observed$lloq)) > 0) {
-            lloq <- min(observed$lloq, na.rm = TRUE)
-            simulated[simulated$yValues < lloq, "yValues"] <- lloq / 2
-          }
-
-          if (private$.outputMappings[[idx]]$scaling == "lin") {
-            modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-            obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-          } else if (private$.outputMappings[[idx]]$scaling == "log") {
-            UNITS_EPSILON <- ospsuite::toUnit(
-              quantityOrDimension = simulated$yDimension[[1]],
-              values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-              targetUnit = simulated$yUnit[[1]],
-              molWeight = 1
-            )
-            modelDf <- data.frame("Time" = simulated$xValues, "Values" = ospsuite.utils::logSafe(simulated$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-            obsDf <- data.frame("Time" = observed$xValues, "Values" = ospsuite.utils::logSafe(observed$yValues, epsilon = UNITS_EPSILON, base = exp(1)))
-          }
-          runningCost <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = runningCost)
-          runningError <- runningCost$model
+          return(NA)
         }
-        if (private$.configuration$printIterationFeedback) {
-          private$.iteration <- private$.iteration + 1
-          cat(paste0("iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "), ", target function ", signif(runningError, 3), "\n"))
-        }
-        return(runningCost)
+      )
+      # Returning a list of `Inf`s as otherwise the "Marq" method complains about
+      # receiving only single value and not residuals.
+      # (I think this would also lead to a failure where only one observed data
+      # point is fitted).
+      if (any(is.na(obsVsPredList))) {
+        return(c(Inf, Inf))
       }
 
-      # If targetFunctionType did not match any of the implementations, return NA
-      warning(paste0(
-        private$.configuration$targetFunctionType,
-        " is not an implemented target function. Cannot run parameter identification."
-      ))
-      return(NA_real_)
+      # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
+      # Summed up over all output mappings
+      unscensoredError <- NULL
+      # Error calculated for censored values (i.e., below LQ if LLOQ censoring)
+      # Summed up over all output mappings
+      censoredError <- NULL
+
+      # Calculate error for each output mapping separately and add them up
+      for (idx in seq_along(private$.outputMappings)) {
+        # Calling unit converter to unify the units within the DataCombined
+        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+        # For least squares target function, values below LLOQ will be set to
+        # LLOQ/2 for simulation data and therefore always equal to the observed values
+        if (private$.configuration$targetFunctionType == "lsq") {
+          # replacing values below LLOQ with LLOQ / 2
+          if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
+            lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
+            obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
+              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+          }
+        }
+
+        # Transform to log if required.
+        if (private$.outputMappings[[idx]]$scaling == "log") {
+          UNITS_EPSILON <- ospsuite::toUnit(
+            quantityOrDimension = obsVsPredDf$yDimension[[1]],
+            values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+            targetUnit = obsVsPredDf$yUnit[[1]],
+            molWeight = 1
+          )
+          obsVsPredDf$yValues <- ospsuite.utils::logSafe(obsVsPredDf$yValues, epsilon = UNITS_EPSILON, base = exp(1))
+          obsVsPredDf$lloq <- ospsuite.utils::logSafe(obsVsPredDf$lloq, epsilon = UNITS_EPSILON, base = exp(1))
+        }
+
+        # Extract simulated and observed data
+        simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
+        observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+
+        # Least squares target function.
+        if (private$.configuration$targetFunctionType == "lsq") {
+          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
+          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
+        }
+
+        # M3 LLOQ method. Implementation based on DOI: 10.1023/a:1012299115260
+        # In particular, equation 6
+        if (private$.configuration$targetFunctionType == "m3") {
+          # Separate censored and uncensored data
+          observed_uncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
+          observed_censored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
+          simulated_uncensored <- merge(observed_uncensored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
+          simulated_censored <- merge(observed_censored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
+
+          # Data frames used for calculation of uncensored error
+          modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
+          obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
+
+          # sd for untransformed data is defined as CV * mean, while mean is the LQ
+          if (private$.outputMappings[[idx]]$scaling == "lin") {
+            sd <- abs(private$.cvM3 * observed_censored$lloq)
+          } else {
+            sd <- private$.sdForLogCV
+          }
+
+          # Calculate censored residuals for this output mapping and add it to
+          # the total censored residuals vector
+          if (nrow(observed_censored) > 0) {
+            # First calculate the probabilities
+            censoderProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
+            # Replace zeros by the minimal number to avoid Inf for censoder error
+            censoderProbabilities[censoderProbabilities == 0] <- .Machine$double.xmin
+
+            # As desctibed in Equation 6. Calculate a vector of residuals
+            censoredErrorVector <- -2 * log(censoderProbabilities,
+              base = 10
+            )
+            # We must take the square root of the censored residuals because modFit
+            # expects the unsquared residuals! The total error value is then calculated
+            # as squared residuals but as can be seen in Equation 5, M3 method returns
+            # already squared values
+            censoredErrorVector <- sqrt(censoredErrorVector)
+
+            # Construct the data frame with censored residuals with the same structure
+            # as the 'residuals'  df
+            censoredError <- rbind(censoredError, data.frame(
+              name = "Values",
+              x = observed_censored$xValues,
+              obs = observed_censored$yValues,
+              mod = simulated_censored$yValues,
+              weight = 1,
+              res.unweighted = censoredErrorVector,
+              res = censoredErrorVector
+            ))
+          }
+        }
+
+        # Calculate uncensored error.
+        unscensoredError <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+      }
+
+      # Total error. Either the uncensored error,
+      # or with addition of censored values
+      runningCost <- unscensoredError
+      if (!is.null(censoredError)) {
+        # Add censored error
+        totalCost <- runningCost$model + sum(censoredError$res^2)
+        # Extend the structure of the results object returned by modCost by
+        # the uncensored cost
+        # Append the data frame to the $residuals df
+        runningCost$residuals <- rbind(runningCost$residuals, censoredError)
+        #
+        # # Update the total cost 'model'
+        runningCost$model <- totalCost
+        runningCost$var$N <- length(runningCost$residuals$res)
+        runningCost$var$SSR.unweighted <- totalCost
+        runningCost$var$SSR.unscaled <- totalCost
+        runningCost$var$SSR <- totalCost
+        runningCost$minlogp <- -sum(log(pmax(0, dnorm(
+          runningCost$residuals$mod, runningCost$residuals$obs,
+          1 / runningCost$residuals$weight
+        ))))
+      }
+
+      # Print current error if requested
+      if (private$.configuration$printIterationFeedback) {
+        # Current total error is the sum of squared residuals
+        private$.iteration <- private$.iteration + 1
+        cat(paste0(
+          "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
+          ", target function ", signif(runningCost$model, 3), "\n"
+        ))
+      }
+      return(runningCost)
     },
 
     # Apply final identified values to simulation parameter objects.
@@ -348,12 +465,6 @@ ParameterIdentification <- R6::R6Class(
       return(obsVsPredList)
     },
 
-    # Calculate the least-squares measure of discrepancy between observed and predicted data
-    .LSQ = function(obsVsPred) {
-      residuals <- calculateResiduals(obsVsPred, scaling = "lin")
-      return(sum(residuals$residualValues**2, na.rm = TRUE))
-    },
-
     # Runs the optimization algorithm and returns the results produced by the
     # algorithms. Called from public $run() method.
     .runAlgorithm = function() {
@@ -367,17 +478,18 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      # Quadratic approximation based algorithms (BOBYQA) may end up in a local minimum
-      # instead of the global minimum. To find the approximate location of the global
-      # minimum, generalized simulated annealing is performed first.
-      # It is intended to run for 10 seconds, but in practice, it runs for one iteration
-      # of simulated annealing (that takes more than 10 seconds). Visiting and acceptance
-      # parameters are set to fast simulated annealing (see doi.org/10.32614/RJ-2013-002).
-      SAresults <- GenSA::GenSA(par = startValues, fn = function(p) {
-        private$.targetFunction(p)$model
-      }, lower = lower, upper = upper, control = list(max.time = 10, verbose = FALSE, simple.function = TRUE, visiting.param = 2, acceptance.param = 1))
-      results <- FME::modFit(f = private$.targetFunction, p = SAresults$par, lower = lower, upper = upper, method = "bobyqa")
-      results$GenSAcounts <- SAresults$counts
+      # The method and method-specific control options can be passed
+      # to the `PIConfiguration` object. The `FME::modFit()` function allows to
+      # use the following algorithms:
+      # * `bobyqa` is a gradient-free quadratic approximation method
+      # * * `rhobeg` is the initial value of the trust region radius. Set to one tenth of the greatest expected variable change
+      # * * `maxfun` is the number of function evaluations
+      # * `Marq` is the Levenberg-Marquardt method
+      # * * `ftol`, `ptol` and `gtol` control the termination criteria
+      # * * `maxfev` is the number of function evaluations
+      # * * `maxiter` is the number of iterations
+      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
+
       # Calculation of confidence intervals
       # Sigma values are standard deviations of the estimated parameters. They are
       # extracted from the estimated hessian matrix through the summary function.
@@ -387,7 +499,7 @@ ParameterIdentification <- R6::R6Class(
       sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
-      results$cv <- sigma / results$par * 100
+      results$cv <- sigma / abs(results$par) * 100
       return(results)
     }
   ),
@@ -410,6 +522,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
+      private$.sdForLogCV <- sqrt(log(1 + private$.cvM3^2, base = 10) / log(10))
 
       simulations <- toList(simulations)
       parameters <- toList(parameters)

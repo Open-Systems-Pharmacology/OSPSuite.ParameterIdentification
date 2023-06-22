@@ -25,8 +25,19 @@ Default is \code{FALSE}}
 \item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
 to simulation runs. If \code{NULL}, default options are used.}
 
-\item{\code{targetFunctionType}}{a string describing the target function for
-parameter estimation. Currently, only "lsq" is implemented.}
+\item{\code{targetFunctionType}}{Type of the target function used for error
+calculation. Supported target functions  are listed  in
+\code{ospsuite.parameteridentification::ObjectiveFunctions}.}
+
+\item{\code{algorithm}}{a string describing the optimization algorithm, as passed
+to the \code{FME::modFit()} function.
+Supported algorithms are listed  in
+\code{ospsuite.parameteridentification::Algorithms}.}
+
+\item{\code{algorithmOptions}}{a list of named parameters describing method-specific
+control arguments, as passed to the \code{FME::modFit()} function.
+Supported options are listed  in
+\code{ospsuite.parameteridentification::AlgorithmOptions}.}
 }
 \if{html}{\out{</div>}}
 }

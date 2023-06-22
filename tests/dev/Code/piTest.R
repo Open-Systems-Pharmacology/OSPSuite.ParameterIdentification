@@ -1,9 +1,9 @@
 # library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
+modelFolder <- file.path(getwd(), "../Models/Simulations")
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../Data")
+dataFolder <- file.path(getwd(), "../../data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
@@ -11,7 +11,7 @@ dataFile <- "DataSet.xlsx"
 dataSheets <- c("Boswell_2012")
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(getwd(), "../Data", "dataImporter_configuration.xml")
+  configurationFilePath = file.path(getwd(), "../../data", "dataImporter_configuration.xml")
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -32,7 +32,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
-piConfiguration$targetFunctionType <- "FME_modCost"
+piConfiguration$targetFunctionType <- "lsq"
 
 ######### Define parameters to optimize#######
 parameters <- list()
@@ -78,7 +78,7 @@ pi <- ParameterIdentification$new(
   simulations = simulations$`2.5 mg_kg.pkml`, parameters = parameters, outputMappings = piOutputMappings[[3]],
   configuration = piConfiguration
 )
-pi$plotCurrentResults()
+pi$plotResults()
 
 # 45 iterations
 # user  system elapsed
@@ -94,7 +94,7 @@ profvis::profvis({
 })
 print(results)
 
-pi$plotCurrentResults()
+pi$plotResults()
 
 ### All simulations###
 
@@ -114,7 +114,7 @@ pi <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 # Plot results before optimization
-pi$plotCurrentResults()
+pi$plotResults()
 
 # user  system elapsed
 # 1652.36   13.61  815.54
@@ -126,4 +126,4 @@ gc()
 profvis::profvis({
   results <- pi$run()
 })
-pi$plotCurrentResults()
+pi$plotResults()

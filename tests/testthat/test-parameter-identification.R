@@ -113,13 +113,13 @@ test_that("The results object contains a parameter estimate", {
   expect_equal(task_results$par, -0.009700017)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(task_results$feval, 12)
+  expect_equal(task_results$feval, 15)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(task_results$lwr, -0.3473112)
+  expect_equal(task_results$lwr, -5.422019, tolerance = 1e-6)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(task_results$upr, 0.32791115)
+  expect_equal(task_results$upr, 5.402619, tolerance = 1e-6)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulations$Aciclovir
@@ -135,4 +135,9 @@ test_that("Output mappings with log scaling are processed without errors", {
     configuration = piConfiguration
   ))
   expect_no_error(task_results <- task$run())
+})
+test_that("Algorithm can be changed in PI configuration", {
+  expect_equal(task$configuration$algorithm, "bobyqa")
+  task$configuration$algorithm <- "Marq"
+  expect_equal(task$configuration$algorithm, "Marq")
 })
