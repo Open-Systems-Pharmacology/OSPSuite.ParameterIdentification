@@ -1,0 +1,132 @@
+---
+title: "User guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{User guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ospsuite.parameteridentification)
+knitr::opts_knit$set(
+  root.dir = ".." # setting up to package root folder so that the relative paths match between the vignettes and the tests
+)
+```
+
+## Parameter estimation problems
+
+Biosimulation models often include numerical parameters that determine the outputs of the model. Often, the values of these parameters are not known in advance and have to be identified by matching possible model outputs to the observed data. Finding parameter values that best match the observed data is called *parameter estimation*.
+
+The `{ospsuite.parameteridentification}` package provides a class for setting up such tasks based on existing PKML models, mapping model outputs to observed data and estimating parameters. Below, a model example shows a case of investigating [an existing open-source biosimulation model of aciclovir](https://github.com/Open-Systems-Pharmacology/Example_Aciclovir).
+
+## Configuration
+
+The package includes a `PIConfiguration` class for storing and re-using the settings of the parameter identification task. Currently, the implemented options include: 
+
+* `printIterationFeedback` (logical) indicates if the objective function value should be printed at each iteration
+
+* `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to quantify the difference between observed data and simulated curve. The M3 method from [Beal, 2001](https://link.springer.com/article/10.1023/A:1012299115260) is an objective function that accounts for possible data points below the lower limit of quantification.
+
+* `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Control options can be specified as list and passed to `piConfiguration$algorithmOptions`.
+
+```{r include=TRUE, eval=FALSE}
+piConfiguration <- PIConfiguration$new()
+piConfiguration$printIterationFeedback <- TRUE
+```
+
+## Extracting parameters from the model
+
+A sample PKML file with the model is shipped with the package: 
+```{r include=TRUE, eval=TRUE}
+simulations <- c(loadSimulation("tests/dev/Models/Simulations/Aciclovir.pkml"))
+names(simulations) <- "Aciclovir"
+```
+
+The parameter corresponding to the lipophilicity of aciclovir is called `Aciclovir|Lipophilicity` within the model. The parameter describing the clearance is called `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`. You can also look up parameters in the model using 
+
+```{r include=TRUE, eval=TRUE}
+getAllParametersMatching("**|TSspec", simulations$Aciclovir)
+```
+
+The package has a `PIParameter` class to represent the varying parameters in the model and store them along with the starting value, the lower and the upper bounds of the parameter search space.
+
+```{r include=TRUE, eval=FALSE}
+parameters <- c(PIParameters$new(parameters = ospsuite::getParameter(
+    path = "Aciclovir|Lipophilicity", 
+    container = simulations$Aciclovir
+  )), PIParameters$new(parameters = ospsuite::getParameter(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    container = simulations$Aciclovir
+  )))
+```
+
+The default bounds are 0.1 of the starting parameter value and 10.0 of the starting parameter value, but it is often useful to supply parameter bounds from previous knowledge:
+```{r include=TRUE, eval=FALSE}
+parameters[[1]]$minValue <- -5
+parameters[[1]]$maxValue <- 10
+parameters[[2]]$minValue <- 0
+parameters[[2]]$maxValue <- 10
+```
+
+## Reading observed data
+
+We need to supply the observed data which we are going to use to identify parameter values. 
+
+```{r include=TRUE, eval=FALSE}
+filePath <- "tests/data/AciclovirLaskinData.xlsx"
+dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
+dataConfiguration$sheets <- "Laskin 1982.Group A"
+dataConfiguration$namingPattern <- "{Source}.{Sheet}"
+observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
+```
+
+Here, the *importer configuration* is created with the `createImporterConfigurationForFile` helper function that tries to guess column names in the Excel file. If you run into errors while importing the data, try to create the importer configuration from the PK-Sim GUI, export it as an `XML` file and re-use it for importing observed data into R as follows:
+```{r include=TRUE, eval=FALSE}
+filePath <- "tests/data/AciclovirLaskinData.xlsx"
+dataConfiguration <- loadDataImporterConfiguration("tests/data/dataImporter_configuration.xml")
+observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
+```
+
+## Mapping data to model outputs
+
+Typically, the observed data show the concentration of the compound in the peripheral blood flow, but there can be other setups. A class from the package that matches the model outputs and the observations is called `PIOutputMapping`, for example:
+
+```{r include=TRUE, eval=FALSE}
+outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+  container = simulations$Aciclovir
+))
+outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+outputMapping$scaling <- "lin"
+outputMappings <- c(outputMapping)
+```
+
+## Running parameter estimation
+
+After the `outputMappings`, `simulations`, `parameters` and `piConfiguration` objects are created, they are used in an instance of the `ParameterIdentification` class as follows:
+
+```{r include=TRUE, eval=FALSE}
+task <- ParameterIdentification$new(
+  simulations = simulations,
+  parameters = parameters,
+  outputMappings = outputMapping,
+  configuration = piConfiguration
+)
+task_results <- task$run()
+```
+
+If `piConfiguration$printIterationFeedback` is set to `TRUE`, each iteration will print a single line with the current objective function value, to track the performance of the optimization algorithm.
+
+## Diagnostics
+
+The resulting object contains: 
+
+* `task_results$par`: a vector of point estimates for each of the parameters
+* `task_results$lwr` and `task_results$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
+* `task_results$cv`: a vector with coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
+
+The `task` object also contains a `$plotResults()` function that produces three diagnostic plots: an individual time profile with the current best estimate of model parameters and overlayed observed data, a comparison of predicted-vs-observed values and a plot of residuals vs time to identify potential biases in the model. The `$plotResults()` function can take an optional vector of parameter values to plot the curve corresponding to another set of model parameters.

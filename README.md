@@ -33,6 +33,9 @@ The **OSPSuite.ParameterIdentification** R-package provides the functionality of
 - knitr (CRAN)
 - styler (CRAN)
 
+# User guide
+
+Examples of running parameter estimation tasks using this package are detailed in [the user guide](articles/user-guide.html).
 
 ## Code of conduct
 
