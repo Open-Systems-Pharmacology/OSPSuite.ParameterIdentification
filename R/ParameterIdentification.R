@@ -478,28 +478,58 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      # The method and method-specific control options can be passed
-      # to the `PIConfiguration` object. The `FME::modFit()` function allows to
-      # use the following algorithms:
-      # * `bobyqa` is a gradient-free quadratic approximation method
-      # * * `rhobeg` is the initial value of the trust region radius. Set to one tenth of the greatest expected variable change
-      # * * `maxfun` is the number of function evaluations
-      # * `Marq` is the Levenberg-Marquardt method
-      # * * `ftol`, `ptol` and `gtol` control the termination criteria
-      # * * `maxfev` is the number of function evaluations
-      # * * `maxiter` is the number of iterations
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
+      # Depending on the method argument in the `PIConfiguration` object, the
+      # actual optimization call will use one of the underlying optimization routines
+      results <- NULL
+      if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
+        time <- system.time(results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions))
 
-      # Calculation of confidence intervals
-      # Sigma values are standard deviations of the estimated parameters. They are
-      # extracted from the estimated hessian matrix through the summary function.
-      # The 95% confidence intervals are defined by two sigma values away from the
-      # point estimate. The coefficient of variation (CV) is the ratio of standard
-      # deviation to the point estimate.
-      sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
-      results$lwr <- results$par - 1.96 * sigma
-      results$upr <- results$par + 1.96 * sigma
-      results$cv <- sigma / abs(results$par) * 100
+        # Sigma values are standard deviations of the estimated parameters. They are
+        # extracted from the estimated hessian matrix through the summary function.
+        # The 95% confidence intervals are defined by two sigma values away from the
+        # point estimate. The coefficient of variation (CV) is the ratio of standard
+        # deviation to the point estimate.
+        sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+
+        results$elapsed <- time[[3]]
+      }
+      if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
+        results <- optim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
+      }
+      if (private$.configuration$algorithm == "minqa") {
+        results <- minqa::bobyqa(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+      }
+      if (private$.configuration$algorithm == "NMKB") {
+        results <- dfoptim::nmkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+      }
+      if (private$.configuration$algorithm == "HJKB") {
+        results <- dfoptim::hjkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+      }
+      if (private$.configuration$algorithm == "nloptr:BOBYQA") {
+        results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+      }
+      if (private$.configuration$algorithm == "nloptr:NM") {
+        results <- nloptr::neldermead(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+      }
+      if (private$.configuration$algorithm == "solnp") {
+        results <- Rsolnp::solnp(pars = startValues, fun = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions)
+      }
+      if (private$.configuration$algorithm == "DEoptim") {
+        results <- DEoptim::DEoptim(fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100))
+      }
+      if (private$.configuration$algorithm == "PSoptim") {
+        results <- pso::psoptim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = private$.configuration$algorithmOptions)
+      }
+      if (private$.configuration$algorithm == "GenOUD") {
+        boundary_domains = matrix(c(lower, upper), ncol = 2)
+        results <- rgenoud::genoud(fn = function(p) {private$.targetFunction(p)$model}, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE)
+      }
+      if (is.null(results)) {
+        warning("Parameter identification stopped: ", private$.configuration$algorithm, " is not a recognized optimization algorithm")
+      }
       return(results)
     }
   ),
