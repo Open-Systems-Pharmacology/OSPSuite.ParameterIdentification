@@ -1,22 +1,28 @@
 #' @title Algorithms
-#' List of optimization algorithms supported by `FME::modFit()` and, consequently,
+#' List of optimization algorithms supported by optimization routines and, consequently,
 #' by the ParameterIdentification class
 Algorithms <- enum(c(
   "bobyqa",
   "Marq",
-  "Port",
-  "Newton",
   "Nelder-Mead",
   "BFGS",
   "CG",
   "L-BFGS-B",
   "SANN",
-  "Pseudo"
+  "minqa",
+  "NMKB",
+  "HJKB",
+  "nloptr:BOBYQA",
+  "nloptr:NM",
+  "solnp",
+  "DEoptim",
+  "PSoptim", 
+  "GenOUD"
 ))
 
 #' @title AlgorithmOptions
-#' List of options for optimization algorithms, some of them specific certain algorithms.
-#' See documentation of `FME::modeFit()` for details.
+#' List of options for optimization algorithms, some of them specific to certain algorithms.
+#' See documentation of `FME::modFit()` for details.
 AlgorithmOptions <- enum(c(
   # from the nls.lm.control routine
   "ftol",

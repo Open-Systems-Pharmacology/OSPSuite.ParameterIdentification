@@ -480,6 +480,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Depending on the method argument in the `PIConfiguration` object, the
       # actual optimization call will use one of the underlying optimization routines
+      message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
       results <- NULL
       if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
         time <- system.time(results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions))
@@ -497,25 +498,43 @@ ParameterIdentification <- R6::R6Class(
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
-        results <- optim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
+        time <- system.time(results <- optim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE))
+
+        # For the target function that represents the deviation = -2 * log(L),
+        # results$hessian / 2 is the observed information matrix
+        # https://stats.stackexchange.com/questions/27033/
+        fim <- solve(results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "minqa") {
-        results <- minqa::bobyqa(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        # "minqa" class changes the formatting of print, so we remove it with "unclass"
+        time <- system.time(results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)))
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "NMKB") {
-        results <- dfoptim::nmkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
-      }
+        time <- system.time(results <- dfoptim::nmkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        results$elapsed <- time[[3]]
+        }
       if (private$.configuration$algorithm == "HJKB") {
-        results <- dfoptim::hjkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        time <- system.time(results <- dfoptim::hjkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "nloptr:BOBYQA") {
-        results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        time <- system.time(results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "nloptr:NM") {
-        results <- nloptr::neldermead(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        time <- system.time(results <- nloptr::neldermead(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "solnp") {
-        results <- Rsolnp::solnp(pars = startValues, fun = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions)
+        time <- system.time(results <- Rsolnp::solnp(pars = startValues, fun = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions))
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "DEoptim") {
         results <- DEoptim::DEoptim(fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100))
@@ -529,7 +548,9 @@ ParameterIdentification <- R6::R6Class(
       }
       if (is.null(results)) {
         warning("Parameter identification stopped: ", private$.configuration$algorithm, " is not a recognized optimization algorithm")
+        return(NULL)
       }
+      results$algorithm <- private$.configuration$algorithm
       return(results)
     }
   ),
