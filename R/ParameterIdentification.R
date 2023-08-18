@@ -217,7 +217,7 @@ ParameterIdentification <- R6::R6Class(
         error = function(cond) {
           message(messages$simulationNotSuccessful(currVals))
           message("Original error message:")
-          message(cond)
+          message(cond$message)
 
           return(NA)
         }

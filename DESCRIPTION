@@ -27,9 +27,12 @@ Depends:
     ospsuite (>= 11.0)
 Imports:
     FME,
-    rClr,
+    ggplot2,
+    ggtext,
+    grDevices,
     ospsuite.utils,
-    R6
+    R6,
+    rClr
 Suggests: 
     knitr,
     rmarkdown,
