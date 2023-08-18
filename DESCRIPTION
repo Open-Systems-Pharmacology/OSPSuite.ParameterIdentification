@@ -28,6 +28,7 @@ Depends:
 Imports:
     FME,
     ggplot2,
+    ggtext,
     grDevices,
     ospsuite.utils,
     R6,
