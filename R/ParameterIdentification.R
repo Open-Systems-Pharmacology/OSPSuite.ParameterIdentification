@@ -512,39 +512,130 @@ ParameterIdentification <- R6::R6Class(
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "minqa") {
-        # "minqa" class changes the formatting of print, so we remove it with "unclass"
+        # "minqa" class overrides printing, so we remove it with "unclass"
         time <- system.time(results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)))
+
+        message("Post-hoc estimation of hessian")
+        # The call to minqa::bobyqa does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        results$value <- results$fval
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "NMKB") {
         time <- system.time(results <- dfoptim::nmkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        # The call to dfoptim::nmkb does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
         results$elapsed <- time[[3]]
-        }
+      }
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time(results <- dfoptim::hjkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        # The call to dfoptim::hjkb does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "nloptr:BOBYQA") {
         time <- system.time(results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        # The call to nloptr::bobyqa does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "nloptr:NM") {
         time <- system.time(results <- nloptr::neldermead(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        # The call to nloptr::neldermead does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "solnp") {
         time <- system.time(results <- Rsolnp::solnp(pars = startValues, fun = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions))
+        # The call to solnp does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        results$par <- results$pars
+        results$value <- private$.targetFunction(results$par)$model
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
         results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "DEoptim") {
-        results <- DEoptim::DEoptim(fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100))
+        time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 1)))
+        # The call to DEoptim does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        results$par <- results$optim$bestmem
+        results$value <- results$optim$bestval
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "PSoptim") {
-        results <- pso::psoptim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = private$.configuration$algorithmOptions)
+        time <- system.time(results <- pso::psoptim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = private$.configuration$algorithmOptions))
+        # The call to psoptim does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+        results$elapsed <- time[[3]]
       }
       if (private$.configuration$algorithm == "GenOUD") {
         boundary_domains = matrix(c(lower, upper), ncol = 2)
-        results <- rgenoud::genoud(fn = function(p) {private$.targetFunction(p)$model}, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE)
+        time <- system.time(results <- rgenoud::genoud(fn = function(p) {private$.targetFunction(p)$model}, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE))
+        # The call to GenOUD does not return an estimated hessian, so
+        # we run one iteration of optim to return the hessian
+        message("Post-hoc estimation of hessian")
+        optim_results <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        fim <- solve(optim_results$hessian / 2)
+        sigma <- sqrt(diag(fim))
+        results$lwr <- results$par - 1.96 * sigma
+        results$upr <- results$par + 1.96 * sigma
+        results$cv <- sigma / abs(results$par) * 100
+        results$elapsed <- time[[3]]
       }
       if (is.null(results)) {
         warning("Parameter identification stopped: ", private$.configuration$algorithm, " is not a recognized optimization algorithm")
