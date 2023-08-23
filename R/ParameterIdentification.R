@@ -285,6 +285,10 @@ ParameterIdentification <- R6::R6Class(
 
           # Data frames used for calculation of uncensored error
           modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
+          # 'merge()' produces multiple entries for the same x value when multiple
+          # observed data sets are present. Apply 'unique()' to avoid duplication
+          # of values and a warning during interpolation.
+          modelDf <- unique(modelDf)
           obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
 
           # sd for untransformed data is defined as CV * mean, while mean is the LQ
