@@ -646,6 +646,17 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
+    #' Calculates the values of the objective function on a rectangular grid
+    calculateGrid = function(lower, upper, log_scale_flag, total_evaluations = 1000) {
+      np <- length(private$parameters)
+      grid_size <- floor(total_evaluations^(1/np))
+      grid_list <- list()
+      for (i in seq_along(private$parameters)) {
+        grid_list <- c(grid_list, tibble())
+      }
+    }
+
+    #' @description
     #' Print the object to the console
     #' @param ... Rest arguments.
     print = function(...) {
