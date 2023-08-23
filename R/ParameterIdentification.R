@@ -327,7 +327,7 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate uncensored error.
-        unscensoredError <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+        unscensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
       }
 
       # Total error. Either the uncensored error,
