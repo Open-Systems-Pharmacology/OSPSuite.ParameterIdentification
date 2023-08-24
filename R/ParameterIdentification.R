@@ -502,49 +502,72 @@ ParameterIdentification <- R6::R6Class(
         calculateSigma <- FALSE
       }
       if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
-        time <- system.time(results <- optim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE))
+        time <- system.time(results <- optim(par = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE))
         optimResults <- results
       }
       if (private$.configuration$algorithm == "minqa") {
         # "minqa" class overrides printing, so we remove it with "unclass"
-        time <- system.time(results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)))
+        time <- system.time(results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)))
         results$value <- results$fval
       }
       if (private$.configuration$algorithm == "NMKB") {
-        time <- system.time(results <- dfoptim::nmkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        time <- system.time(results <- dfoptim::nmkb(par = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
       }
       if (private$.configuration$algorithm == "HJKB") {
-        time <- system.time(results <- dfoptim::hjkb(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        time <- system.time(results <- dfoptim::hjkb(par = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
       }
       if (private$.configuration$algorithm == "nloptr:BOBYQA") {
-        time <- system.time(results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        time <- system.time(results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
       }
       if (private$.configuration$algorithm == "nloptr:NM") {
-        time <- system.time(results <- nloptr::neldermead(x0 = startValues, fn = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+        time <- system.time(results <- nloptr::neldermead(x0 = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
       }
       if (private$.configuration$algorithm == "solnp") {
-        time <- system.time(results <- Rsolnp::solnp(pars = startValues, fun = function(p) {private$.targetFunction(p)$model}, control = private$.configuration$algorithmOptions))
+        time <- system.time(results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
+          private$.targetFunction(p)$model
+        }, control = private$.configuration$algorithmOptions))
         results$par <- results$pars
         results$value <- private$.targetFunction(results$par)$model
       }
       if (private$.configuration$algorithm == "DEoptim") {
-        time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 1)))
+        time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {
+          private$.targetFunction(p)$model
+        }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 1)))
         results$par <- results$optim$bestmem
-        results$value <- results$optim$bestval      }
+        results$value <- results$optim$bestval
+      }
       if (private$.configuration$algorithm == "PSoptim") {
-        time <- system.time(results <- pso::psoptim(par = startValues, fn = function(p) {private$.targetFunction(p)$model}, lower = lower, upper = upper, control = private$.configuration$algorithmOptions))
+        time <- system.time(results <- pso::psoptim(par = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }, lower = lower, upper = upper, control = private$.configuration$algorithmOptions))
       }
       if (private$.configuration$algorithm == "GenOUD") {
-        boundary_domains = matrix(c(lower, upper), ncol = 2)
-        time <- system.time(results <- rgenoud::genoud(fn = function(p) {private$.targetFunction(p)$model}, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE))
+        boundary_domains <- matrix(c(lower, upper), ncol = 2)
+        time <- system.time(results <- rgenoud::genoud(fn = function(p) {
+          private$.targetFunction(p)$model
+        }, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE))
       }
 
       if (calculateSigma) {
         message("Post-hoc estimation of hessian")
         # The call to minqa::bobyqa does not return an estimated hessian, so
         # we run one iteration of optim to return the hessian
-        if (is.null(optimResults)){
-          optimResults <- optim(results$par, function(p) {private$.targetFunction(p)$model}, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+        if (is.null(optimResults)) {
+          optimResults <- optim(results$par, function(p) {
+            private$.targetFunction(p)$model
+          }, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
         }
         # For the target function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix

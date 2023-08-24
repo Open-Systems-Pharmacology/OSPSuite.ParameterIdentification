@@ -16,7 +16,7 @@ Algorithms <- enum(c(
   "nloptr:NM",
   "solnp",
   "DEoptim",
-  "PSoptim", 
+  "PSoptim",
   "GenOUD"
 ))
 
