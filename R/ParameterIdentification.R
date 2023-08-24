@@ -217,7 +217,7 @@ ParameterIdentification <- R6::R6Class(
         error = function(cond) {
           message(messages$simulationNotSuccessful(currVals))
           message("Original error message:")
-          message(cond)
+          message(cond$message)
 
           return(NA)
         }
@@ -285,6 +285,10 @@ ParameterIdentification <- R6::R6Class(
 
           # Data frames used for calculation of uncensored error
           modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
+          # 'merge()' produces multiple entries for the same x value when multiple
+          # observed data sets are present. Apply 'unique()' to avoid duplication
+          # of values and a warning during interpolation.
+          modelDf <- unique(modelDf)
           obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
 
           # sd for untransformed data is defined as CV * mean, while mean is the LQ
@@ -327,7 +331,7 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate uncensored error.
-        unscensoredError <- FME::modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+        unscensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
       }
 
       # Total error. Either the uncensored error,
