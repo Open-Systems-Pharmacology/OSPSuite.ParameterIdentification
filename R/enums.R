@@ -16,6 +16,8 @@ Algorithms <- enum(c(
   "nloptr:BOBYQA",
   "nloptr:NM",
   "solnp",
+  "marqLevAlg",
+  "minpack",
   "DEoptim",
   "PSoptim",
   "GenOUD"

@@ -541,6 +541,20 @@ ParameterIdentification <- R6::R6Class(
         results$par <- results$pars
         results$value <- private$.targetFunction(results$par)$model
       }
+      if (private$.configuration$algorithm == "marqLevAlg") {
+        time <- system.time(results <- marqLevAlg::marqLevAlg(b = startValues, fn = function(p) {
+          private$.targetFunction(p)$model
+        }))
+        results$par <- results$b
+        results$value <- results$fn.value
+      }
+      if (private$.configuration$algorithm == "minpack") {
+        time <- system.time(results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
+          private$.targetFunction(p)$residuals$res
+        }))
+        results$value <- private$.targetFunction(results$par)$model
+        optimResults <- results
+      }
       if (private$.configuration$algorithm == "DEoptim") {
         time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {
           private$.targetFunction(p)$model
