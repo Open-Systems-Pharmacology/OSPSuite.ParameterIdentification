@@ -43,9 +43,11 @@ task_results <- task$run()
 
 
 grid_search <- crossing(tibble(lip = seq(-5, 10, 0.2))) %>%
-  mutate(ofv = map_dbl(lip, function(x) {task$.__enclos_env__$private$.targetFunction(c(x))$model}))
+  mutate(ofv = map_dbl(lip, function(x) {
+    task$.__enclos_env__$private$.targetFunction(c(x))$model
+  }))
 ggplot(grid_search) +
-  geom_point(aes(x = lip, y = ofv, col = 1/ofv)) +
+  geom_point(aes(x = lip, y = ofv, col = 1 / ofv)) +
   scale_color_viridis_c() +
   theme_bw() +
   guides(color = "none")

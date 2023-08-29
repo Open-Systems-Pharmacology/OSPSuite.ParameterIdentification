@@ -588,20 +588,20 @@ ParameterIdentification <- R6::R6Class(
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
         # Try to solve 'hessian / 2'. This will fall if the system is singular.
-        sigma <- tryCatch({
-          fim <- solve(optimResults$hessian / 2)
-          return(sqrt(diag(fim)))
-        },
-        error=function(cond) {
-          message("Error calculating confidence intervals.")
-          message("Here's the original error message:")
-          message(cond$message)
-          # Choose a return value in case of error
-          return(NA_real_)
-        }
+        sigma <- tryCatch(
+          {
+            fim <- solve(optimResults$hessian / 2)
+            sqrt(diag(fim))
+          },
+          error = function(cond) {
+            message("Error calculating confidence intervals.")
+            message("Here's the original error message:")
+            message(cond$message)
+            # Choose a return value in case of error
+            NA_real_
+          }
         )
       }
-
       # Add CV
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
