@@ -208,6 +208,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
+      # Increase iteration counter
+      private$.iteration <- private$.iteration + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -360,7 +362,6 @@ ParameterIdentification <- R6::R6Class(
       # Print current error if requested
       if (private$.configuration$printIterationFeedback) {
         # Current total error is the sum of squared residuals
-        private$.iteration <- private$.iteration + 1
         cat(paste0(
           "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
@@ -586,8 +587,19 @@ ParameterIdentification <- R6::R6Class(
         # For the target function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
-        fim <- solve(optimResults$hessian / 2)
-        sigma <- sqrt(diag(fim))
+        # Try to solve 'hessian / 2'. This will fall if the system is singular.
+        sigma <- tryCatch({
+          fim <- solve(optimResults$hessian / 2)
+          return(sqrt(diag(fim)))
+        },
+        error=function(cond) {
+          message("Error calculating confidence intervals.")
+          message("Here's the original error message:")
+          message(cond$message)
+          # Choose a return value in case of error
+          return(NA_real_)
+        }
+        )
       }
 
       # Add CV
@@ -597,6 +609,8 @@ ParameterIdentification <- R6::R6Class(
 
       results$elapsed <- time[[3]]
       results$algorithm <- private$.configuration$algorithm
+      # Add the number of iterations the to results output
+      results$nrOfIterations <- private$.iteration
       return(results)
     }
   ),
