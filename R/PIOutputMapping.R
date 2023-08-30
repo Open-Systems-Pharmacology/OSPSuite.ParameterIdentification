@@ -82,7 +82,7 @@ PIOutputMapping <- R6::R6Class(
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
     .scaling = NULL,
-    .dataCombinedObject = ospsuite::DataCombined$new()
+    .dataCombinedObject = NULL
   ),
   public = list(
     #' @description
@@ -95,6 +95,7 @@ PIOutputMapping <- R6::R6Class(
       private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
       private$.scaling <- "lin"
+      private$.dataCombinedObject <- ospsuite::DataCombined$new()
     },
 
     #' Add observed data as `DataSet` objects
