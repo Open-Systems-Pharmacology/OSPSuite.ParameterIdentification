@@ -482,12 +482,7 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      # Flag if sigma for CV should be calculated after evaluation.
-      calculateSigma <- TRUE
-      # omtimResults is used for sigma calculation
-      optimResults <- NULL
-
-      # Depending on the method argument in the `PIConfiguration` object, the
+      # Depending on the `algorithm` argument in the `PIConfiguration` object, the
       # actual optimization call will use one of the underlying optimization routines
       message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
       if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
@@ -498,14 +493,12 @@ ParameterIdentification <- R6::R6Class(
         # The 95% confidence intervals are defined by two sigma values away from the
         # point estimate. The coefficient of variation (CV) is the ratio of standard
         # deviation to the point estimate.
-        sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
-        calculateSigma <- FALSE
+        results$sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
       }
       if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
         time <- system.time(results <- optim(par = startValues, fn = function(p) {
           private$.targetFunction(p)$model
         }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE))
-        optimResults <- results
       }
       if (private$.configuration$algorithm == "minqa") {
         # "minqa" class overrides printing, so we remove it with "unclass"
@@ -553,7 +546,6 @@ ParameterIdentification <- R6::R6Class(
           private$.targetFunction(p)$residuals$res
         }))
         results$value <- private$.targetFunction(results$par)$model
-        optimResults <- results
       }
       if (private$.configuration$algorithm == "DEoptim") {
         time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {
@@ -574,26 +566,26 @@ ParameterIdentification <- R6::R6Class(
         }, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE))
       }
 
-      if (calculateSigma) {
-        message("Post-hoc estimation of hessian")
-        # The call to minqa::bobyqa does not return an estimated hessian, so
-        # we run one iteration of optim to return the hessian
-        if (is.null(optimResults)) {
+      if (is.null(results$sigma)) {
+        if (is.null(results$hessian)) {
+          message("Post-hoc estimation of hessian")
+          # If the optimization algorithm did not return an estimate of the hessian matrix,
+          # we run one iteration of `optim` to return the hessian
           optimResults <- optim(results$par, function(p) {
             private$.targetFunction(p)$model
           }, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
+          results$hessian <- optimResults$hessian
         }
         # For the target function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
-        fim <- solve(optimResults$hessian / 2)
-        sigma <- sqrt(diag(fim))
+        results$fim <- solve(results$hessian / 2)
+        results$sigma <- sqrt(diag(results$fim))
       }
-
       # Add CV
-      results$lwr <- results$par - 1.96 * sigma
-      results$upr <- results$par + 1.96 * sigma
-      results$cv <- sigma / abs(results$par) * 100
+      results$lwr <- results$par - 1.96 * results$sigma
+      results$upr <- results$par + 1.96 * results$sigma
+      results$cv <- results$sigma / abs(results$par) * 100
 
       results$elapsed <- time[[3]]
       results$algorithm <- private$.configuration$algorithm
