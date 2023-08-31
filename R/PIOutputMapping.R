@@ -119,12 +119,12 @@ PIOutputMapping <- R6::R6Class(
         ))
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
-      private$.dataCombinedObject$addDataSets(private$.observedDataSets)
+      private$.dataCombinedObject$addDataSets(private$.observedDataSets, groups = private$.quantity$path)
       private$.dataCombinedObject$setDataTransformations(
-        xOffsets = private$dataTransformations$xOffsets,
-        xScaleFactors = private$dataTransformations$xFactors,
-        yOffsets = private$dataTransformations$yOffsets,
-        yScaleFactors = private$dataTransformations$yFactors
+        xOffsets = private$.dataTransformations$xOffsets,
+        xScaleFactors = private$.dataTransformations$xFactors,
+        yOffsets = private$.dataTransformations$yOffsets,
+        yScaleFactors = private$.dataTransformations$yFactors
       )
     },
 

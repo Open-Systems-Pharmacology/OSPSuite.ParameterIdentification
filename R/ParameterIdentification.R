@@ -449,7 +449,8 @@ ParameterIdentification <- R6::R6Class(
         resultObject <- simulationResults[[simBatch$id]][[1]]
         obsVsPred <- currOutputMapping$dataCombinedObject
         obsVsPred$addSimulationResults(resultObject,
-          quantitiesOrPaths = currOutputMapping$quantity$path
+          quantitiesOrPaths = currOutputMapping$quantity$path,
+          groups = currOutputMapping$quantity$path
         )
         obsVsPredList[[idx]] <- obsVsPred
       }
