@@ -21,15 +21,6 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field dataCombinedObject a `DataCombined` object that contains observed data
-    dataCombinedObject = function(value) {
-      if (missing(value)) {
-        private$.dataCombinedObject
-      } else {
-        stop(messages$errorPropertyReadOnly("dataCombinedObject"))
-      }
-    },
-
     #' @field dataTransformations a named list of factors and offsets
     dataTransformations = function(value) {
       if (missing(value)) {
@@ -81,8 +72,7 @@ PIOutputMapping <- R6::R6Class(
     .observedDataSets = NULL,
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
-    .scaling = NULL,
-    .dataCombinedObject = NULL
+    .scaling = NULL
   ),
   public = list(
     #' @description
@@ -95,7 +85,6 @@ PIOutputMapping <- R6::R6Class(
       private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
       private$.scaling <- "lin"
-      private$.dataCombinedObject <- ospsuite::DataCombined$new()
     },
 
     #' Add observed data as `DataSet` objects
@@ -119,13 +108,6 @@ PIOutputMapping <- R6::R6Class(
         ))
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
-      private$.dataCombinedObject$addDataSets(private$.observedDataSets, groups = private$.quantity$path)
-      private$.dataCombinedObject$setDataTransformations(
-        xOffsets = private$.dataTransformations$xOffsets,
-        xScaleFactors = private$.dataTransformations$xFactors,
-        yOffsets = private$.dataTransformations$yOffsets,
-        yScaleFactors = private$.dataTransformations$yFactors
-      )
     },
 
     #' @param label label of the x-y values series to be removed
@@ -153,6 +135,18 @@ PIOutputMapping <- R6::R6Class(
       validateIsNumeric(xFactors, nullAllowed = TRUE)
       validateIsNumeric(yFactors, nullAllowed = TRUE)
       validateIsNumeric(yOffsets, nullAllowed = TRUE)
+      if (is.null(xOffsets)) {
+        xOffsets <- 0
+      }
+      if (is.null(yOffsets)) {
+        yOffsets <- 0
+      }
+      if (is.null(xFactors)) {
+        xFactors <- 1
+      }
+      if (is.null(yFactors)) {
+        yFactors <- 1
+      }
 
       if (missing(labels)) {
         # if no labels are given to the function, the same parameters will be used across datasets

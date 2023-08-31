@@ -82,6 +82,9 @@ ParameterIdentification <- R6::R6Class(
     # Used for M3 target function
     # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
     .sdForLogCV = NULL,
+    # a list of DataCombined objects (one per output mapping) that store (transformed)
+    # observed data
+    .dataCombinedList = NULL,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -545,6 +548,23 @@ ParameterIdentification <- R6::R6Class(
         names(private$.variableParameters) <-
         names(private$.simulationBatches) <-
         names(private$.steadyStateBatches) <- ids
+
+      # We create DataCombined objects (one per output mapping) and pre-fill them with data
+      private$.dataCombinedList <- vector("list", length(outputMappings))
+      for (idx in seq_along(outputMappings)) {
+        private$.dataCombinedList[[idx]] <- ospsuite::DataCombined$new()
+        private$.dataCombinedList[[idx]]$addDataSets(outputMappings[[idx]]$observedDataSets,
+                                                     groups = outputMappings[[idx]]$quantity$path)
+        # First, transformations from the output mapping are applied to the dataset
+        private$.dataCombinedList[[idx]]$setDataTransformations(
+          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors,
+        )
+        # Second, the dataset values are converted to base units
+        # TODO
+      }
     },
 
     #' @description

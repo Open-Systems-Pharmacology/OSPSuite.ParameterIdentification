@@ -17,6 +17,8 @@ for (parameterPath in parameterPaths) {
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
 }
+parameters[[1]]$minValue <- -10
+parameters[[1]]$maxValue <- 10
 
 filePath <- "tests/data/AciclovirLaskinData.xlsx"
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
