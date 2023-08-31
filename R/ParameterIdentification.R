@@ -437,6 +437,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       for (idx in seq_along(private$.outputMappings)) {
+        obsVsPred <- DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
@@ -447,10 +448,20 @@ ParameterIdentification <- R6::R6Class(
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
-        obsVsPred <- currOutputMapping$dataCombinedObject
+        resultId <- names(simulationResults[[simBatch$id]])[[1]]
         obsVsPred$addSimulationResults(resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          groups = currOutputMapping$quantity$path
+          names = resultId, groups = groupName
+        )
+
+        obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
+        # apply data transformations stored in corresponding outputMapping
+        obsVsPred$setDataTransformations(
+          forNames = names(private$.outputMappings[[idx]]$observedDataSets),
+          xOffsets = private$.outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = private$.outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
         )
         obsVsPredList[[idx]] <- obsVsPred
       }
