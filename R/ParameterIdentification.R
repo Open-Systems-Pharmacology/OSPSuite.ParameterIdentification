@@ -392,7 +392,6 @@ ParameterIdentification <- R6::R6Class(
     #' with the given parameters, and corresponding datasets with observed data.
     #' Returns one `DataCombined` object for each output mapping.
     .evaluate = function(currVals) {
-      obsVsPredList <- vector("list", length(private$.outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -445,20 +444,17 @@ ParameterIdentification <- R6::R6Class(
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
         # Find the simulation batch that corresponds to the simulation
         simBatch <- private$.simulationBatches[[simId]]
-        # Construct group names out of output path and simulation id
-        groupName <- currOutputMapping$quantity$path
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
-        obsVsPred <- currOutputMapping$dataCombinedObject
-        obsVsPred$addSimulationResults(resultObject,
+        # Construct group names out of output path and simulation id
+        private$.dataCombinedList[[idx]]$addSimulationResults(resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
           groups = currOutputMapping$quantity$path
         )
-        obsVsPredList[[idx]] <- obsVsPred
       }
 
-      return(obsVsPredList)
+      return(private$.dataCombinedList)
     },
 
     # Runs the optimization algorithm and returns the results produced by the
