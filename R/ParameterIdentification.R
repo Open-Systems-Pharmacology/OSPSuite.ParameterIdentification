@@ -211,6 +211,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
+      # Increase iteration counter
+      private$.iteration <- private$.iteration + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -494,6 +496,8 @@ ParameterIdentification <- R6::R6Class(
       results$lwr <- results$par - 1.96 * sigma
       results$upr <- results$par + 1.96 * sigma
       results$cv <- sigma / abs(results$par) * 100
+      # Add the number of iterations the to results output
+      results$nrOfIterations <- private$.iteration
       return(results)
     }
   ),
