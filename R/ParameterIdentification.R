@@ -555,17 +555,49 @@ ParameterIdentification <- R6::R6Class(
       private$.dataCombinedList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
         private$.dataCombinedList[[idx]] <- ospsuite::DataCombined$new()
+        # each of the data sets present in the output mapping is converted to base units
+        for (ds in outputMappings[[idx]]$observedDataSets) {
+          convertedXValues <- toBaseUnit(quantityOrDimension = ds$xDimension,
+                                         values = ds$xValues,
+                                         unit = ds$xUnit)
+          convertedYValues <- toBaseUnit(quantityOrDimension = outputMappings[[idx]]$quantity,
+                                         values = ds$yValues,
+                                         unit = ds$yUnit,
+                                         molWeight = ds$molWeight,
+                                         molWeightUnit = "g/mol")
+          # DataSet objects created by importing Excel files always assume molecular weight in g/mol
+          convertedYErrorValues <- toBaseUnit(quantityOrDimension = outputMappings[[idx]]$quantity,
+                                              values = ds$yErrorValues,
+                                              unit = ds$yUnit,
+                                              molWeight = ds$molWeight,
+                                              molWeightUnit = "g/mol")
+          convertedLLOQ <- toBaseUnit(quantityOrDimension = outputMappings[[idx]]$quantity,
+                                      values = ds$LLOQ,
+                                      unit = ds$yUnit,
+                                      molWeight = ds$molWeight,
+                                      molWeightUnit = "g/mol")
+          ds$setValues(xValues = convertedXValues,
+                       yValues = convertedYValues,
+                       yErrorValues = convertedYErrorValues)
+          ds$xUnit <- getBaseUnit(quantityOrDimension = ds$xDimension)
+          # yDimension can change if observed data was reported in mass-based units,
+          # and simulation returns molar-based units
+          ds$yDimension <- outputMappings[[idx]]$quantity$dimension
+          ds$yUnit <- getBaseUnit(quantityOrDimension = outputMappings[[idx]]$quantity)
+          if (!is.null(convertedLLOQ)) {
+            ds$LLOQ <- convertedLLOQ
+          }
+        }
+
         private$.dataCombinedList[[idx]]$addDataSets(outputMappings[[idx]]$observedDataSets,
                                                      groups = outputMappings[[idx]]$quantity$path)
-        # First, transformations from the output mapping are applied to the dataset
+        # Transformations from the output mapping are applied to the dataset
         private$.dataCombinedList[[idx]]$setDataTransformations(
           xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
           xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
           yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
           yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors,
         )
-        # Second, the dataset values are converted to base units
-        # TODO
       }
     },
 
