@@ -70,6 +70,8 @@ for (parameterPath in parameterPaths) {
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
 }
+parameters[[1]]$minValue <- -10
+parameters[[1]]$maxValue <- 10
 
 filePath <- "../data/AciclovirLaskinData.xlsx"
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
@@ -110,16 +112,16 @@ test_that("Plotting returns a different plot when supplied with input parameters
   vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
 })
 test_that("The results object contains a parameter estimate", {
-  expect_equal(task_results$par, -0.009700017)
+  expect_equal(task_results$par, 1.318802, tolerance = 1e-5)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(task_results$feval, 15)
+  expect_equal(task_results$feval, 31)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(task_results$lwr, -5.422019, tolerance = 1e-6)
+  expect_equal(task_results$lwr, 1.131761, tolerance = 1e-6)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(task_results$upr, 5.402619, tolerance = 1e-6)
+  expect_equal(task_results$upr, 1.505843, tolerance = 1e-6)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulations$Aciclovir
