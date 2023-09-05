@@ -361,8 +361,6 @@ ParameterIdentification <- R6::R6Class(
 
       # Print current error if requested
       if (private$.configuration$printIterationFeedback) {
-        # Current total error is the sum of squared residuals
-        private$.iteration <- private$.iteration + 1
         cat(paste0(
           "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
