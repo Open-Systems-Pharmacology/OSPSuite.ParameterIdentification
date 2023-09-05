@@ -450,7 +450,9 @@ ParameterIdentification <- R6::R6Class(
         # Construct group names out of output path and simulation id
         private$.dataCombinedList[[idx]]$addSimulationResults(resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          groups = currOutputMapping$quantity$path
+          groups = currOutputMapping$quantity$path,
+          # in parameter estimation, we are repeating this instruction at each iteration
+          silent = TRUE
         )
       }
 
