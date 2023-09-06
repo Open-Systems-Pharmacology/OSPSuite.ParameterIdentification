@@ -488,7 +488,8 @@ ParameterIdentification <- R6::R6Class(
       message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
       if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
         time <- system.time(results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions))
-
+        results$value <- results$ssr
+        
         # Sigma values are standard deviations of the estimated parameters. They are
         # extracted from the estimated hessian matrix through the summary function.
         # The 95% confidence intervals are defined by two sigma values away from the
