@@ -552,7 +552,7 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$algorithm == "DEoptim") {
         time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {
           private$.targetFunction(p)$model
-        }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 1)))
+        }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100, steptol = 10)))
         results$par <- results$optim$bestmem
         results$value <- results$optim$bestval
       }
