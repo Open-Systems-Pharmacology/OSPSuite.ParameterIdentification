@@ -3,62 +3,49 @@
 #' by the ParameterIdentification class
 #' @export
 Algorithms <- enum(c(
-  "bobyqa",
-  "Marq",
-  "Nelder-Mead",
-  "BFGS",
-  "CG",
-  "L-BFGS-B",
-  "SANN",
-  "minqa",
-  "NMKB",
-  "HJKB",
-  "nloptr:BOBYQA",
-  "nloptr:NM",
-  "solnp",
-  "marqLevAlg",
-  "minpack",
-  "DEoptim",
-  "PSoptim",
-  "GenOUD"
+  "bobyqa",       # BOBYQA (bound optimization by quadratic approximation) algorithm from the {FME} package
+  "Marq",         # Levenberg-Marquardt algorithm from the {FME} package
+  "Nelder-Mead",  # Nelder-Mead algorithm from the {stats} package
+  "BFGS",         # BFGS algorithm from the {stats} package
+  "CG",           # conjugate gradient algorithm from the {stats} package
+  "L-BFGS-B",     # L-BFGS-B (limited, bounded memory) algorithm from the {stats} package
+  "SANN",         # simulated annealing algorithm from the {stats} package
+  "minqa",        # BOBYQA algorithm from the {minqa} package
+  "NMKB",         # bounded version of the Nelder-Mead algorithm from the {dfoptim} package
+  "HJKB",         # Hooke-Jeeves algorithm from the {dfoptim} package
+  "nloptr:BOBYQA",# BOBYQA algorithm from the {nloptr} package
+  "nloptr:NM",    # Nelder-Mead algorithm from the {nloptr} package
+  "solnp",        # augmented Lagrange algorithm from the {Rsolnp} package
+  "marqLevAlg",   # Levenberg-Marquardt algorithm from the {marqLevAlg} package
+  "minpack",      # Levenberg-Marquardt algorithm from the {minpack.lm} package
+  ## Stochastic global optimization methods
+  "DEoptim",      # differential evolution algorithm from the {DEoptim} package
+  "PSoptim",      # particle swarm algorithm from the {pso} package
+  "GenOUD"        # genetic optimization using derivatives from the {rgenoud} package
 ))
 
 #' @title AlgorithmOptions
 #' List of options for optimization algorithms, some of them specific to certain algorithms.
-#' See documentation of `FME::modFit()` for details.
 #' @export
 AlgorithmOptions <- enum(c(
-  # from the nls.lm.control routine
-  "ftol",
-  "ptol",
-  "gtol",
-  "diag",
-  "epsfcn",
-  "factor",
-  "maxfev",
-  "maxiter",
-  "nprint",
-  # from the nlminb routine
-  "eval.max",
-  "iter.max",
-  "trace",
-  "abs.tol",
-  "rel.tol",
-  "x.tol",
-  "xf.tol",
-  "step.min",
-  "step.max",
-  "sing.tol",
-  "scale.init",
-  "diff.g",
-  # from the optim routine
-  "fnscale",
-  "parscale",
-  "ndeps",
-  "maxit",
-  "abstol",
-  "reltol",
-  # specific to Nelder-Mead
+  # applies to "Marq" and "minpack" algorithms
+  "ftol",                     # relative error of sum of squares for termination
+  "ptol",                     # relative error of consecutive iterations for termination
+  "gtol",                     # cosine of gradient and jacobian columns for termination
+  "diag",                     # scale factors for parameters
+  "epsfcn",                   # step size for numeric gradient calculation
+  "factor",                   # initial step bound factor
+  "maxfev",                   # maximum function evaluations
+  "maxiter",                  # maximum iterations
+  "nprint",                   # print every n iterations
+  # applies to "Nelder-Mead", "BFGS", "CG", "L-BFGS-B", and "SANN" algorithms
+  "fnscale",                  # scale factor for objective function
+  "parscale",                 # scale factors for parameters
+  "ndeps",                    # step size for numeric gradient calculation
+  "maxit",                    # maximum iterations
+  "abstol",                   # absolute value of the objective function for termination
+  "reltol",                   # relative error of consecutive iterations for termination
+  # applies to "Nelder-Mead" algorithm
   "alpha",
   "beta",
   "gamma",
