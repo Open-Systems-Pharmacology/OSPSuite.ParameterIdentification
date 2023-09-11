@@ -32,7 +32,16 @@ Imports:
     grDevices,
     ospsuite.utils,
     R6,
-    rClr
+    rClr,
+    minqa,
+    dfoptim,
+    nloptr,
+    Rsolnp,
+    marqLevAlg,
+    minpack.lm,
+    DEoptim,
+    pso,
+    rgenoud
 Suggests: 
     knitr,
     rmarkdown,
