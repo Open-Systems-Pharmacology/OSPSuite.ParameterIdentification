@@ -113,7 +113,7 @@ test_that("The results object contains a parameter estimate", {
   expect_equal(taskResults$par, -0.009700017)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(taskResults$nrOfFnEvaluations, 15)
+  expect_equal(taskResults$nrOfFnEvaluations, 20)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
   expect_equal(taskResults$lwr, -5.422019, tolerance = 1e-6)
