@@ -74,7 +74,7 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
-    .iteration = 0,
+    .fncall = 0,
     # CV for M3 target function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
     .cvM3 = 0.2,
@@ -208,8 +208,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
-      # Increase iteration counter
-      private$.iteration <- private$.iteration + 1
+      # Increase function call counter
+      private$.fncall <- private$.fncall + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -360,10 +360,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Print current error if requested
-      if (private$.configuration$printIterationFeedback) {
+      if (private$.configuration$printCallFeedback) {
         # Current total error is the sum of squared residuals
         cat(paste0(
-          "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
+          "fncall ", private$.fncall, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
         ))
       }
@@ -486,87 +486,109 @@ ParameterIdentification <- R6::R6Class(
       # Depending on the `algorithm` argument in the `PIConfiguration` object, the
       # actual optimization call will use one of the underlying optimization routines
       message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
+
       if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
-        time <- system.time(results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions))
-        results$value <- results$ssr
-        
-        # Sigma values are standard deviations of the estimated parameters. They are
-        # extracted from the estimated hessian matrix through the summary function.
-        # The 95% confidence intervals are defined by two sigma values away from the
-        # point estimate. The coefficient of variation (CV) is the ratio of standard
-        # deviation to the point estimate.
-        results$sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
+        time <- system.time({
+          results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
+          results$value <- results$ssr
+          # Sigma values are standard deviations of the estimated parameters. They are
+          # extracted from the estimated hessian matrix through the summary function.
+          results$sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
+        })
+      } else if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
+        time <- system.time({
+          # produces warning with Nelder-Mead, BFGS, CG and SANN
+          # because only L-BFGS-B respects parameter bounds
+          results <- optim(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
+        })
+      } else if (private$.configuration$algorithm == "minqa") {
+        time <- system.time({
+          # "minqa" class overrides printing, so we remove it with "unclass"
+          results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
+          results$value <- results$fval
+        })
+      } else if (private$.configuration$algorithm == "NMKB") {
+        time <- system.time({
+          results <- dfoptim::nmkb(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "HJKB") {
+        time <- system.time({
+          results <- dfoptim::hjkb(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "nloptr:BOBYQA") {
+        time <- system.time({
+          results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "nloptr:NM") {
+        time <- system.time({
+          results <- nloptr::neldermead(x0 = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "solnp") {
+        time <- system.time({
+          results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions)
+          results$par <- results$pars
+          results$value <- private$.targetFunction(results$par)$model
+        })
+      } else if (private$.configuration$algorithm == "marqLevAlg") {
+        time <- system.time({
+          results <- marqLevAlg::marqLevAlg(b = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          })
+          results$par <- results$b
+          results$value <- results$fn.value
+        })
+      } else if (private$.configuration$algorithm == "minpack") {
+        time <- system.time({
+          results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
+            private$.targetFunction(p)$residuals$res
+          })
+          results$value <- private$.targetFunction(results$par)$model
+        })
+      } else if (private$.configuration$algorithm == "DEoptim") {
+        time <- system.time({
+          results <- DEoptim::DEoptim(fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100, steptol = 10))
+          results$par <- results$optim$bestmem
+          results$value <- results$optim$bestval
+        })
+      } else if (private$.configuration$algorithm == "PSoptim") {
+        time <- system.time({
+          results <- pso::psoptim(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, control = private$.configuration$algorithmOptions)
+        })
+      } else if (private$.configuration$algorithm == "GenOUD") {
+        time <- system.time({
+          boundaryDomains <- matrix(c(lower, upper), ncol = 2)
+          results <- rgenoud::genoud(fn = function(p) {
+            private$.targetFunction(p)$model
+          }, nvars = length(lower), pop.size = 20, Domains = boundaryDomains,
+          boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE)
+        })
       }
-      if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
-        time <- system.time(results <- optim(par = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE))
-      }
-      if (private$.configuration$algorithm == "minqa") {
-        # "minqa" class overrides printing, so we remove it with "unclass"
-        time <- system.time(results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)))
-        results$value <- results$fval
-      }
-      if (private$.configuration$algorithm == "NMKB") {
-        time <- system.time(results <- dfoptim::nmkb(par = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
-      }
-      if (private$.configuration$algorithm == "HJKB") {
-        time <- system.time(results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
-      }
-      if (private$.configuration$algorithm == "nloptr:BOBYQA") {
-        time <- system.time(results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
-      }
-      if (private$.configuration$algorithm == "nloptr:NM") {
-        time <- system.time(results <- nloptr::neldermead(x0 = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
-      }
-      if (private$.configuration$algorithm == "solnp") {
-        time <- system.time(results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
-          private$.targetFunction(p)$model
-        }, control = private$.configuration$algorithmOptions))
-        results$par <- results$pars
-        results$value <- private$.targetFunction(results$par)$model
-      }
-      if (private$.configuration$algorithm == "marqLevAlg") {
-        time <- system.time(results <- marqLevAlg::marqLevAlg(b = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }))
-        results$par <- results$b
-        results$value <- results$fn.value
-      }
-      if (private$.configuration$algorithm == "minpack") {
-        time <- system.time(results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
-          private$.targetFunction(p)$residuals$res
-        }))
-        results$value <- private$.targetFunction(results$par)$model
-      }
-      if (private$.configuration$algorithm == "DEoptim") {
-        time <- system.time(results <- DEoptim::DEoptim(fn = function(p) {
-          private$.targetFunction(p)$model
-        }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100, steptol = 10)))
-        results$par <- results$optim$bestmem
-        results$value <- results$optim$bestval
-      }
-      if (private$.configuration$algorithm == "PSoptim") {
-        time <- system.time(results <- pso::psoptim(par = startValues, fn = function(p) {
-          private$.targetFunction(p)$model
-        }, lower = lower, upper = upper, control = private$.configuration$algorithmOptions))
-      }
-      if (private$.configuration$algorithm == "GenOUD") {
-        boundary_domains <- matrix(c(lower, upper), ncol = 2)
-        time <- system.time(results <- rgenoud::genoud(fn = function(p) {
-          private$.targetFunction(p)$model
-        }, nvars = length(lower), pop.size = 20, Domains = boundary_domains, boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE))
-      }
+      # at this point, we assume that `private$.configuration$algorithm` contains
+      # one of the entries from `ospsuite.parameteridentification::Algorithms`,
+      # so one of the `if` conditions above would execute
+
+      results$elapsed <- time[[3]]
+      results$algorithm <- private$.configuration$algorithm
+      # Add the number of function evaluations (excluding hessian calculation) to the results output
+      results$nrOfFnEvaluations <- private$.fncall
 
       if (is.null(results$sigma)) {
         if (is.null(results$hessian)) {
@@ -596,15 +618,13 @@ ParameterIdentification <- R6::R6Class(
           }
         )
       }
-      # Add CV
+      # The 95% confidence intervals are defined by two sigma values away from the
+      # point estimate. The coefficient of variation (CV) is the ratio of standard
+      # deviation to the point estimate.
       results$lwr <- results$par - 1.96 * results$sigma
       results$upr <- results$par + 1.96 * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
 
-      results$elapsed <- time[[3]]
-      results$algorithm <- private$.configuration$algorithm
-      # Add the number of iterations the to results output
-      results$nrOfIterations <- private$.iteration
       return(results)
     }
   ),
@@ -675,8 +695,8 @@ ParameterIdentification <- R6::R6Class(
       # variables of the batches.
       private$.batchInitialization()
       # Run optimization algorithm
-      # Reset iteration counter
-      private$.iteration <- 0
+      # Reset function call counter
+      private$.fncall <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, simulationState)
@@ -761,7 +781,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
-      private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)
+      private$printLine("Print feedback after each function call", private$.configuration$printCallFeedback)
       invisible(self)
     }
   )
