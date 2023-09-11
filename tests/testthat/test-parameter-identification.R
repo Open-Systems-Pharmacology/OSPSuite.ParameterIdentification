@@ -58,7 +58,7 @@ simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printIterationFeedback <- FALSE
+piConfiguration$printCallFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -102,7 +102,7 @@ test_that("Plotting works before running the parameter estimation task", {
   # plotResults returns a list of plots, one plot for each output mapping
   # in this example, we have a single output mapping
 })
-task_results <- task$run()
+taskResults <- task$run()
 test_that("Plotting works after running the parameter estimation task", {
   vdiffr::expect_doppelganger("after_estimation", task$plotResults()[[1]])
 })
@@ -110,16 +110,16 @@ test_that("Plotting returns a different plot when supplied with input parameters
   vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
 })
 test_that("The results object contains a parameter estimate", {
-  expect_equal(task_results$par, -0.009700017)
+  expect_equal(taskResults$par, -0.009700017)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(task_results$feval, 15)
+  expect_equal(taskResults$nrOfFnEvaluations, 15)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(task_results$lwr, -5.422019, tolerance = 1e-6)
+  expect_equal(taskResults$lwr, -5.422019, tolerance = 1e-6)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(task_results$upr, 5.402619, tolerance = 1e-6)
+  expect_equal(taskResults$upr, 5.402619, tolerance = 1e-6)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulations$Aciclovir
@@ -134,7 +134,7 @@ test_that("Output mappings with log scaling are processed without errors", {
     outputMappings = outputMapping,
     configuration = piConfiguration
   ))
-  expect_no_error(task_results <- task$run())
+  expect_no_error(taskResults <- task$run())
 })
 test_that("Algorithm can be changed in PI configuration", {
   expect_equal(task$configuration$algorithm, "bobyqa")
