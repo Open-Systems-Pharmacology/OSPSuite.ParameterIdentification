@@ -229,7 +229,29 @@ ParameterIdentification <- R6::R6Class(
       # (I think this would also lead to a failure where only one observed data
       # point is fitted).
       if (any(is.na(obsVsPredList))) {
-        return(c(Inf, Inf))
+        out <- list(
+          model = Inf,
+          minlogp = Inf,
+          var = data.frame(
+            name           = "Values",
+            scale          = 1,
+            N              = 1,
+            SSR.unweighted = Inf,
+            SSR.unscaled   = Inf,
+            SSR            = Inf
+          ),
+          residuals = data.frame(
+            name = "Values",
+            x = 0,
+            obs = 0,
+            mod = Inf,
+            weight = 1,
+            res.unweighted = Inf,
+            res = Inf
+          )
+        )
+        class(out) <- "modCost"
+        return(out)
       }
 
       # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
@@ -539,7 +561,7 @@ ParameterIdentification <- R6::R6Class(
         time <- system.time({
           results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
             private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions)
+          }, control = private$.configuration$algorithmOptions, LB = lower, UB = upper)
           results$par <- results$pars
           results$value <- private$.targetFunction(results$par)$model
         })
@@ -590,15 +612,14 @@ ParameterIdentification <- R6::R6Class(
       # Add the number of function evaluations (excluding hessian calculation) to the results output
       results$nrOfFnEvaluations <- private$.fncall
 
+      # Calculate sigma if it has not been calculated previously
       if (is.null(results$sigma)) {
+        # Calculate hessian if the selected algorithm does not calculate it by default
         if (is.null(results$hessian)) {
           message("Post-hoc estimation of hessian")
-          # If the optimization algorithm did not return an estimate of the hessian matrix,
-          # we run one iteration of `optim` to return the hessian
-          optimResults <- optim(results$par, function(p) {
+          results$hessian <- optimHess(par = results$par, fn = function(p) {
             private$.targetFunction(p)$model
-          }, method = "L-BFGS-B", control = list(maxit = 1), lower = lower, upper = upper, hessian = TRUE)
-          results$hessian <- optimResults$hessian
+          })
         }
         # For the target function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix

@@ -4,10 +4,9 @@
 \name{AlgorithmOptions}
 \alias{AlgorithmOptions}
 \title{AlgorithmOptions
-List of options for optimization algorithms, some of them specific to certain algorithms.
-See documentation of \code{FME::modFit()} for details.}
+List of options for optimization algorithms, some of them specific to certain algorithms.}
 \format{
-An object of class \code{list} of length 48.
+An object of class \code{list} of length 72.
 }
 \usage{
 AlgorithmOptions
@@ -15,6 +14,5 @@ AlgorithmOptions
 \description{
 AlgorithmOptions
 List of options for optimization algorithms, some of them specific to certain algorithms.
-See documentation of \code{FME::modFit()} for details.
 }
 \keyword{datasets}
