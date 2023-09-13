@@ -18,7 +18,7 @@ should be brought to a steady-state first}
 
 \item{\code{steadyStateTime}}{Time in minutes to simulate if simulating steady-state. May be NULL}
 
-\item{\code{printIterationFeedback}}{Boolean. If \code{TRUE}, the output of the
+\item{\code{printCallFeedback}}{Boolean. If \code{TRUE}, the output of the
 residuals calculation will be printed after each iteration.
 Default is \code{FALSE}}
 
