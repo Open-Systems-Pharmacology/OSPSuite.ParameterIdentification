@@ -31,15 +31,15 @@ PIConfiguration <- R6::R6Class(
         private$.steadyStateTime <- value
       }
     },
-    #' @field printCallFeedback Boolean. If `TRUE`, the output of the
-    #' residuals calculation will be printed after each iteration.
+    #' @field printEvaluationFeedback Boolean. If `TRUE`, the objective function value
+    #' will be printed after each function evaluation.
     #' Default is `FALSE`
-    printCallFeedback = function(value) {
+    printEvaluationFeedback = function(value) {
       if (missing(value)) {
-        private$.printCallFeedback
+        private$.printEvaluationFeedback
       } else {
         validateIsLogical(value)
-        private$.printCallFeedback <- value
+        private$.printEvaluationFeedback <- value
       }
     },
 
@@ -99,7 +99,7 @@ PIConfiguration <- R6::R6Class(
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
-    .printCallFeedback = NULL,
+    .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
     .targetFunctionType = NULL,
     .algorithm = NULL,
@@ -112,7 +112,7 @@ PIConfiguration <- R6::R6Class(
     initialize = function() {
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
-      private$.printCallFeedback <- FALSE
+      private$.printEvaluationFeedback <- FALSE
       private$.targetFunctionType <- "lsq"
       private$.algorithm <- "bobyqa"
       private$.algorithmOptions <- list()
@@ -125,7 +125,7 @@ PIConfiguration <- R6::R6Class(
       private$printClass()
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine("Print feedback after each function call", private$.printCallFeedback)
+      private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
       private$printLine("Target function", private$.targetFunctionType)
       private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)

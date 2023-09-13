@@ -74,7 +74,7 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
-    .fncall = 0,
+    .fnEvaluations = 0,
     # CV for M3 target function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
     .cvM3 = 0.2,
@@ -208,8 +208,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
-      # Increase function call counter
-      private$.fncall <- private$.fncall + 1
+      # Increase function evaluations counter
+      private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -360,10 +360,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Print current error if requested
-      if (private$.configuration$printCallFeedback) {
+      if (private$.configuration$printEvaluationFeedback) {
         # Current total error is the sum of squared residuals
         cat(paste0(
-          "fncall ", private$.fncall, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
+          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
         ))
       }
@@ -588,7 +588,7 @@ ParameterIdentification <- R6::R6Class(
       results$elapsed <- time[[3]]
       results$algorithm <- private$.configuration$algorithm
       # Add the number of function evaluations (excluding hessian calculation) to the results output
-      results$nrOfFnEvaluations <- private$.fncall
+      results$nrOfFnEvaluations <- private$.fnEvaluations
 
       if (is.null(results$sigma)) {
         if (is.null(results$hessian)) {
@@ -695,8 +695,8 @@ ParameterIdentification <- R6::R6Class(
       # variables of the batches.
       private$.batchInitialization()
       # Run optimization algorithm
-      # Reset function call counter
-      private$.fncall <- 0
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, simulationState)
@@ -781,7 +781,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
-      private$printLine("Print feedback after each function call", private$.configuration$printCallFeedback)
+      private$printLine("Print feedback after each function evaluation", private$.configuration$printEvaluationFeedback)
       invisible(self)
     }
   )

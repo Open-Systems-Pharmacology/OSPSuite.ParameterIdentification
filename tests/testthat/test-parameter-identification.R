@@ -58,7 +58,7 @@ simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printCallFeedback <- FALSE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
