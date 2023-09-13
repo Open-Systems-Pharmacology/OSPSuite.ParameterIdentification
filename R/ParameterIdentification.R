@@ -539,7 +539,7 @@ ParameterIdentification <- R6::R6Class(
         time <- system.time({
           results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
             private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions)
+          }, control = private$.configuration$algorithmOptions, LB = lower, UB = upper)
           results$par <- results$pars
           results$value <- private$.targetFunction(results$par)$model
         })
