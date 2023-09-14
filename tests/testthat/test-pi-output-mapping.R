@@ -3,6 +3,8 @@ simFilePath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 simulations <- c(loadSimulation(simFilePath))
 names(simulations) <- "Aciclovir"
 
+piParameter <- PIParameters$new(parameters = ospsuite::getParameter(path = "Aciclovir|Lipophilicity", container = simulations[[1]]))
+
 test_that("Output mappings can be safely created with aciclovir simulations", {
   expect_no_error(outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
     container = simulations$Aciclovir
@@ -69,4 +71,16 @@ test_that("Adding data sets in Concentration (mass) without MW to an entity with
   ds$setValues(c(0, 1, 2), c(0, 1, 2))
 
   outputMapping$addObservedDataSets(ds)
+  # 2DO: Failing now - test to be extended when not failing to check for something plausible
+})
+
+test_that("Data transformations can be set for simulated results", {
+  outputMapping$setDataTransformations(labels = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+                                       xOffsets = 0,
+                                       xFactors = 0.5)
+
+  # 2DO Failing because the test above is failing too
+  pi <- ParameterIdentification$new(simulations = simulations, parameters = piParameter,
+                                    outputMappings = outputMapping)
+  #2DO - add meaningful check that transformations are applied
 })
