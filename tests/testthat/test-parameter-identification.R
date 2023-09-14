@@ -141,3 +141,10 @@ test_that("Algorithm can be changed in PI configuration", {
   task$configuration$algorithm <- "Marq"
   expect_equal(task$configuration$algorithm, "Marq")
 })
+test_that("Grid search produces no error with default parameters", {
+  expect_no_error(gridSearchResults <- task$calculateGrid())
+})
+gridSearchResults <- task$calculateGrid(totalEvaluations = 10)
+test_that("Grid search produced correct results", {
+  expect_known_value(gridSearchResults, "gridSearchResults")
+})

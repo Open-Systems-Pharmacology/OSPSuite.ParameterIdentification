@@ -647,14 +647,79 @@ ParameterIdentification <- R6::R6Class(
 
     #' @description
     #' Calculates the values of the objective function on a rectangular grid
-    calculateGrid = function(lower, upper, log_scale_flag, total_evaluations = 1000) {
-      np <- length(private$parameters)
-      grid_size <- floor(total_evaluations^(1/np))
-      grid_list <- list()
-      for (i in seq_along(private$parameters)) {
-        grid_list <- c(grid_list, tibble())
+    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses the minimal values supported for parameters.
+    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses the maximal values supported for parameters.
+    #' @param logScaleFlag A single logical value or a vector of logical values indicating
+    #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
+    #' @param totalEvaluations An integer number. The grid will have as many points so that the
+    #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
+    #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
+    #' from the exact parameter bounds.
+    calculateGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      if (private$.needBatchInitialization) {
+        # Store simulation outputs and time intervals to reset them at the end
+        # of the run.
+        simulationState <- .storeSimulationState(private$.simulations)
+        private$.batchInitialization()
       }
-    }
+
+      np <- length(private$.piParameters)
+      # logScaleFlag can be specified as a single value (common for all parameters)
+      # or as a vector of values (one for each parameter)
+      if (length(logScaleFlag) != np) {
+        logScaleFlag <- rep(logScaleFlag, length.out = np)
+      }
+
+      # if lower and upper are not supplied, we reuse parameter bounds
+      # By default, margin = 0, but we can use a non-zero value
+      # so that the grid does not start exactly at the parameter bound
+      if (missing(lower)) {
+        lower <- vector(mode = "list", length = np)
+        for (idx in seq_along(private$.piParameters)) {
+          lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
+        }
+      }
+      if (missing(upper)) {
+        upper <- vector(mode = "list", length = np)
+        for (idx in seq_along(private$.piParameters)) {
+          upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
+        }
+      }
+
+      gridSize <- floor(totalEvaluations^(1/np))
+      gridList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        # the names of the parameters are extracted from the first available path
+        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+        if (logScaleFlag[[idx]]) {
+          grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
+        } else {
+          grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        }
+        gridList[[idx]] <- grid
+        names(gridList)[[idx]] <- parameterName
+      }
+
+      OFVGrid <- expand.grid(gridList)
+      # all columns from the OFVGrid are passed in the same order to the objective function
+      OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
+        private$.targetFunction(c(...))$model
+      })
+
+      # Mark that the batches have been initialized and restore simulation state
+      # Note: we can't use `simulationState` variable in the condition
+      # because it might be not defined
+      if (private$.needBatchInitialization){
+        .restoreSimulationState(private$.simulations, simulationState)
+        private$.needBatchInitialization <- FALSE
+      }
+
+      return(OFVGrid)
+    },
 
     #' @description
     #' Print the object to the console
