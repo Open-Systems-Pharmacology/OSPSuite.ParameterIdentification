@@ -581,10 +581,11 @@ ParameterIdentification <- R6::R6Class(
           results$value <- private$.targetFunction(results$par)$model
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
+        control <- DEoptim::DEoptim.control(itermax = 100, steptol = 10, trace = FALSE)
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
             private$.targetFunction(p)$model
-          }, lower = lower, upper = upper, control = DEoptim::DEoptim.control(itermax = 100, steptol = 10))
+          }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
         })
@@ -597,10 +598,12 @@ ParameterIdentification <- R6::R6Class(
       } else if (private$.configuration$algorithm == "GenOUD") {
         time <- system.time({
           boundaryDomains <- matrix(c(lower, upper), ncol = 2)
-          results <- rgenoud::genoud(fn = function(p) {
-            private$.targetFunction(p)$model
-          }, nvars = length(lower), pop.size = 20, Domains = boundaryDomains,
-          boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE)
+          results <- rgenoud::genoud(
+            fn = function(p) {
+              private$.targetFunction(p)$model
+            }, nvars = length(lower), pop.size = 20, Domains = boundaryDomains,
+            boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE
+          )
         })
       }
       # at this point, we assume that `private$.configuration$algorithm` contains
@@ -629,8 +632,7 @@ ParameterIdentification <- R6::R6Class(
             fim <- solve(results$hessian / 2)
             sqrt(diag(fim))
           },
-          error = function(cond)
-          {
+          error = function(cond) {
             message("Error calculating confidence intervals.")
             message("Here's the original error message:")
             message(cond$message)
