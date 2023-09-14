@@ -63,3 +63,10 @@ test_that("X-factors can be set in a dataset-specific manner, with labels", {
   expect_equal(outputMapping$dataTransformations$yOffsets[["data1"]], 0)
   expect_equal(outputMapping$dataTransformations$yOffsets[["data2"]], 0)
 })
+
+test_that("Adding data sets in Concentration (mass) without MW to an entity with Concentration (molar)", {
+  ds <- DataSet$new(name = "Aciclovir observed")
+  ds$setValues(c(0, 1, 2), c(0, 1, 2))
+
+  outputMapping$addObservedDataSets(ds)
+})
