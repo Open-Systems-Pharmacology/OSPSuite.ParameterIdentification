@@ -1,6 +1,7 @@
 #' @title Algorithms
 #' List of optimization algorithms supported by `FME::modFit()` and, consequently,
 #' by the ParameterIdentification class
+#' @export
 Algorithms <- enum(c(
   "bobyqa",
   "Marq",
@@ -17,6 +18,7 @@ Algorithms <- enum(c(
 #' @title AlgorithmOptions
 #' List of options for optimization algorithms, some of them specific certain algorithms.
 #' See documentation of `FME::modeFit()` for details.
+#' @export
 AlgorithmOptions <- enum(c(
   # from the nls.lm.control routine
   "ftol",
@@ -79,4 +81,5 @@ AlgorithmOptions <- enum(c(
 
 #' @title ObjectiveFunctions
 #' List of supported objective functions to calculate the error.
+#' @export
 ObjectiveFunctions <- enum(c("lsq", "m3"))
