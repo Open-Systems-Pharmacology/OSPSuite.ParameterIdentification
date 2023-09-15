@@ -577,7 +577,8 @@ ParameterIdentification <- R6::R6Class(
         time <- system.time({
           results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
             private$.targetFunction(p)$residuals$res
-          })
+          },
+          control = private$.configuration$algorithmOptions)
           results$value <- private$.targetFunction(results$par)$model
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
