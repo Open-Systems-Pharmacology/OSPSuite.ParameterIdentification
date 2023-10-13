@@ -150,8 +150,8 @@ task_results <- task$run()
 test_that("Optimal kcat value in the clarithromycin model is close to expected value of 76.5", {
   expect_equal(task_results$par[[1]], 76.5, tolerance = 0.01)
 })
-test_that("Optimal plasma clearance value in the clarithromycin model is close to expected value of 0.87", {
-  expect_equal(task_results$par[[2]], 1.75, tolerance = 0.01)
+test_that("Optimal specific clearance value in the clarithromycin model is close to expected value of 0.87", {
+  expect_equal(task_results$par[[2]], 0.87, tolerance = 0.01)
 })
 test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.23e-6", {
   expect_equal(task_results$par[[3]], 1.23e-6, tolerance = 1e-7)
