@@ -229,7 +229,29 @@ ParameterIdentification <- R6::R6Class(
       # (I think this would also lead to a failure where only one observed data
       # point is fitted).
       if (any(is.na(obsVsPredList))) {
-        return(c(Inf, Inf))
+        out <- list(
+          model = Inf,
+          minlogp = Inf,
+          var = data.frame(
+            name           = "Values",
+            scale          = 1,
+            N              = 1,
+            SSR.unweighted = Inf,
+            SSR.unscaled   = Inf,
+            SSR            = Inf
+          ),
+          residuals = data.frame(
+            name = "Values",
+            x = 0,
+            obs = 0,
+            mod = Inf,
+            weight = 1,
+            res.unweighted = Inf,
+            res = Inf
+          )
+        )
+        class(out) <- "modCost"
+        return(out)
       }
 
       # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
