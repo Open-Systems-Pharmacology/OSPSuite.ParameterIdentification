@@ -100,8 +100,8 @@ piConfiguration <- PIConfiguration$new()
 piConfiguration$printIterationFeedback <- TRUE
 
 parameterInputData <- list(list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
-                           list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Plasma clearance", min = 0, max = 10, start = 1),
-                           list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01))
+                           list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 1, start = 0.5),
+                           list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 0.01, start = 1e-4))
 # The code below assumes that every parameter is present in each simulation
 # and parameter values across all simulations should be changed in parallel
 parameters <- vector("list", length = length(parameterInputData))
@@ -112,9 +112,9 @@ for (idx in seq_along(parameterInputData)) {
                                                          container = simulation))
   }
   parameters[[idx]] <- PIParameters$new(parameters = modelParams)
+  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
   parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
   parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
-  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
 }
 
 # Observed data is loaded from two different files
@@ -150,7 +150,7 @@ task_results <- task$run()
 test_that("Optimal kcat value in the clarithromycin model is close to expected value of 76.5", {
   expect_equal(task_results$par[[1]], 76.5, tolerance = 0.01)
 })
-test_that("Optimal plasma clearance value in the clarithromycin model is close to expected value of 1.75", {
+test_that("Optimal plasma clearance value in the clarithromycin model is close to expected value of 0.87", {
   expect_equal(task_results$par[[2]], 1.75, tolerance = 0.01)
 })
 test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.23e-6", {
