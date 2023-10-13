@@ -53,7 +53,7 @@ for (idx in seq_along(simulations)) {
 task <- ParameterIdentification$new(
   simulations = simulations,
   parameters = parameters,
-  outputMappings = outputMapping,
+  outputMappings = outputMappings,
   configuration = piConfiguration
 )
 task_results <- task$run()
