@@ -7,7 +7,7 @@
 List of optimization algorithms supported by optimization routines and, consequently,
 by the ParameterIdentification class}
 \format{
-An object of class \code{list} of length 18.
+An object of class \code{list} of length 12.
 }
 \usage{
 Algorithms

@@ -26,18 +26,14 @@ Depends:
     R (>= 4.1),
     ospsuite (>= 11.0)
 Imports:
-    FME,
     ggplot2,
     ggtext,
     grDevices,
     ospsuite.utils,
     R6,
     rClr,
-    minqa,
     dfoptim,
     nloptr,
-    Rsolnp,
-    marqLevAlg,
     minpack.lm,
     DEoptim,
     pso,

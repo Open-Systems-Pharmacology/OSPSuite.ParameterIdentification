@@ -18,8 +18,8 @@ should be brought to a steady-state first}
 
 \item{\code{steadyStateTime}}{Time in minutes to simulate if simulating steady-state. May be NULL}
 
-\item{\code{printCallFeedback}}{Boolean. If \code{TRUE}, the output of the
-residuals calculation will be printed after each iteration.
+\item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, the objective function value
+will be printed after each function evaluation.
 Default is \code{FALSE}}
 
 \item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
@@ -29,15 +29,12 @@ to simulation runs. If \code{NULL}, default options are used.}
 calculation. Supported target functions  are listed  in
 \code{ospsuite.parameteridentification::ObjectiveFunctions}.}
 
-\item{\code{algorithm}}{a string describing the optimization algorithm, as passed
-to the \code{FME::modFit()} function.
+\item{\code{algorithm}}{a string describing the optimization algorithm.
 Supported algorithms are listed  in
 \code{ospsuite.parameteridentification::Algorithms}.}
 
-\item{\code{algorithmOptions}}{a list of named parameters describing method-specific
-control arguments, as passed to the \code{FME::modFit()} function.
-Supported options are listed  in
-\code{ospsuite.parameteridentification::AlgorithmOptions}.}
+\item{\code{algorithmOptions}}{a list of named parameters describing algorithm-specific
+options. Supported options are listed  in \code{ospsuite.parameteridentification::AlgorithmOptions}.}
 }
 \if{html}{\out{</div>}}
 }

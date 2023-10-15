@@ -3,21 +3,14 @@
 #' by the ParameterIdentification class
 #' @export
 Algorithms <- enum(c(
-  "bobyqa", # BOBYQA (bound optimization by quadratic approximation) algorithm from the {FME} package
-  "Marq", # Levenberg-Marquardt algorithm from the {FME} package
-  "Nelder-Mead", # Nelder-Mead algorithm from the {stats} package
-  "BFGS", # BFGS algorithm from the {stats} package
+  "Nelder-Mead", # Nelder-Mead algorithm from the {stats} package                                         *2
+  "BFGS", # BFGS algorithm from the {stats} package                                                       !3
   "CG", # conjugate gradient algorithm from the {stats} package
   "L-BFGS-B", # L-BFGS-B (limited, bounded memory) algorithm from the {stats} package
   "SANN", # simulated annealing algorithm from the {stats} package
-  "minqa", # BOBYQA algorithm from the {minqa} package
-  "NMKB", # bounded version of the Nelder-Mead algorithm from the {dfoptim} package
   "HJKB", # Hooke-Jeeves algorithm from the {dfoptim} package
-  "nloptr:BOBYQA", # BOBYQA algorithm from the {nloptr} package
-  "nloptr:NM", # Nelder-Mead algorithm from the {nloptr} package
-  "solnp", # augmented Lagrange algorithm from the {Rsolnp} package
-  "marqLevAlg", # Levenberg-Marquardt algorithm from the {marqLevAlg} package
-  "minpack", # Levenberg-Marquardt algorithm from the {minpack.lm} package
+  "nloptr:BOBYQA", # BOBYQA algorithm from the {nloptr} package                                           *1
+  "minpack", # Levenberg-Marquardt algorithm from the {minpack.lm} package                                *4
   ## Stochastic global optimization methods
   "DEoptim", # differential evolution algorithm from the {DEoptim} package
   "PSoptim", # particle swarm algorithm from the {pso} package
@@ -61,21 +54,10 @@ AlgorithmOptions <- enum(c(
   # applies to "SANN" algorithm
   "temp", # starting temperature
   "tmax", # maximum number of function evaluations at each temperature
-  # applies to "bobyqa" and "minqa" algorithms
-  "npt", # number of points in quadratic approximations
-  "rhobeg", # starting radius of the trust region
-  "rhoend", # final radius of the trust region
-  "iprint", # print every n iterations
-  "maxfun", # maximum function evaluations
-  # applies to "NMKB" and "HJKB" algorithms
+  # applies to "HJKB" algorithm
   "tol", # absolute error of consecutive iterations for termination
   "maxfeval", # maximum number of function evaluations
   "maximize", # flag to maximize function instead
-  # applies to "NMKB" algorithm
-  "regsimp", # flag to indicate that starting parameter values are a regular simplex
-  "restarts.max", # restarts before failure
-  "trace", # reporting settings
-  # applies to "HJKB" algorithm
   "target", # target objective function value for termination
   "info", # reporting settings
   # applies to "nloptr:BOBYQA" and "nloptr:NM" algorithms

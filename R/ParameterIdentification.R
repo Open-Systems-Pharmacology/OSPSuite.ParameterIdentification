@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME ospsuite.utils
+#' @import ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -509,35 +509,13 @@ ParameterIdentification <- R6::R6Class(
       # actual optimization call will use one of the underlying optimization routines
       message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
 
-      if (private$.configuration$algorithm %in% c("bobyqa", "Marq")) {
-        time <- system.time({
-          results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
-          results$value <- results$ssr
-          # Sigma values are standard deviations of the estimated parameters. They are
-          # extracted from the estimated hessian matrix through the summary function.
-          results$sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
-        })
-      } else if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
+      if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
         time <- system.time({
           # produces warning with Nelder-Mead, BFGS, CG and SANN
           # because only L-BFGS-B respects parameter bounds
           results <- optim(par = startValues, fn = function(p) {
             private$.targetFunction(p)$model
           }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
-        })
-      } else if (private$.configuration$algorithm == "minqa") {
-        time <- system.time({
-          # "minqa" class overrides printing, so we remove it with "unclass"
-          results <- unclass(minqa::bobyqa(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper))
-          results$value <- results$fval
-        })
-      } else if (private$.configuration$algorithm == "NMKB") {
-        time <- system.time({
-          results <- dfoptim::nmkb(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
@@ -550,28 +528,6 @@ ParameterIdentification <- R6::R6Class(
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
             private$.targetFunction(p)$model
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "nloptr:NM") {
-        time <- system.time({
-          results <- nloptr::neldermead(x0 = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "solnp") {
-        time <- system.time({
-          results <- Rsolnp::solnp(pars = startValues, fun = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, LB = lower, UB = upper)
-          results$par <- results$pars
-          results$value <- private$.targetFunction(results$par)$model
-        })
-      } else if (private$.configuration$algorithm == "marqLevAlg") {
-        time <- system.time({
-          results <- marqLevAlg::marqLevAlg(b = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          })
-          results$par <- results$b
-          results$value <- results$fn.value
         })
       } else if (private$.configuration$algorithm == "minpack") {
         time <- system.time({

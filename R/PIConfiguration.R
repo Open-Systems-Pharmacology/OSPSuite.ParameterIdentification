@@ -67,8 +67,7 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithm a string describing the optimization algorithm, as passed
-    #' to the `FME::modFit()` function.
+    #' @field algorithm a string describing the optimization algorithm.
     #' Supported algorithms are listed  in
     #' `ospsuite.parameteridentification::Algorithms`.
     algorithm = function(value) {
@@ -81,10 +80,8 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions a list of named parameters describing method-specific
-    #' control arguments, as passed to the `FME::modFit()` function.
-    #' Supported options are listed  in
-    #' `ospsuite.parameteridentification::AlgorithmOptions`.
+    #' @field algorithmOptions a list of named parameters describing algorithm-specific
+    #' options. Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
