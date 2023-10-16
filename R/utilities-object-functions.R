@@ -17,6 +17,39 @@ modCost <- function(model, obs, x = "time", y = NULL, err = NULL,
     colnames(model) <- cn
   }
 
+  # Special use case - no observed data provided. In this case, the error is
+  # obviously zero. Return early.
+  if (dim(obs)[[1]] == 0) {
+    # If previous cost is provided, return it with no changes
+    if (!is.null(cost)) {
+      return(cost)
+    }
+
+    out <- list(
+      model = 0,
+      minlogp = 0,
+      var = data.frame(
+        name           = "Values",
+        scale          = 1,
+        N              = 0,
+        SSR.unweighted = 0,
+        SSR.unscaled   = 0,
+        SSR            = 0
+      ),
+      residuals = data.frame(
+        name = character(),
+        x = numeric(),
+        obs = numeric(),
+        mod = numeric(),
+        weight = numeric(),
+        res.unweighted = numeric(),
+        res = numeric()
+      )
+    )
+    class(out) <- "modCost"
+    return(out)
+  }
+
   ## =============================================================================
   ## Observations
   ## =============================================================================
