@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME ospsuite.utils
+#' @import ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -74,7 +74,7 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
-    .iteration = 0,
+    .fnEvaluations = 0,
     # CV for M3 target function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
     .cvM3 = 0.2,
@@ -208,8 +208,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
-      # Increase iteration counter
-      private$.iteration <- private$.iteration + 1
+      # Increase function evaluations counter
+      private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -382,9 +382,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Print current error if requested
-      if (private$.configuration$printIterationFeedback) {
+      if (private$.configuration$printEvaluationFeedback) {
+        # Current total error is the sum of squared residuals
         cat(paste0(
-          "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
+          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
         ))
       }
@@ -504,30 +505,106 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      # The method and method-specific control options can be passed
-      # to the `PIConfiguration` object. The `FME::modFit()` function allows to
-      # use the following algorithms:
-      # * `bobyqa` is a gradient-free quadratic approximation method
-      # * * `rhobeg` is the initial value of the trust region radius. Set to one tenth of the greatest expected variable change
-      # * * `maxfun` is the number of function evaluations
-      # * `Marq` is the Levenberg-Marquardt method
-      # * * `ftol`, `ptol` and `gtol` control the termination criteria
-      # * * `maxfev` is the number of function evaluations
-      # * * `maxiter` is the number of iterations
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
+      # Depending on the `algorithm` argument in the `PIConfiguration` object, the
+      # actual optimization call will use one of the underlying optimization routines
+      message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
 
-      # Calculation of confidence intervals
-      # Sigma values are standard deviations of the estimated parameters. They are
-      # extracted from the estimated hessian matrix through the summary function.
+      if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
+        time <- system.time({
+          # produces warning with Nelder-Mead, BFGS, CG and SANN
+          # because only L-BFGS-B respects parameter bounds
+          results <- optim(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
+        })
+      } else if (private$.configuration$algorithm == "HJKB") {
+        time <- system.time({
+          results <- dfoptim::hjkb(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "nloptr:BOBYQA") {
+        time <- system.time({
+          results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "minpack") {
+        time <- system.time({
+          results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
+            private$.targetFunction(p)$residuals$res
+          },
+          control = private$.configuration$algorithmOptions)
+          results$value <- private$.targetFunction(results$par)$model
+        })
+      } else if (private$.configuration$algorithm == "DEoptim") {
+        control <- DEoptim::DEoptim.control(itermax = 100, steptol = 10, trace = FALSE)
+        time <- system.time({
+          results <- DEoptim::DEoptim(fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, control = control)
+          results$par <- results$optim$bestmem
+          results$value <- results$optim$bestval
+        })
+      } else if (private$.configuration$algorithm == "PSoptim") {
+        time <- system.time({
+          results <- pso::psoptim(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, control = private$.configuration$algorithmOptions)
+        })
+      } else if (private$.configuration$algorithm == "GenOUD") {
+        time <- system.time({
+          boundaryDomains <- matrix(c(lower, upper), ncol = 2)
+          results <- rgenoud::genoud(
+            fn = function(p) {
+              private$.targetFunction(p)$model
+            }, nvars = length(lower), pop.size = 20, Domains = boundaryDomains,
+            boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE
+          )
+        })
+      }
+      # at this point, we assume that `private$.configuration$algorithm` contains
+      # one of the entries from `ospsuite.parameteridentification::Algorithms`,
+      # so one of the `if` conditions above would execute
+
+      results$elapsed <- time[[3]]
+      results$algorithm <- private$.configuration$algorithm
+      # Add the number of function evaluations (excluding hessian calculation) to the results output
+      results$nrOfFnEvaluations <- private$.fnEvaluations
+
+      # Calculate sigma if it has not been calculated previously
+      if (is.null(results$sigma)) {
+        # Calculate hessian if the selected algorithm does not calculate it by default
+        if (is.null(results$hessian)) {
+          message("Post-hoc estimation of hessian")
+          results$hessian <- optimHess(par = results$par, fn = function(p) {
+            private$.targetFunction(p)$model
+          })
+        }
+        # For the target function that represents the deviation = -2 * log(L),
+        # results$hessian / 2 is the observed information matrix
+        # https://stats.stackexchange.com/questions/27033/
+        results$sigma <- tryCatch(
+          {
+            fim <- solve(results$hessian / 2)
+            sqrt(diag(fim))
+          },
+          error = function(cond) {
+            message("Error calculating confidence intervals.")
+            message("Here's the original error message:")
+            message(cond$message)
+            # Choose a return value in case of error
+            NA_real_
+          }
+        )
+      }
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
-      results$lwr <- results$par - 1.96 * sigma
-      results$upr <- results$par + 1.96 * sigma
-      results$cv <- sigma / abs(results$par) * 100
-      # Add the number of iterations the to results output
-      results$nrOfIterations <- private$.iteration
+      results$lwr <- results$par - 1.96 * results$sigma
+      results$upr <- results$par + 1.96 * results$sigma
+      results$cv <- results$sigma / abs(results$par) * 100
+
       return(results)
     }
   ),
@@ -598,8 +675,8 @@ ParameterIdentification <- R6::R6Class(
       # variables of the batches.
       private$.batchInitialization()
       # Run optimization algorithm
-      # Reset iteration counter
-      private$.iteration <- 0
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, simulationState)
@@ -684,7 +761,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
-      private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)
+      private$printLine("Print feedback after each function evaluation", private$.configuration$printEvaluationFeedback)
       invisible(self)
     }
   )

@@ -4,17 +4,17 @@
 \name{Algorithms}
 \alias{Algorithms}
 \title{Algorithms
-List of optimization algorithms supported by \code{FME::modFit()} and, consequently,
+List of optimization algorithms supported by optimization routines and, consequently,
 by the ParameterIdentification class}
 \format{
-An object of class \code{list} of length 10.
+An object of class \code{list} of length 12.
 }
 \usage{
 Algorithms
 }
 \description{
 Algorithms
-List of optimization algorithms supported by \code{FME::modFit()} and, consequently,
+List of optimization algorithms supported by optimization routines and, consequently,
 by the ParameterIdentification class
 }
 \keyword{datasets}
