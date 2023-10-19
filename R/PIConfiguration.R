@@ -111,7 +111,7 @@ PIConfiguration <- R6::R6Class(
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.targetFunctionType <- "lsq"
-      private$.algorithm <- "bobyqa"
+      private$.algorithm <- "BOBYQA"
       private$.algorithmOptions <- list()
     },
 

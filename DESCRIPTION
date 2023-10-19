@@ -34,10 +34,7 @@ Imports:
     rClr,
     dfoptim,
     nloptr,
-    minpack.lm,
-    DEoptim,
-    pso,
-    rgenoud
+    DEoptim
 Suggests: 
     knitr,
     rmarkdown,

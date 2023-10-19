@@ -509,15 +509,7 @@ ParameterIdentification <- R6::R6Class(
       # actual optimization call will use one of the underlying optimization routines
       message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
 
-      if (private$.configuration$algorithm %in% c("Nelder-Mead", "BFGS", "CG", "L-BFGS-B", "SANN")) {
-        time <- system.time({
-          # produces warning with Nelder-Mead, BFGS, CG and SANN
-          # because only L-BFGS-B respects parameter bounds
-          results <- optim(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions, hessian = TRUE)
-        })
-      } else if (private$.configuration$algorithm == "HJKB") {
+      if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
             private$.targetFunction(p)$model
@@ -529,14 +521,6 @@ ParameterIdentification <- R6::R6Class(
             private$.targetFunction(p)$model
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
-      } else if (private$.configuration$algorithm == "minpack") {
-        time <- system.time({
-          results <- minpack.lm::nls.lm(par = startValues, lower = lower, upper = upper, fn = function(p) {
-            private$.targetFunction(p)$residuals$res
-          },
-          control = private$.configuration$algorithmOptions)
-          results$value <- private$.targetFunction(results$par)$model
-        })
       } else if (private$.configuration$algorithm == "DEoptim") {
         control <- DEoptim::DEoptim.control(itermax = 100, steptol = 10, trace = FALSE)
         time <- system.time({
@@ -545,22 +529,6 @@ ParameterIdentification <- R6::R6Class(
           }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
-        })
-      } else if (private$.configuration$algorithm == "PSoptim") {
-        time <- system.time({
-          results <- pso::psoptim(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, lower = lower, upper = upper, control = private$.configuration$algorithmOptions)
-        })
-      } else if (private$.configuration$algorithm == "GenOUD") {
-        time <- system.time({
-          boundaryDomains <- matrix(c(lower, upper), ncol = 2)
-          results <- rgenoud::genoud(
-            fn = function(p) {
-              private$.targetFunction(p)$model
-            }, nvars = length(lower), pop.size = 20, Domains = boundaryDomains,
-            boundary.enforcement = TRUE, max.generations = 10, hard.generation.limit = TRUE
-          )
         })
       }
       # at this point, we assume that `private$.configuration$algorithm` contains

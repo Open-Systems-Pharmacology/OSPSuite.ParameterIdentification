@@ -1,25 +1,31 @@
 library(ospsuite.parameteridentification)
-simulations <- c("IV250"   = loadSimulation("tests/dev/Models/Simulations/Chu1992 iv 250mg Clarithromycin.pkml"),
-                 "PO250"   = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg Clarithromycin.pkml"),
-                 "PO250MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg md Clarithromycin.pkml"),
-                 "PO500"   = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg Clarithromycin.pkml"),
-                 "PO500MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg md Clarithromycin.pkml"))
+simulations <- c(
+  "IV250" = loadSimulation("tests/dev/Models/Simulations/Chu1992 iv 250mg Clarithromycin.pkml"),
+  "PO250" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg Clarithromycin.pkml"),
+  "PO250MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg md Clarithromycin.pkml"),
+  "PO500" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg Clarithromycin.pkml"),
+  "PO500MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg md Clarithromycin.pkml")
+)
 
 piConfiguration <- PIConfiguration$new()
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
 piConfiguration$printIterationFeedback <- TRUE
 
-parameterInputData <- list(list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
-                           list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
-                           list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01))
+parameterInputData <- list(
+  list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
+  list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
+  list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01)
+)
 # The code below assumes that every parameter is present in each simulation
 # and parameter values across all simulations should be changed in parallel
 parameters <- vector("list", length = length(parameterInputData))
 for (idx in seq_along(parameterInputData)) {
   modelParams <- list()
   for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterInputData[[idx]]$path,
-                                                         container = simulation))
+    modelParams <- c(modelParams, ospsuite::getParameter(
+      path = parameterInputData[[idx]]$path,
+      container = simulation
+    ))
   }
   parameters[[idx]] <- PIParameters$new(parameters = modelParams)
   parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
@@ -28,7 +34,7 @@ for (idx in seq_along(parameterInputData)) {
 }
 
 # Observed data is loaded from two different files
-# because IV data is reported in μmol/L, and PO data is reported in µg/ml
+# because IV data is reported in µmol/L, and PO data is reported in µg/ml
 filePath <- "tests/data/Clarithromycin_Chu_1992.xlsx"
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
 dataConfiguration$sheets <- "IV250"
@@ -45,7 +51,8 @@ observedData <- c(observedData_IV, observedData_PO)
 outputMappings <- vector("list", length = length(simulations))
 for (idx in seq_along(simulations)) {
   outputMappings[[idx]] <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)",
-                                                                      container = simulations[[idx]]))
+    container = simulations[[idx]]
+  ))
   outputMappings[[idx]]$addObservedDataSets(observedData[[names(simulations)[[idx]]]])
   outputMappings[[idx]]$scaling <- "lin"
 }
