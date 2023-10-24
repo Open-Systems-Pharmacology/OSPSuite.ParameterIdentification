@@ -19,7 +19,7 @@ AlgorithmOptions <- enum(c(
   "maximize", # flag to maximize function instead
   "target", # target objective function value for termination
   "info", # reporting settings
-  # applies to "nloptr:BOBYQA" and "nloptr:NM" algorithms
+  # applies to "BOBYQA" algorithm
   "stopval", # target objective function value for termination
   "xtol_rel", # relative tolerance for parameter step for termination
   "maxeval", # maximum number of function evaluations

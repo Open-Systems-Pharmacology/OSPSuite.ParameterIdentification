@@ -5,7 +5,7 @@ context("ParameterIdentification")
 simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printIterationFeedback <- FALSE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(path = parameterPaths[[1]], container = simulations$Aciclovir))
@@ -42,7 +42,7 @@ test_that("Optimal lipophilicity value in the aciclovir model is close to expect
 simulations <- c(loadSimulation("../dev/Models/Simulations/Smith1981 iv 5mg Midazolam.pkml"))
 names(simulations) <- "Midazolam"
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterInputData <- list(
   list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
@@ -103,7 +103,7 @@ simulations <- c(
 
 piConfiguration <- PIConfiguration$new()
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterInputData <- list(
   list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),

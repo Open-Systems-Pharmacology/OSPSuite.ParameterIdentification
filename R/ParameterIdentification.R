@@ -515,7 +515,7 @@ ParameterIdentification <- R6::R6Class(
             private$.targetFunction(p)$model
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
-      } else if (private$.configuration$algorithm == "nloptr:BOBYQA") {
+      } else if (private$.configuration$algorithm == "BOBYQA") {
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
             private$.targetFunction(p)$model
@@ -542,18 +542,19 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate sigma if it has not been calculated previously
       if (is.null(results$sigma)) {
-        # Calculate hessian if the selected algorithm does not calculate it by default
-        if (is.null(results$hessian)) {
-          message("Post-hoc estimation of hessian")
-          results$hessian <- optimHess(par = results$par, fn = function(p) {
-            private$.targetFunction(p)$model
-          })
-        }
         # For the target function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
         results$sigma <- tryCatch(
           {
+            # Calculate hessian if the selected algorithm does not calculate it by default
+            if (is.null(results$hessian)) {
+              message("Post-hoc estimation of hessian")
+              results$hessian <- optimHess(par = results$par, fn = function(p) {
+                private$.targetFunction(p)$model
+              })
+            }
+
             fim <- solve(results$hessian / 2)
             sqrt(diag(fim))
           },
@@ -572,7 +573,6 @@ ParameterIdentification <- R6::R6Class(
       results$lwr <- results$par - 1.96 * results$sigma
       results$upr <- results$par + 1.96 * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
-
       return(results)
     }
   ),

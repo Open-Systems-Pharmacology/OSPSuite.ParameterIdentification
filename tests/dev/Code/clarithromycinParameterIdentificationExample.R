@@ -9,7 +9,7 @@ simulations <- c(
 
 piConfiguration <- PIConfiguration$new()
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterInputData <- list(
   list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
