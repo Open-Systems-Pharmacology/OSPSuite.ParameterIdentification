@@ -522,7 +522,17 @@ ParameterIdentification <- R6::R6Class(
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
-        control <- DEoptim::DEoptim.control(itermax = 100, steptol = 10, trace = FALSE)
+        # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
+        control <- DEoptim::DEoptim.control(VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
+                                            strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
+                                            bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
+                                            NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
+                                            itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
+                                            CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
+                                            F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
+                                            trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
+                                            reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
+                                            steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
             private$.targetFunction(p)$model
