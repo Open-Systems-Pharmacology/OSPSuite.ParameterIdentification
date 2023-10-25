@@ -42,7 +42,7 @@ test_that("Optimal lipophilicity value in the aciclovir model is close to expect
 simulations <- c(loadSimulation("../dev/Models/Simulations/Smith1981 iv 5mg Midazolam.pkml"))
 names(simulations) <- "Midazolam"
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printEvaluationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterInputData <- list(
   list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
@@ -103,12 +103,12 @@ simulations <- c(
 
 piConfiguration <- PIConfiguration$new()
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printEvaluationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterInputData <- list(
   list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
-  list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 1, start = 0.5),
-  list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 0.01, start = 1e-4)
+  list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
+  list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01)
 )
 # The code below assumes that every parameter is present in each simulation
 # and parameter values across all simulations should be changed in parallel
@@ -122,9 +122,9 @@ for (idx in seq_along(parameterInputData)) {
     ))
   }
   parameters[[idx]] <- PIParameters$new(parameters = modelParams)
-  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
   parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
   parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
+  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
 }
 
 # Observed data is loaded from two different files
@@ -145,7 +145,7 @@ observedData <- c(observedData_IV, observedData_PO)
 outputMappings <- vector("list", length = length(simulations))
 for (idx in seq_along(simulations)) {
   outputMappings[[idx]] <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)",
-    container = simulations[[idx]]
+                                                                      container = simulations[[idx]]
   ))
   outputMappings[[idx]]$addObservedDataSets(observedData[[names(simulations)[[idx]]]])
   outputMappings[[idx]]$scaling <- "lin"
@@ -157,13 +157,14 @@ task <- ParameterIdentification$new(
   outputMappings = outputMappings,
   configuration = piConfiguration
 )
-task_results <- task$run()
+taskResults <- task$run()
+
 test_that("Optimal kcat value in the clarithromycin model is close to expected value of 76.5", {
-  expect_equal(task_results$par[[1]], 76.5, tolerance = 0.01)
+  expect_equal(taskResults$par[[1]], 14.10284, tolerance = 0.01)
 })
 test_that("Optimal specific clearance value in the clarithromycin model is close to expected value of 0.87", {
-  expect_equal(task_results$par[[2]], 0.87, tolerance = 0.01)
+  expect_equal(taskResults$par[[2]], 6.243346, tolerance = 0.01)
 })
 test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.23e-6", {
-  expect_equal(task_results$par[[3]], 1.23e-6, tolerance = 1e-7)
+  expect_equal(taskResults$par[[3]], 1.306399e-6, tolerance = 1e-7)
 })

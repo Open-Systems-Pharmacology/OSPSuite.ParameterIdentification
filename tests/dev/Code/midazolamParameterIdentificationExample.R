@@ -5,7 +5,7 @@ names(simulations) <- "Midazolam"
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printCallFeedback <- TRUE
+piConfiguration$printCallFeedback <- FALSE
 
 parameterPaths <- c("Midazolam|Lipophilicity", "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat")
 parameters <- list()
@@ -44,17 +44,3 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 taskResults <- task$run()
-
-
-gridSearch <- crossing(
-  tibble(lip = seq(-5, 8, 0.2)),
-  tibble(kcat = seq(0, 1, 0.05))
-) %>%
-  mutate(ofv = map2_dbl(lip, kcat, function(x, y) {
-    task$.__enclos_env__$private$.targetFunction(c(x, y))$model
-  }))
-ggplot(gridSearch) +
-  geom_contour_filled(aes(x = lip, y = kcat, z = 1 / ofv)) +
-  scale_fill_viridis_d() +
-  theme_bw() +
-  guides(z = "none")

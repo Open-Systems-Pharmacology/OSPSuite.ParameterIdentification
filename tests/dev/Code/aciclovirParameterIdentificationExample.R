@@ -5,7 +5,7 @@ names(simulations) <- "Aciclovir"
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
-piConfiguration$printEvaluationFeedback <- TRUE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -40,14 +40,3 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 taskResults <- task$run()
-
-
-gridSearch <- crossing(tibble(lip = seq(-5, 10, 0.2))) %>%
-  mutate(ofv = map_dbl(lip, function(x) {
-    task$.__enclos_env__$private$.targetFunction(c(x))$model
-  }))
-ggplot(gridSearch) +
-  geom_point(aes(x = lip, y = ofv, col = 1 / ofv)) +
-  scale_color_viridis_c() +
-  theme_bw() +
-  guides(color = "none")

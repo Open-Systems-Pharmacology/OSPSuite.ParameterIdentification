@@ -383,7 +383,6 @@ ParameterIdentification <- R6::R6Class(
 
       # Print current error if requested
       if (private$.configuration$printEvaluationFeedback) {
-        # Current total error is the sum of squared residuals
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
