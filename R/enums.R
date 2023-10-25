@@ -25,9 +25,18 @@ AlgorithmOptions <- enum(c(
   "maxeval", # maximum number of function evaluations
   "ftol_rel", # relative tolerance for objective value for termination
   "ftol_abs", # absolute tolerance for objective value for termination
-  "check_derivatives" # FALSE by default
-  ## Note that "DEoptim" algorithm has its own parameters which are not passed through the `control` argument.
-  ## Instead, they are currently set inside the task setup.
+  "check_derivatives", # FALSE by default
+  # applies and passed on to the "DEoptim" algorithm
+  "VTR", # target objective function value for termination
+  "strategy", # strategy for differential evolution
+  "bs", # strategy for selection
+  "NP", # population size
+  "itermax", # maximum number of iterations
+  "CR", # crossover probability
+  "F", # differential weight
+  "trace", # reporting settings
+  "reltol", # relative tolerance for termination
+  "steptol" # step count before checking relative tolerance
 ))
 
 #' @title ObjectiveFunctions
