@@ -26,13 +26,15 @@ Depends:
     R (>= 4.1),
     ospsuite (>= 11.0)
 Imports:
-    FME,
     ggplot2,
     ggtext,
     grDevices,
     ospsuite.utils,
     R6,
-    rClr
+    rClr,
+    dfoptim,
+    nloptr,
+    DEoptim
 Suggests: 
     knitr,
     rmarkdown,
