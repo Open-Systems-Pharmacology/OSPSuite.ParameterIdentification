@@ -34,7 +34,8 @@ Imports:
     rClr,
     dfoptim,
     nloptr,
-    DEoptim
+    DEoptim,
+	numDeriv
 Suggests: 
     knitr,
     rmarkdown,
