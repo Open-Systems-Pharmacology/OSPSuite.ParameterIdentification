@@ -559,9 +559,13 @@ ParameterIdentification <- R6::R6Class(
             # Calculate hessian if the selected algorithm does not calculate it by default
             if (is.null(results$hessian)) {
               message("Post-hoc estimation of hessian")
+              # If the parameter values are close to their bounds, the hessian
+              # should be calculated with a smaller epsilon than a default value
+              # of 1e-4
+              hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
               results$hessian <- numDeriv::hessian(func = function(p) {
                 private$.targetFunction(p)$model
-              }, x = results$par)
+              }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
             fim <- solve(results$hessian / 2)
