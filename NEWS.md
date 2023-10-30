@@ -10,6 +10,7 @@ package and used for calculation of residuals.
 ### BUG FIXES
 - Calculation of residals does not fail if observed data contains only one 
 time point.
+- Calculation of the hessian close to the bounds of parameter values is improved
 
 
 # ospsuite-parameteridentification 1.2

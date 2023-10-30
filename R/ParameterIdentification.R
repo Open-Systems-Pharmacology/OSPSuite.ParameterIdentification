@@ -221,7 +221,7 @@ ParameterIdentification <- R6::R6Class(
           message("Original error message:")
           message(cond$message)
 
-          return(NA)
+          NA
         }
       )
       # Returning a list of `Inf`s as otherwise the "Marq" method complains about
@@ -559,9 +559,13 @@ ParameterIdentification <- R6::R6Class(
             # Calculate hessian if the selected algorithm does not calculate it by default
             if (is.null(results$hessian)) {
               message("Post-hoc estimation of hessian")
-              results$hessian <- optimHess(par = results$par, fn = function(p) {
+              # If the parameter values are close to their bounds, the hessian
+              # should be calculated with a smaller epsilon than a default value
+              # of 1e-4
+              hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
+              results$hessian <- numDeriv::hessian(func = function(p) {
                 private$.targetFunction(p)$model
-              })
+              }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
             fim <- solve(results$hessian / 2)
@@ -579,8 +583,8 @@ ParameterIdentification <- R6::R6Class(
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      results$lwr <- results$par - 1.96 * results$sigma
-      results$upr <- results$par + 1.96 * results$sigma
+      results$lwr <- results$par - qnorm(p = 1 - 0.05/2) * results$sigma
+      results$upr <- results$par + qnorm(p = 1 - 0.05/2) * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
       return(results)
     }

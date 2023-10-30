@@ -1,5 +1,3 @@
-context("ParameterIdentification")
-
 # Load aciclovir 1-parameter model and confirm that the optimal parameter value is as expected
 
 simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
@@ -31,10 +29,13 @@ task <- ParameterIdentification$new(
   outputMappings = outputMapping,
   configuration = piConfiguration
 )
-task_results <- task$run()
+taskResults <- task$run()
 
 test_that("Optimal lipophilicity value in the aciclovir model is close to expected value of 1.318", {
-  expect_equal(task_results$par, 1.318, tolerance = 0.01)
+  expect_equal(taskResults$par, 1.318, tolerance = 0.01)
+})
+test_that("The hessian value in the aciclovir model is calculated without errors", {
+  expect_false(is.na(taskResults$hessian))
 })
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
@@ -83,13 +84,16 @@ task <- ParameterIdentification$new(
   outputMappings = outputMapping,
   configuration = piConfiguration
 )
-task_results <- task$run()
+taskResults <- task$run()
 
 test_that("Optimal lipophilicity value in the midazolam model is close to expected value of 3.36", {
-  expect_equal(task_results$par[[1]], 3.36, tolerance = 0.01)
+  expect_equal(taskResults$par[[1]], 3.36, tolerance = 0.01)
 })
 test_that("Optimal kcat value in the midazolam model is close to expected value of 0.117", {
-  expect_equal(task_results$par[[2]], 0.117, tolerance = 0.01)
+  expect_equal(taskResults$par[[2]], 0.117, tolerance = 0.01)
+})
+test_that("The hessian value in the midazolam model is calculated without errors", {
+  expect_false(any(is.na(taskResults$hessian)))
 })
 
 # Load clarithomycin 3-parameter model and confirm that the optimal parameter values are as expected
@@ -167,4 +171,7 @@ test_that("Optimal specific clearance value in the clarithromycin model is close
 })
 test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.23e-6", {
   expect_equal(taskResults$par[[3]], 1.306399e-6, tolerance = 1e-7)
+})
+test_that("The hessian value in the clarithromycin model is calculated without errors", {
+  expect_false(any(is.na(taskResults$hessian)))
 })

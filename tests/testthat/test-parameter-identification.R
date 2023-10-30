@@ -1,5 +1,3 @@
-context("ParameterIdentification")
-
 modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
 sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))
 modelParameter <- ospsuite::getParameter(path = "Organism|IR_I_P_Inter_tHalf", container = sim)
@@ -118,10 +116,10 @@ test_that("The results object contains a number of function evaluations", {
   expect_equal(taskResults$nrOfFnEvaluations, 22)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(taskResults$lwr, 1.216545, tolerance = 1e-4)
+  expect_equal(taskResults$lwr, 1.216545, tolerance = 1e-3)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(taskResults$upr, 1.42116, tolerance = 1e-4)
+  expect_equal(taskResults$upr, 1.42116, tolerance = 1e-3)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulations$Aciclovir
