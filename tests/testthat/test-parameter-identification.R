@@ -110,7 +110,7 @@ test_that("Plotting returns a different plot when supplied with input parameters
   vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
 })
 test_that("The results object contains a parameter estimate", {
-  expect_equal(taskResults$par, 1.318853, tol = 1e-4)
+  expect_equal(taskResults$par, 1.318853, tolerance = 1e-4)
 })
 test_that("The results object contains a number of function evaluations", {
   expect_equal(taskResults$nrOfFnEvaluations, 22)
@@ -146,5 +146,5 @@ test_that("Grid search produces no error with default parameters", {
 })
 gridSearchResults <- task$calculateGrid(totalEvaluations = 10)
 test_that("Grid search produced correct results", {
-  expect_snapshot_value(gridSearchResults)
+  expect_snapshot_value(gridSearchResults, style = "serialize")
 })

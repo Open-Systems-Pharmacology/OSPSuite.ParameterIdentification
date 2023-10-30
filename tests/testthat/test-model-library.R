@@ -40,10 +40,10 @@ test_that("The hessian value in the aciclovir model is calculated without errors
 # I only store the `ofv` column in the snapshot file, because the parameter
 # names might have nonstandard symbols disrupting the `expect` function
 test_that("The grid calculation (with default parameters) in the aciclovir model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with default parameters) in the aciclovir model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles())
+  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
 })
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
@@ -104,10 +104,10 @@ test_that("The hessian value in the midazolam model is calculated without errors
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the midazolam model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the midazolam model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles())
+  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
 })
 
 # Load clarithomycin 3-parameter model and confirm that the optimal parameter values are as expected
@@ -190,8 +190,8 @@ test_that("The hessian value in the clarithromycin model is calculated without e
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the clarithromycin model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the clarithromycin model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles())
+  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
 })
