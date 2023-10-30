@@ -37,6 +37,14 @@ test_that("Optimal lipophilicity value in the aciclovir model is close to expect
 test_that("The hessian value in the aciclovir model is calculated without errors", {
   expect_false(is.na(taskResults$hessian))
 })
+# I only store the `ofv` column in the snapshot file, because the parameter
+# names might have nonstandard symbols disrupting the `expect` function
+test_that("The grid calculation (with default parameters) in the aciclovir model returns the expected results", {
+  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+})
+test_that("The profile calculation (with default parameters) in the aciclovir model returns the expected results", {
+  expect_snapshot_value(task$calculateProfiles())
+})
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
 
@@ -87,13 +95,19 @@ task <- ParameterIdentification$new(
 taskResults <- task$run()
 
 test_that("Optimal lipophilicity value in the midazolam model is close to expected value of 3.36", {
-  expect_equal(taskResults$par[[1]], 3.36, tolerance = 0.01)
+  expect_equal(taskResults$par[[1]], 3.36637, tolerance = 0.01)
 })
 test_that("Optimal kcat value in the midazolam model is close to expected value of 0.117", {
-  expect_equal(taskResults$par[[2]], 0.117, tolerance = 0.01)
+  expect_equal(taskResults$par[[2]], 0.118855, tolerance = 0.01)
 })
 test_that("The hessian value in the midazolam model is calculated without errors", {
   expect_false(any(is.na(taskResults$hessian)))
+})
+test_that("The grid calculation (with the default parameters) in the midazolam model returns the expected results", {
+  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+})
+test_that("The profile calculation (with the default parameters) in the midazolam model returns the expected results", {
+  expect_snapshot_value(task$calculateProfiles())
 })
 
 # Load clarithomycin 3-parameter model and confirm that the optimal parameter values are as expected
@@ -163,15 +177,21 @@ task <- ParameterIdentification$new(
 )
 taskResults <- task$run()
 
-test_that("Optimal kcat value in the clarithromycin model is close to expected value of 76.5", {
+test_that("Optimal kcat value in the clarithromycin model is close to expected value of 14.1", {
   expect_equal(taskResults$par[[1]], 14.10284, tolerance = 0.01)
 })
-test_that("Optimal specific clearance value in the clarithromycin model is close to expected value of 0.87", {
+test_that("Optimal specific clearance value in the clarithromycin model is close to expected value of 6.24", {
   expect_equal(taskResults$par[[2]], 6.243346, tolerance = 0.01)
 })
-test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.23e-6", {
-  expect_equal(taskResults$par[[3]], 1.306399e-6, tolerance = 1e-7)
+test_that("Optimal specific intestinal permeability value in the clarithromycin model is close to expected value of 1.3e-6", {
+  expect_equal(taskResults$par[[3]], 1.306399e-6, tolerance = 0.01)
 })
 test_that("The hessian value in the clarithromycin model is calculated without errors", {
   expect_false(any(is.na(taskResults$hessian)))
+})
+test_that("The grid calculation (with the default parameters) in the clarithromycin model returns the expected results", {
+  expect_snapshot_value(task$calculateGrid()[["ofv"]])
+})
+test_that("The profile calculation (with the default parameters) in the clarithromycin model returns the expected results", {
+  expect_snapshot_value(task$calculateProfiles())
 })

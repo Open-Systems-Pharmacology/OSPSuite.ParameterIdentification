@@ -146,5 +146,5 @@ test_that("Grid search produces no error with default parameters", {
 })
 gridSearchResults <- task$calculateGrid(totalEvaluations = 10)
 test_that("Grid search produced correct results", {
-  expect_known_value(gridSearchResults, "gridSearchResults")
+  expect_snapshot_value(gridSearchResults)
 })

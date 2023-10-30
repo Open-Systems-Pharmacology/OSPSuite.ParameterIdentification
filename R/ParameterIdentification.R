@@ -804,7 +804,79 @@ ParameterIdentification <- R6::R6Class(
         private$.needBatchInitialization <- FALSE
       }
 
-      return(OFVGrid)
+      return(tibble::as_tibble(OFVGrid))
+    },
+
+    #' @description
+    #' Calculates the values of the objective function on all orthogonal lines
+    #' passing through a given point in the parameter space.
+    calculateProfiles = function(par = NA, lower = NA, upper = NA, totalEvaluations = NA) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      if (private$.needBatchInitialization) {
+        # Store simulation outputs and time intervals to reset them at the end
+        # of the run.
+        simulationState <- .storeSimulationState(private$.simulations)
+        private$.batchInitialization()
+      }
+
+      np <- length(private$.piParameters)
+
+      # if par is not supplied, we use the current parameter values
+      if (missing(par)) {
+        par <- unlist(lapply(private$.piParameters, function(x) {
+          x$currValue
+        }), use.names = FALSE)
+      }
+
+      # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
+      # of the current parameter values
+      if (missing(lower)) {
+        lower <- 0.9 * par
+      }
+      if (missing(upper)) {
+        upper <- 1.1 * par
+      }
+
+      # calculate the grid for each parameter separately
+      if (missing(totalEvaluations)) {
+        gridSize <- 21
+        # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
+        # of the current parameter values
+      } else {
+        gridSize <- floor(totalEvaluations / np)
+      }
+      gridList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        gridList[[idx]] <- rep(par[[idx]], gridSize)
+        names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
+      }
+      defaultGrid <- tibble::as_tibble(gridList)
+
+      profileList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        # the names of the parameters are extracted from the first available path
+        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+        grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        currentGrid <- defaultGrid
+        currentGrid[[parameterName]] <- grid
+        # creates a tibble with the column name from the `parameterName` variable
+        profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
+        profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
+          private$.targetFunction(c(...))$model
+        })
+        names(profileList)[[idx]] <- parameterName
+      }
+
+      # Mark that the batches have been initialized and restore simulation state
+      # Note: we can't use `simulationState` variable in the condition
+      # because it might be not defined
+      if (private$.needBatchInitialization){
+        .restoreSimulationState(private$.simulations, simulationState)
+        private$.needBatchInitialization <- FALSE
+      }
+
+      return(profileList)
     },
 
     #' @description
