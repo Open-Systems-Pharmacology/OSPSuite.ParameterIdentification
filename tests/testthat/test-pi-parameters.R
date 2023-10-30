@@ -1,5 +1,3 @@
-context("PIParameters")
-
 sim <- loadTestSimulation("Aciclovir")
 param <- getParameter("Aciclovir|Permeability", sim)
 livVol <- getParameter("Organism|Liver|Volume", sim)

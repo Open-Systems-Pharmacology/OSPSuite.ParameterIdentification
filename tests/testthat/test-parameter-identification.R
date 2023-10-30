@@ -1,5 +1,3 @@
-context("ParameterIdentification")
-
 modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
 sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))
 modelParameter <- ospsuite::getParameter(path = "Organism|IR_I_P_Inter_tHalf", container = sim)
@@ -58,7 +56,7 @@ simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printIterationFeedback <- FALSE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -70,6 +68,8 @@ for (parameterPath in parameterPaths) {
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
 }
+parameters[[1]]$minValue <- -10
+parameters[[1]]$maxValue <- 10
 
 filePath <- "../data/AciclovirLaskinData.xlsx"
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
@@ -102,7 +102,7 @@ test_that("Plotting works before running the parameter estimation task", {
   # plotResults returns a list of plots, one plot for each output mapping
   # in this example, we have a single output mapping
 })
-task_results <- task$run()
+taskResults <- task$run()
 test_that("Plotting works after running the parameter estimation task", {
   vdiffr::expect_doppelganger("after_estimation", task$plotResults()[[1]])
 })
@@ -110,16 +110,16 @@ test_that("Plotting returns a different plot when supplied with input parameters
   vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
 })
 test_that("The results object contains a parameter estimate", {
-  expect_equal(task_results$par, -0.009700017)
+  expect_equal(taskResults$par, 1.318853, tol = 1e-4)
 })
 test_that("The results object contains a number of function evaluations", {
-  expect_equal(task_results$feval, 15)
+  expect_equal(taskResults$nrOfFnEvaluations, 22)
 })
 test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(task_results$lwr, -5.422019, tolerance = 1e-6)
+  expect_equal(taskResults$lwr, 1.216545, tolerance = 1e-3)
 })
 test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(task_results$upr, 5.402619, tolerance = 1e-6)
+  expect_equal(taskResults$upr, 1.42116, tolerance = 1e-3)
 })
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulations$Aciclovir
@@ -134,12 +134,12 @@ test_that("Output mappings with log scaling are processed without errors", {
     outputMappings = outputMapping,
     configuration = piConfiguration
   ))
-  expect_no_error(task_results <- task$run())
+  expect_no_error(taskResults <- task$run())
 })
 test_that("Algorithm can be changed in PI configuration", {
-  expect_equal(task$configuration$algorithm, "bobyqa")
-  task$configuration$algorithm <- "Marq"
-  expect_equal(task$configuration$algorithm, "Marq")
+  expect_equal(task$configuration$algorithm, "BOBYQA")
+  task$configuration$algorithm <- "HJKB"
+  expect_equal(task$configuration$algorithm, "HJKB")
 })
 test_that("Grid search produces no error with default parameters", {
   expect_no_error(gridSearchResults <- task$calculateGrid())

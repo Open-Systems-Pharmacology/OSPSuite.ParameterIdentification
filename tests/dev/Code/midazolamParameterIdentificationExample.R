@@ -5,7 +5,7 @@ names(simulations) <- "Midazolam"
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+piConfiguration$printCallFeedback <- FALSE
 
 parameterPaths <- c("Midazolam|Lipophilicity", "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat")
 parameters <- list()
@@ -31,7 +31,7 @@ dataConfiguration$namingPattern <- "{Source}.{Sheet}"
 observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
 
 outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Midazolam|Plasma (Peripheral Venous Blood)",
-                                                            container = simulations$Midazolam
+  container = simulations$Midazolam
 ))
 outputMapping$addObservedDataSets(observedData$Midazolam_Smith_1981.Smith1981)
 outputMapping$scaling <- "lin"
@@ -43,14 +43,4 @@ task <- ParameterIdentification$new(
   outputMappings = outputMapping,
   configuration = piConfiguration
 )
-task_results <- task$run()
-
-
-grid_search <- crossing(tibble(lip = seq(-5, 8, 0.2)),
-                        tibble(kcat = seq(0, 1, 0.05))) %>%
-  mutate(ofv = map2_dbl(lip, kcat, function(x, y) {task$.__enclos_env__$private$.targetFunction(c(x, y))$model}))
-ggplot(grid_search) +
-  geom_contour_filled(aes(x = lip, y = kcat, z = 1/ofv)) +
-  scale_fill_viridis_d() +
-  theme_bw() +
-  guides(z = "none")
+taskResults <- task$run()

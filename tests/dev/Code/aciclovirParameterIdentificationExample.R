@@ -4,8 +4,8 @@ names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
-# If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+# If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
@@ -17,7 +17,7 @@ for (parameterPath in parameterPaths) {
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
 }
-parameters[[1]]$minValue <- -5
+parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
 
 filePath <- "tests/data/AciclovirLaskinData.xlsx"
@@ -39,13 +39,4 @@ task <- ParameterIdentification$new(
   outputMappings = outputMapping,
   configuration = piConfiguration
 )
-task_results <- task$run()
-
-
-grid_search <- crossing(tibble(lip = seq(-5, 10, 0.2))) %>%
-  mutate(ofv = map_dbl(lip, function(x) {task$.__enclos_env__$private$.targetFunction(c(x))$model}))
-ggplot(grid_search) +
-  geom_point(aes(x = lip, y = ofv, col = 1/ofv)) +
-  scale_color_viridis_c() +
-  theme_bw() +
-  guides(color = "none")
+taskResults <- task$run()

@@ -31,15 +31,15 @@ PIConfiguration <- R6::R6Class(
         private$.steadyStateTime <- value
       }
     },
-    #' @field printIterationFeedback Boolean. If `TRUE`, the output of the
-    #' residuals calculation will be printed after each iteration.
+    #' @field printEvaluationFeedback Boolean. If `TRUE`, the objective function value
+    #' will be printed after each function evaluation.
     #' Default is `FALSE`
-    printIterationFeedback = function(value) {
+    printEvaluationFeedback = function(value) {
       if (missing(value)) {
-        private$.printIterationFeedback
+        private$.printEvaluationFeedback
       } else {
         validateIsLogical(value)
-        private$.printIterationFeedback <- value
+        private$.printEvaluationFeedback <- value
       }
     },
 
@@ -67,8 +67,7 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithm a string describing the optimization algorithm, as passed
-    #' to the `FME::modFit()` function.
+    #' @field algorithm a string describing the optimization algorithm.
     #' Supported algorithms are listed  in
     #' `ospsuite.parameteridentification::Algorithms`.
     algorithm = function(value) {
@@ -81,10 +80,8 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions a list of named parameters describing method-specific
-    #' control arguments, as passed to the `FME::modFit()` function.
-    #' Supported options are listed  in
-    #' `ospsuite.parameteridentification::AlgorithmOptions`.
+    #' @field algorithmOptions a list of named parameters describing algorithm-specific
+    #' options. Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -99,7 +96,7 @@ PIConfiguration <- R6::R6Class(
   private = list(
     .simulateSteadyState = NULL,
     .steadyStateTime = NULL,
-    .printIterationFeedback = NULL,
+    .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
     .targetFunctionType = NULL,
     .algorithm = NULL,
@@ -112,9 +109,9 @@ PIConfiguration <- R6::R6Class(
     initialize = function() {
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
-      private$.printIterationFeedback <- FALSE
+      private$.printEvaluationFeedback <- FALSE
       private$.targetFunctionType <- "lsq"
-      private$.algorithm <- "bobyqa"
+      private$.algorithm <- "BOBYQA"
       private$.algorithmOptions <- list()
     },
 
@@ -125,7 +122,7 @@ PIConfiguration <- R6::R6Class(
       private$printClass()
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine("Print feedback after each iteration", private$.printIterationFeedback)
+      private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
       private$printLine("Target function", private$.targetFunctionType)
       private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)
