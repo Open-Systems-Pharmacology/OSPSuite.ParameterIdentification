@@ -743,7 +743,8 @@ ParameterIdentification <- R6::R6Class(
     #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
     #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
     #' from the exact parameter bounds.
-    calculateGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0) {
+    #' @param setStartingPoint If `TRUE`, the best parameter values will be set as the starting point
+    calculateGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
       if (private$.needBatchInitialization) {
@@ -802,6 +803,15 @@ ParameterIdentification <- R6::R6Class(
       if (private$.needBatchInitialization){
         .restoreSimulationState(private$.simulations, simulationState)
         private$.needBatchInitialization <- FALSE
+      }
+
+      if (setStartingPoint) {
+        # set the best parameter values as the starting point
+        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
+        for (idx in seq_along(private$.piParameters)) {
+          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
+        }
+        message("Set the best parameter values as the starting point.")
       }
 
       return(tibble::as_tibble(OFVGrid))
