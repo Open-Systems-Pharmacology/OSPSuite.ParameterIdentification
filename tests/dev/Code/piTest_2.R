@@ -45,8 +45,8 @@ piConfiguration$simulateSteadyState <- TRUE
 piConfiguration$steadyStateTime <- 1000
 
 print(piConfiguration)
-# If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+# If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
+piConfiguration$printEvaluationFeedback <- TRUE
 
 ######### Define parameters to optimize#######
 parameters <- list()

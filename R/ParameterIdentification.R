@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import FME ospsuite.utils
+#' @import ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -74,7 +74,7 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
-    .iteration = 0,
+    .fnEvaluations = 0,
     # CV for M3 target function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
     .cvM3 = 0.2,
@@ -208,8 +208,8 @@ ParameterIdentification <- R6::R6Class(
     # Calculate the target function that is going to be minimized during
     # parameter estimation.
     .targetFunction = function(currVals) {
-      # Increase iteration counter
-      private$.iteration <- private$.iteration + 1
+      # Increase function evaluations counter
+      private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
       # If the simulation was not successful, return `Inf` for the objective function value.
       obsVsPredList <- tryCatch(
@@ -221,7 +221,7 @@ ParameterIdentification <- R6::R6Class(
           message("Original error message:")
           message(cond$message)
 
-          return(NA)
+          NA
         }
       )
       # Returning a list of `Inf`s as otherwise the "Marq" method complains about
@@ -382,11 +382,9 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Print current error if requested
-      if (private$.configuration$printIterationFeedback) {
-        # Current total error is the sum of squared residuals
-        private$.iteration <- private$.iteration + 1
+      if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
-          "iter ", private$.iteration, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
+          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", target function ", signif(runningCost$model, 3), "\n"
         ))
       }
@@ -506,30 +504,88 @@ ParameterIdentification <- R6::R6Class(
         x$maxValue
       }), use.names = FALSE)
 
-      # The method and method-specific control options can be passed
-      # to the `PIConfiguration` object. The `FME::modFit()` function allows to
-      # use the following algorithms:
-      # * `bobyqa` is a gradient-free quadratic approximation method
-      # * * `rhobeg` is the initial value of the trust region radius. Set to one tenth of the greatest expected variable change
-      # * * `maxfun` is the number of function evaluations
-      # * `Marq` is the Levenberg-Marquardt method
-      # * * `ftol`, `ptol` and `gtol` control the termination criteria
-      # * * `maxfev` is the number of function evaluations
-      # * * `maxiter` is the number of iterations
-      results <- FME::modFit(f = private$.targetFunction, p = startValues, lower = lower, upper = upper, method = private$.configuration$algorithm, control = private$.configuration$algorithmOptions)
+      # Depending on the `algorithm` argument in the `PIConfiguration` object, the
+      # actual optimization call will use one of the underlying optimization routines
+      message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
 
-      # Calculation of confidence intervals
-      # Sigma values are standard deviations of the estimated parameters. They are
-      # extracted from the estimated hessian matrix through the summary function.
+      if (private$.configuration$algorithm == "HJKB") {
+        time <- system.time({
+          results <- dfoptim::hjkb(par = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "BOBYQA") {
+        time <- system.time({
+          results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
+            private$.targetFunction(p)$model
+          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+        })
+      } else if (private$.configuration$algorithm == "DEoptim") {
+        # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
+        control <- DEoptim::DEoptim.control(VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
+                                            strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
+                                            bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
+                                            NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
+                                            itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
+                                            CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
+                                            F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
+                                            trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
+                                            reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
+                                            steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
+        time <- system.time({
+          results <- DEoptim::DEoptim(fn = function(p) {
+            private$.targetFunction(p)$model
+          }, lower = lower, upper = upper, control = control)
+          results$par <- results$optim$bestmem
+          results$value <- results$optim$bestval
+        })
+      }
+      # at this point, we assume that `private$.configuration$algorithm` contains
+      # one of the entries from `ospsuite.parameteridentification::Algorithms`,
+      # so one of the `if` conditions above would execute
+
+      results$elapsed <- time[[3]]
+      results$algorithm <- private$.configuration$algorithm
+      # Add the number of function evaluations (excluding hessian calculation) to the results output
+      results$nrOfFnEvaluations <- private$.fnEvaluations
+
+      # Calculate sigma if it has not been calculated previously
+      if (is.null(results$sigma)) {
+        # For the target function that represents the deviation = -2 * log(L),
+        # results$hessian / 2 is the observed information matrix
+        # https://stats.stackexchange.com/questions/27033/
+        results$sigma <- tryCatch(
+          {
+            # Calculate hessian if the selected algorithm does not calculate it by default
+            if (is.null(results$hessian)) {
+              message("Post-hoc estimation of hessian")
+              # If the parameter values are close to their bounds, the hessian
+              # should be calculated with a smaller epsilon than a default value
+              # of 1e-4
+              hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
+              results$hessian <- numDeriv::hessian(func = function(p) {
+                private$.targetFunction(p)$model
+              }, x = results$par, method.args = list(eps = hessianEpsilon))
+            }
+
+            fim <- solve(results$hessian / 2)
+            sqrt(diag(fim))
+          },
+          error = function(cond) {
+            message("Error calculating confidence intervals.")
+            message("Here's the original error message:")
+            message(cond$message)
+            # Choose a return value in case of error
+            NA_real_
+          }
+        )
+      }
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      sigma <- as.numeric(summary(results)[["par"]][, "Std. Error"])
-      results$lwr <- results$par - 1.96 * sigma
-      results$upr <- results$par + 1.96 * sigma
-      results$cv <- sigma / abs(results$par) * 100
-      # Add the number of iterations the to results output
-      results$nrOfIterations <- private$.iteration
+      results$lwr <- results$par - qnorm(p = 1 - 0.05/2) * results$sigma
+      results$upr <- results$par + qnorm(p = 1 - 0.05/2) * results$sigma
+      results$cv <- results$sigma / abs(results$par) * 100
       return(results)
     }
   ),
@@ -600,8 +656,8 @@ ParameterIdentification <- R6::R6Class(
       # variables of the batches.
       private$.batchInitialization()
       # Run optimization algorithm
-      # Reset iteration counter
-      private$.iteration <- 0
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, simulationState)
@@ -676,6 +732,202 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
+    #' Calculates the values of the objective function on a rectangular grid
+    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses the minimal values supported for parameters.
+    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses the maximal values supported for parameters.
+    #' @param logScaleFlag A single logical value or a vector of logical values indicating
+    #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
+    #' @param totalEvaluations An integer number. The grid will have as many points so that the
+    #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
+    #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
+    #' from the exact parameter bounds.
+    #' @param setStartingPoint If `TRUE`, the best parameter values will be set as the starting point
+    calculateGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      if (private$.needBatchInitialization) {
+        # Store simulation outputs and time intervals to reset them at the end
+        # of the run.
+        simulationState <- .storeSimulationState(private$.simulations)
+        private$.batchInitialization()
+      }
+
+      np <- length(private$.piParameters)
+      # logScaleFlag can be specified as a single value (common for all parameters)
+      # or as a vector of values (one for each parameter)
+      if (length(logScaleFlag) != np) {
+        logScaleFlag <- rep(logScaleFlag, length.out = np)
+      }
+
+      # if lower and upper are not supplied, we reuse parameter bounds
+      # By default, margin = 0, but we can use a non-zero value
+      # so that the grid does not start exactly at the parameter bound
+      if (missing(lower)) {
+        lower <- vector(mode = "list", length = np)
+        for (idx in seq_along(private$.piParameters)) {
+          lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
+        }
+      }
+      if (missing(upper)) {
+        upper <- vector(mode = "list", length = np)
+        for (idx in seq_along(private$.piParameters)) {
+          upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
+        }
+      }
+
+      gridSize <- floor(totalEvaluations^(1/np))
+      gridList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        # the names of the parameters are extracted from the first available path
+        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+        if (logScaleFlag[[idx]]) {
+          grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
+        } else {
+          grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        }
+        gridList[[idx]] <- grid
+        names(gridList)[[idx]] <- parameterName
+      }
+
+      OFVGrid <- expand.grid(gridList)
+      # all columns from the OFVGrid are passed in the same order to the objective function
+      OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
+        private$.targetFunction(c(...))$model
+      })
+
+      # Mark that the batches have been initialized and restore simulation state
+      # Note: we can't use `simulationState` variable in the condition
+      # because it might be not defined
+      if (private$.needBatchInitialization){
+        .restoreSimulationState(private$.simulations, simulationState)
+        private$.needBatchInitialization <- FALSE
+      }
+
+      if (setStartingPoint) {
+        # set the best parameter values as the starting point
+        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
+        for (idx in seq_along(private$.piParameters)) {
+          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
+        }
+        message("Set the best parameter values as the starting point.")
+      }
+
+      return(tibble::as_tibble(OFVGrid))
+    },
+
+    #' @description
+    #' Calculates the values of the objective function on all orthogonal lines
+    #' passing through a given point in the parameter space.
+    calculateProfiles = function(par = NA, lower = NA, upper = NA, totalEvaluations = NA) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      if (private$.needBatchInitialization) {
+        # Store simulation outputs and time intervals to reset them at the end
+        # of the run.
+        simulationState <- .storeSimulationState(private$.simulations)
+        private$.batchInitialization()
+      }
+
+      np <- length(private$.piParameters)
+
+      # if par is not supplied, we use the current parameter values
+      if (missing(par)) {
+        par <- unlist(lapply(private$.piParameters, function(x) {
+          x$currValue
+        }), use.names = FALSE)
+      }
+
+      # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
+      # of the current parameter values
+      if (missing(lower)) {
+        lower <- 0.9 * par
+      }
+      if (missing(upper)) {
+        upper <- 1.1 * par
+      }
+
+      # calculate the grid for each parameter separately
+      if (missing(totalEvaluations)) {
+        gridSize <- 21
+        # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
+        # of the current parameter values
+      } else {
+        gridSize <- floor(totalEvaluations / np)
+      }
+      gridList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        gridList[[idx]] <- rep(par[[idx]], gridSize)
+        names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
+      }
+      defaultGrid <- tibble::as_tibble(gridList)
+
+      profileList <- vector(mode = "list", length = np)
+      for (idx in seq_along(private$.piParameters)) {
+        # the names of the parameters are extracted from the first available path
+        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+        grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        currentGrid <- defaultGrid
+        currentGrid[[parameterName]] <- grid
+        # creates a tibble with the column name from the `parameterName` variable
+        profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
+        profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
+          private$.targetFunction(c(...))$model
+        })
+        names(profileList)[[idx]] <- parameterName
+      }
+
+      # Mark that the batches have been initialized and restore simulation state
+      # Note: we can't use `simulationState` variable in the condition
+      # because it might be not defined
+      if (private$.needBatchInitialization){
+        .restoreSimulationState(private$.simulations, simulationState)
+        private$.needBatchInitialization <- FALSE
+      }
+
+      return(profileList)
+    },
+
+    #' @description
+    #' Plot the profiles of the objective function calculated by the calculateProfiles method.
+    plotOFVProfiles = function(profiles) {
+      plotList <- vector(mode = "list", length = length(profiles))
+      for (idx in seq_along(profiles)) {
+        parameterName <- names(profiles)[[idx]]
+        plotList[[idx]] <- ggplot2::ggplot(data = profiles[[idx]],
+                                           ggplot2::aes(x = .data[[parameterName]], y = .data[["ofv"]])) +
+          ggplot2::theme_bw() +
+          ggplot2::geom_point(ggplot2::aes(col = 1/ofv)) +
+          ggplot2::labs(x = parameterName, y = "OFV") +
+          ggplot2::scale_color_viridis_c() +
+          ggplot2::guides(col = "none")
+      }
+      return(plotList)
+    },
+
+    #' @description
+    #' Plot a heatmap of the objective function calculated by the calculateGrid method
+    plotOFVGrid = function(grid) {
+      # This plot only makes sense for 2-parametric problems
+      stopifnot(length(private$.piParameters) == 2)
+      xParameterName <- names(grid)[[1]]
+      yParameterName <- names(grid)[[2]]
+      plot <- ggplot2::ggplot(data = grid,
+                              ggplot2::aes(x = .data[[xParameterName]], y = .data[[yParameterName]])) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_contour_filled(ggplot2::aes(z = 1/ofv)) +
+        ggplot2::geom_point(x = private$.piParameters[[1]]$currValue,
+                            y = private$.piParameters[[2]]$currValue,
+                            size = 3,
+                            color = "white") +
+        ggplot2::labs(x = xParameterName, y = yParameterName) +
+        ggplot2::scale_fill_viridis_d() +
+        ggplot2::guides(fill = "none")
+      return(plot)
+    },
+
+    #' @description
     #' Print the object to the console
     #' @param ... Rest arguments.
     print = function(...) {
@@ -686,7 +938,7 @@ ParameterIdentification <- R6::R6Class(
       private$printLine("Number of parameters", length(private$.piParameters))
       private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
-      private$printLine("Print feedback after each iteration", private$.configuration$printIterationFeedback)
+      private$printLine("Print feedback after each function evaluation", private$.configuration$printEvaluationFeedback)
       invisible(self)
     }
   )

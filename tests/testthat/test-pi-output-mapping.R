@@ -1,4 +1,3 @@
-context("PIOutputMapping")
 simFilePath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 simulations <- c(loadSimulation(simFilePath))
 names(simulations) <- "Aciclovir"

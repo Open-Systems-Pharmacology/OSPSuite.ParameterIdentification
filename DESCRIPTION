@@ -26,13 +26,18 @@ Depends:
     R (>= 4.1),
     ospsuite (>= 11.0)
 Imports:
-    FME,
     ggplot2,
     ggtext,
     grDevices,
+    tibble,
+    purrr,
     ospsuite.utils,
     R6,
-    rClr
+    rClr,
+    dfoptim,
+    nloptr,
+    DEoptim,
+    numDeriv
 Suggests: 
     knitr,
     rmarkdown,
@@ -43,3 +48,4 @@ Suggests:
 RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
+Config/testthat/edition: 3

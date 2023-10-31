@@ -30,8 +30,8 @@ names(simulations) <- simNames
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
-# If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printIterationFeedback <- TRUE
+# If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
+piConfiguration$printEvaluationFeedback <- TRUE
 piConfiguration$targetFunctionType <- "lsq"
 
 ######### Define parameters to optimize#######
