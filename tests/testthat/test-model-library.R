@@ -45,6 +45,9 @@ test_that("The grid calculation (with default parameters) in the aciclovir model
 test_that("The profile calculation (with default parameters) in the aciclovir model returns the expected results", {
   expect_snapshot_value(task$calculateProfiles(), style = "serialize")
 })
+test_that("The profile plot in the aciclovir model returns the expected graphics", {
+  vdiffr::expect_doppelganger("ofv-profile-aciclovir", task$plotOFVProfiles(task$calculateProfiles())[[1]])
+})
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
 
@@ -108,6 +111,17 @@ test_that("The grid calculation (with the default parameters) in the midazolam m
 })
 test_that("The profile calculation (with the default parameters) in the midazolam model returns the expected results", {
   expect_snapshot_value(task$calculateProfiles(), style = "serialize")
+})
+test_that("The profile plot in the midazolam model returns the expected graphics", {
+  profiles <- task$calculateProfiles()
+  plots <- task$plotOFVProfiles(profiles)
+  vdiffr::expect_doppelganger("ofv-profile-midazolam-1", plots[[1]])
+  vdiffr::expect_doppelganger("ofv-profile-midazolam-2", plots[[2]])
+})
+test_that("The grid plot in the midazolam model returns the expected graphics", {
+  grid <- task$calculateGrid()
+  plot <- task$plotOFVGrid(grid)
+  vdiffr::expect_doppelganger("ofv-grid-midazolam", plot)
 })
 
 # Load clarithomycin 3-parameter model and confirm that the optimal parameter values are as expected
@@ -194,4 +208,11 @@ test_that("The grid calculation (with the default parameters) in the clarithromy
 })
 test_that("The profile calculation (with the default parameters) in the clarithromycin model returns the expected results", {
   expect_snapshot_value(task$calculateProfiles(), style = "serialize")
+})
+test_that("The profile plot in the clarithromycin model returns the expected graphics", {
+  profiles <- task$calculateProfiles()
+  plots <- task$plotOFVProfiles(profiles)
+  vdiffr::expect_doppelganger("ofv-profile-clarithromycin-1", plots[[1]])
+  vdiffr::expect_doppelganger("ofv-profile-clarithromycin-2", plots[[2]])
+  vdiffr::expect_doppelganger("ofv-profile-clarithromycin-3", plots[[3]])
 })
