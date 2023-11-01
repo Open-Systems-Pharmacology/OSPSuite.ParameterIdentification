@@ -5,7 +5,7 @@ names(simulations) <- "Midazolam"
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each iteration. May be useful for assessing if the algorithm converges.
-piConfiguration$printCallFeedback <- FALSE
+piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Midazolam|Lipophilicity", "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat")
 parameters <- list()
