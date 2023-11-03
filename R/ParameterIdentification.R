@@ -743,8 +743,7 @@ ParameterIdentification <- R6::R6Class(
     #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
     #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
     #' from the exact parameter bounds.
-    #' @param setStartingPoint If `TRUE`, the best parameter values will be set as the starting point
-    calculateGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
+    calculateOFVGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0) {
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
       if (private$.needBatchInitialization) {
@@ -805,22 +804,13 @@ ParameterIdentification <- R6::R6Class(
         private$.needBatchInitialization <- FALSE
       }
 
-      if (setStartingPoint) {
-        # set the best parameter values as the starting point
-        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
-        for (idx in seq_along(private$.piParameters)) {
-          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
-        }
-        message("Set the best parameter values as the starting point.")
-      }
-
       return(tibble::as_tibble(OFVGrid))
     },
 
     #' @description
     #' Calculates the values of the objective function on all orthogonal lines
     #' passing through a given point in the parameter space.
-    calculateProfiles = function(par = NA, lower = NA, upper = NA, totalEvaluations = NA) {
+    calculateOFVProfiles = function(par = NA, lower = NA, upper = NA, totalEvaluations = NA) {
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
       if (private$.needBatchInitialization) {
@@ -890,7 +880,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
-    #' Plot the profiles of the objective function calculated by the calculateProfiles method.
+    #' Plot the profiles of the objective function calculated by the calculateOFVProfiles method.
     plotOFVProfiles = function(profiles) {
       plotList <- vector(mode = "list", length = length(profiles))
       for (idx in seq_along(profiles)) {
@@ -907,7 +897,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
-    #' Plot a heatmap of the objective function calculated by the calculateGrid method
+    #' Plot a heatmap of the objective function calculated by the calculateOFVGrid method
     plotOFVGrid = function(grid) {
       # This plot only makes sense for 2-parametric problems
       stopifnot(length(private$.piParameters) == 2)

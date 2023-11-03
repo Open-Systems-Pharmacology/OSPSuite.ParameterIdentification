@@ -40,13 +40,13 @@ test_that("The hessian value in the aciclovir model is calculated without errors
 # I only store the `ofv` column in the snapshot file, because the parameter
 # names might have nonstandard symbols disrupting the `expect` function
 test_that("The grid calculation (with default parameters) in the aciclovir model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with default parameters) in the aciclovir model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
+  expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
 })
 test_that("The profile plot in the aciclovir model returns the expected graphics", {
-  vdiffr::expect_doppelganger("ofv-profile-aciclovir", task$plotOFVProfiles(task$calculateProfiles())[[1]])
+  vdiffr::expect_doppelganger("ofv-profile-aciclovir", task$plotOFVProfiles(task$calculateOFVProfiles())[[1]])
 })
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
@@ -107,19 +107,19 @@ test_that("The hessian value in the midazolam model is calculated without errors
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the midazolam model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the midazolam model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
+  expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
 })
 test_that("The profile plot in the midazolam model returns the expected graphics", {
-  profiles <- task$calculateProfiles()
+  profiles <- task$calculateOFVProfiles()
   plots <- task$plotOFVProfiles(profiles)
   vdiffr::expect_doppelganger("ofv-profile-midazolam-1", plots[[1]])
   vdiffr::expect_doppelganger("ofv-profile-midazolam-2", plots[[2]])
 })
 test_that("The grid plot in the midazolam model returns the expected graphics", {
-  grid <- task$calculateGrid()
+  grid <- task$calculateOFVGrid()
   plot <- task$plotOFVGrid(grid)
   vdiffr::expect_doppelganger("ofv-grid-midazolam", plot)
 })
@@ -204,13 +204,13 @@ test_that("The hessian value in the clarithromycin model is calculated without e
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the clarithromycin model returns the expected results", {
-  expect_snapshot_value(task$calculateGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the clarithromycin model returns the expected results", {
-  expect_snapshot_value(task$calculateProfiles(), style = "serialize")
+  expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
 })
 test_that("The profile plot in the clarithromycin model returns the expected graphics", {
-  profiles <- task$calculateProfiles()
+  profiles <- task$calculateOFVProfiles()
   plots <- task$plotOFVProfiles(profiles)
   vdiffr::expect_doppelganger("ofv-profile-clarithromycin-1", plots[[1]])
   vdiffr::expect_doppelganger("ofv-profile-clarithromycin-2", plots[[2]])
