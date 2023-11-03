@@ -1,5 +1,5 @@
 # OSPSuite.ParameterIdentification
-R package for parameter identification for OSPS models
+R package for parameter identification in Open Systems Pharmacology models
 
   <!-- badges: start -->
 
@@ -9,7 +9,7 @@ R package for parameter identification for OSPS models
   <!-- badges: end -->
 
 # Overview
-The **OSPSuite.ParameterIdentification** R-package provides the functionality of performing parameter identification (i.e., fitting the model to observed data) with simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. The package requires the [**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) package to run the simulations.
+The **OSPSuite.ParameterIdentification** is used to set up, run and validate parameter identification problems (i.e., fitting the model to observed data) for simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. 
 
 # Installation
 
@@ -30,17 +30,16 @@ The **OSPSuite.ParameterIdentification** R-package provides the functionality of
 - knitr (CRAN)
 - styler (CRAN)
 
-# User guide
-
+## User guide
 Examples of running parameter estimation tasks using this package are detailed in [the user guide](articles/user-guide.html).
-
-## Code of conduct
-
-Everyone interacting in the Open Systems Pharmacology community (codebases, issue trackers, chat rooms, mailing lists etc...) is expected to follow the Open Systems Pharmacology [code of conduct](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODE_OF_CONDUCT.md).
 
 ## Contribution
 
 We encourage contribution to the Open Systems Pharmacology community. Before getting started please read the [contribution guidelines](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CONTRIBUTING.md). If you are contributing code, please be familiar with the [coding standards](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODING_STANDARDS_R.md).
+
+### Code of conduct
+
+Everyone interacting in the Open Systems Pharmacology community (codebases, issue trackers, chat rooms, mailing lists etc...) is expected to follow the Open Systems Pharmacology [code of conduct](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 

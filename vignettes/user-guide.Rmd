@@ -17,10 +17,12 @@ knitr::opts_knit$set(
   root.dir = ".." # setting up to package root folder so that the relative paths match between the vignettes and the tests
 )
 ```
-
-### Why do you need this package
-### Quick start
-### Troubleshooting
+```{r include=FALSE, eval=TRUE}
+# Some results in this vignette take too much time to calculate, so they are cached in the "cached.RData" file. 
+# Whenever the R code in the vignette uses these cached results, there's a block with `eval=FALSE` showing how
+# they were calculated, and a block with `echo=FALSE` reusing the cached results.
+load("vignettes/cached.RData")
+```
 
 ### Parameter estimation problems
 
@@ -160,15 +162,15 @@ task$configuration$printEvaluationFeedback <- FALSE
 profile <- task$calculateProfiles()
 task$plotOFVProfiles(profile)[[1]]
 ```
-```{r include=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
+```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 task$plotOFVProfiles(cachedAciclovirProfile)[[1]]
 ```
 We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems: 
 ```{r include=TRUE, eval=FALSE}
-profile <- task$calculateProfiles(lower = -10, upper = 10, totalEvaluations = 100)
+profile <- task$calculateProfiles(lower = -10, upper = 10, totalEvaluations = 200)
 task$plotOFVProfiles(profile)[[1]]
 ```
-```{r include=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
+```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 task$plotOFVProfiles(cachedAciclovirFullProfile)[[1]]
 ```
 
@@ -240,7 +242,7 @@ In addition to previous diagnostic methods, we can also plot the landscape of th
 grid <- task$calculateGrid(lower = c(3, 0), upper = c(4, 5), totalEvaluations = 2000)
 task$plotOFVGrid(grid)
 ```
-```{r include=FALSE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center'}
+```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center'}
 task$plotOFVGrid(cachedMidazolamGrid)
 ```
 
@@ -311,31 +313,38 @@ task <- ParameterIdentification$new(
 ```
 
 ### Limitations of the local optimization algorithms
-The solution found by the BOBYQA algorithm (14.10, 6.24, 1.306e-6 > 4.17) with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles: 
+The solution (catalytic activity 14.10 1/min, specific clearance 6.24 1/min, intestinal permeability 1.306e-6 dm/min, OFV 4.17) found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles: 
 ```{r include=TRUE, eval=FALSE}
 taskResults <- task$run()
 task$plotOFVProfiles(task$calculateProfiles())[[1]]
 ```
-```{r include=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
-task$plotOFVProfiles(task$calculateProfiles(par = cachedClarithromycinOptimalPoint))[[1]]
+```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
+task$plotOFVProfiles(cachedClarithromycinSuboptimalProfiles)[[1]]
 ```
 
-If a sub-optimal solution is not enough, we need to adapt the local algorithm settings, use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum. 
-
-### Local algorithm settings
+If a sub-optimal solution is not enough, we need to use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum. 
 
 ### Exhaustive grid search
-Running the grid search with 3000 evaluations produces a better starting point (15.4, 7.69, 0.385 > 32.2). This can be a useful first step when you don't know the optimization landscape of the problem. 
+Running the grid search can be a useful first step when you don't know the optimization landscape of the problem. 
 ```{r include=TRUE, eval=FALSE}
-grid <- task$calculateGrid(totalEvaluations = 3000, setStartingPoint = TRUE)
+grid <- task$calculateGrid(totalEvaluations = 1000, setStartingPoint = TRUE)
 best <- dplyr::slice_min(grid, ofv, with_ties = FALSE)
 ```
 If the `setStartingPoint` argument is set to `TRUE` (instead of default `FALSE`), the next optimization run will start from the best estimate across the grid.
 
 ### Running a global optimization algorithm
-For example, running 1000 iterations of differential optimization produces a result with a better OFV: ???.
+Running 1000 iterations of differential optimization produces a result with a better OFV: catalytic activity 45.7 1/min, specific clearance 1.43 1/min, intestinal permeability 1.256e-6 dm/min, OFV 1.96.
 ```{r include=TRUE, message=FALSE, eval=FALSE}
 task$configuration$algorithm <- "DEoptim"
 task$configuration$algorithmOptions <- list(itermax = 1000, steptol = 10)
 taskResults <- task$run()
+```
+We can ensure that this is at least a local minimum by plotting the OFV profiles: 
+```{r include=TRUE, eval=FALSE}
+task$plotOFVProfiles(task$calculateProfiles())
+```
+```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
+task$plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[1]]
+task$plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[2]]
+task$plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[3]]
 ```
