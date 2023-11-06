@@ -159,15 +159,15 @@ Around the global minimum, the objective function is expected to be convex and p
 task$configuration$printEvaluationFeedback <- FALSE
 ```
 ```{r include=TRUE, eval=FALSE}
-profile <- task$calculateProfiles()
+profile <- task$calculateOFVProfiles()
 task$plotOFVProfiles(profile)[[1]]
 ```
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 task$plotOFVProfiles(cachedAciclovirProfile)[[1]]
 ```
-We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems: 
+We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateOFVProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems: 
 ```{r include=TRUE, eval=FALSE}
-profile <- task$calculateProfiles(lower = -10, upper = 10, totalEvaluations = 200)
+profile <- task$calculateOFVProfiles(lower = -10, upper = 10, totalEvaluations = 200)
 task$plotOFVProfiles(profile)[[1]]
 ```
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
@@ -237,13 +237,13 @@ taskResults <- task$run()
 ```
 
 ### OFV grids for parameter space exploration
-In addition to previous diagnostic methods, we can also plot the landscape of the objective function, since the problem is 2-parametric and it is easily visualized with a contour plot. The package includes `$calculateGrid()` and `$plotOFVGrid()` functions for that: 
+In addition to previous diagnostic methods, we can also plot the landscape of the objective function, since the problem is 2-parametric and it is easily visualized with a contour plot. The package includes `$gridSearch()` and `$plotGrid()` functions for that: 
 ```{r include=TRUE, eval=FALSE}
-grid <- task$calculateGrid(lower = c(3, 0), upper = c(4, 5), totalEvaluations = 2000)
+grid <- task$gridSearch(lower = c(3, 0), upper = c(4, 5), totalEvaluations = 2000)
 task$plotOFVGrid(grid)
 ```
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center'}
-task$plotOFVGrid(cachedMidazolamGrid)
+task$plotGrid(cachedMidazolamGrid)
 ```
 
 ## Clarithromycin model
@@ -316,7 +316,7 @@ task <- ParameterIdentification$new(
 The solution (catalytic activity 14.10 1/min, specific clearance 6.24 1/min, intestinal permeability 1.306e-6 dm/min, OFV 4.17) found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles: 
 ```{r include=TRUE, eval=FALSE}
 taskResults <- task$run()
-task$plotOFVProfiles(task$calculateProfiles())[[1]]
+task$plotOFVProfiles(task$calculateOFVProfiles())[[1]]
 ```
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 task$plotOFVProfiles(cachedClarithromycinSuboptimalProfiles)[[1]]
@@ -327,7 +327,7 @@ If a sub-optimal solution is not enough, we need to use grid search or a global 
 ### Exhaustive grid search
 Running the grid search can be a useful first step when you don't know the optimization landscape of the problem. 
 ```{r include=TRUE, eval=FALSE}
-grid <- task$calculateGrid(totalEvaluations = 1000, setStartingPoint = TRUE)
+grid <- task$gridSearch(totalEvaluations = 1000, setStartingPoint = TRUE)
 best <- dplyr::slice_min(grid, ofv, with_ties = FALSE)
 ```
 If the `setStartingPoint` argument is set to `TRUE` (instead of default `FALSE`), the next optimization run will start from the best estimate across the grid.
@@ -341,7 +341,7 @@ taskResults <- task$run()
 ```
 We can ensure that this is at least a local minimum by plotting the OFV profiles: 
 ```{r include=TRUE, eval=FALSE}
-task$plotOFVProfiles(task$calculateProfiles())
+task$plotOFVProfiles(task$calculateOFVProfiles())
 ```
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 task$plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[1]]
