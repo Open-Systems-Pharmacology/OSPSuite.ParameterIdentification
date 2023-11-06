@@ -40,7 +40,7 @@ test_that("The hessian value in the aciclovir model is calculated without errors
 # I only store the `ofv` column in the snapshot file, because the parameter
 # names might have nonstandard symbols disrupting the `expect` function
 test_that("The grid calculation (with default parameters) in the aciclovir model returns the expected results", {
-  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$gridSearch()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with default parameters) in the aciclovir model returns the expected results", {
   expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
@@ -107,7 +107,7 @@ test_that("The hessian value in the midazolam model is calculated without errors
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the midazolam model returns the expected results", {
-  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$gridSearch()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the midazolam model returns the expected results", {
   expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
@@ -119,12 +119,19 @@ test_that("The profile plot in the midazolam model returns the expected graphics
   vdiffr::expect_doppelganger("ofv-profile-midazolam-2", plots[[2]])
 })
 test_that("The grid plot in the midazolam model returns the expected graphics", {
-  grid <- task$calculateOFVGrid()
-  plot <- task$plotOFVGrid(grid)
+  grid <- task$gridSearch()
+  plot <- task$plotGrid(grid)
   vdiffr::expect_doppelganger("ofv-grid-midazolam", plot)
 })
+test_that("Starting values are correctly changed after a grid search", {
+  old_values <- purrr::map_dbl(task$parameters, ~ .x$startValue)
+  grid <- task$gridSearch(setStartingPoint = TRUE)
+  new_values <- purrr::map_dbl(task$parameters, ~ .x$startValue)
+  expect_equal(old_values, c(3.9, 320), tolerance = 1e-3)
+  expect_equal(new_values, c(3.333333, 0), tolerance = 1e-3)
+})
 
-# Load clarithomycin 3-parameter model and confirm that the optimal parameter values are as expected
+# Load clarithromycin 3-parameter model and confirm that the optimal parameter values are as expected
 simulations <- c(
   "IV250" = loadSimulation("../dev/Models/Simulations/Chu1992 iv 250mg Clarithromycin.pkml"),
   "PO250" = loadSimulation("../dev/Models/Simulations/Chu1993 po 250mg Clarithromycin.pkml"),
@@ -204,7 +211,7 @@ test_that("The hessian value in the clarithromycin model is calculated without e
   expect_false(any(is.na(taskResults$hessian)))
 })
 test_that("The grid calculation (with the default parameters) in the clarithromycin model returns the expected results", {
-  expect_snapshot_value(task$calculateOFVGrid()[["ofv"]], style = "serialize")
+  expect_snapshot_value(task$gridSearch()[["ofv"]], style = "serialize")
 })
 test_that("The profile calculation (with the default parameters) in the clarithromycin model returns the expected results", {
   expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")

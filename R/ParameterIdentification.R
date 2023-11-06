@@ -732,7 +732,8 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
-    #' Calculates the values of the objective function on a rectangular grid
+    #' Calculates the values of the objective function on a rectangular grid, and optionally saves the
+    #' best result as the starting point for next optimization runs.
     #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
     #' By default, uses the minimal values supported for parameters.
     #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
@@ -743,7 +744,11 @@ ParameterIdentification <- R6::R6Class(
     #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
     #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
     #' from the exact parameter bounds.
-    calculateOFVGrid = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0) {
+    #' @param setStartingPoint (logical) If `TRUE`, the best result will be saved as the starting point for
+    #' the next optimization runs
+    #' @return A tibble with one column for each parameter and one column for the objective function value.
+    #' The tibble will have at most `totalEvaluations` rows.
+    gridSearch = function(lower = NA, upper = NA, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
       if (private$.needBatchInitialization) {
@@ -804,12 +809,30 @@ ParameterIdentification <- R6::R6Class(
         private$.needBatchInitialization <- FALSE
       }
 
+      if (setStartingPoint) {
+        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
+        for (idx in seq_along(private$.piParameters)) {
+          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
+        }
+        message("The best parameter value has been set as the starting point.")
+      }
+
       return(tibble::as_tibble(OFVGrid))
     },
 
     #' @description
     #' Calculates the values of the objective function on all orthogonal lines
     #' passing through a given point in the parameter space.
+    #' @param par A vector of parameter values, with the same length as the number of parameters.
+    #' If not supplied, the current parameter values are used.
+    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses 0.9 of the current parameter value.
+    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses 1.1 of the current parameter value.
+    #' @param totalEvaluations An integer number. The combined profiles will not contain more than `totalEvaluations`
+    #' points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.
+    #' @return A list of tibbles, one tibble per parameter, with one column for parameter values
+    #' and one column for the matching objective function values.
     calculateOFVProfiles = function(par = NA, lower = NA, upper = NA, totalEvaluations = NA) {
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
@@ -880,8 +903,14 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
-    #' Plot the profiles of the objective function calculated by the calculateOFVProfiles method.
+    #' Plot the profiles of the objective function calculated by the calculateOFVProfiles() method.
+    #' @param profiles A list of tibbles, with each tibble containing two columns. The first column should contain
+    #' several values for the parameter, and the second column, called `ofv`, should contain the matching objective function value.
+    #' @return A list of ggplot2 objects, one for each parameter.
     plotOFVProfiles = function(profiles) {
+      if (missing(profiles)) {
+        stop("Supply the result of the calculateOFVProfiles() method as the argument to the plotOFVProfiles() method.")
+      }
       plotList <- vector(mode = "list", length = length(profiles))
       for (idx in seq_along(profiles)) {
         parameterName <- names(profiles)[[idx]]
@@ -897,8 +926,11 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @description
-    #' Plot a heatmap of the objective function calculated by the calculateOFVGrid method
-    plotOFVGrid = function(grid) {
+    #' Plot a heatmap of the objective function calculated by the gridSearch() method
+    #' @param grid A tibble with three columns. The first two columns should contain parameter values
+    #' for a 2-parameter optimization problem, and the `ofv` column should contain the matching objective function values.
+    #' @return A ggplot2 object.
+    plotGrid = function(grid) {
       # This plot only makes sense for 2-parametric problems
       stopifnot(length(private$.piParameters) == 2)
       xParameterName <- names(grid)[[1]]

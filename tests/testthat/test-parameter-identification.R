@@ -142,9 +142,9 @@ test_that("Algorithm can be changed in PI configuration", {
   expect_equal(task$configuration$algorithm, "HJKB")
 })
 test_that("Grid search produces no error with default parameters", {
-  expect_no_error(gridSearchResults <- task$calculateOFVGrid())
+  expect_no_error(gridSearchResults <- task$gridSearch())
 })
-gridSearchResults <- task$calculateOFVGrid(totalEvaluations = 10)
+gridSearchResults <- task$gridSearch(totalEvaluations = 10)
 test_that("Grid search produced correct results", {
   expect_snapshot_value(gridSearchResults, style = "serialize")
 })
