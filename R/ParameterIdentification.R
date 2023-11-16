@@ -670,7 +670,7 @@ ParameterIdentification <- R6::R6Class(
       private$.fnEvaluations <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
-      .restoreSimulationState(private$.simulations, private.$savedSimulationState)
+      .restoreSimulationState(private$.simulations, private$.savedSimulationState)
 
       # Apply identified values to the parameter objects. Should be an option?
       private$.applyFinalValues(values = results$par)
@@ -727,7 +727,7 @@ ParameterIdentification <- R6::R6Class(
         return(plotGrid(plotGridConfiguration))
       })
 
-      if (private$.savedSimulationState) {
+      if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)
       }
 
@@ -806,7 +806,7 @@ ParameterIdentification <- R6::R6Class(
         private$.targetFunction(c(...))$model
       })
 
-      if (private$.savedSimulationState) {
+      if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)
       }
 
@@ -887,7 +887,7 @@ ParameterIdentification <- R6::R6Class(
         names(profileList)[[idx]] <- parameterName
       }
 
-      if (private$.savedSimulationState) {
+      if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)
       }
 

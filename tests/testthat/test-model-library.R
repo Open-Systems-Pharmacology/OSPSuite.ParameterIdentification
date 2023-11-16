@@ -46,7 +46,7 @@ test_that("The profile calculation (with default parameters) in the aciclovir mo
   expect_snapshot_value(task$calculateOFVProfiles(), style = "serialize")
 })
 test_that("The profile plot in the aciclovir model returns the expected graphics", {
-  vdiffr::expect_doppelganger("ofv-profile-aciclovir", task$plotOFVProfiles(task$calculateOFVProfiles())[[1]])
+  vdiffr::expect_doppelganger("ofv-profile-aciclovir", plotOFVProfiles(task$calculateOFVProfiles())[[1]])
 })
 
 # Load midazolam 2-parameter model and confirm that the optimal parameter values are as expected
@@ -114,13 +114,13 @@ test_that("The profile calculation (with the default parameters) in the midazola
 })
 test_that("The profile plot in the midazolam model returns the expected graphics", {
   profiles <- task$calculateOFVProfiles()
-  plots <- task$plotOFVProfiles(profiles)
+  plots <- plotOFVProfiles(profiles)
   vdiffr::expect_doppelganger("ofv-profile-midazolam-1", plots[[1]])
   vdiffr::expect_doppelganger("ofv-profile-midazolam-2", plots[[2]])
 })
 test_that("The grid plot in the midazolam model returns the expected graphics", {
   grid <- task$gridSearch()
-  plot <- task$plotGrid(grid)
+  plot <- plot2DOFVGrid(grid, taskResults$par)
   vdiffr::expect_doppelganger("ofv-grid-midazolam", plot)
 })
 test_that("Starting values are correctly changed after a grid search", {
@@ -218,7 +218,7 @@ test_that("The profile calculation (with the default parameters) in the clarithr
 })
 test_that("The profile plot in the clarithromycin model returns the expected graphics", {
   profiles <- task$calculateOFVProfiles()
-  plots <- task$plotOFVProfiles(profiles)
+  plots <- plotOFVProfiles(profiles)
   vdiffr::expect_doppelganger("ofv-profile-clarithromycin-1", plots[[1]])
   vdiffr::expect_doppelganger("ofv-profile-clarithromycin-2", plots[[2]])
   vdiffr::expect_doppelganger("ofv-profile-clarithromycin-3", plots[[3]])
