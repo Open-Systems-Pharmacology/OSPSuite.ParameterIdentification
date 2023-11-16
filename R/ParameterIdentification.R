@@ -516,7 +516,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Depending on the `algorithm` argument in the `PIConfiguration` object, the
       # actual optimization call will use one of the underlying optimization routines
-      message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
+      message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
 
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
@@ -568,7 +568,7 @@ ParameterIdentification <- R6::R6Class(
           {
             # Calculate hessian if the selected algorithm does not calculate it by default
             if (is.null(results$hessian)) {
-              message("Post-hoc estimation of hessian")
+              message(messages$hessianEstimation())
               # If the parameter values are close to their bounds, the hessian
               # should be calculated with a smaller epsilon than a default value
               # of 1e-4
@@ -815,7 +815,7 @@ ParameterIdentification <- R6::R6Class(
         for (idx in seq_along(private$.piParameters)) {
           private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
         }
-        message("The best parameter value has been set as the starting point.")
+        message(messages$gridSearchParameterValueSet())
       }
 
       return(tibble::as_tibble(OFVGrid))
