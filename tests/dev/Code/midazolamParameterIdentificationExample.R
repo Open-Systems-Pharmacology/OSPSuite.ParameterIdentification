@@ -20,7 +20,7 @@ for (parameterPath in parameterPaths) {
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
 parameters[[1]]$startValue <- 3.9
-parameters[[2]]$minValue <- 0
+parameters[[2]]$minValue <- 0.001
 parameters[[2]]$maxValue <- 3200
 parameters[[2]]$startValue <- 320
 

@@ -74,6 +74,9 @@ ParameterIdentification <- R6::R6Class(
     # Flag if simulation batches must be created from simulations. Used for
     # plotting current results.
     .needBatchInitialization = TRUE,
+    # If previous simulation state has been saved during batch creation, it is
+    # stored in this variable
+    .savedSimulationState = NULL,
     .fnEvaluations = 0,
     # CV for M3 target function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
@@ -85,124 +88,131 @@ ParameterIdentification <- R6::R6Class(
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
-      # Prepare simulations
+      # If the flag is already set to FALSE, short-cuts the execution of the function
+      # This way, the function call be called repeatedly with minimal overhead
+      if (private$.needBatchInitialization) {
+        .savedSimulationState <- .storeSimulationState(private$.simulations)
 
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, get the set of all state variables for each simulation
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     id <- simulation$root$id
-      #     moleculePaths <- getAllMoleculePathsIn(container = simulation)
-      #     # Only keep molecules that are not defined by formula
-      #     moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
-      #     moleculesStartValues <- getQuantityValuesByPath(
-      #       quantityPaths = moleculePaths,
-      #       simulation = simulation
-      #     )
-      #     # Save molecule start  values for this simulation ID
-      #     private$.variableMolecules[[id]] <- moleculesStartValues
-      #     names(private$.variableMolecules[[id]]) <- moleculePaths
-      #
-      #     variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
-      #     # Only keep parameters that initial values are not defined by formula
-      #     variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
-      #     # If the simulation does not contain any state variable parameters,
-      #     # do not try to retrieve the values.
-      #     if (!is.null(variableParametersPaths)){
-      #       variableParametersValues <- getQuantityValuesByPath(
-      #         quantityPaths = variableParametersPaths,
-      #         simulation = simulation
-      #       )
-      #       # Save parameter values for this simulation ID
-      #       private$.variableParameters[[id]] <- variableParametersValues
-      #       names(private$.variableParameters[[id]]) <- variableParametersPaths
-      #     }
-      #   }
-      # }
+        # Prepare simulations
 
-      # Clear output intervals and output quantities of all simulations
-      for (simulation in private$.simulations) {
-        clearOutputIntervals(simulation)
-        clearOutputs(simulation)
-      }
+        # 2DO: Enable steady-state
+        # If steady-state should be simulated, get the set of all state variables for each simulation
+        # if (private$.configuration$simulateSteadyState) {
+        #   for (simulation in private$.simulations) {
+        #     id <- simulation$root$id
+        #     moleculePaths <- getAllMoleculePathsIn(container = simulation)
+        #     # Only keep molecules that are not defined by formula
+        #     moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
+        #     moleculesStartValues <- getQuantityValuesByPath(
+        #       quantityPaths = moleculePaths,
+        #       simulation = simulation
+        #     )
+        #     # Save molecule start  values for this simulation ID
+        #     private$.variableMolecules[[id]] <- moleculesStartValues
+        #     names(private$.variableMolecules[[id]]) <- moleculePaths
+        #
+        #     variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
+        #     # Only keep parameters that initial values are not defined by formula
+        #     variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
+        #     # If the simulation does not contain any state variable parameters,
+        #     # do not try to retrieve the values.
+        #     if (!is.null(variableParametersPaths)){
+        #       variableParametersValues <- getQuantityValuesByPath(
+        #         quantityPaths = variableParametersPaths,
+        #         simulation = simulation
+        #       )
+        #       # Save parameter values for this simulation ID
+        #       private$.variableParameters[[id]] <- variableParametersValues
+        #       names(private$.variableParameters[[id]]) <- variableParametersPaths
+        #     }
+        #   }
+        # }
 
-      # Add time points to the output schema that are present in the observed data.
-      # Also add output quantities.
-      for (outputMapping in private$.outputMappings) {
-        # ID of the and the parent simulation of the quantity of the mapping.
-        simId <- .getSimulationContainer(outputMapping$quantity)$id
-        simulation <- private$.simulations[[simId]]
-        # Add the quantity to the outputs of the simulations.
-        ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
-        # Add time points present in the observed data of this mapping.
-        for (dataset in outputMapping$observedDataSets) {
-          # Time values can be stored in units different from the base unit
-          # and must be converted to the base unit first.
-          label <- dataset$name
-          xFactor <- outputMapping$dataTransformations$xFactors
-          if (length(xFactor) != 1) {
-            xFactor <- xFactor[[label]]
+        # Clear output intervals and output quantities of all simulations
+        for (simulation in private$.simulations) {
+          clearOutputIntervals(simulation)
+          clearOutputs(simulation)
+        }
+
+        # Add time points to the output schema that are present in the observed data.
+        # Also add output quantities.
+        for (outputMapping in private$.outputMappings) {
+          # ID of the and the parent simulation of the quantity of the mapping.
+          simId <- .getSimulationContainer(outputMapping$quantity)$id
+          simulation <- private$.simulations[[simId]]
+          # Add the quantity to the outputs of the simulations.
+          ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
+          # Add time points present in the observed data of this mapping.
+          for (dataset in outputMapping$observedDataSets) {
+            # Time values can be stored in units different from the base unit
+            # and must be converted to the base unit first.
+            label <- dataset$name
+            xFactor <- outputMapping$dataTransformations$xFactors
+            if (length(xFactor) != 1) {
+              xFactor <- xFactor[[label]]
+            }
+            xOffset <- outputMapping$dataTransformations$xOffsets
+            if (length(xOffset) != 1) {
+              xOffset <- xOffset[[label]]
+            }
+            xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+                                          values = (dataset$xValues + xOffset) * xFactor,
+                                          unit = dataset$xUnit
+            )
+            simulation$outputSchema$addTimePoints(xVals)
           }
-          xOffset <- outputMapping$dataTransformations$xOffsets
-          if (length(xOffset) != 1) {
-            xOffset <- xOffset[[label]]
+        }
+
+        # Add parameters that will be optimized to the list of variable parameters
+        for (piParameter in private$.piParameters) {
+          for (parameter in piParameter$parameters) {
+            simId <- .getSimulationContainer(parameter)$id
+            # Set the current value of this parameter to the start value of the
+            # PIParameter.
+            private$.variableParameters[[simId]][[parameter$path]] <- piParameter$startValue
           }
-          xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-            values = (dataset$xValues + xOffset) * xFactor,
-            unit = dataset$xUnit
+        }
+
+        # Create simulation batches for identification runs
+        for (simulation in private$.simulations) {
+          simId <- simulation$root$id
+          # Parameters and molecules defined in the previous steps will be variable.
+          simBatch <- createSimulationBatch(
+            simulation = simulation,
+            parametersOrPaths = names(private$.variableParameters[[simId]]),
+            moleculesOrPaths = names(private$.variableMolecules[[simId]])
           )
-          simulation$outputSchema$addTimePoints(xVals)
+          private$.simulationBatches[[simId]] <- simBatch
         }
-      }
 
-      # Add parameters that will be optimized to the list of variable parameters
-      for (piParameter in private$.piParameters) {
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          # Set the current value of this parameter to the start value of the
-          # PIParameter.
-          private$.variableParameters[[simId]][[parameter$path]] <- piParameter$startValue
-        }
+        # 2DO: Enable steady-state
+        # If steady-state should be simulated, create new batches for ss simulation
+        # Add all state variables to the outputs and set the simulation time to
+        # steady state time
+        # if (private$.configuration$simulateSteadyState) {
+        #   for (simulation in private$.simulations) {
+        #     simId <- simulation$root$id
+        #     clearOutputIntervals(simulation)
+        #     clearOutputs(simulation)
+        #
+        #     # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
+        #     simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
+        #     # If no quantities are explicitly specified, simulate all outputs.
+        #     ospsuite::addOutputs(
+        #       quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
+        #       simulation = simulation
+        #     )
+        #
+        #     simBatch <- createSimulationBatch(
+        #       simulation = simulation,
+        #       parametersOrPaths = names(private$.variableParameters[[simId]]),
+        #       moleculesOrPaths = names(private$.variableMolecules[[simId]])
+        #     )
+        #     private$.steadyStateBatches[[simId]] <- simBatch
+        #   }
+        # }
+        private$.needBatchInitialization <- FALSE
       }
-
-      # Create simulation batches for identification runs
-      for (simulation in private$.simulations) {
-        simId <- simulation$root$id
-        # Parameters and molecules defined in the previous steps will be variable.
-        simBatch <- createSimulationBatch(
-          simulation = simulation,
-          parametersOrPaths = names(private$.variableParameters[[simId]]),
-          moleculesOrPaths = names(private$.variableMolecules[[simId]])
-        )
-        private$.simulationBatches[[simId]] <- simBatch
-      }
-
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, create new batches for ss simulation
-      # Add all state variables to the outputs and set the simulation time to
-      # steady state time
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     simId <- simulation$root$id
-      #     clearOutputIntervals(simulation)
-      #     clearOutputs(simulation)
-      #
-      #     # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
-      #     simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
-      #     # If no quantities are explicitly specified, simulate all outputs.
-      #     ospsuite::addOutputs(
-      #       quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
-      #       simulation = simulation
-      #     )
-      #
-      #     simBatch <- createSimulationBatch(
-      #       simulation = simulation,
-      #       parametersOrPaths = names(private$.variableParameters[[simId]]),
-      #       moleculesOrPaths = names(private$.variableMolecules[[simId]])
-      #     )
-      #     private$.steadyStateBatches[[simId]] <- simBatch
-      #   }
-      # }
     },
 
     # Calculate the target function that is going to be minimized during
@@ -506,7 +516,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Depending on the `algorithm` argument in the `PIConfiguration` object, the
       # actual optimization call will use one of the underlying optimization routines
-      message(paste0("Running optimization algorithm: ", private$.configuration$algorithm))
+      message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
 
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
@@ -558,7 +568,7 @@ ParameterIdentification <- R6::R6Class(
           {
             # Calculate hessian if the selected algorithm does not calculate it by default
             if (is.null(results$hessian)) {
-              message("Post-hoc estimation of hessian")
+              message(messages$hessianEstimation())
               # If the parameter values are close to their bounds, the hessian
               # should be calculated with a smaller epsilon than a default value
               # of 1e-4
@@ -649,7 +659,7 @@ ParameterIdentification <- R6::R6Class(
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
-      simulationState <- .storeSimulationState(private$.simulations)
+      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
 
       # Every time the user starts an optimization run, new batches should be
       # created, because `simulateSteadyState` flag can change and defines the
@@ -660,7 +670,7 @@ ParameterIdentification <- R6::R6Class(
       private$.fnEvaluations <- 0
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
-      .restoreSimulationState(private$.simulations, simulationState)
+      .restoreSimulationState(private$.simulations, private$.savedSimulationState)
 
       # Apply identified values to the parameter objects. Should be an option?
       private$.applyFinalValues(values = results$par)
@@ -687,12 +697,7 @@ ParameterIdentification <- R6::R6Class(
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
-      if (private$.needBatchInitialization) {
-        # Store simulation outputs and time intervals to reset them at the end
-        # of the run.
-        simulationState <- .storeSimulationState(private$.simulations)
-        private$.batchInitialization()
-      }
+      private$.batchInitialization()
 
       # Run evaluate once. If the input argument is missing, run with current values.
       # Otherwise, use the supplied values.
@@ -722,13 +727,170 @@ ParameterIdentification <- R6::R6Class(
         return(plotGrid(plotGridConfiguration))
       })
 
-      # Mark that the batches have been initialized and restore simulation state
-      private$.needBatchInitialization <- FALSE
-      if (!is.null(simulationState)) {
-        .restoreSimulationState(private$.simulations, simulationState)
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
       }
 
       return(multiPlot)
+    },
+
+    #' @description
+    #' Calculates the values of the objective function on an n-dimensional grid, where n is the number
+    #' of parameters, and optionally saves the best result as the starting point for next optimization runs.
+    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters
+    #' optimized in this parameter identification task. By default, uses the minimal values
+    #' defined in the `PIParameter` objects.
+    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters
+    #' optimized in this parameter identification task. By default, uses the maximal values
+    #' defined in the `PIParameter` objects.
+    #' @param logScaleFlag A single logical value or a vector of logical values indicating
+    #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
+    #' @param totalEvaluations An integer number. The grid will have as many points so that the
+    #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
+    #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
+    #' from the exact parameter bounds.
+    #' @param setStartingPoint (logical) If `TRUE`, the best result will be saved as the starting point for
+    #' the next optimization runs. Defaults to `FALSE`.
+    #' @return A tibble with one column for each parameter and one column for the objective function value.
+    #' The tibble will have at most `totalEvaluations` rows.
+    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      private$.batchInitialization()
+
+      nrOfParameters <- length(private$.piParameters)
+      # logScaleFlag can be specified as a single value (common for all parameters)
+      # or as a vector of values (one for each parameter)
+      if (length(logScaleFlag) == 1) {
+        logScaleFlag <- rep(logScaleFlag, length.out = nrOfParameters)
+      }
+      # This will catch the cases where logScaleFlag is a vector longer than 1,
+      # but does not match the number of parameters
+      ospsuite.utils::isSameLength(logScaleFlag, private$.piParameters)
+
+      # if lower and upper are not supplied, we reuse parameter bounds
+      # By default, margin = 0, but we can use a non-zero value
+      # so that the grid does not start exactly at the parameter bound
+      if (missing(lower)) {
+        lower <- vector(mode = "list", length = nrOfParameters)
+        for (idx in seq_along(private$.piParameters)) {
+          lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
+        }
+      }
+      if (missing(upper)) {
+        upper <- vector(mode = "list", length = nrOfParameters)
+        for (idx in seq_along(private$.piParameters)) {
+          upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
+        }
+      }
+      ospsuite.utils::isSameLength(lower, private$.piParameters)
+      ospsuite.utils::isSameLength(upper, private$.piParameters)
+
+      gridSize <- floor(totalEvaluations^(1/nrOfParameters))
+      gridList <- vector(mode = "list", length = nrOfParameters)
+      for (idx in seq_along(private$.piParameters)) {
+        if (logScaleFlag[[idx]]) {
+          grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
+        } else {
+          grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        }
+        gridList[[idx]] <- grid
+        # creating unique column names for the grid
+        names(gridList)[[idx]] <- paste0("par", idx, ": ", private$.piParameters[[idx]]$parameters[[1]]$path)
+      }
+
+      OFVGrid <- expand.grid(gridList)
+      # all columns from the OFVGrid are passed in the same order to the objective function
+      OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
+        private$.targetFunction(c(...))$model
+      })
+
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      }
+
+      if (setStartingPoint) {
+        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
+        for (idx in seq_along(private$.piParameters)) {
+          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
+        }
+        message(messages$gridSearchParameterValueSet())
+      }
+
+      return(tibble::as_tibble(OFVGrid))
+    },
+
+    #' @description
+    #' Calculates the values of the objective function on all orthogonal lines
+    #' passing through a given point in the parameter space.
+    #' @param par A vector of parameter values, with the same length as the number of parameters.
+    #' If not supplied, the current parameter values are used.
+    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses 0.9 of the current parameter value.
+    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
+    #' By default, uses 1.1 of the current parameter value.
+    #' @param totalEvaluations An integer number. The combined profiles will not contain more than `totalEvaluations`
+    #' points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.
+    #' @return A list of tibbles, one tibble per parameter, with one column for parameter values
+    #' and one column for the matching objective function values.
+    calculateOFVProfiles = function(par = NULL, lower = NULL, upper = NULL, totalEvaluations = NULL) {
+      # If the batches have not been initialized yet (i.e., no run has been
+      # performed), this must be done prior to plotting
+      private$.batchInitialization()
+
+      nrOfParameters <- length(private$.piParameters)
+
+      # if par is not supplied, we use the current parameter values
+      if (missing(par)) {
+        par <- unlist(lapply(private$.piParameters, function(x) {
+          x$currValue
+        }), use.names = FALSE)
+      }
+
+      # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
+      # of the current parameter values
+      if (missing(lower)) {
+        lower <- 0.9 * par
+      }
+      if (missing(upper)) {
+        upper <- 1.1 * par
+      }
+
+      # calculate the grid for each parameter separately
+      if (missing(totalEvaluations)) {
+        gridSize <- 21
+        # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
+        # of the current parameter values
+      } else {
+        gridSize <- floor(totalEvaluations / nrOfParameters)
+      }
+      gridList <- vector(mode = "list", length = nrOfParameters)
+      for (idx in seq_along(private$.piParameters)) {
+        gridList[[idx]] <- rep(par[[idx]], gridSize)
+        names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
+      }
+      defaultGrid <- tibble::as_tibble(gridList)
+
+      profileList <- vector(mode = "list", length = nrOfParameters)
+      for (idx in seq_along(private$.piParameters)) {
+        # the names of the parameters are extracted from the first available path
+        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+        grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+        currentGrid <- defaultGrid
+        currentGrid[[parameterName]] <- grid
+        # creates a tibble with the column name from the `parameterName` variable
+        profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
+        profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
+          private$.targetFunction(c(...))$model
+        })
+        names(profileList)[[idx]] <- parameterName
+      }
+
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      }
+
+      return(profileList)
     },
 
     #' @description
