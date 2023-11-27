@@ -789,15 +789,14 @@ ParameterIdentification <- R6::R6Class(
       gridSize <- floor(totalEvaluations^(1/nrOfParameters))
       gridList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
-        # the names of the parameters are extracted from the first available path
-        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
         if (logScaleFlag[[idx]]) {
           grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
         } else {
           grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
         }
         gridList[[idx]] <- grid
-        names(gridList)[[idx]] <- parameterName
+        # creating unique column names for the grid
+        names(gridList)[[idx]] <- paste0("par", idx, ": ", private$.piParameters[[idx]]$parameters[[1]]$path)
       }
 
       OFVGrid <- expand.grid(gridList)
