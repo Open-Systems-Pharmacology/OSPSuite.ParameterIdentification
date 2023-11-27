@@ -5,6 +5,7 @@
 #' @param point A vector of length 2 with the X- and Y-coordinates of a point that would be plotted in white
 #' on top of the heatmap.
 #' @return A ggplot2 object.
+#' @export
 plot2DOFVGrid = function(grid, point = NULL) {
   # This plot only makes sense for 2-parametric problems, the `grid` data frame should have 3 columns
   if (ncol(grid) != 3) {
@@ -34,6 +35,7 @@ plot2DOFVGrid = function(grid, point = NULL) {
 #' @param profiles A list of tibbles, with each tibble containing two columns. The first column should contain
 #' several values for the parameter, and the second column, called `ofv`, should contain the matching objective function value.
 #' @return A list of ggplot2 objects, one for each parameter.
+#' @export
 plotOFVProfiles = function(profiles) {
   if (missing(profiles)) {
     stop(messages$profilesNotSupplied)
