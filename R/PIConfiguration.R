@@ -9,28 +9,28 @@ PIConfiguration <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field simulateSteadyState Boolean representing whether the simulation
-    #' should be brought to a steady-state first
-    simulateSteadyState = function(value) {
-      if (missing(value)) {
-        private$.simulateSteadyState
-      } else {
-        validateIsLogical(value)
-        private$.simulateSteadyState <- value
-      }
-    },
+    #' #' @field simulateSteadyState Boolean representing whether the simulation
+    #' #' should be brought to a steady-state first
+    #' simulateSteadyState = function(value) {
+    #'   if (missing(value)) {
+    #'     private$.simulateSteadyState
+    #'   } else {
+    #'     validateIsLogical(value)
+    #'     private$.simulateSteadyState <- value
+    #'   }
+    #' },
     #' @field steadyStateTime Time in minutes to simulate if simulating steady-state. May be NULL
-    steadyStateTime = function(value) {
-      if (missing(value)) {
-        private$.steadyStateTime
-      } else {
-        validateIsNumeric(value)
-        if (value < 0) {
-          stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
-        }
-        private$.steadyStateTime <- value
-      }
-    },
+    # steadyStateTime = function(value) {
+    #   if (missing(value)) {
+    #     private$.steadyStateTime
+    #   } else {
+    #     validateIsNumeric(value)
+    #     if (value < 0) {
+    #       stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
+    #     }
+    #     private$.steadyStateTime <- value
+    #   }
+    # },
     #' @field printEvaluationFeedback Boolean. If `TRUE`, the objective function value
     #' will be printed after each function evaluation.
     #' Default is `FALSE`
@@ -55,7 +55,7 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field targetFunctionType Type of the target function used for error
-    #' calculation. Supported target functions  are listed  in
+    #' calculation. Supported target functions  are listed in
     #' `ospsuite.parameteridentification::ObjectiveFunctions`.
     targetFunctionType = function(value) {
       if (missing(value)) {
@@ -120,8 +120,8 @@ PIConfiguration <- R6::R6Class(
     #' @param ... Rest arguments.
     print = function(...) {
       private$printClass()
-      private$printLine("Simulate to steady-state", private$.simulateSteadyState)
-      private$printLine("Steady-state time [min]", private$.steadyStateTime)
+ #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
+#      private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
       private$printLine("Target function", private$.targetFunctionType)
       private$printLine("Optimization algorithm", private$.algorithm)

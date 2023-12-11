@@ -17,6 +17,7 @@ knitr::opts_knit$set(
   root.dir = ".." # setting up to package root folder so that the relative paths match between the vignettes and the tests
 )
 ```
+
 ```{r include=FALSE, eval=TRUE}
 # Some results in this vignette take too much time to calculate, so they are cached in the "cached.RData" file. 
 # Whenever the R code in the vignette uses these cached results, there's a block with `eval=FALSE` showing how
@@ -26,19 +27,19 @@ load("vignettes/cached.RData")
 
 ### Parameter estimation problems
 
-Biosimulation models often include numerical parameters that determine the outputs of the model. Often, the values of these parameters are not known in advance and have to be identified by matching possible model outputs to the observed data. Finding parameter values that best match the observed data is called *parameter estimation*.
+Biosimulation models include numerical parameters that determine the outputs of the model. Often, the values of these parameters are not known in advance and have to be identified by matching possible model outputs to the observed data. Finding parameter values that best match the observed data is called *parameter identification*.
 
-The `{ospsuite.parameteridentification}` package provides a class for setting up such tasks based on existing PKML models, mapping model outputs to observed data and estimating parameters. Below, three models of increasing complexity are used to demonstrate the functionality of the package.
+The `{ospsuite.parameteridentification}` package provides a workflow for setting up such tasks based on existing PKML models, mapping model outputs to observed data, and estimating parameters. Below, three models of increasing complexity are used to demonstrate the functionality of the package.
 
 ### Configuration
 
-The package includes a `PIConfiguration` class for storing and re-using the settings of the parameter identification task. Currently, the implemented options include: 
+The package includes a `PIConfiguration` class for storing and re-using the settings of the parameter identification task. Currently, the implemented options include:
 
-* `printEvaluationFeedback` (logical) indicates if the objective function value should be printed at each iteration
+-   `printEvaluationFeedback` (logical) indicates if the objective function value should be printed at each iteration
 
-* `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to quantify the difference between observed data and simulated curve. The M3 method from [Beal, 2001](https://link.springer.com/article/10.1023/A:1012299115260) is an objective function that accounts for possible data points below the lower limit of quantification.
+-   `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to quantify the difference between observed data and simulated curve. The M3 method from [Beal, 2001](https://link.springer.com/article/10.1023/A:1012299115260) is an objective function that accounts for possible data points below the lower limit of quantification.
 
-* `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Control options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Currently, the BOBYQA method (bound optimization by quadratic approximation) is the default local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, `HJKB` for derivative-free Hooke-Jeeves algorithm or `DEoptim` for global stochastic differential evolution algorithm may be more suitable.
+-   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Control options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Currently, the BOBYQA method (bound optimization by quadratic approximation) is the default local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, `HJKB` for derivative-free Hooke-Jeeves algorithm or `DEoptim` for global stochastic differential evolution algorithm may be more suitable.
 
 ```{r include=TRUE, eval=TRUE}
 piConfiguration <- PIConfiguration$new()
@@ -46,9 +47,11 @@ piConfiguration$printEvaluationFeedback <- TRUE
 ```
 
 ## Aciclovir model
+
 ### Extracting parameters from the model
 
-A sample PKML file with the model is shipped with the package: 
+A sample PKML file with the model is shipped with the package:
+
 ```{r include=TRUE, eval=TRUE}
 simulations <- c(loadSimulation("tests/dev/Models/Simulations/Aciclovir.pkml"))
 names(simulations) <- "Aciclovir"
@@ -64,6 +67,7 @@ parameters <- c(PIParameters$new(parameters = ospsuite::getParameter(
 ```
 
 The default bounds are 0.1 of the starting parameter value and 10.0 of the starting parameter value, but it is often useful to supply parameter bounds from previous knowledge:
+
 ```{r include=TRUE, eval=TRUE}
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
@@ -71,7 +75,7 @@ parameters[[1]]$maxValue <- 10
 
 ### Reading observed data
 
-We need to supply the observed data which we are going to use to identify parameter values. 
+We need to supply the observed data which we are going to use to identify parameter values.
 
 ```{r include=TRUE, eval=TRUE}
 filePath <- "tests/data/AciclovirLaskinData.xlsx"
@@ -82,6 +86,7 @@ observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurat
 ```
 
 Here, the *importer configuration* is created with the `createImporterConfigurationForFile` helper function that tries to guess column names in the Excel file. If you run into errors while importing the data, try to create the importer configuration from the PK-Sim GUI, export it as an `XML` file and re-use it for importing observed data into R as follows:
+
 ```{r include=TRUE, eval=FALSE}
 filePath <- "tests/data/AciclovirLaskinData.xlsx"
 dataConfiguration <- loadDataImporterConfiguration("tests/data/dataImporter_configuration.xml")
@@ -116,6 +121,7 @@ taskResults <- task$run()
 ```
 
 If `piConfiguration$printEvaluationFeedback` is set to `TRUE`, each iteration will print a single line with the current objective function value, to track the performance of the optimization algorithm, such as below:
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE}
 task <- ParameterIdentification$new(
   simulations = simulations,
@@ -128,14 +134,14 @@ taskResults <- task$run()
 
 ### Diagnostics
 
-The resulting object contains: 
+The resulting object contains:
 
-* `taskResults$par`: a vector of point estimates for each of the parameters
-* `taskResults$lwr` and `taskResults$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
-* `taskResults$cv`: a vector with coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
-* `taskResults$value` is the objective function value at the point estimate
-* `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
-* `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
+-   `taskResults$par`: a vector of point estimates for each of the parameters
+-   `taskResults$lwr` and `taskResults$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
+-   `taskResults$cv`: a vector with coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
+-   `taskResults$value` is the objective function value at the point estimate
+-   `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
+-   `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
 
 The `task` object also contains a `$plotResults()` function that produces three diagnostic plots: an individual time profile with the current best estimate of model parameters and overlayed observed data, a comparison of predicted-vs-observed values and a plot of residuals vs time to identify potential biases in the model. The `$plotResults()` function can take an optional vector of parameter values to plot the curve corresponding to another set of model parameters. After running the parameter identification task, the `$plotResults()` function can be called as follows:
 
@@ -145,9 +151,9 @@ task$plotResults()
 
 We can judge if the model is properly calibrated by observing if:
 
-* the individual time profile is close to the observed data points
-* the predicted-vs-observed plot is close to the diagonal
-* the residuals are randomly distributed above and below zero
+-   the individual time profile is close to the observed data points
+-   the predicted-vs-observed plot is close to the diagonal
+-   the residuals are randomly distributed above and below zero
 
 The residuals only above or only below zero indicate an overprediction or an underprediction. It is likely that another set of parameters will result in a better fit. A bad prediction in the early-time region of the plot indicates that the model needs a better description of the drug absorption. A bad prediction in the late-time region indicates that the model needs a better description of the drug elimination.
 
@@ -158,24 +164,31 @@ Around the global minimum, the objective function is expected to be convex and p
 ```{r include=FALSE, eval=TRUE}
 task$configuration$printEvaluationFeedback <- FALSE
 ```
+
 ```{r include=TRUE, eval=FALSE}
 profile <- task$calculateOFVProfiles()
 plotOFVProfiles(profile)[[1]]
 ```
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 plotOFVProfiles(cachedAciclovirProfile)[[1]]
 ```
-We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateOFVProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems: 
+
+We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateOFVProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems:
+
 ```{r include=TRUE, eval=FALSE}
 profile <- task$calculateOFVProfiles(lower = -10, upper = 10, totalEvaluations = 200)
 plotOFVProfiles(profile)[[1]]
 ```
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 plotOFVProfiles(cachedAciclovirFullProfile)[[1]]
 ```
 
 ## Midazolam model
+
 ### Extracting parameters from the model
+
 Load the model by running
 
 ```{r include=TRUE, eval=TRUE}
@@ -186,16 +199,21 @@ names(simulations) <- "Midazolam"
 ```
 
 The midazolam model shipped with this package includes two free parameters: lipophilicity of midazolam and the catalytic activity of the CYP3A4 cytochrome in the reaction with midazolam. While lipophilicity is stored in the model as a `Midazolam|Lipophilicity` parameter, the catalytic activity (kcat) is less transparently called `Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat`. However, we can find it by searching for a parameter name including `kcat`:
+
 ```{r include=TRUE, eval=TRUE}
 getAllParametersMatching("**|kcat", simulations$Midazolam)
 ```
+
 ... and then we have everything we need to set up the parameter identification task.
 
 ### Setting up the model
+
 Execute the following code to continue setting up the midazolam model and to run the task.
+
 ```{r include=FALSE, eval=TRUE}
 piConfiguration$printEvaluationFeedback <- FALSE
 ```
+
 ```{r include=TRUE, message=FALSE, eval=TRUE}
 parameterInputData <- list(
   list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
@@ -237,16 +255,20 @@ taskResults <- task$run()
 ```
 
 ### OFV grids for parameter space exploration
-In addition to previous diagnostic methods, we can also plot the landscape of the objective function, since the problem is 2-parametric and it is easily visualized with a contour plot. The package includes `$gridSearch()` and `$plotGrid()` functions for that: 
+
+In addition to previous diagnostic methods, we can also plot the landscape of the objective function, since the problem is 2-parametric and it is easily visualized with a contour plot. The package includes `$gridSearch()` and `$plotGrid()` functions for that:
+
 ```{r include=TRUE, eval=FALSE}
 grid <- task$gridSearch(lower = c(3, 0), upper = c(4, 5), totalEvaluations = 2000)
 plot2DOFVGrid(grid, taskResults$par)
 ```
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center'}
 plot2DOFVGrid(cachedMidazolamGrid, taskResults$par)
 ```
 
 ## Clarithromycin model
+
 ### Setting up the model
 
 This is a more complex model that lifts its observed data from five distinct studies and includes three parameters that should be optimized. Load the simulations, the parameters, the observed data and the task by running the following code:
@@ -313,36 +335,47 @@ task <- ParameterIdentification$new(
 ```
 
 ### Limitations of the local optimization algorithms
-The solution (catalytic activity 14.10 1/min, specific clearance 6.24 1/min, intestinal permeability 1.306e-6 dm/min, OFV 4.17) found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles: 
+
+The solution (catalytic activity 14.10 1/min, specific clearance 6.24 1/min, intestinal permeability 1.306e-6 dm/min, OFV 4.17) found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles:
+
 ```{r include=TRUE, eval=FALSE}
 taskResults <- task$run()
 plotOFVProfiles(task$calculateOFVProfiles())[[1]]
 ```
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 plotOFVProfiles(cachedClarithromycinSuboptimalProfiles)[[1]]
 ```
 
-If a sub-optimal solution is not enough, we need to use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum. 
+If a sub-optimal solution is not enough, we need to use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum.
 
 ### Exhaustive grid search
-Running the grid search can be a useful first step when you don't know the optimization landscape of the problem. 
+
+Running the grid search can be a useful first step when you don't know the optimization landscape of the problem.
+
 ```{r include=TRUE, eval=FALSE}
 grid <- task$gridSearch(totalEvaluations = 1000, setStartingPoint = TRUE)
 best <- dplyr::slice_min(grid, ofv, with_ties = FALSE)
 ```
+
 If the `setStartingPoint` argument is set to `TRUE` (instead of default `FALSE`), the next optimization run will start from the best estimate across the grid.
 
 ### Running a global optimization algorithm
+
 Running 1000 iterations of differential optimization produces a result with a better OFV: catalytic activity 45.7 1/min, specific clearance 1.43 1/min, intestinal permeability 1.256e-6 dm/min, OFV 1.96.
+
 ```{r include=TRUE, message=FALSE, eval=FALSE}
 task$configuration$algorithm <- "DEoptim"
 task$configuration$algorithmOptions <- list(itermax = 1000, steptol = 10)
 taskResults <- task$run()
 ```
-We can ensure that this is at least a local minimum by plotting the OFV profiles: 
+
+We can ensure that this is at least a local minimum by plotting the OFV profiles:
+
 ```{r include=TRUE, eval=FALSE}
 plotOFVProfiles(task$calculateOFVProfiles())
 ```
+
 ```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
 plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[1]]
 plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[2]]
