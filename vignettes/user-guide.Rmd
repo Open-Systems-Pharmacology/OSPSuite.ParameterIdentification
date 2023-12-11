@@ -31,7 +31,37 @@ Biosimulation models include numerical parameters that determine the outputs of 
 
 The `{ospsuite.parameteridentification}` package provides a workflow for setting up such tasks based on existing PKML models, mapping model outputs to observed data, and estimating parameters. Below, three models of increasing complexity are used to demonstrate the functionality of the package.
 
-### Configuration
+### PI workflow
+
+General workflow description. The overall workflow is similar to running parameter identification in PK-Sim or MoBi, see the corresponding documnetation chapter <https://docs.open-systems-pharmacology.org/shared-tools-and-example-workflows/parameter-identification>
+
+A PI task is defined by:
+
+-   A set of simulations
+
+    -   You can use multiple simulations in one optimization task. As an example, you can indetify parameter values using data for different dosings.
+
+-   Mapping of model outputs to observed data
+
+-   Definition of parameters to be identified
+
+-   Configuration of the optimization task, including selection of algorithm and algorithm options.
+
+#### Mapping of model output to observed data
+
+In order to calculate the error of the model, simulation outputs must be linked to observed data. In this framework, one simulation output can be linked to multiple observed data sets. The error will be calculated for each pair of simulated output and the linked data set and added up for the total error. The mapping is done by creating an object of the class `PIOutputMapping`. Each object links a single `Quantity` of a simulation to multiple [`DataSet`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/DataSet.html) objects.
+
+All data sets (simulated results and obsreved data) within a `PIOutputMapping` can be transformed by applying offsets and scaling factors following the same logic as implemented in the [`DataCombined` class](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/data-combined.html#transformations). Finally, the scaling of the output mapping defines how results are calculated. ADD SHORT DESCRIPTION HERE. LIN: SIM-OBS, log: log(SIM/OBS).
+
+#### Definition of parameters to be identified
+
+Specification of parameters to be idenfied is done by creating objects of the class `PIParameters`. A `PIParameter` describes a single model parameter of a group of parameters that will be optimized together, i.e., all model parameters grouped to a `PIParameters` object will have the same value. A `PIParameter` also defines the start and the minimal and maximal values for the optimization.
+
+If multiple model parameters are linked in one `PIParameters` instance, they can belong to different simulations or come from the same simulation. If you have, for example, two simulations for two individuals with the same compound you may have one identification parameter lipophilicity which is linked to both lipophilicity parameters in the two simulations. At the same time, you define two identification parameters for the individual reference concentrations of a certain enzyme.
+
+EXAMPLES FOR THE ABOVE DESCRIBED CASES
+
+#### Configuration
 
 The package includes a `PIConfiguration` class for storing and re-using the settings of the parameter identification task. Currently, the implemented options include:
 
@@ -39,14 +69,14 @@ The package includes a `PIConfiguration` class for storing and re-using the sett
 
 -   `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to quantify the difference between observed data and simulated curve. The M3 method from [Beal, 2001](https://link.springer.com/article/10.1023/A:1012299115260) is an objective function that accounts for possible data points below the lower limit of quantification.
 
--   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Control options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Currently, the BOBYQA method (bound optimization by quadratic approximation) is the default local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, `HJKB` for derivative-free Hooke-Jeeves algorithm or `DEoptim` for global stochastic differential evolution algorithm may be more suitable.
+-   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Algorithm options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Default algorithm is the BOBYQA method (bound optimization by quadratic approximation), a local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, `HJKB` for derivative-free Hooke-Jeeves algorithm or `DEoptim` for global stochastic differential evolution algorithm may provide better results at the cost of overall execution time.
 
 ```{r include=TRUE, eval=TRUE}
 piConfiguration <- PIConfiguration$new()
 piConfiguration$printEvaluationFeedback <- TRUE
 ```
 
-## Aciclovir model
+## Example - Aciclovir model
 
 ### Extracting parameters from the model
 
