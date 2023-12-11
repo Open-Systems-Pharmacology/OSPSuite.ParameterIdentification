@@ -76,6 +76,21 @@ piConfiguration <- PIConfiguration$new()
 piConfiguration$printEvaluationFeedback <- TRUE
 ```
 
+#### Running a parameter identification task
+
+Create a parameter identification task by creating an object of the class `ParameterIdentification`. The object holds the set of simulations that were used for the creation of the `PIOutputMapping` and `PIParameters`, and the configuration.
+
+Overview - plot the (current) results, run the identification, run grid search, plot OFVprofiles. Describe the theory and link to examples below.
+
+The output of the optimization run is:
+
+-   `taskResults$par`: a vector of point estimates for each of the parameters
+-   `taskResults$lwr` and `taskResults$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
+-   `taskResults$cv`: a vector with coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
+-   `taskResults$value` is the objective function value at the point estimate
+-   `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
+-   `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
+
 ## Example - Aciclovir model
 
 ### Extracting parameters from the model
@@ -96,7 +111,7 @@ parameters <- c(PIParameters$new(parameters = ospsuite::getParameter(
   )))
 ```
 
-The default bounds are 0.1 of the starting parameter value and 10.0 of the starting parameter value, but it is often useful to supply parameter bounds from previous knowledge:
+The default lower and uppr bounds are 0.1- and 10-fold of the starting parameter value, respectrively, but it is often useful to supply parameter bounds from prior knowledge:
 
 ```{r include=TRUE, eval=TRUE}
 parameters[[1]]$minValue <- -10
@@ -105,7 +120,7 @@ parameters[[1]]$maxValue <- 10
 
 ### Reading observed data
 
-We need to supply the observed data which we are going to use to identify parameter values.
+We need to supply the observed data which we are going to use to identify parameter values:
 
 ```{r include=TRUE, eval=TRUE}
 filePath <- "tests/data/AciclovirLaskinData.xlsx"
@@ -163,15 +178,6 @@ taskResults <- task$run()
 ```
 
 ### Diagnostics
-
-The resulting object contains:
-
--   `taskResults$par`: a vector of point estimates for each of the parameters
--   `taskResults$lwr` and `taskResults$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
--   `taskResults$cv`: a vector with coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
--   `taskResults$value` is the objective function value at the point estimate
--   `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
--   `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
 
 The `task` object also contains a `$plotResults()` function that produces three diagnostic plots: an individual time profile with the current best estimate of model parameters and overlayed observed data, a comparison of predicted-vs-observed values and a plot of residuals vs time to identify potential biases in the model. The `$plotResults()` function can take an optional vector of parameter values to plot the curve corresponding to another set of model parameters. After running the parameter identification task, the `$plotResults()` function can be called as follows:
 
