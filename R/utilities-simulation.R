@@ -75,8 +75,7 @@ getSteadyState <- function(quantitiesPaths = NULL,
       quantitiesPathsMap[[idx]] <- quantitiesPaths
     }
     names(quantitiesPathsMap)[[idx]] <- simId
-    ospsuite::clearOutputs(simulation)
-    ospsuite::addOutputs(quantitiesOrPaths = quantitiesPathsMap[[idx]], simulation = simulation)
+    ospsuite::setOutputs(quantitiesOrPaths = quantitiesPathsMap[[idx]], simulation = simulation)
   }
 
   # Run simulations concurrently
