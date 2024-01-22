@@ -2,7 +2,7 @@
 #' List of optimization algorithms supported by optimization routines and, consequently,
 #' by the ParameterIdentification class
 #' @export
-Algorithms <- enum(c(
+Algorithms <- ospsuite.utils::enum(c(
   "HJKB", # Hooke-Jeeves algorithm from the {dfoptim} package
   "BOBYQA", # BOBYQA algorithm from the {nloptr} package
   ## Stochastic global optimization methods
@@ -12,7 +12,7 @@ Algorithms <- enum(c(
 #' @title AlgorithmOptions
 #' List of options for optimization algorithms, some of them specific to certain algorithms.
 #' @export
-AlgorithmOptions <- enum(c(
+AlgorithmOptions <- ospsuite.utils::enum(c(
   # applies to "HJKB" algorithm
   "tol", # absolute error of consecutive iterations for termination
   "maxfeval", # maximum number of function evaluations
@@ -42,4 +42,12 @@ AlgorithmOptions <- enum(c(
 #' @title ObjectiveFunctions
 #' List of supported objective functions to calculate the error.
 #' @export
-ObjectiveFunctions <- enum(c("lsq", "m3"))
+ObjectiveFunctions <- ospsuite.utils::enum(c("lsq", "m3"))
+
+#' @title ScalingOptions
+#' List of scaling options for output mappings.
+#' @export
+ScalingOptions <- ospsuite.utils::enum(c(
+  "lin", # Linear scaling (default)
+  "log"  # Logarithmic scaling
+))

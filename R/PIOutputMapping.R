@@ -3,7 +3,7 @@
 #' @description An object that links together quantities from the simulation
 #' to observed data. This object is passed to the ParameterIdentification
 #' objects
-#' @import ospsuite.utils R6
+#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIOutputMapping <- R6::R6Class(
@@ -45,6 +45,8 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.scaling
       } else {
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, ScalingOptions)
         private$.scaling <- value
       }
     },
@@ -80,7 +82,7 @@ PIOutputMapping <- R6::R6Class(
     #' @param quantity An object of the type `Quantity`
     #' @return A new `PIOutputMapping` object.
     initialize = function(quantity) {
-      validateIsOfType(quantity, "Quantity")
+      ospsuite.utils::validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
       private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
@@ -95,8 +97,8 @@ PIOutputMapping <- R6::R6Class(
     #' quantity of the mapping.
     #' @export
     addObservedDataSets = function(data) {
-      validateIsOfType(data, "DataSet")
-      data <- toList(data)
+      ospsuite.utils::validateIsOfType(data, "DataSet")
+      data <- ospsuite.utils::toList(data)
       for (idx in seq_along(data)) {
         # Test if the dimension of the data to be added can be converted to the
         # dimension of the quantity of this Output Mapping.
@@ -130,11 +132,11 @@ PIOutputMapping <- R6::R6Class(
                                       yOffsets = 0,
                                       xFactors = 1,
                                       yFactors = 1) {
-      validateIsString(labels, nullAllowed = TRUE)
-      validateIsNumeric(xOffsets, nullAllowed = TRUE)
-      validateIsNumeric(xFactors, nullAllowed = TRUE)
-      validateIsNumeric(yFactors, nullAllowed = TRUE)
-      validateIsNumeric(yOffsets, nullAllowed = TRUE)
+      ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(yFactors, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
 
       if (missing(labels)) {
         # if no labels are given to the function, the same parameters will be used across datasets

@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
 #' @description An object storing configuration for the parameter identification
-#' @import ospsuite.utils
+#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
@@ -15,7 +15,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.simulateSteadyState
       } else {
-        validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.simulateSteadyState <- value
       }
     },
@@ -24,7 +24,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.steadyStateTime
       } else {
-        validateIsNumeric(value)
+        ospsuite.utils::validateIsNumeric(value)
         if (value < 0) {
           stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
         }
@@ -38,7 +38,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.printEvaluationFeedback
       } else {
-        validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.printEvaluationFeedback <- value
       }
     },
@@ -49,7 +49,7 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.simulationRunOptions
       } else {
-        validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
+        ospsuite.utils::validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
         private$.simulationRunOptions <- value
       }
     },
@@ -61,8 +61,8 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.targetFunctionType
       } else {
-        validateIsCharacter(value)
-        validateEnumValue(tolower(value), ObjectiveFunctions)
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(tolower(value), ObjectiveFunctions)
         private$.targetFunctionType <- value
       }
     },
@@ -74,8 +74,8 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.algorithm
       } else {
-        validateIsCharacter(value)
-        validateEnumValue(value, Algorithms)
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, Algorithms)
         private$.algorithm <- value
       }
     },
@@ -87,7 +87,7 @@ PIConfiguration <- R6::R6Class(
         private$.algorithmOptions
       } else {
         for (name in names(value)) {
-          validateEnumValue(name, AlgorithmOptions)
+          ospsuite.utils::validateEnumValue(name, AlgorithmOptions)
         }
         private$.algorithmOptions <- value
       }

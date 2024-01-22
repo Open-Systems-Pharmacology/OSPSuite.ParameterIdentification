@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import ospsuite.utils
+#' @import R6 ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -34,7 +34,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(value, "PIConfiguration")
+        ospsuite.utils::validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -130,8 +130,8 @@ ParameterIdentification <- R6::R6Class(
 
         # Clear output intervals and output quantities of all simulations
         for (simulation in private$.simulations) {
-          clearOutputIntervals(simulation)
-          clearOutputs(simulation)
+          ospsuite::clearOutputIntervals(simulation)
+          ospsuite::clearOutputs(simulation)
         }
 
         # Add time points to the output schema that are present in the observed data.
@@ -177,7 +177,7 @@ ParameterIdentification <- R6::R6Class(
         for (simulation in private$.simulations) {
           simId <- simulation$root$id
           # Parameters and molecules defined in the previous steps will be variable.
-          simBatch <- createSimulationBatch(
+          simBatch <- ospsuite::createSimulationBatch(
             simulation = simulation,
             parametersOrPaths = names(private$.variableParameters[[simId]]),
             moleculesOrPaths = names(private$.variableMolecules[[simId]])
@@ -266,7 +266,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
       # Summed up over all output mappings
-      unscensoredError <- NULL
+      uncensoredError <- NULL
       # Error calculated for censored values (i.e., below LQ if LLOQ censoring)
       # Summed up over all output mappings
       censoredError <- NULL
@@ -336,12 +336,12 @@ ParameterIdentification <- R6::R6Class(
           # the total censored residuals vector
           if (nrow(observed_censored) > 0) {
             # First calculate the probabilities
-            censoderProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
-            # Replace zeros by the minimal number to avoid Inf for censoder error
-            censoderProbabilities[censoderProbabilities == 0] <- .Machine$double.xmin
+            censoredProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
+            # Replace zeros by the minimal number to avoid Inf for censored error
+            censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
 
-            # As desctibed in Equation 6. Calculate a vector of residuals
-            censoredErrorVector <- -2 * log(censoderProbabilities,
+            # As described in Equation 6. Calculate a vector of residuals
+            censoredErrorVector <- -2 * log(censoredProbabilities,
               base = 10
             )
             # We must take the square root of the censored residuals because modFit
@@ -365,12 +365,12 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate uncensored error.
-        unscensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+        uncensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = uncensoredError)
       }
 
       # Total error. Either the uncensored error,
       # or with addition of censored values
-      runningCost <- unscensoredError
+      runningCost <- uncensoredError
       if (!is.null(censoredError)) {
         # Add censored error
         totalCost <- runningCost$model + sum(censoredError$res^2)
@@ -450,7 +450,7 @@ ParameterIdentification <- R6::R6Class(
       #   }
       #
       #   # Run steady-state batches
-      #   ssResults <- runSimulationBatches(simulationBatches = private$.steadyStateBatches,
+      #   ssResults <- ospsuite::runSimulationBatches(simulationBatches = private$.steadyStateBatches,
       #                        simulationRunOptions = private$.configuration$simulationRunOptions)
       #####
 
@@ -463,13 +463,13 @@ ParameterIdentification <- R6::R6Class(
         )
       }
       # Run simulation batches
-      simulationResults <- runSimulationBatches(
+      simulationResults <- ospsuite::runSimulationBatches(
         simulationBatches = private$.simulationBatches,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
       for (idx in seq_along(private$.outputMappings)) {
-        obsVsPred <- DataCombined$new()
+        obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
@@ -620,9 +620,9 @@ ParameterIdentification <- R6::R6Class(
       private$.configuration <- configuration %||% PIConfiguration$new()
       private$.sdForLogCV <- sqrt(log(1 + private$.cvM3^2, base = 10) / log(10))
 
-      simulations <- toList(simulations)
-      parameters <- toList(parameters)
-      outputMappings <- toList(outputMappings)
+      simulations <- ospsuite.utils::toList(simulations)
+      parameters <- ospsuite.utils::toList(parameters)
+      outputMappings <- ospsuite.utils::toList(outputMappings)
 
       # We have to use the id of the root container of the simulation instead of
       # the id of the simulation itself, because later we have to find the
@@ -710,21 +710,21 @@ ParameterIdentification <- R6::R6Class(
       dataCombined <- private$.evaluate(parValues)
 
       # Create figures and plot
-      plotConfiguration <- DefaultPlotConfiguration$new()
+      plotConfiguration <- ospsuite::DefaultPlotConfiguration$new()
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$legendPosition <- "none"
         plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        obsVsSim <- ospsuite::plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
-        plotGridConfiguration <- PlotGridConfiguration$new()
+        resVsTime <- ospsuite::plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
         plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
-        return(plotGrid(plotGridConfiguration))
+        return(ospsuite::plotGrid(plotGridConfiguration))
       })
 
       if (!is.null(private$.savedSimulationState)) {

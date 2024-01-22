@@ -37,7 +37,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.startValue
       } else {
-        validateIsNumeric(value)
+        ospsuite.utils::validateIsNumeric(value)
         private$.startValue <- value
       }
     },
@@ -47,7 +47,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.minValue
       } else {
-        validateIsNumeric(value)
+        ospsuite.utils::validateIsNumeric(value)
         if (value > private$.startValue) {
           stop(paste0("The minimal value cannot be greater than the start value!
           Provided minimal value: ", value, ". Current start value: ", private$.startValue))
@@ -62,7 +62,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.maxValue
       } else {
-        validateIsNumeric(value)
+        ospsuite.utils::validateIsNumeric(value)
         if (value < private$.startValue) {
           stop(paste0("The maximal value cannot be smaller than the start value!
           Provided maximal value: ", value, ". Current start value: ", private$.startValue))
@@ -78,7 +78,7 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.unit
       } else {
-        validateUnit(unit = value, dimension = private$.parameters[[1]]$dimension)
+        ospsuite::validateUnit(unit = value, dimension = private$.parameters[[1]]$dimension)
         private$.unit <- value
       }
     }
@@ -100,7 +100,7 @@ PIParameters <- R6::R6Class(
     #' @return A new `PIParameters` object.
     initialize = function(parameters) {
       parameters <- c(parameters)
-      validateIsOfType(parameters, "Parameter")
+      ospsuite.utils::validateIsOfType(parameters, "Parameter")
       .validateIsSameDimension(parameters)
 
       private$.parameters <- parameters
@@ -120,7 +120,7 @@ PIParameters <- R6::R6Class(
     #' The unit of the value is $unit
     #' @param value Numerical value.
     setValue = function(value) {
-      validateIsNumeric(value)
+      ospsuite.utils::validateIsNumeric(value)
       for (param in private$.parameters) {
         param$setValue(value, private$.unit)
       }
