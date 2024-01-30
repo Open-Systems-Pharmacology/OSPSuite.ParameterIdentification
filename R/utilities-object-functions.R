@@ -279,3 +279,38 @@ plot.modCost <- function(x, legpos = "topleft", ...) {
     legend(legpos, legend = x$var$name, col = DotsCol, pch = DotsPch)
   }
 }
+
+#' Handle Simulation Failure
+#'
+#' This function checks for NA in simulation results and returns an infinite cost structure if any are found.
+#' @param simulationResults A list of simulation results.
+#' @return Returns an infinite cost structure if NA values are found in the simulation results, NULL otherwise.
+#' @keywords internal
+.handleSimulationFailure <- function(simulationResults) {
+  if (any(is.na(simulationResults))) {
+    return(.createInfiniteCostStructure())
+  }
+  return(NULL)
+}
+
+#' Create Infinite Cost Structure
+#'
+#' Generates a cost structure with infinite values, used in cases of simulation failure.
+#' @return Returns a list with infinite values for model, minlogp, var, and residuals components.
+#' @keywords internal
+.createInfiniteCostStructure <- function() {
+  infiniteCost <- list(
+    model = Inf,
+    minlogp = Inf,
+    var = data.frame(
+      name = "Values", scale = 1, N = 1,
+      SSRUnweighted = Inf, SSRUnscaled = Inf, SSR = Inf
+    ),
+    residuals = data.frame(
+      name = "Values", x = 0, obs = 0, mod = Inf,
+      weight = 1, resUnweighted = Inf, res = Inf
+    )
+  )
+  class(infiniteCost) <- "modCost"
+  return(infiniteCost)
+}

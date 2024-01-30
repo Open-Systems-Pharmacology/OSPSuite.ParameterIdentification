@@ -234,34 +234,10 @@ ParameterIdentification <- R6::R6Class(
           NA
         }
       )
-      # Returning a list of `Inf`s as otherwise the "Marq" method complains about
-      # receiving only single value and not residuals.
-      # (I think this would also lead to a failure where only one observed data
-      # point is fitted).
-      if (any(is.na(obsVsPredList))) {
-        out <- list(
-          model = Inf,
-          minlogp = Inf,
-          var = data.frame(
-            name           = "Values",
-            scale          = 1,
-            N              = 1,
-            SSR.unweighted = Inf,
-            SSR.unscaled   = Inf,
-            SSR            = Inf
-          ),
-          residuals = data.frame(
-            name = "Values",
-            x = 0,
-            obs = 0,
-            mod = Inf,
-            weight = 1,
-            res.unweighted = Inf,
-            res = Inf
-          )
-        )
-        class(out) <- "modCost"
-        return(out)
+      # Return an infinite cost structure if the simulation is NA
+      failureResponse <- .handleSimulationFailure(obsVsPredList)
+      if (!is.null(failureResponse)) {
+        return(failureResponse)
       }
 
       # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
