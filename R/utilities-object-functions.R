@@ -314,3 +314,41 @@ plot.modCost <- function(x, legpos = "topleft", ...) {
   class(infiniteCost) <- "modCost"
   return(infiniteCost)
 }
+
+#' Apply Log Transformation to Data Frame
+#'
+#' Transforms the `yValues` and `lloq` columns in the given data frame using a log
+#' transformation. Currently, this function only supports `obsVsPredDf` data frames,
+#' which must contain `yDimension`, `yUnit`, `yValues`, and `lloq` columns.
+#'
+#' @param df A `tbl_df` representing the observed vs predicted data frame (`obsVsPredDf`).
+#'
+#' @return A transformed data frame with log-transformed `yValues` and `lloq`.
+#' @keywords internal
+#'
+#' @examples
+#' # Assuming df is a valid obsVsPredDf data frame
+#' transformedDf <- applyLogTransformation(df)
+.applyLogTransformation <- function(df) {
+  ospsuite.utils::validateIsOfType(df, "tbl_df")
+  ospsuite.utils::validateIsIncluded(
+    c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
+  )
+
+  UNITS_EPSILON <- ospsuite::toUnit(
+    quantityOrDimension = df$yDimension[1],
+    values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+    targetUnit = df$yUnit[1],
+    molWeight = 1
+  )
+
+  df$yValues <- ospsuite.utils::logSafe(
+    df$yValues, epsilon = UNITS_EPSILON, base = exp(1)
+  )
+  df$lloq <- ospsuite.utils::logSafe(
+    df$lloq, epsilon = UNITS_EPSILON, base = exp(1)
+  )
+
+  return(df)
+}
+

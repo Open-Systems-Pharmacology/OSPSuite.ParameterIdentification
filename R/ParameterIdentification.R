@@ -264,14 +264,7 @@ ParameterIdentification <- R6::R6Class(
 
         # Transform to log if required.
         if (private$.outputMappings[[idx]]$scaling == "log") {
-          UNITS_EPSILON <- ospsuite::toUnit(
-            quantityOrDimension = obsVsPredDf$yDimension[[1]],
-            values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-            targetUnit = obsVsPredDf$yUnit[[1]],
-            molWeight = 1
-          )
-          obsVsPredDf$yValues <- ospsuite.utils::logSafe(obsVsPredDf$yValues, epsilon = UNITS_EPSILON, base = exp(1))
-          obsVsPredDf$lloq <- ospsuite.utils::logSafe(obsVsPredDf$lloq, epsilon = UNITS_EPSILON, base = exp(1))
+          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
         # Extract simulated and observed data
