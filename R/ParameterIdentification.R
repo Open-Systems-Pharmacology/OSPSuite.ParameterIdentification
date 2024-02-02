@@ -258,7 +258,7 @@ ParameterIdentification <- R6::R6Class(
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
             obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
-              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+                           obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
           }
         }
 
@@ -280,57 +280,13 @@ ParameterIdentification <- R6::R6Class(
         # M3 LLOQ method. Implementation based on DOI: 10.1023/a:1012299115260
         # In particular, equation 6
         if (private$.configuration$targetFunctionType == "m3") {
-          # Separate censored and uncensored data
-          observed_uncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
-          observed_censored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
-          simulated_uncensored <- merge(observed_uncensored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-          simulated_censored <- merge(observed_censored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-
-          # Data frames used for calculation of uncensored error
-          modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
-          # 'merge()' produces multiple entries for the same x value when multiple
-          # observed data sets are present. Apply 'unique()' to avoid duplication
-          # of values and a warning during interpolation.
-          modelDf <- unique(modelDf)
-          obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
-
-          # sd for untransformed data is defined as CV * mean, while mean is the LQ
-          if (private$.outputMappings[[idx]]$scaling == "lin") {
-            sd <- abs(private$.cvM3 * observed_censored$lloq)
-          } else {
-            sd <- private$.sdForLogCV
-          }
-
-          # Calculate censored residuals for this output mapping and add it to
-          # the total censored residuals vector
-          if (nrow(observed_censored) > 0) {
-            # First calculate the probabilities
-            censoredProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
-            # Replace zeros by the minimal number to avoid Inf for censored error
-            censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
-
-            # As described in Equation 6. Calculate a vector of residuals
-            censoredErrorVector <- -2 * log(censoredProbabilities,
-              base = 10
-            )
-            # We must take the square root of the censored residuals because modFit
-            # expects the unsquared residuals! The total error value is then calculated
-            # as squared residuals but as can be seen in Equation 5, M3 method returns
-            # already squared values
-            censoredErrorVector <- sqrt(censoredErrorVector)
-
-            # Construct the data frame with censored residuals with the same structure
-            # as the 'residuals'  df
-            censoredError <- rbind(censoredError, data.frame(
-              name = "Values",
-              x = observed_censored$xValues,
-              obs = observed_censored$yValues,
-              mod = simulated_censored$yValues,
-              weight = 1,
-              res.unweighted = censoredErrorVector,
-              res = censoredErrorVector
-            ))
-          }
+          censoredError <- .calculateCensoredError(
+            df            = obsVsPredDf,
+            censoredError = NULL,
+            scaling       = private$.outputMappings[[idx]]$scaling,
+            cvM3          = private$.cvM3,
+            sdForLogCV    = private$.sdForLogCV
+          )
         }
 
         # Calculate uncensored error.
@@ -451,8 +407,8 @@ ParameterIdentification <- R6::R6Class(
         resultObject <- simulationResults[[simBatch$id]][[1]]
         resultId <- names(simulationResults[[simBatch$id]])[[1]]
         obsVsPred$addSimulationResults(resultObject,
-          quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = resultId, groups = groupName
+                                       quantitiesOrPaths = currOutputMapping$quantity$path,
+                                       names = resultId, groups = groupName
         )
 
         obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)

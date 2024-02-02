@@ -359,3 +359,72 @@ plot.modCost <- function(x, legpos = "topleft", ...) {
 
   return(df)
 }
+
+#' Calculate Censored Error
+#'
+#' @param df Data frame with specific structure and columns.
+#' @param censoredError Data frame to append results, or NULL.
+#' @param scaling Character, scaling method.
+#' @param cvM3 Numeric, coefficient of variation for linear scaling.
+#' @param sdForLogCV Numeric, standard deviation for log scaling.
+#' @return Data frame with censored error calculations.
+#' @keywords internal
+#' @examples
+#' \dontrun{
+#' .calculateCensoredError(df, scaling = "lin", cvM3 = 0.2)
+#' }
+.calculateCensoredError <- function(df, censoredError = NULL, scaling,
+                                    cvM3 = NULL, sdForLogCV = NULL) {
+  ospsuite.utils::validateIsOfType(df, "tbl_df")
+  ospsuite.utils::validateIsIncluded(
+    c("dataType", "lloq", "yValues", "xValues", "xUnit", "xDimension"),
+    colnames(df)
+  )
+  ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
+  # Add evaluation logic for lloq values in df
+  # LLOQ <- unique(df$lloq[!is.na(df$lloq)])
+
+  simulated <- df[df$dataType == "simulated", ]
+  observed <- df[df$dataType == "observed", ]
+
+  # Distinguishing between uncensored and censored observations based on lloq values
+  observedUncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
+  observedCensored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
+  simulatedUncensored <- merge(observedUncensored[c("xValues", "xUnit", "xDimension")],
+                               simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
+  simulatedCensored <- merge(observedCensored[c("xValues", "xUnit", "xDimension")],
+                             simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
+
+  # Calculate standard deviation based on the scaling method
+  if (scaling == "lin") {
+    ospsuite.utils::validateIsNumeric(cvM3)
+    sd <- abs(cvM3 * observedCensored$lloq)
+  } else if (scaling == "log") {
+    ospsuite.utils::validateIsNumeric(sdForLogCV)
+    sd <- sdForLogCV
+  }
+
+  if (isTRUE(nrow(observedCensored) > 0)) {
+    # Calculate the probabilities for censored data points
+    censoredProbabilities <- pnorm((observedCensored$lloq - simulatedCensored$yValues) / sd)
+    censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
+    # Using logarithmic transformation for censored residuals as per the M3 method
+    censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
+    # Transforming residuals to match the expected format for subsequent analysis
+    censoredErrorVector <- sqrt(censoredErrorVector)
+
+    censoredError <- rbind(censoredError,
+                           data.frame(
+                             name = "Values",
+                             x = observedCensored$xValues,
+                             obs = observedCensored$yValues,
+                             mod = simulatedCensored$yValues,
+                             weight = 1,
+                             resUnweighted = censoredErrorVector,
+                             res = censoredErrorVector
+                           )
+    )
+  }
+
+  return(censoredError)
+}
