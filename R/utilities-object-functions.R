@@ -1,257 +1,159 @@
-## -----------------------------------------------------------------------------
-## The model cost and residuals
-## Currently copied from the FME implementation
-## -----------------------------------------------------------------------------
+#' @name calculateCostMetrics
+#' @title Calculate Cost Metrics for Model Evaluation
+#'
+#' @description
+#' This function calculates various cost metrics to evaluate the fit of a model
+#' by comparing simulated data against observed data. It supports different
+#' methods for weighting residuals.
+#'
+#' @param df A dataframe containing the combined data for simulation and
+#' observation. Supports dataframes created from a `DataCombined` object via
+#' `DataCombined$toDataFrame()`. The dataframe must include columns for
+#' "dataType", "xValues", "yValues", and optionally "yErrorValues" if the
+#' `residualWeightingMethod` is set to "error".
+#' @param residualWeightingMethod A string indicating the method to weight the
+#' residuals. Options include "none" (default), "std", "mean", and "error".
+#' @param scaleVar A boolean indicating whether to scale residuals by the
+#' number of observations. Defaults to `FALSE`.
+#' @param ... Additional arguments. Currently not used.
+#'
+#' @details
+#' The function calculates the residuals between the simulated and observed
+#' values, applies the specified weighting method, and computes the cost metrics
+#' based on the scaled or unscaled residuals.
+#'
+#' @return
+#' A list containing the following elements:
+#' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
+#' - `minLogProbability`: The minimum log probability indicating the model fit.
+#' - `costDetails`: A dataframe with details on the cost calculations.
+#' - `residualDetails`: A dataframe with the calculated residuals and their weights.
+#' The list has the class `modelCost` for easy identification and further processing.
+#'
+#' @examples
+#' \dontrun{
+#' library(ospsuite)
+#'
+#' # Assuming DataCombined is a valid ospsuite DataCombined object
+#' df <- DataCombined$toDataFrame()
+#'
+#' # Calculate cost metrics
+#' costMetrics <- calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
+#'
+#' # View model cost
+#' print(costMetrics$modelCost)
+#'
+#' @export
+calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar = FALSE, ...) {
+  # Validate input dataframe structure
+  ospsuite.utils::validateIsOfType(df, "tbl_df")
+  ospsuite.utils::validateIsIncluded(
+    c("dataType", "xDimension", "yDimension", "xValues", "yValues", "xUnit", "yUnit"),
+    colnames(df)
+  )
+  ospsuite.utils::validateIsOfLength(unique(df$xUnit), 1)
+  ospsuite.utils::validateIsOfLength(unique(df$yUnit), 1)
+  ospsuite.utils::validateIsIncluded(unique(df$xDimension), "Time")
 
-modCost <- function(model, obs, x = "time", y = NULL, err = NULL,
-                    weight = "none", scaleVar = FALSE, cost = NULL, ...) {
-  ## convert vector to matrix
-  if (is.vector(obs)) {
-    cn <- names(obs)
-    obs <- matrix(data = obs, nrow = 1)
-    colnames(obs) <- cn
+  # Ensure the residual weighting method is recognized
+  ospsuite.utils::validateEnumValue(residualWeightingMethod, residualWeightingOptions)
+  if (residualWeightingMethod == "error") {
+    ospsuite.utils::validateIsIncluded(c("yErrorValues", "yErrorUnit"), colnames(df))
   }
-  if (is.vector(model)) {
-    cn <- names(model)
-    model <- matrix(data = model, nrow = 1)
-    colnames(model) <- cn
+
+  # Handle infinite values by converting them to NA for accurate calculations
+  df$xValues[df$xValues == Inf | df$xValues == -Inf] <- NA
+  df$yValues[df$yValues == Inf | df$yValues == -Inf] <- NA
+  idx <- is.na(df$xValues) & is.na(df$yValues)
+  df <- df[!idx, ]
+
+  # Splitting dataframe into simulated and observed data
+  simulatedData <- df[df$dataType == "simulated", ]
+  simulatedData <- simulatedData[!is.na(simulatedData$yValues), ]
+  observedData <- df[df$dataType == "observed", ]
+  observedData <- observedData[!is.na(observedData$yValues), ]
+
+  # Ensuring there is enough data to perform calculations
+  if (NROW(simulatedData) < 2 | is.null(simulatedData)) {
+    stop("No simulated data found when calculating cost function.")
+  }
+  if (NROW(observedData) < 2 | is.null(observedData)) {
+    stop("No observed data found when calculating cost function.")
   }
 
-  # Special use case - no observed data provided. In this case, the error is
-  # obviously zero. Return early.
-  if (dim(obs)[[1]] == 0) {
-    # If previous cost is provided, return it with no changes
-    if (!is.null(cost)) {
-      return(cost)
-    }
+  # Extracting values for interpolation or direct matching
+  simulatedXVal <- simulatedData[["xValues"]]
+  simulatedYVal <- simulatedData[["yValues"]]
+  observedXVal <- observedData[["xValues"]]
+  observedYVal <- observedData[["yValues"]]
 
-    out <- list(
-      model = 0,
-      minlogp = 0,
-      var = data.frame(
-        name           = "Values",
-        scale          = 1,
-        N              = 0,
-        SSR.unweighted = 0,
-        SSR.unscaled   = 0,
-        SSR            = 0
-      ),
-      residuals = data.frame(
-        name = character(),
-        x = numeric(),
-        obs = numeric(),
-        mod = numeric(),
-        weight = numeric(),
-        res.unweighted = numeric(),
-        res = numeric()
-      )
-    )
-    class(out) <- "modCost"
-    return(out)
-  }
-
-  ## =============================================================================
-  ## Observations
-  ## =============================================================================
-
-  ## The position of independent variable(s)
-  ix <- 0
-  if (!is.null(x)) { # mapping required...
-    ## For now multiple independent variables are not supported...
-    if (length(x) > 1) {
-      stop("multiple independent variables in 'obs' are not yet supported")
-    }
-
-    if (!is.character(x)) {
-      stop("'x' should be the *name* of the column with the independent variable in 'obs' or NULL")
-    }
-    ix <- which(colnames(obs) %in% x)
-    if (length(ix) != length(x)) {
-      stop(paste("Independent variable column not found in observations", x))
-    }
+  # Interpolating simulated Y values based on observed X values if applicable
+  if (length(unique(simulatedXVal)) > 1) {
+    simulatedYValApprox <- approx(simulatedXVal, simulatedYVal, xout = observedXVal)$y
   } else {
-    ix <- NULL
+    simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
   }
 
-  ## The position of weighing values
-  ierr <- 0
-  if (!is.null(err)) {
-    if (!is.character(err)) {
-      stop("'err' should be the *name* of the column with the error estimates in obs or NULL")
-    }
-    ierr <- which(colnames(obs) == err) # only one
-    if (length(ierr) == 0) {
-      stop(paste("Column with error estimates not found in observations", err))
-    }
-  }
-
-  ## The dependent variables
-  type <- 1 # data input type: type 2 is table format, type 1 is long format...
-
-  if (!is.null(y)) { # it is in table format; first column are names of observed data...
-
-    Names <- as.character(unique(obs[, 1])) # Names of data sets, all data should be model variables...
-    Ndat <- length(Names) # Number of data sets
-    ilist <- 1:Ndat
-    if (!is.character(y)) {
-      stop("'y' should be the *name* of the column with the values of the dependent variable in obs")
-    }
-    iy <- which(colnames(obs) == y)
-    if (length(iy) == 0) {
-      stop(paste("Column with value of dependent variable not found in observations", y))
-    }
-    type <- 2
-  } else { # it is a matrix, variable names are column names
-    Ndat <- NCOL(obs) - 1
-    Names <- colnames(obs)
-    ilist <- (1:NCOL(obs)) # column positions of the (dependent) observed variables
-    exclude <- ix # exclude columns that are not
-    if (ierr > 0) {
-      exclude <- c(ix, ierr)
-    } # exclude columns that are not
-    if (length(exclude) > 0) {
-      ilist <- ilist[-exclude]
-    }
-  }
-
-  # ================================
-  # The model results
-  # ================================
-
-  ModNames <- colnames(model) # Names of model variables
-  if (length(ix) > 1) {
-    ixMod <- NULL
-
-    for (i in 1:length(ix)) {
-      ix2 <- which(colnames(model) == x[i])
-      if (length(ix2) == 0) {
-        stop(paste("Cannot calculate cost: independent variable not found in model output", x[i]))
-      }
-      ixMod <- c(ixMod, ix2)
-    }
-
-    xMod <- model[, ixMod] # Independent variable, model
-  } else if (length(ix) == 1) {
-    ixMod <- which(colnames(model) == x)
-    if (length(ixMod) == 0) {
-      stop(paste("Cannot calculate cost: independent variable not found in model output", x))
-    }
-    xMod <- model[, ixMod] # Independent variable, model
-  }
-  Residual <- NULL
-  CostVar <- NULL
-
-  # ================================
-  # Compare model and data...
-  # ================================
-  xDat <- 0
-  iDat <- 1:nrow(obs)
-
-  for (i in ilist) { # for each observed variable ...
-    ii <- which(ModNames == Names[i])
-    if (length(ii) == 0) stop(paste("observed variable not found in model output", Names[i]))
-    yMod <- model[, ii]
-    if (type == 2) { # table format
-      iDat <- which(obs[, 1] == Names[i])
-      if (length(ix) > 0) xDat <- obs[iDat, ix]
-      obsdat <- obs[iDat, iy]
-    } else {
-      if (length(ix) > 0) xDat <- obs[, 1]
-      obsdat <- obs[, i]
-    }
-    ii <- which(is.na(obsdat))
-    if (length(ii) > 0) {
-      xDat <- xDat[-ii]
-      obsdat <- obsdat[-ii]
-    }
-
-    if (length(ix) > 0) {
-      # Only interpolate if more than one x point is available
-      if (length(unique(xMod)) > 1) {
-        ModVar <- approx(xMod, yMod, xout = xDat)$y
-      } else {
-        # Otherwise simply wort simulated y values based on the order of
-        # observed x values
-        ModVar <- yMod[match(xDat, xMod)]
-      }
-    } else {
-      ModVar <- mean(yMod)
-      obsdat <- mean(obsdat)
-    }
-    iex <- which(!is.na(ModVar))
-    ModVar <- ModVar[iex]
-    obsdat <- obsdat[iex]
-    xDat <- xDat[iex]
-    if (ierr > 0) {
-      Err <- obs[iDat, ierr]
-      Err <- Err[iex]
-    } else {
-      if (weight == "std") {
-        Err <- sd(obsdat)
-      } else if (weight == "mean") {
-        Err <- mean(abs(obsdat))
-      } else if (weight == "none") {
-        Err <- 1
-      } else {
-        stop("error: do not recognize 'weight'; should be one of 'none', 'std', 'mean'")
-      }
-    }
-    if (any(is.na(Err))) {
-      stop(paste("error: cannot estimate weighing for observed variable: ", Names[i]))
-    }
-    if (min(Err) <= 0) {
-      stop(paste("error: weighing for observed variable is 0 or negative:", Names[i]))
-    }
-    if (scaleVar) {
-      Scale <- 1 / length(obsdat)
-    } else {
-      Scale <- 1
-    }
-    Res <- (ModVar - obsdat)
-    res <- Res / Err
-    resScaled <- res * Scale
-    Residual <- rbind(
-      Residual,
-      data.frame(
-        name = Names[i],
-        x = xDat,
-        obs = obsdat,
-        mod = ModVar,
-        weight = 1 / Err,
-        res.unweighted = Res,
-        res = res
-      )
+  # Determining the method for residual weighting
+  observedYErr <-
+    switch(residualWeightingMethod,
+           "none" = 1,
+           "error" = { observedData[["yErrorValues"]] |>
+               (\(x) replace(x, is.na(x), 1))() },
+           "std" = {
+             if (length(unique(observedYVal)) == 1) {
+               observedYErr <- sqrt(.Machine$double.eps)
+             } else {
+               observedYErr <- sd(observedYVal)
+             }
+           },
+           "mean" = {
+             meanVal <- mean(abs(observedYVal))
+             if (meanVal == 0) 1 else meanVal
+           }
     )
 
-    CostVar <- rbind(
-      CostVar,
-      data.frame(
-        name           = Names[i],
-        scale          = Scale,
-        N              = length(Res),
-        SSR.unweighted = sum(Res^2),
-        SSR.unscaled   = sum(res^2),
-        SSR            = sum(resScaled^2)
-      )
-    )
-  } # end loop over all observed variables
+  # Scaling residuals by the number of observations if requested
+  scaleFactor <- if (scaleVar) 1 / length(observedYVal) else 1
 
-  ## SSR
-  Cost <- sum(CostVar$SSR * CostVar$scale)
+  # Calculating and organizing residuals
+  rawResiduals <- simulatedYValApprox - observedYVal
+  weightedResiduals <- rawResiduals / observedYErr
+  scaledResiduals <- weightedResiduals * scaleFactor
 
-  ## Corrected a bug in version 1.2
-  # Lprob <- -sum(log(pmax(0, dnorm(Residual$mod, Residual$obs, Err))))
-  Lprob <- -sum(log(pmax(0, dnorm(Residual$mod, Residual$obs, 1 / Residual$weight)))) # avoid log of negative values
+  residualsData <- data.frame(
+    x = observedXVal,
+    yObserved = observedYVal,
+    ySimulated = simulatedYValApprox,
+    weight = 1 / observedYErr,
+    residuals = rawResiduals,
+    weightedResiduals = weightedResiduals,
+    scaledResiduals = scaledResiduals
+  )
 
-  if (!is.null(cost)) {
-    Cost <- Cost + cost$model
-    CostVar <- rbind(CostVar, cost$var)
-    Residual <- rbind(Residual, cost$residuals)
-    Lprob <- Lprob + cost$minlogp
-  }
-  out <- list(model = Cost, minlogp = Lprob, var = CostVar, residuals = Residual)
-  class(out) <- "modCost"
-  return(out)
+  # Compiling cost variables based on residuals
+  costVariables <- data.frame(
+    scaleFactor = scaleFactor,
+    nObservations = length(rawResiduals),
+    ssr = sum(rawResiduals^2),
+    ssrWeighted = sum(weightedResiduals^2),
+    ssrScaled = sum(scaledResiduals^2)
+  )
+
+  # Calculating log probability to evaluate model fit
+  logProbability <- -sum(log(pmax(0, dnorm(
+    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$weight))))
+
+  # Organizing output with model evaluation metrics
+  modelCost <- list(
+    modelCost = costVariables$ssrScaled,
+    minLogProbability = logProbability,
+    costDetails = costVariables,
+    residualDetails = residualsData
+  )
+
+  class(modelCost) <- "modelCost"
+  return(modelCost)
 }
 
 ## -----------------------------------------------------------------------------

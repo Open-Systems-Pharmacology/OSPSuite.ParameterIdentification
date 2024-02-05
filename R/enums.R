@@ -51,3 +51,13 @@ ScalingOptions <- ospsuite.utils::enum(c(
   "lin", # Linear scaling (default)
   "log"  # Logarithmic scaling
 ))
+
+#' @title residualWeightingOptions
+#' List of residual weighting methods used in the cost function.
+#' @export
+residualWeightingOptions <- ospsuite.utils::enum(c(
+  "none", # no weighting
+  "error", # error estimates for dependent variable in observed data
+  "std", #  weights equal to the reciprocal of the standard deviation of the observed data
+  "mean" # 1/mean of the absolute value of the observed data
+))
