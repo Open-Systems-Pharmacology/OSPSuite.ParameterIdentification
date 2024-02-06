@@ -32,7 +32,6 @@
 #'
 #' @examples
 #' \dontrun{
-#' library(ospsuite)
 #'
 #' # Assuming DataCombined is a valid ospsuite DataCombined object
 #' df <- DataCombined$toDataFrame()
@@ -329,4 +328,36 @@ plot.modCost <- function(x, legpos = "topleft", ...) {
   }
 
   return(censoredError)
+}
+
+#' Summarize Cost Lists
+#'
+#' This function takes two lists, each being the output of the `calculateCostMetrics` function,
+#' and summarizes them. It aggregates model costs and min log probabilities, and combines
+#' cost and residual details by row-binding.
+#'
+#' @param list1 The first list, containing the output of the `calculateCostMetrics` function,
+#'   which includes `modelCost`, `minLogProbability`, `costDetails`, and `residualDetails`.
+#' @param list2 The second list, containing the output of the `calculateCostMetrics` function,
+#'   which includes `modelCost`, `minLogProbability`, `costDetails`, and `residualDetails`.
+#'
+#' @return Returns a list that includes the sum of `modelCosts`, the sum of `minLogProbabilities`,
+#'   a row-bound combination of `costDetails`, and a row-bound combination of `residualDetails`.
+#'
+#'
+#' @keywords internal
+.summarizeCostLists <- function(list1, list2) {
+  # Sum modelCost
+  list1$modelCost <- list1$modelCost + list2$modelCost
+
+  # Sum minLogProbability
+  list1$minLogProbability <- list1$minLogProbability + list2$minLogProbability
+
+  # rbind costDetails
+  list1$costDetails <- rbind(list1$costDetails, list2$costDetails)
+
+  # rbind residualDetails
+  list1$residualDetails <- rbind(list1$residualDetails, list2$residualDetails)
+
+  return(list1)
 }

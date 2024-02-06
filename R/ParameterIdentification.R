@@ -248,6 +248,7 @@ ParameterIdentification <- R6::R6Class(
       censoredError <- NULL
 
       # Calculate error for each output mapping separately and add them up
+      costSummaryList <- vector("list", length(private$.outputMappings))
       for (idx in seq_along(private$.outputMappings)) {
         # Calling unit converter to unify the units within the DataCombined
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
@@ -290,37 +291,41 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate uncensored error.
-        uncensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = uncensoredError)
+        costSummary <- calculateCostMetrics(
+          df = obsVsPredDf,
+          residualWeightingMethod = "none"
+        )
+
+        # Total error. Either the uncensored error,
+        # or with addition of censored values
+        if (!is.null(censoredError)) {
+          # Add censored error
+          totalCost <- costSummary$modelCost + sum(censoredError$res^2)
+          # Extend the structure of the results object returned by modCost by
+          # the uncensored cost
+          # Append the data frame to the $residuals df
+          costSummary$residualDetails <- rbind(costSummary$residualDetails, censoredError)
+          # # Update the total cost 'model'
+          costSummary$modelCost <- totalCost
+          costSummary$costDetails$ssr <- totalCost
+          costSummary$costDetails$ssrWeighted <- totalCost
+          costSummary$costDetails$ssrScaled <- totalCost
+          costSummary$minlogp <- -sum(log(pmax(0, dnorm(
+            costSummary$residualDetails$ySimulated, costSummary$residuals$yObserved,
+            1 / costSummary$residualDetails$weight
+          ))))
+        }
+
+        costSummaryList[[idx]] <- costSummary
       }
 
-      # Total error. Either the uncensored error,
-      # or with addition of censored values
-      runningCost <- uncensoredError
-      if (!is.null(censoredError)) {
-        # Add censored error
-        totalCost <- runningCost$model + sum(censoredError$res^2)
-        # Extend the structure of the results object returned by modCost by
-        # the uncensored cost
-        # Append the data frame to the $residuals df
-        runningCost$residuals <- rbind(runningCost$residuals, censoredError)
-        #
-        # # Update the total cost 'model'
-        runningCost$model <- totalCost
-        runningCost$var$N <- length(runningCost$residuals$res)
-        runningCost$var$SSR.unweighted <- totalCost
-        runningCost$var$SSR.unscaled <- totalCost
-        runningCost$var$SSR <- totalCost
-        runningCost$minlogp <- -sum(log(pmax(0, dnorm(
-          runningCost$residuals$mod, runningCost$residuals$obs,
-          1 / runningCost$residuals$weight
-        ))))
-      }
+      runningCost <- Reduce(.summarizeCostLists, costSummaryList)
 
       # Print current error if requested
       if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", target function ", signif(runningCost$model, 3), "\n"
+          ", target function ", signif(runningCost$modelCost, 4), "\n"
         ))
       }
       return(runningCost)
@@ -446,13 +451,13 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.targetFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.targetFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
@@ -469,7 +474,7 @@ ParameterIdentification <- R6::R6Class(
                                             steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.targetFunction(p)$modelCost
           }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
@@ -499,7 +504,7 @@ ParameterIdentification <- R6::R6Class(
               # of 1e-4
               hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
               results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.targetFunction(p)$model
+                private$.targetFunction(p)$modelCost
               }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
@@ -727,7 +732,7 @@ ParameterIdentification <- R6::R6Class(
       OFVGrid <- expand.grid(gridList)
       # all columns from the OFVGrid are passed in the same order to the objective function
       OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
-        private$.targetFunction(c(...))$model
+        private$.targetFunction(c(...))$modelCost
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -806,7 +811,7 @@ ParameterIdentification <- R6::R6Class(
         # creates a tibble with the column name from the `parameterName` variable
         profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
         profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
-          private$.targetFunction(c(...))$model
+          private$.targetFunction(c(...))$modelCost
         })
         names(profileList)[[idx]] <- parameterName
       }
