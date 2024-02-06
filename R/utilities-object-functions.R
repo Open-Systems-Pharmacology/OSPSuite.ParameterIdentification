@@ -118,7 +118,7 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
   # Calculating and organizing residuals
   rawResiduals <- simulatedYValApprox - observedYVal
   weightedResiduals <- rawResiduals / observedYErr
-  scaledResiduals <- weightedResiduals * scaleFactor
+  normalizedResiduals <- weightedResiduals * scaleFactor
 
   residualsData <- data.frame(
     x = observedXVal,
@@ -127,16 +127,16 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
     weight = 1 / observedYErr,
     residuals = rawResiduals,
     weightedResiduals = weightedResiduals,
-    scaledResiduals = scaledResiduals
+    normalizedResiduals = normalizedResiduals
   )
 
   # Compiling cost variables based on residuals
   costVariables <- data.frame(
     scaleFactor = scaleFactor,
     nObservations = length(rawResiduals),
-    ssr = sum(rawResiduals^2),
-    ssrWeighted = sum(weightedResiduals^2),
-    ssrScaled = sum(scaledResiduals^2)
+    SSR = sum(rawResiduals^2),
+    weightedSSR = sum(weightedResiduals^2),
+    normalizedSSR = sum(normalizedResiduals^2)
   )
 
   # Calculating log probability to evaluate model fit
@@ -145,9 +145,9 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
-    modelCost = costVariables$ssrScaled,
+    modelCost = costVariables$normalizedSSR,
     minLogProbability = logProbability,
-    costDetails = costVariables,
+    costVariables = costVariables,
     residualDetails = residualsData
   )
 

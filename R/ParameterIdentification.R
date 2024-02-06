@@ -307,9 +307,9 @@ ParameterIdentification <- R6::R6Class(
           costSummary$residualDetails <- rbind(costSummary$residualDetails, censoredError)
           # # Update the total cost 'model'
           costSummary$modelCost <- totalCost
-          costSummary$costDetails$ssr <- totalCost
-          costSummary$costDetails$ssrWeighted <- totalCost
-          costSummary$costDetails$ssrScaled <- totalCost
+          costSummary$costVariables$SSR <- totalCost
+          costSummary$costVariables$weightedSSR <- totalCost
+          costSummary$costVariables$normalizedSSR <- totalCost
           costSummary$minlogp <- -sum(log(pmax(0, dnorm(
             costSummary$residualDetails$ySimulated, costSummary$residuals$yObserved,
             1 / costSummary$residualDetails$weight
