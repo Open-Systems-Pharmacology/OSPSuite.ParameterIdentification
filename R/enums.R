@@ -61,3 +61,12 @@ residualWeightingOptions <- ospsuite.utils::enum(c(
   "std", #  weights equal to the reciprocal of the standard deviation of the observed data
   "mean" # 1/mean of the absolute value of the observed data
 ))
+
+#' @title robustMethodOptions
+#' List of robust weighting methods used in the cost function for handling outliers.
+#' @export
+robustMethodOptions <- ospsuite.utils::enum(c(
+  "none", # No robust weighting applied
+  "huber", # Huber weighting for moderate outliers
+  "bisquare" # Bisquare (Tukey's biweight) weighting for severe outliers
+))

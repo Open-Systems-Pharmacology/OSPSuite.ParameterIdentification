@@ -13,6 +13,8 @@
 #' `residualWeightingMethod` is set to "error".
 #' @param residualWeightingMethod A string indicating the method to weight the
 #' residuals. Options include "none" (default), "std", "mean", and "error".
+#' @param robustMethod A string indicating the robust method to apply to the residuals.
+#' Options include "none" (default), "huber", and "bisquare".
 #' @param scaleVar A boolean indicating whether to scale residuals by the
 #' number of observations. Defaults to `FALSE`.
 #' @param ... Additional arguments. Currently not used.
@@ -43,7 +45,8 @@
 #' print(costMetrics$modelCost)
 #'
 #' @export
-calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar = FALSE, ...) {
+calculateCostMetrics <- function(df, residualWeightingMethod = "none",
+                                 robustMethod = "none", scaleVar = FALSE, ...) {
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -54,13 +57,14 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
   ospsuite.utils::validateIsOfLength(unique(df$yUnit), 1)
   ospsuite.utils::validateIsIncluded(unique(df$xDimension), "Time")
 
-  # Ensure the residual weighting method is recognized
+  # Ensure methods are recognized
   ospsuite.utils::validateEnumValue(residualWeightingMethod, residualWeightingOptions)
   if (residualWeightingMethod == "error") {
     ospsuite.utils::validateIsIncluded(c("yErrorValues", "yErrorUnit"), colnames(df))
   }
+  ospsuite.utils::validateEnumValue(robustMethod, robustMethodOptions)
 
-  # Handle infinite values by converting them to NA for accurate calculations
+  # Handle infinite values
   df$xValues[df$xValues == Inf | df$xValues == -Inf] <- NA
   df$yValues[df$yValues == Inf | df$yValues == -Inf] <- NA
   idx <- is.na(df$xValues) & is.na(df$yValues)
@@ -120,14 +124,26 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
   weightedResiduals <- rawResiduals / observedYErr
   normalizedResiduals <- weightedResiduals * scaleFactor
 
+  # Calculate robust weights based on the specified robust method
+  robustWeights <- switch(
+    robustMethod,
+    "huber" = .calculateHuberWeights(normalizedResiduals),
+    "bisquare" = .calculateBisquareWeights(normalizedResiduals),
+    rep(1, length(normalizedResiduals))
+  )
+
+  # Apply robust weights to the residuals
+  robustWeightedResiduals <- normalizedResiduals * robustWeights
+
   residualsData <- data.frame(
     x = observedXVal,
     yObserved = observedYVal,
     ySimulated = simulatedYValApprox,
-    weight = 1 / observedYErr,
+    weight = (1 / observedYErr) * robustWeights,
     residuals = rawResiduals,
     weightedResiduals = weightedResiduals,
-    normalizedResiduals = normalizedResiduals
+    normalizedResiduals = normalizedResiduals,
+    robustWeightedResiduals = robustWeightedResiduals
   )
 
   # Compiling cost variables based on residuals
@@ -136,7 +152,8 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
     nObservations = length(rawResiduals),
     SSR = sum(rawResiduals^2),
     weightedSSR = sum(weightedResiduals^2),
-    normalizedSSR = sum(normalizedResiduals^2)
+    normalizedSSR = sum(normalizedResiduals^2),
+    robustSSR = sum(robustWeightedResiduals^2)
   )
 
   # Calculating log probability to evaluate model fit
@@ -145,7 +162,7 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none", scaleVar 
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
-    modelCost = costVariables$normalizedSSR,
+    modelCost = costVariables$robustSSR,
     minLogProbability = logProbability,
     costVariables = costVariables,
     residualDetails = residualsData
@@ -360,4 +377,42 @@ plot.modCost <- function(x, legpos = "topleft", ...) {
   list1$residualDetails <- rbind(list1$residualDetails, list2$residualDetails)
 
   return(list1)
+}
+
+#' Calculate Huber Weights for Residuals
+#'
+#' This function calculates Huber weights for residuals, reducing the influence of outliers.
+#' Uses MAD for scaling and applies a cutoff at `k` times MAD.
+#' @param residuals Numeric vector of residuals.
+#' @param k Tuning parameter for outlier cutoff. Default is 1.345.
+#' @return Numeric vector of Huber weights.
+#' @keywords internal
+.calculateHuberWeights <- function(residuals, k = 1.345) {
+  # Calculate the scale of the residuals (MAD = Median Absolute Deviation)
+  mad <- mad(residuals, constant = 1.4826)
+  # Scale residuals
+  standardizedResiduals <- residuals / (k * mad)
+  # Huber weights
+  weights <- ifelse(abs(standardizedResiduals) <= 1, 1,
+                    1 / abs(standardizedResiduals))
+  return(weights)
+}
+
+#' Calculate Bisquare Weights for Residuals
+#'
+#' This function calculates Bisquare (Tukey's biweight) weights for residuals, aggressively reducing outlier influence.
+#' Scales residuals using MAD with a cutoff at `c` times MAD.
+#' @param residuals Numeric vector of residuals.
+#' @param c Tuning parameter for outlier exclusion. Default is 4.685.
+#' @return Numeric vector of Bisquare weights.
+#' @keywords internal
+.calculateBisquareWeights <- function(residuals, c = 4.685) {
+  # Calculate the scale of the residuals (MAD = Median Absolute Deviation)
+  mad <- mad(residuals, constant = 1.4826)
+  # Scale residuals
+  standardizedResiduals <- residuals / (c * mad)
+  # Bisquare weights
+  weights <- ifelse(abs(standardizedResiduals) < 1,
+                    (1 - standardizedResiduals^2)^2, 0)
+  return(weights)
 }
