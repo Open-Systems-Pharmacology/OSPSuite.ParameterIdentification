@@ -172,29 +172,66 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none",
   return(modelCost)
 }
 
-## -----------------------------------------------------------------------------
-## S3 methods of modCost
-## -----------------------------------------------------------------------------
+#' Plot Model Cost Residuals
+#'
+#' Plots raw residuals and, if different, weighted and robust weighted residuals from a `modelCost` object.
+#'
+#' @param x A `modelCost` object containing residuals to plot.
+#' @param legpos Position of the legend; default is "topright". Use NA to omit the legend.
+#' @param ... Additional arguments passed to the plot function.
+#' @return Generates a plot.
+#' @examples
+#' # Assuming modelCostObj is a valid `modelCost` object
+#' plot.modelCost(modelCostObj)
+#' @export
+plot.modelCost <- function(x, legpos = "topright", ...) {
+  if (!inherits(x, "modelCost")) {
+    stop("x must be a 'modelCost' object.")
+  }
 
-plot.modCost <- function(x, legpos = "topleft", ...) {
-  nvar <- nrow(x$var)
+  # Ensure 'residualDetails' is present
+  if (!"residualDetails" %in% names(x)) {
+    stop("'residualDetails' component missing in 'modelCost' object.")
+  }
 
-  dots <- list(...)
+  # Extracting residuals data
+  residualsData <- x$residualDetails
 
-  dots$xlab <- if (is.null(dots$xlab)) "x" else dots$xlab
-  dots$ylab <- if (is.null(dots$ylab)) "weighted residuals" else dots$ylab
-  DotsPch <- if (is.null(dots$pch)) (16:24) else dots$pch
-  dots$pch <- if (is.null(dots$pch)) rep(16:24, length.out = nvar)[x$residuals$name] else rep(dots$pch, length.out = nvar)[x$residuals$name] # Tom 02/01/2012: changed (16:24)  to rep(16:24,length.out=nvar); same for dots$pch in else part
-  DotsCol <- if (is.null(dots$col)) (1:nvar) else dots$col
-  dots$col <- if (is.null(dots$col)) (1:nvar)[x$residuals$name] else dots$col[x$residuals$name]
+  # Setup base plot
+  plot(residualsData$x, residualsData$residuals, xlab = "x", ylab = "Residuals",
+       pch = 16, col = 'black', ...)
 
-  do.call("plot", c(alist(x$residuals$x, x$residuals$res), dots))
+  # Add weightedResiduals if different from rawResiduals
+  if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
+    points(residualsData$x, residualsData$weightedResiduals,
+           pch = 17, col = 'red', ...)
+  }
 
-  #  plot(x$residuals$x, x$residuals$res, xlab="x", ylab="weighted residuals",
-  #     pch=c(16:24)[x$residuals$name],col=c(1:nvar)[x$residuals$name],...)
+  # Add robustWeightedResiduals if different from rawResiduals
+  if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
+    points(residualsData$x, residualsData$robustWeightedResiduals,
+           pch = 18, col = 'blue', ...)
+  }
+
+  # Legend
+  legends <- c("Raw Residuals")
+  colors <- c('black')
+  pch_values <- c(16)
+
+  if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
+    legends <- c(legends, "Weighted Residuals")
+    colors <- c(colors, 'red')
+    pch_values <- c(pch_values, 17)
+  }
+
+  if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
+    legends <- c(legends, "Robust Weighted Residuals")
+    colors <- c(colors, 'blue')
+    pch_values <- c(pch_values, 18)
+  }
 
   if (!is.na(legpos)) {
-    legend(legpos, legend = x$var$name, col = DotsCol, pch = DotsPch)
+    legend(legpos, legend = legends, col = colors, pch = pch_values)
   }
 }
 
