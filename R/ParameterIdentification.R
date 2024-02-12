@@ -156,8 +156,8 @@ ParameterIdentification <- R6::R6Class(
               xOffset <- xOffset[[label]]
             }
             xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-                                          values = (dataset$xValues + xOffset) * xFactor,
-                                          unit = dataset$xUnit
+              values = (dataset$xValues + xOffset) * xFactor,
+              unit = dataset$xUnit
             )
             simulation$outputSchema$addTimePoints(xVals)
           }
@@ -532,16 +532,18 @@ ParameterIdentification <- R6::R6Class(
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
-        control <- DEoptim::DEoptim.control(VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
-                                            strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
-                                            bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
-                                            NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
-                                            itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
-                                            CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
-                                            F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
-                                            trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
-                                            reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
-                                            steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
+        control <- DEoptim::DEoptim.control(
+          VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
+          strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
+          bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
+          NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
+          itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
+          CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
+          F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
+          trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
+          reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
+          steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200))
+        )
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
             private$.targetFunction(p)$model
@@ -593,8 +595,8 @@ ParameterIdentification <- R6::R6Class(
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      results$lwr <- results$par - qnorm(p = 1 - 0.05/2) * results$sigma
-      results$upr <- results$par + qnorm(p = 1 - 0.05/2) * results$sigma
+      results$lwr <- results$par - qnorm(p = 1 - 0.05 / 2) * results$sigma
+      results$upr <- results$par + qnorm(p = 1 - 0.05 / 2) * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
       return(results)
     }
@@ -786,7 +788,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::isSameLength(lower, private$.piParameters)
       ospsuite.utils::isSameLength(upper, private$.piParameters)
 
-      gridSize <- floor(totalEvaluations^(1/nrOfParameters))
+      gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
       gridList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         if (logScaleFlag[[idx]]) {

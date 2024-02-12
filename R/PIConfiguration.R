@@ -120,8 +120,8 @@ PIConfiguration <- R6::R6Class(
     #' @param ... Rest arguments.
     print = function(...) {
       private$printClass()
- #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
-#      private$printLine("Steady-state time [min]", private$.steadyStateTime)
+      #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
+      #      private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
       private$printLine("Target function", private$.targetFunctionType)
       private$printLine("Optimization algorithm", private$.algorithm)

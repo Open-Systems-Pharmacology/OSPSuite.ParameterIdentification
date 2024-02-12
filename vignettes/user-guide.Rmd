@@ -19,7 +19,7 @@ knitr::opts_knit$set(
 ```
 
 ```{r include=FALSE, eval=TRUE}
-# Some results in this vignette take too much time to calculate, so they are cached in the "cached.RData" file. 
+# Some results in this vignette take too much time to calculate, so they are cached in the "cached.RData" file.
 # Whenever the R code in the vignette uses these cached results, there's a block with `eval=FALSE` showing how
 # they were calculated, and a block with `echo=FALSE` reusing the cached results.
 load("vignettes/cached.RData")
@@ -106,9 +106,9 @@ The parameter corresponding to the lipophilicity of aciclovir is called `Aciclov
 
 ```{r include=TRUE, eval=TRUE}
 parameters <- c(PIParameters$new(parameters = ospsuite::getParameter(
-    path = "Aciclovir|Lipophilicity", 
-    container = simulations$Aciclovir
-  )))
+  path = "Aciclovir|Lipophilicity",
+  container = simulations$Aciclovir
+)))
 ```
 
 The default lower and uppr bounds are 0.1- and 10-fold of the starting parameter value, respectrively, but it is often useful to supply parameter bounds from prior knowledge:
@@ -356,7 +356,7 @@ observedData <- c(observedData_IV, observedData_PO)
 outputMappings <- vector("list", length = length(simulations))
 for (idx in seq_along(simulations)) {
   outputMappings[[idx]] <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)",
-                                                                      container = simulations[[idx]]
+    container = simulations[[idx]]
   ))
   outputMappings[[idx]]$addObservedDataSets(observedData[[names(simulations)[[idx]]]])
   outputMappings[[idx]]$scaling <- "lin"
