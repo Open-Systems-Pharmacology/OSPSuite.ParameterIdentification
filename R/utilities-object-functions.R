@@ -11,13 +11,17 @@
 #' `DataCombined$toDataFrame()`. The dataframe must include columns for
 #' "dataType", "xValues", "yValues", and optionally "yErrorValues" if the
 #' `residualWeightingMethod` is set to "error".
+#' @param targetFunctionType A string indicating the target function type for
+#' calculating model cost. Options include "lsq" (least squares, default) and "m3"
+#' for handling censored data.
 #' @param residualWeightingMethod A string indicating the method to weight the
 #' residuals. Options include "none" (default), "std", "mean", and "error".
 #' @param robustMethod A string indicating the robust method to apply to the residuals.
 #' Options include "none" (default), "huber", and "bisquare".
 #' @param scaleVar A boolean indicating whether to scale residuals by the
 #' number of observations. Defaults to `FALSE`.
-#' @param ... Additional arguments. Currently not used.
+#' @param ... Additional arguments passed to `.calculateCensoredContribution`,
+#' including 'scaling', 'linScaleCV', and 'logScaleSD'.
 #'
 #' @details
 #' The function calculates the residuals between the simulated and observed
@@ -45,8 +49,10 @@
 #' print(costMetrics$modelCost)
 #'
 #' @export
-calculateCostMetrics <- function(df, residualWeightingMethod = "none",
+calculateCostMetrics <- function(df, targetFunctionType = "lsq", residualWeightingMethod = "none",
                                  robustMethod = "none", scaleVar = FALSE, ...) {
+  additionalArgs <- list(...)
+
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -70,6 +76,7 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none",
   idx <- is.na(df$xValues) & is.na(df$yValues)
   df <- df[!idx, ]
 
+
   # Splitting dataframe into simulated and observed data
   simulatedData <- df[df$dataType == "simulated", ]
   simulatedData <- simulatedData[!is.na(simulatedData$yValues), ]
@@ -82,6 +89,18 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none",
   }
   if (NROW(observedData) < 2 | is.null(observedData)) {
     stop("No observed data found when calculating cost function.")
+  }
+
+  # Applying M3 method for censored error calculation
+  censoredContribution <- 0
+  if (targetFunctionType == "m3") {
+    censoredContribution <- .calculateCensoredContribution(
+      observed = observedData,
+      simulated = simulatedData,
+      scaling = additionalArgs$scaling,
+      linScaleCV = additionalArgs$linScaleCV %||% NULL,
+      logScaleSD = additionalArgs$logScaleSD %||% NULL
+    )
   }
 
   # Extracting values for interpolation or direct matching
@@ -150,6 +169,7 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none",
   costVariables <- data.frame(
     scaleFactor = scaleFactor,
     nObservations = length(rawResiduals),
+    M3Contribution = censoredContribution,
     SSR = sum(rawResiduals^2),
     weightedSSR = sum(weightedResiduals^2),
     normalizedSSR = sum(normalizedResiduals^2),
@@ -162,7 +182,7 @@ calculateCostMetrics <- function(df, residualWeightingMethod = "none",
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
-    modelCost = costVariables$robustSSR,
+    modelCost = costVariables$robustSSR + censoredContribution,
     minLogProbability = logProbability,
     costVariables = costVariables,
     residualDetails = residualsData
@@ -315,73 +335,66 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   return(df)
 }
 
-#' Calculate Censored Error
+#' Calculate Contribution of Censored Data
 #'
-#' @param df Data frame with specific structure and columns.
-#' @param censoredError Data frame to append results, or NULL.
-#' @param scaling Character, scaling method.
-#' @param cvM3 Numeric, coefficient of variation for linear scaling.
-#' @param sdForLogCV Numeric, standard deviation for log scaling.
-#' @return Data frame with censored error calculations.
+#' This function computes the contribution of censored data based on the lower limit of quantification (LLOQ)
+#' for observed values. It supports both linear and logarithmic scaling methods to calculate the standard deviation (SD)
+#' used in deriving censored probabilities and their contribution to the overall model cost.
+#'
+#' @param observed Data frame containing observed data, must include 'lloq', 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param simulated Data frame containing simulated data, must include 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param scaling Character string specifying the scaling method; should be one of the predefined scaling options.
+#' @param linScaleCV Numeric, coefficient used to calculate standard deviation for linear scaling, applied to 'lloq' values.
+#' @param logScaleSD Numeric, standard deviation for logarithmic scaling, applied uniformly to all censored observations.
+#' @return Numeric value representing the sum of squared errors for censored observations, contributing to the model's total cost.
 #' @keywords internal
 #' @examples
 #' \dontrun{
-#' .calculateCensoredError(df, scaling = "lin", cvM3 = 0.2)
+#' .calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
 #' }
-.calculateCensoredError <- function(df, censoredError = NULL, scaling,
-                                    cvM3 = NULL, sdForLogCV = NULL) {
-  ospsuite.utils::validateIsOfType(df, "tbl_df")
-  ospsuite.utils::validateIsIncluded(
-    c("dataType", "lloq", "yValues", "xValues", "xUnit", "xDimension"),
-    colnames(df)
-  )
+.calculateCensoredContribution <- function(observed, simulated, scaling,
+                                           linScaleCV = NULL, logScaleSD = NULL) {
+
+  ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
+  ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
-  # Add evaluation logic for lloq values in df
-  # LLOQ <- unique(df$lloq[!is.na(df$lloq)])
 
-  simulated <- df[df$dataType == "simulated", ]
-  observed <- df[df$dataType == "observed", ]
+  lloq <- unique(na.omit(observed$lloq))
+  ospsuite.utils::validateIsNumeric(lloq)
 
-  # Distinguishing between uncensored and censored observations based on lloq values
-  observedUncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
-  observedCensored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
-  simulatedUncensored <- merge(observedUncensored[c("xValues", "xUnit", "xDimension")],
-                               simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-  simulatedCensored <- merge(observedCensored[c("xValues", "xUnit", "xDimension")],
-                             simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-
-  # Calculate standard deviation based on the scaling method
-  if (scaling == "lin") {
-    ospsuite.utils::validateIsNumeric(cvM3)
-    sd <- abs(cvM3 * observedCensored$lloq)
-  } else if (scaling == "log") {
-    ospsuite.utils::validateIsNumeric(sdForLogCV)
-    sd <- sdForLogCV
+  if (any(is.na(observed$lloq))) {
+    observed$lloq[is.na(observed$lloq)] <- min(lloq, na.rm = TRUE)
   }
 
-  if (isTRUE(nrow(observedCensored) > 0)) {
-    # Calculate the probabilities for censored data points
-    censoredProbabilities <- pnorm((observedCensored$lloq - simulatedCensored$yValues) / sd)
-    censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
-    # Using logarithmic transformation for censored residuals as per the M3 method
-    censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
-    # Transforming residuals to match the expected format for subsequent analysis
-    censoredErrorVector <- sqrt(censoredErrorVector)
+  # Identify censored and uncensored observations based on LLOQ
+  observedUncensored <- observed[is.na(observed$lloq) |
+                                   (observed$yValues > observed$lloq), ]
+  observedCensored <- observed[!is.na(observed$lloq) &
+                                 (observed$yValues <= observed$lloq), ]
+  simulatedCensored <- merge(
+    observedCensored[c("xValues", "xUnit", "xDimension")], simulated,
+    by = c("xValues", "xUnit", "xDimension"), all.x = TRUE
+  )
 
-    censoredError <- rbind(censoredError,
-                           data.frame(
-                             name = "Values",
-                             x = observedCensored$xValues,
-                             obs = observedCensored$yValues,
-                             mod = simulatedCensored$yValues,
-                             weight = 1,
-                             resUnweighted = censoredErrorVector,
-                             res = censoredErrorVector
-                           )
-    )
+  # No censored data to process
+  if (nrow(simulatedCensored) == 0) {
+    return(0)
   }
 
-  return(censoredError)
+  if (scaling == "lin" && !is.null(linScaleCV)) {
+    sd <- abs(linScaleCV * lloq)
+  } else if (scaling == "log" && !is.null(logScaleSD)) {
+    sd <- logScaleSD
+  } else {
+    stop("Scaling method and scaling parameters are not compatible.")
+  }
+
+  censoredProbabilities <- pnorm((observedCensored$lloq - simulatedCensored$yValues) / sd)
+  censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
+  censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
+  censoredErrorVector <- sqrt(censoredErrorVector)
+
+  return(sum(censoredErrorVector^2))
 }
 
 #' Summarize Cost Lists

@@ -240,14 +240,7 @@ ParameterIdentification <- R6::R6Class(
         return(failureResponse)
       }
 
-      # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
-      # Summed up over all output mappings
-      uncensoredError <- NULL
-      # Error calculated for censored values (i.e., below LQ if LLOQ censoring)
-      # Summed up over all output mappings
-      censoredError <- NULL
-
-      # Calculate error for each output mapping separately and add them up
+      # Calculate error for each output mapping separately
       costSummaryList <- vector("list", length(private$.outputMappings))
       for (idx in seq_along(private$.outputMappings)) {
         # Calling unit converter to unify the units within the DataCombined
@@ -268,57 +261,14 @@ ParameterIdentification <- R6::R6Class(
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
-        # Extract simulated and observed data
-        simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-        observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-
-        # Least squares target function.
-        if (private$.configuration$targetFunctionType == "lsq") {
-          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-        }
-
-        # M3 LLOQ method. Implementation based on DOI: 10.1023/a:1012299115260
-        # In particular, equation 6
-        if (private$.configuration$targetFunctionType == "m3") {
-          censoredError <- .calculateCensoredError(
-            df            = obsVsPredDf,
-            censoredError = NULL,
-            scaling       = private$.outputMappings[[idx]]$scaling,
-            cvM3          = private$.cvM3,
-            sdForLogCV    = private$.sdForLogCV
-          )
-        }
-
-        # Calculate uncensored error.
+        # Calculate model costs
         costSummary <- calculateCostMetrics(
-          df = obsVsPredDf,
-          residualWeightingMethod = "none"
+          df = obsVsPredDf
         )
-
-        # Total error. Either the uncensored error,
-        # or with addition of censored values
-        if (!is.null(censoredError)) {
-          # Add censored error
-          totalCost <- costSummary$modelCost + sum(censoredError$res^2)
-          # Extend the structure of the results object returned by modCost by
-          # the uncensored cost
-          # Append the data frame to the $residuals df
-          costSummary$residualDetails <- rbind(costSummary$residualDetails, censoredError)
-          # # Update the total cost 'model'
-          costSummary$modelCost <- totalCost
-          costSummary$costVariables$SSR <- totalCost
-          costSummary$costVariables$weightedSSR <- totalCost
-          costSummary$costVariables$normalizedSSR <- totalCost
-          costSummary$minlogp <- -sum(log(pmax(0, dnorm(
-            costSummary$residualDetails$ySimulated, costSummary$residuals$yObserved,
-            1 / costSummary$residualDetails$weight
-          ))))
-        }
 
         costSummaryList[[idx]] <- costSummary
       }
-
+      # Summed up over all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
 
       # Print current error if requested
@@ -548,7 +498,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
-      private$.sdForLogCV <- sqrt(log(1 + private$.cvM3^2, base = 10) / log(10))
+      private$.logScaleSD <- sqrt(log(1 + private$.linScaleCV^2, base = 10) / log(10))
 
       simulations <- ospsuite.utils::toList(simulations)
       parameters <- ospsuite.utils::toList(parameters)
