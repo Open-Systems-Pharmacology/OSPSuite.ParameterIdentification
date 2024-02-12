@@ -9,8 +9,8 @@ PIConfiguration <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' #' @field simulateSteadyState Boolean representing whether the simulation
-    #' #' should be brought to a steady-state first
+    #' @field simulateSteadyState Boolean representing whether the simulation
+    #' should be brought to a steady-state first
     #' simulateSteadyState = function(value) {
     #'   if (missing(value)) {
     #'     private$.simulateSteadyState
@@ -56,7 +56,7 @@ PIConfiguration <- R6::R6Class(
 
     #' @field targetFunctionType Type of the target function used for error
     #' calculation. Supported target functions  are listed in
-    #' `ospsuite.parameteridentification::ObjectiveFunctions`.
+    #' `ospsuite.parameteridentification::ObjectiveFunctions`. Default is `lsq`.
     targetFunctionType = function(value) {
       if (missing(value)) {
         private$.targetFunctionType
