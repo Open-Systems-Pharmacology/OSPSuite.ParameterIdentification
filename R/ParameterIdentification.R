@@ -78,13 +78,13 @@ ParameterIdentification <- R6::R6Class(
     # stored in this variable
     .savedSimulationState = NULL,
     .fnEvaluations = 0,
-    # CV for M3 target function
+    # CV for M3 objective function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
-    .cvM3 = 0.2,
+    .linScaleCV = 0.2,
     # pre-calculate SD for log-transformed data assuming CV of 20%
-    # Used for M3 target function
+    # Used for M3 objective function
     # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
-    .sdForLogCV = NULL,
+    .logScaleSD = NULL,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -215,9 +215,9 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Calculate the target function that is going to be minimized during
+    # Calculate the objective function that is going to be minimized during
     # parameter estimation.
-    .targetFunction = function(currVals) {
+    .objectiveFunction = function(currVals) {
       # Increase function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
@@ -245,9 +245,9 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(private$.outputMappings)) {
         # Calling unit converter to unify the units within the DataCombined
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-        # For least squares target function, values below LLOQ will be set to
+        # For least squares objective function, values below LLOQ will be set to
         # LLOQ/2 for simulation data and therefore always equal to the observed values
-        if (private$.configuration$targetFunctionType == "lsq") {
+        if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
           # replacing values below LLOQ with LLOQ / 2
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
@@ -263,7 +263,14 @@ ParameterIdentification <- R6::R6Class(
 
         # Calculate model costs
         costSummary <- calculateCostMetrics(
-          df = obsVsPredDf
+          df = obsVsPredDf,
+          objectiveFunctionType = private$.configuration$objectiveFunctionOptions$objectiveFunctionType,
+          residualWeightingMethod = private$.configuration$objectiveFunctionOptions$residualWeightingMethod,
+          robustMethod = private$.configuration$objectiveFunctionOptions$robustMethod,
+          scaleVar = private$.configuration$objectiveFunctionOptions$scaleVar,
+          scaling = private$.outputMappings[[idx]]$scaling,
+          linScaleCV = private$.linScaleCV,
+          logScaleSD = private$.logScaleSD
         )
 
         costSummaryList[[idx]] <- costSummary
@@ -275,7 +282,7 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", target function ", signif(runningCost$modelCost, 4), "\n"
+          ", objective function ", signif(runningCost$modelCost, 4), "\n"
         ))
       }
       return(runningCost)
@@ -401,13 +408,13 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$modelCost
+            private$.objectiveFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.targetFunction(p)$modelCost
+            private$.objectiveFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
@@ -424,7 +431,7 @@ ParameterIdentification <- R6::R6Class(
                                             steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
-            private$.targetFunction(p)$modelCost
+            private$.objectiveFunction(p)$modelCost
           }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
@@ -441,7 +448,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate sigma if it has not been calculated previously
       if (is.null(results$sigma)) {
-        # For the target function that represents the deviation = -2 * log(L),
+        # For the objective function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
         results$sigma <- tryCatch(
@@ -454,7 +461,7 @@ ParameterIdentification <- R6::R6Class(
               # of 1e-4
               hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
               results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.targetFunction(p)$modelCost
+                private$.objectiveFunction(p)$modelCost
               }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
@@ -682,7 +689,7 @@ ParameterIdentification <- R6::R6Class(
       OFVGrid <- expand.grid(gridList)
       # all columns from the OFVGrid are passed in the same order to the objective function
       OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
-        private$.targetFunction(c(...))$modelCost
+        private$.objectiveFunction(c(...))$modelCost
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -761,7 +768,7 @@ ParameterIdentification <- R6::R6Class(
         # creates a tibble with the column name from the `parameterName` variable
         profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
         profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
-          private$.targetFunction(c(...))$modelCost
+          private$.objectiveFunction(c(...))$modelCost
         })
         names(profileList)[[idx]] <- parameterName
       }
