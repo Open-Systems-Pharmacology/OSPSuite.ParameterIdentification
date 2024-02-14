@@ -1,5 +1,5 @@
 # OSPSuite.ParameterIdentification
-R package for parameter identification in Open Systems Pharmacology models
+R package for parameter identification in Open Systems Pharmacology models.
 
   <!-- badges: start -->
 
