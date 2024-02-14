@@ -39,10 +39,18 @@ AlgorithmOptions <- ospsuite.utils::enum(c(
   "steptol" # step count before checking relative tolerance
 ))
 
-#' @title ObjectiveFunctions
-#' List of supported objective functions to calculate the error.
+#' @title ObjectiveFunctionOptions
+#' List of supported parameter options for calculation of model cost.
 #' @export
-ObjectiveFunctions <- ospsuite.utils::enum(c("lsq", "m3"))
+ObjectiveFunctionOptions <- list(
+  objectiveFunctionType = c("lsq", "m3"),
+  residualWeightingMethod = c("none", "std", "mean", "error"),
+  robustMethod = c("none", "huber", "bisquare"),
+  scaleVar = "boolean",
+  scaling = c("lin", "log"),
+  linScaleCV = "numeric",
+  logScaleSD = "numeric"
+)
 
 #' @title ScalingOptions
 #' List of scaling options for output mappings.
