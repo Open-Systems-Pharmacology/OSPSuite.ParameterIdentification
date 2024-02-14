@@ -54,16 +54,21 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field targetFunctionType Type of the target function used for error
-    #' calculation. Supported target functions  are listed  in
-    #' `ospsuite.parameteridentification::ObjectiveFunctions`.
-    targetFunctionType = function(value) {
-      if (missing(value)) {
-        private$.targetFunctionType
+    #' @field objectiveFunctionOptions Arguments configuring the model fit assessment
+    #' within the `.objectiveFunction`. These parameters influence how errors and
+    #' model fit are calculated using `calculateCostMetrics`.
+    #' Supported options and their allowable values are detailed in
+    #' `ospsuite.parameteridentification::ObjectiveFunctionOptions`.
+    objectiveFunctionOptions = function(options = list()) {
+      if (missing(options)) {
+        private$.objectiveFunctionOptions
       } else {
-        ospsuite.utils::validateIsCharacter(value)
-        ospsuite.utils::validateEnumValue(tolower(value), ObjectiveFunctions)
-        private$.targetFunctionType <- value
+        values <- enumWithValues(ObjectiveFunctionOptions)
+        ospsuite.utils::validateIsIncluded(names(options), names(values))
+        validateIsOption(options, values)
+        private$.objectiveFunctionOptions <- modifyList(
+          private$.objectiveFunctionOptions, options
+        )
       }
     },
 
@@ -98,7 +103,7 @@ PIConfiguration <- R6::R6Class(
     .steadyStateTime = NULL,
     .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
-    .targetFunctionType = NULL,
+    .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL
   ),
@@ -110,7 +115,15 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
-      private$.targetFunctionType <- "lsq"
+      private$.objectiveFunctionOptions <- list(
+        objectiveFunctionType = "lsq",
+        residualWeightingMethod = "none",
+        robustMethod = "none",
+        scaleVar = FALSE,
+        scaling = NULL,
+        linScaleCV = 0.2,
+        logScaleSD = NULL
+      )
       private$.algorithm <- "BOBYQA"
       private$.algorithmOptions <- list()
     },
@@ -122,8 +135,14 @@ PIConfiguration <- R6::R6Class(
       private$printClass()
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
-      private$printLine("Target function", private$.targetFunctionType)
+      private$printLine("Print feedback after each function evaluation",
+                        private$.printEvaluationFeedback)
+      private$printLine("Objective function type ",
+                        private$.objectiveFunctionOptions$objectiveFunctionType)
+      private$printLine("Residual weighting method ",
+                        private$.objectiveFunctionOptions$residualWeightingMethod)
+      private$printLine("Robust residual calculation method ",
+                        private$.objectiveFunctionOptions$robustMethod)
       private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)
     }
