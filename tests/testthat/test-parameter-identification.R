@@ -124,6 +124,7 @@ test_that("ParameterIdentification run method works", {
 })
 
 taskResults <- task$run()
+
 test_that("Results object has expected names", {
   expected_names <- c("par", "value", "iter", "convergence", "message",
                       "elapsed", "algorithm", "nrOfFnEvaluations", "hessian",
@@ -201,3 +202,68 @@ test_that("Grid search produced correct results", {
   expect_snapshot_value(gridSearchResults, style = "serialize")
 })
 
+
+# test robust and error residual weighting --------------------------------
+
+testConfiguration <- PIConfiguration$new()
+testConfiguration$printEvaluationFeedback <- FALSE
+
+test_that("Objective function options can be set to Huber method and
+          ParameterIdentification object runs correctly", {
+  expect_no_error(testConfiguration$objectiveFunctionOptions <- list(
+    robustMethod = "huber"
+  ))
+  expect_no_error(task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = testPiParameters,
+    outputMappings = outputMapping,
+    configuration = testConfiguration
+  ))
+  expect_no_error(taskResults <- task$run())
+  expect_equal(taskResults$par, -0.3468597, tolerance = 1e-4)
+})
+
+testConfiguration <- PIConfiguration$new()
+testConfiguration$printEvaluationFeedback <- FALSE
+
+test_that("Objective function options can be set to error weighting method and
+          ParameterIdentification object runs correctly", {
+  expect_no_error(testConfiguration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  ))
+  expect_no_error(task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = testPiParameters,
+    outputMappings = outputMapping,
+    configuration = testConfiguration
+  ))
+  expect_no_error(taskResults <- task$run())
+  expect_equal(taskResults$par, 0.1531188, tolerance = 1e-4)
+})
+
+
+# test censored error calculation -----------------------------------------
+
+observedData$`AciclovirLaskinData.Laskin 1982.Group A`$LLOQ <- 0.5
+
+outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+outputMappings <- c(outputMapping)
+
+testConfiguration <- PIConfiguration$new()
+testConfiguration$printEvaluationFeedback <- FALSE
+
+test_that("Objective function options can be set to M3 censored error method and
+          ParameterIdentification object runs correctly", {
+  expect_no_error(testConfiguration$objectiveFunctionOptions <- list(
+    objectiveFunctionType = "m3"
+  ))
+  expect_no_error(task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = testPiParameters,
+    outputMappings = outputMapping,
+    configuration = testConfiguration
+  ))
+  expect_no_error(taskResults <- task$run())
+  expect_equal(taskResults$par, 1.32004, tolerance = 1e-4)
+  })
