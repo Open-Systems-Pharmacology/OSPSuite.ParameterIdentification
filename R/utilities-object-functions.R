@@ -258,6 +258,13 @@ modCost <- function(model, obs, x = "time", y = NULL, err = NULL,
 ## S3 methods of modCost
 ## -----------------------------------------------------------------------------
 
+#' Title
+#'
+#' @param x tbd
+#' @param legpos tbd
+#' @param ... tbd
+#'
+#' @noRd
 plot.modCost <- function(x, legpos = "topleft", ...) {
   nvar <- nrow(x$var)
 

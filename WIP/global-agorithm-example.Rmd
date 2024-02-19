@@ -1,0 +1,151 @@
+---
+title: "Global algorithm example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Global algorithm example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ospsuite.parameteridentification)
+knitr::opts_knit$set(
+  root.dir = ".." # setting up to package root folder so that the relative paths match between the vignettes and the tests
+)
+```
+
+Local optimization algorithms, such as the BOBYQA algorithm used by default, usually perform well for simple models with few parameters. However, the global optimization algorithms may be more suitable for more complex models. They cover a wider range of parameter space and are less likely to get stuck in local minima. However, this comes at the cost of increased computational time. This example will demonstrate how to use the global optimization algorithms in the `{ospsuite.parameteridentification}` package.
+
+## Fitting the clarithromycin model
+
+This example will use the clarithromycin model from the [OSP model library.](https://github.com/Open-Systems-Pharmacology/Clarithromycin-Model) Three parameters will be optimized - CYP3A4 mediated clearance, renal clearance, and intestinal permeability - with five distinct studies - iv infusion of 250 mg clarithromycin over 45 minutes, single dose (SD) oral (po) 250 mg, SD po 500 mg, multiple dose (MD) po 250 mg, and MD po 500 mg.
+
+### Loading simulations
+We will read the five simulations from \*.pkml files provided with the package:
+
+```{r}
+simulations <- c("IV250" = loadSimulation(system.file("extdata", "Chu1992 iv 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+                 "PO250" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+                 "PO250MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+                 "PO500" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+                 "PO500MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")))
+```
+
+and then change the doses of the 500 mg groups:
+
+```{r}
+setParameterValuesByPath("Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose", simulation = simulations$PO500,
+                         values = 500, units = "mg")
+
+# Get all `Dose` parameters for the MD simulation
+doseParams <- getAllParametersMatching("Applications|**|Dose", container = simulations$PO500MD)
+setParameterValues(parameters = doseParams, values = rep(500, length(doseParams)), units = rep("mg", length(doseParams)))
+```
+
+### Defining `PIParameters`
+
+```{r}
+parameterInputData <- list(list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
+                           list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
+                           list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01))
+
+parameters <- vector("list", length = length(parameterInputData))
+for (idx in seq_along(parameterInputData)) {
+  modelParams <- list()
+  for (simulation in simulations) {
+    modelParams <- c(modelParams, ospsuite::getParameter( path = parameterInputData[[idx]]$path, container = simulation ))
+    }
+  parameters[[idx]] <- PIParameters$new(parameters = modelParams)
+  parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
+  parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
+  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
+}
+```
+
+### Mapping of model output to observed data
+
+Load the observed data
+
+```{r loadDataSets}
+filePath <- system.file("extdata", "Clarithromycin_Profiles.xlsx", package = "ospsuite.parameteridentification")
+
+# Create importer configuration for the file
+importConfig <- createImporterConfigurationForFile(filePath = filePath)
+# Set naming patter
+importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
+# Import data sets
+obsData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = importConfig, importAllSheets = TRUE)
+
+print(names(obsData))
+```
+Create mappings of simulation outputs to the observed data sets.
+
+```{r}
+outputPath <- "Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)"
+outputMappings <- vector("list", length = length(simulations))
+outputMappings[[1]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
+                                                                  container = simulations$IV250))
+outputMappings[[1]]$addObservedDataSets(obsData$Clarithromycin_Profiles.IV250SD.IV250SD)
+
+outputMappings[[2]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
+                                                                  container = simulations$PO250))
+outputMappings[[2]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO250.PO500SD)
+
+outputMappings[[3]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
+                                                                  container = simulations$PO250MD))
+outputMappings[[3]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO250MD.PO250MD)
+
+outputMappings[[4]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
+                                                                  container = simulations$PO500))
+outputMappings[[4]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO500.PO500SD)
+
+outputMappings[[5]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
+                                                                  container = simulations$PO500MD))
+outputMappings[[5]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO500MD.PO500MD)
+
+
+for (idx in seq_along(outputMappings)) {
+  outputMappings[[idx]]$scaling <- "log"
+}
+```
+
+#### Running a parameter identification task with default algorithm
+We will first run the identification with the default local algorithm (BOBYQA) and the default configuration.
+
+
+```{r}
+piTask <- ParameterIdentification$new( simulations = simulations, parameters = parameters, outputMappings = outputMappings)
+piTask$run()
+```
+
+The solution found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles:
+
+{r include=TRUE, eval=FALSE} taskResults \<- task$run() plotOFVProfiles(task$calculateOFVProfiles())[[1]]
+
+{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'} plotOFVProfiles(cachedClarithromycinSuboptimalProfiles)[[1]]
+
+If a sub-optimal solution is not enough, we need to use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum.
+
+Exhaustive grid search
+
+Running the grid search can be a useful first step when you don't know the optimization landscape of the problem.
+
+{r include=TRUE, eval=FALSE} grid \<- task\$gridSearch(totalEvaluations = 1000, setStartingPoint = TRUE) best \<- dplyr::slice_min(grid, ofv, with_ties = FALSE)
+
+If the setStartingPoint argument is set to TRUE (instead of default FALSE), the next optimization run will start from the best estimate across the grid.
+
+Running a global optimization algorithm
+
+Running 1000 iterations of differential optimization produces a result with a better OFV: catalytic activity 45.7 1/min, specific clearance 1.43 1/min, intestinal permeability 1.256e-6 dm/min, OFV 1.96.
+
+{r include=TRUE, message=FALSE, eval=FALSE} task$configuration$algorithm \<- "DEoptim" task$configuration$algorithmOptions \<- list(itermax = 1000, steptol = 10) taskResults \<- task\$run()
+
+We can ensure that this is at least a local minimum by plotting the OFV profiles:
+
+{r include=TRUE, eval=FALSE} plotOFVProfiles(task\$calculateOFVProfiles())
+
+{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'} plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[1]] plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[2]] plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[3]]

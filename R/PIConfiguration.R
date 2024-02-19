@@ -9,17 +9,17 @@ PIConfiguration <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field simulateSteadyState Boolean representing whether the simulation
-    #' should be brought to a steady-state first
-    #' simulateSteadyState = function(value) {
-    #'   if (missing(value)) {
-    #'     private$.simulateSteadyState
-    #'   } else {
-    #'     validateIsLogical(value)
-    #'     private$.simulateSteadyState <- value
-    #'   }
-    #' },
-    #' @field steadyStateTime Time in minutes to simulate if simulating steady-state. May be NULL
+    # #' @field simulateSteadyState Boolean representing whether the simulation
+    # #' should be brought to a steady-state first
+    # simulateSteadyState = function(value) {
+    #   if (missing(value)) {
+    #     private$.simulateSteadyState
+    #   } else {
+    #     validateIsLogical(value)
+    #     private$.simulateSteadyState <- value
+    #   }
+    # },
+    # #' @field steadyStateTime Time in minutes to simulate if simulating steady-state. May be NULL
     # steadyStateTime = function(value) {
     #   if (missing(value)) {
     #     private$.steadyStateTime

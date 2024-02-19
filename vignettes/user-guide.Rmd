@@ -33,54 +33,203 @@ The `{ospsuite.parameteridentification}` package provides a workflow for setting
 
 ### PI workflow
 
-General workflow description. The overall workflow is similar to running parameter identification in PK-Sim or MoBi, see the corresponding documnetation chapter <https://docs.open-systems-pharmacology.org/shared-tools-and-example-workflows/parameter-identification>
+The overall workflow is similar to running parameter identification (PI) in PK-Sim or MoBi, see the corresponding documentation chapter: <https://docs.open-systems-pharmacology.org/shared-tools-and-example-workflows/parameter-identification>.
 
-A PI task is defined by:
+To set up a PI task, the user has to define:
 
 -   A set of simulations
 
-    -   You can use multiple simulations in one optimization task. As an example, you can indetify parameter values using data for different dosings.
-
--   Mapping of model outputs to observed data
+    -   You can use multiple simulations in one optimization task. As an example, you can identify a value of the same parameter (e.g., the lipophilicity of the compound) using data for different dosings.
 
 -   Definition of parameters to be identified
 
+-   Mapping of model outputs to observed data
+
 -   Configuration of the optimization task, including selection of algorithm and algorithm options.
 
-#### Mapping of model output to observed data
+#### Simulations
 
-In order to calculate the error of the model, simulation outputs must be linked to observed data. In this framework, one simulation output can be linked to multiple observed data sets. The error will be calculated for each pair of simulated output and the linked data set and added up for the total error. The mapping is done by creating an object of the class `PIOutputMapping`. Each object links a single `Quantity` of a simulation to multiple [`DataSet`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/DataSet.html) objects.
+A set of `Simulation` objects. See the documentation of `{ospsuite-r}` on how to load and adjust simulations.
 
-All data sets (simulated results and obsreved data) within a `PIOutputMapping` can be transformed by applying offsets and scaling factors following the same logic as implemented in the [`DataCombined` class](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/data-combined.html#transformations). Finally, the scaling of the output mapping defines how results are calculated. ADD SHORT DESCRIPTION HERE. LIN: SIM-OBS, log: log(SIM/OBS).
+For this example, we will load two instances of the Aciclovir PBPK model provided with the `{ospsuite-r}` package. We want to optimize the lipophilicity and the renal clearance using plasma concentration data gathered after a 10-minute intravenous infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered as a scenario-independent parameter, i.e., the same value will be applied for both simulations. For the renal clearance, we can assume an inter-individual variability and will optimize the value of this parameter separately for each dose group.
+
+We will start by loading the simulation of the \*.pkml file twice. The dose in this simulation is set to 250 mg. Remember that both `Simulation` objects are created by loading the same \*.pkml file, they represent two independent instances of a simulation.
+
+```{r loadSimulations}
+sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+```
+
+In the next step, we will retrieve the objects of the application dose parameters and change the dose of the second simulation to 500 mg.
+
+```{r setDose}
+# Path to the dose parameter
+doseParameterPath <- "Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+# Get the parameter from the first simulation
+
+# Get the instances of the parameters
+sim_250mg_doseParam <- getParameter(path = doseParameterPath, container = sim_250mg)
+print(sim_250mg_doseParam)
+sim_500mg_doseParam <- getParameter(path = doseParameterPath, container = sim_500mg)
+
+# Chage the value to 500 mg
+setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
+print(sim_500mg_doseParam)
+```
 
 #### Definition of parameters to be identified
 
-Specification of parameters to be idenfied is done by creating objects of the class `PIParameters`. A `PIParameter` describes a single model parameter of a group of parameters that will be optimized together, i.e., all model parameters grouped to a `PIParameters` object will have the same value. A `PIParameter` also defines the start and the minimal and maximal values for the optimization.
+Specification of parameters to be identified is done by creating objects of the class `PIParameters`. A `PIParameter` describes a single model parameter or a group of parameters that will be optimized together, i.e., all model parameters grouped to a `PIParameters` object will have the same value during the optimization. A `PIParameter` also defines the start and the minimal and maximal values for the optimization.
 
-If multiple model parameters are linked in one `PIParameters` instance, they can belong to different simulations or come from the same simulation. If you have, for example, two simulations for two individuals with the same compound you may have one identification parameter lipophilicity which is linked to both lipophilicity parameters in the two simulations. At the same time, you define two identification parameters for the individual reference concentrations of a certain enzyme.
+If multiple model parameters are linked in one `PIParameters` instance, they can belong to different simulations or come from the same simulation. If you have, for example, two simulations for two individuals with the same compound, you may have one identification parameter, lipophilicity, which is linked to both lipophilicity parameters in the two simulations. At the same time, you can define two identification parameters for the individual reference concentrations of a certain enzyme.
 
-EXAMPLES FOR THE ABOVE DESCRIBED CASES
+Consider the example above. We will create thee `PIParameters` objects - one for the lipophilicity of aciclovir, where the parameters from the two simulations are linked together, and two `PIParameters` for the renal clearance, as they are considered independent.
+
+```{r createPIParameters}
+# Creating a PIParameters object with two simulation parameters retrieved from different simulations
+piParameterLipo <- PIParameters$new(parameters = list(getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+                                                      getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)))
+
+# Creating two separate PIParameters for the renal clearance
+piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_250mg))
+piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_500mg))
+```
+
+Each `PIParameter` has the following properties:
+
+-   `$value`: Current value of the parameter. Corresponds to the value of the `Parameter` object used in the `PIParameters`. If multiple parameters are linked together, the value of the first parameter added is used.
+
+-   `$startValue`: Start value of the parameter(s) used in the identification. By default, the value of the first added parameter. Can be changed.
+
+-   `$minValue`: Minimal allowed value. By default, 0.1-fold of the start value. Can be changed.
+
+-   `$maxValue`: Maximal allowed value. By default, 10-fold of the start value. Can be changed.
+
+-   `$unit`: Unit of the start, min, and max values. WARNING: changing the unit does not update the values! E.g., the default start, min, and max values of the renal clearance parameter are given in `1/min`:
+
+```{r}
+print(piParameterCl_250mg)
+```
+
+Setting the unit to `1/h` will cause the identification to start at `0.94 1/h`, while the current value is still `0.94 1/h` or `0.94 1/h * 60 min = 56.47 1/h`:
+
+```{r}
+piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/h`
+print(piParameterCl_250mg)
+```
+
+We will set the boundaries for lipophilicity to [-10, 10], and for renal clearance to [0, 10] `1/min`:
+
+```{r}
+piParameterLipo$minValue <- -10
+piParameterLipo$maxValue <- 10
+
+piParameterCl_250mg$minValue <- 0
+piParameterCl_250mg$maxValue <- 10
+piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
+
+piParameterCl_500mg$minValue <- 0
+piParameterCl_500mg$maxValue <- 10
+piParameterCl_500mg$unit <- ospUnits$`Inversed time`$`1/min`
+
+print(piParameterLipo)
+print(piParameterCl_250mg)
+print(piParameterCl_500mg)
+```
+
+#### Mapping of model output to observed data
+
+In order to calculate the error of the model, simulation outputs must be linked to observed data. In this framework, one simulation output can be linked to multiple observed data sets. The error will be calculated for each pair of simulated output and linked data set and added up for the total error. The mapping is done by creating an object of the class `PIOutputMapping`. Each object links a single [`Quantity`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/Quantity.html) of a simulation to multiple [`DataSet`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/DataSet.html) objects.
+
+In the first step, we will load two observed data sets from the excel file provided with the package. Read the article [Observed data](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/observed-data.html) from the `{ospsuite}` documentation for details.
+
+```{r loadDataSet}
+filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx", package = "ospsuite.parameteridentification")
+
+# Create importer configuration for the file
+importConfig <- createImporterConfigurationForFile(filePath = filePath)
+# Set naming patter
+importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
+# Import data sets
+obsData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = importConfig, importAllSheets = TRUE)
+
+print(names(obsData))
+```
+
+The data sets hold concentration data of aciclovir in venous blood, the corresponding simulation output has the path:
+
+```{r}
+simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+```
+
+We will create two objects of the `PIOutputMapping` class, one for each dose group:
+
+```{r}
+outputMapping_250mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_250mg))
+
+outputMapping_500mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_500mg))
+```
+
+and link simulation results to the corresponding observed data:
+
+```{r}
+outputMapping_250mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`)
+outputMapping_500mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`)
+
+print(outputMapping_250mg)
+```
+
+The scaling of the output mapping defines how the residuals between simulated and observed data are calculated. For details, see the article error-functions. For concentration data, we will change the scaling to logarithmic:
+
+```{r}
+outputMapping_250mg$scaling <- "log"
+outputMapping_500mg$scaling <- "log"
+```
+
+All data sets (simulated results and observed data) within a `PIOutputMapping` can be transformed by applying offsets and scaling factors following the same logic as implemented in the [`DataCombined` class](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/data-combined.html#transformations).
 
 #### Configuration
 
-The package includes a `PIConfiguration` class for storing and re-using the settings of the parameter identification task. Currently, the implemented options include:
+The configuration of a PI includes the selection of an algorithm, setting algorithm settings, and some further options. A PI configuration is defined in a `PIConfiguration` object and can be re-used by multiple PI tasks. If no user-defined configuration is provided to a PI task, a default one is created with the following properties:
+
+```{r}
+piConfiguration <- PIConfiguration$new()
+print(piConfiguration)
+```
 
 -   `printEvaluationFeedback` (logical) indicates if the objective function value should be printed at each iteration
 
--   `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to quantify the difference between observed data and simulated curve. The M3 method from [Beal, 2001](https://link.springer.com/article/10.1023/A:1012299115260) is an objective function that accounts for possible data points below the lower limit of quantification.
+-   `simulationRunOptions`: Object of type [`SimulationRunOptions`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/SimulationRunOptions.html) that will be passed to simulation runs. If `NULL`, default options are used.
 
--   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Algorithm options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Default algorithm is the BOBYQA method (bound optimization by quadratic approximation), a local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, `HJKB` for derivative-free Hooke-Jeeves algorithm or `DEoptim` for global stochastic differential evolution algorithm may provide better results at the cost of overall execution time.
+-   `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to calculate the difference between observed data and simulated curve. See article error-function for more information.
 
-```{r include=TRUE, eval=TRUE}
-piConfiguration <- PIConfiguration$new()
-piConfiguration$printEvaluationFeedback <- TRUE
-```
+-   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Algorithm options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Supported algorithms and their options are described in optimization-algorithms
 
 #### Running a parameter identification task
 
-Create a parameter identification task by creating an object of the class `ParameterIdentification`. The object holds the set of simulations that were used for the creation of the `PIOutputMapping` and `PIParameters`, and the configuration.
+After the simulation, identification parameters, mappings of observed and simulated data, and the configuration are defined, they are used in an instance of the `ParameterIdentification` class:
 
-Overview - plot the (current) results, run the identification, run grid search, plot OFVprofiles. Describe the theory and link to examples below.
+```{r include=TRUE, eval=TRUE}
+piTask <- ParameterIdentification$new(simulations = list(sim_250mg, sim_500mg),
+                                    parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+                                    outputMappings = list(outputMapping_250mg, outputMapping_500mg),
+                                    configuration = piConfiguration )
+```
+
+We first can create time profiles comparing simulation results with observed data with the current parameter values. A separate time profile is created for each `PIOutputMapping`.
+
+```{r}
+piTask$plotResults()
+```
+
+NOTE: the figures are created with the current values of the parameters, not the start values!
+
+We can now run the PI and print the results:
+
+```{r}
+piResults <- piTask$run()
+print(piResults)
+```
 
 The output of the optimization run is:
 
@@ -91,329 +240,20 @@ The output of the optimization run is:
 -   `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
 -   `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
 
-## Example - Aciclovir model
+The optimal values are directly applied to the `Parameter` objects used in the PI.
 
-### Extracting parameters from the model
+#### Diagnostics
 
-A sample PKML file with the model is shipped with the package:
+To assess the goodnes of the fit, plot the time profiles after the optimization:
 
-```{r include=TRUE, eval=TRUE}
-simulations <- c(loadSimulation("tests/dev/Models/Simulations/Aciclovir.pkml"))
-names(simulations) <- "Aciclovir"
+```{r}
+piTask$plotResults()
 ```
 
-The parameter corresponding to the lipophilicity of aciclovir is called `Aciclovir|Lipophilicity` within the model. The package has a `PIParameter` class to represent the varying parameters in the model and store them along with the starting value, the lower and the upper bounds of the parameter search space.
+The quality of the fit can be assessed by the following criteria:
 
-```{r include=TRUE, eval=TRUE}
-parameters <- c(PIParameters$new(parameters = ospsuite::getParameter(
-  path = "Aciclovir|Lipophilicity",
-  container = simulations$Aciclovir
-)))
-```
+-   The individual time profile is close to the observed data points.
+-   The predicted-vs-observed plot is close to the diagonal.
+-   The residuals are randomly distributed above and below zero.
 
-The default lower and uppr bounds are 0.1- and 10-fold of the starting parameter value, respectrively, but it is often useful to supply parameter bounds from prior knowledge:
-
-```{r include=TRUE, eval=TRUE}
-parameters[[1]]$minValue <- -10
-parameters[[1]]$maxValue <- 10
-```
-
-### Reading observed data
-
-We need to supply the observed data which we are going to use to identify parameter values:
-
-```{r include=TRUE, eval=TRUE}
-filePath <- "tests/data/AciclovirLaskinData.xlsx"
-dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-dataConfiguration$sheets <- "Laskin 1982.Group A"
-dataConfiguration$namingPattern <- "{Source}.{Sheet}"
-observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
-```
-
-Here, the *importer configuration* is created with the `createImporterConfigurationForFile` helper function that tries to guess column names in the Excel file. If you run into errors while importing the data, try to create the importer configuration from the PK-Sim GUI, export it as an `XML` file and re-use it for importing observed data into R as follows:
-
-```{r include=TRUE, eval=FALSE}
-filePath <- "tests/data/AciclovirLaskinData.xlsx"
-dataConfiguration <- loadDataImporterConfiguration("tests/data/dataImporter_configuration.xml")
-observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
-```
-
-### Mapping data to model outputs
-
-Typically, the observed data show the concentration of the compound in the peripheral blood flow, but there can be other setups. A class from the package that matches the model outputs and the observations is called `PIOutputMapping`, for example:
-
-```{r include=TRUE, eval=TRUE}
-outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-  container = simulations$Aciclovir
-))
-outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
-outputMapping$scaling <- "lin"
-outputMappings <- c(outputMapping)
-```
-
-### Running parameter estimation
-
-After the `outputMappings`, `simulations`, `parameters` and `piConfiguration` objects are created, they are used in an instance of the `ParameterIdentification` class as follows:
-
-```{r include=TRUE, eval=FALSE}
-task <- ParameterIdentification$new(
-  simulations = simulations,
-  parameters = parameters,
-  outputMappings = outputMappings,
-  configuration = piConfiguration
-)
-taskResults <- task$run()
-```
-
-If `piConfiguration$printEvaluationFeedback` is set to `TRUE`, each iteration will print a single line with the current objective function value, to track the performance of the optimization algorithm, such as below:
-
-```{r include=TRUE, echo=FALSE, eval=TRUE}
-task <- ParameterIdentification$new(
-  simulations = simulations,
-  parameters = parameters,
-  outputMappings = outputMappings,
-  configuration = piConfiguration
-)
-taskResults <- task$run()
-```
-
-### Diagnostics
-
-The `task` object also contains a `$plotResults()` function that produces three diagnostic plots: an individual time profile with the current best estimate of model parameters and overlayed observed data, a comparison of predicted-vs-observed values and a plot of residuals vs time to identify potential biases in the model. The `$plotResults()` function can take an optional vector of parameter values to plot the curve corresponding to another set of model parameters. After running the parameter identification task, the `$plotResults()` function can be called as follows:
-
-```{r include=TRUE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center', warning=FALSE}
-task$plotResults()
-```
-
-We can judge if the model is properly calibrated by observing if:
-
--   the individual time profile is close to the observed data points
--   the predicted-vs-observed plot is close to the diagonal
--   the residuals are randomly distributed above and below zero
-
-The residuals only above or only below zero indicate an overprediction or an underprediction. It is likely that another set of parameters will result in a better fit. A bad prediction in the early-time region of the plot indicates that the model needs a better description of the drug absorption. A bad prediction in the late-time region indicates that the model needs a better description of the drug elimination.
-
-### Plotting OFV profiles
-
-Around the global minimum, the objective function is expected to be convex and parabolic. We can check if we are, indeed, around a minimum (global or local) by plotting the objective function value (OFV) profile around the tentative optimal point. For example, after running the parameter identification task, run to plot the OFV profile:
-
-```{r include=FALSE, eval=TRUE}
-task$configuration$printEvaluationFeedback <- FALSE
-```
-
-```{r include=TRUE, eval=FALSE}
-profile <- task$calculateOFVProfiles()
-plotOFVProfiles(profile)[[1]]
-```
-
-```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
-plotOFVProfiles(cachedAciclovirProfile)[[1]]
-```
-
-We observe that the tentative lipophilicity value of `r signif(taskResults$par[[1]], 3)` is close to at least a local (and potentially, a global) minimum. By passing explicit parameters to the `calculateOFVProfiles` function, we can check the whole parameter space, at least for 1-dimensional parameter estimation problems:
-
-```{r include=TRUE, eval=FALSE}
-profile <- task$calculateOFVProfiles(lower = -10, upper = 10, totalEvaluations = 200)
-plotOFVProfiles(profile)[[1]]
-```
-
-```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
-plotOFVProfiles(cachedAciclovirFullProfile)[[1]]
-```
-
-## Midazolam model
-
-### Extracting parameters from the model
-
-Load the model by running
-
-```{r include=TRUE, eval=TRUE}
-piConfiguration <- PIConfiguration$new()
-piConfiguration$printEvaluationFeedback <- TRUE
-simulations <- c(loadSimulation("tests/dev/Models/Simulations/Smith1981 iv 5mg Midazolam.pkml"))
-names(simulations) <- "Midazolam"
-```
-
-The midazolam model shipped with this package includes two free parameters: lipophilicity of midazolam and the catalytic activity of the CYP3A4 cytochrome in the reaction with midazolam. While lipophilicity is stored in the model as a `Midazolam|Lipophilicity` parameter, the catalytic activity (kcat) is less transparently called `Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat`. However, we can find it by searching for a parameter name including `kcat`:
-
-```{r include=TRUE, eval=TRUE}
-getAllParametersMatching("**|kcat", simulations$Midazolam)
-```
-
-... and then we have everything we need to set up the parameter identification task.
-
-### Setting up the model
-
-Execute the following code to continue setting up the midazolam model and to run the task.
-
-```{r include=FALSE, eval=TRUE}
-piConfiguration$printEvaluationFeedback <- FALSE
-```
-
-```{r include=TRUE, message=FALSE, eval=TRUE}
-parameterInputData <- list(
-  list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
-  list(path = "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat", min = 0, max = 3200, start = 320)
-)
-parameters <- vector("list", length = length(parameterInputData))
-for (idx in seq_along(parameterInputData)) {
-  modelParams <- list()
-  for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(
-      path = parameterInputData[[idx]]$path,
-      container = simulation
-    ))
-  }
-  parameters[[idx]] <- PIParameters$new(parameters = modelParams)
-  parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
-  parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
-  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
-}
-filePath <- "tests/data/Midazolam_Smith_1981.xlsx"
-dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-dataConfiguration$sheets <- "Smith1981"
-dataConfiguration$namingPattern <- "{Source}.{Sheet}"
-observedData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
-outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Midazolam|Plasma (Peripheral Venous Blood)",
-  container = simulations$Midazolam
-))
-outputMapping$addObservedDataSets(observedData$Midazolam_Smith_1981.Smith1981)
-outputMapping$scaling <- "lin"
-outputMappings <- c(outputMapping)
-
-task <- ParameterIdentification$new(
-  simulations = simulations,
-  parameters = parameters,
-  outputMappings = outputMapping,
-  configuration = piConfiguration
-)
-taskResults <- task$run()
-```
-
-### OFV grids for parameter space exploration
-
-In addition to previous diagnostic methods, we can also plot the landscape of the objective function, since the problem is 2-parametric and it is easily visualized with a contour plot. The package includes `$gridSearch()` and `$plotGrid()` functions for that:
-
-```{r include=TRUE, eval=FALSE}
-grid <- task$gridSearch(lower = c(3, 0), upper = c(4, 5), totalEvaluations = 2000)
-plot2DOFVGrid(grid, taskResults$par)
-```
-
-```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=10, fig.height=6, fig.align='center'}
-plot2DOFVGrid(cachedMidazolamGrid, taskResults$par)
-```
-
-## Clarithromycin model
-
-### Setting up the model
-
-This is a more complex model that lifts its observed data from five distinct studies and includes three parameters that should be optimized. Load the simulations, the parameters, the observed data and the task by running the following code:
-
-```{r include=TRUE, message=FALSE, eval=TRUE}
-simulations <- c(
-  "IV250" = loadSimulation("tests/dev/Models/Simulations/Chu1992 iv 250mg Clarithromycin.pkml"),
-  "PO250" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg Clarithromycin.pkml"),
-  "PO250MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 250mg md Clarithromycin.pkml"),
-  "PO500" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg Clarithromycin.pkml"),
-  "PO500MD" = loadSimulation("tests/dev/Models/Simulations/Chu1993 po 500mg md Clarithromycin.pkml")
-)
-piConfiguration <- PIConfiguration$new()
-
-parameterInputData <- list(
-  list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
-  list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
-  list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01)
-)
-parameters <- vector("list", length = length(parameterInputData))
-for (idx in seq_along(parameterInputData)) {
-  modelParams <- list()
-  for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(
-      path = parameterInputData[[idx]]$path,
-      container = simulation
-    ))
-  }
-  parameters[[idx]] <- PIParameters$new(parameters = modelParams)
-  parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
-  parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
-  parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
-}
-
-# Observed data is loaded from two different files
-# because IV data is reported in µmol/L, and PO data is reported in µg/ml
-filePath <- "tests/data/Clarithromycin_Chu_1992.xlsx"
-dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-dataConfiguration$sheets <- "IV250"
-dataConfiguration$namingPattern <- "{Sheet}"
-observedData_IV <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
-filePath <- "tests/data/Clarithromycin_Chu_1993.xlsx"
-dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-dataConfiguration$sheets <- c("PO250", "PO250MD", "PO500", "PO500MD")
-dataConfiguration$namingPattern <- "{Sheet}"
-observedData_PO <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration)
-observedData <- c(observedData_IV, observedData_PO)
-
-outputMappings <- vector("list", length = length(simulations))
-for (idx in seq_along(simulations)) {
-  outputMappings[[idx]] <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)",
-    container = simulations[[idx]]
-  ))
-  outputMappings[[idx]]$addObservedDataSets(observedData[[names(simulations)[[idx]]]])
-  outputMappings[[idx]]$scaling <- "lin"
-}
-
-task <- ParameterIdentification$new(
-  simulations = simulations,
-  parameters = parameters,
-  outputMappings = outputMappings,
-  configuration = piConfiguration
-)
-```
-
-### Limitations of the local optimization algorithms
-
-The solution (catalytic activity 14.10 1/min, specific clearance 6.24 1/min, intestinal permeability 1.306e-6 dm/min, OFV 4.17) found by the BOBYQA algorithm with the default parameters is satisfactory, because the individual profiles are close to the observed data. However, it is sub-optimal, as can be evidenced by non-parabolic OFV profiles:
-
-```{r include=TRUE, eval=FALSE}
-taskResults <- task$run()
-plotOFVProfiles(task$calculateOFVProfiles())[[1]]
-```
-
-```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
-plotOFVProfiles(cachedClarithromycinSuboptimalProfiles)[[1]]
-```
-
-If a sub-optimal solution is not enough, we need to use grid search or a global stochastic optimization algorithm, such as differential evolution, to find a good starting approximation or a global minimum.
-
-### Exhaustive grid search
-
-Running the grid search can be a useful first step when you don't know the optimization landscape of the problem.
-
-```{r include=TRUE, eval=FALSE}
-grid <- task$gridSearch(totalEvaluations = 1000, setStartingPoint = TRUE)
-best <- dplyr::slice_min(grid, ofv, with_ties = FALSE)
-```
-
-If the `setStartingPoint` argument is set to `TRUE` (instead of default `FALSE`), the next optimization run will start from the best estimate across the grid.
-
-### Running a global optimization algorithm
-
-Running 1000 iterations of differential optimization produces a result with a better OFV: catalytic activity 45.7 1/min, specific clearance 1.43 1/min, intestinal permeability 1.256e-6 dm/min, OFV 1.96.
-
-```{r include=TRUE, message=FALSE, eval=FALSE}
-task$configuration$algorithm <- "DEoptim"
-task$configuration$algorithmOptions <- list(itermax = 1000, steptol = 10)
-taskResults <- task$run()
-```
-
-We can ensure that this is at least a local minimum by plotting the OFV profiles:
-
-```{r include=TRUE, eval=FALSE}
-plotOFVProfiles(task$calculateOFVProfiles())
-```
-
-```{r include=TRUE, echo=FALSE, eval=TRUE, fig.width=6, fig.height=4, fig.align='center'}
-plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[1]]
-plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[2]]
-plotOFVProfiles(cachedClarithromycinOptimalProfiles)[[3]]
-```
+The residuals only above or only below zero indicate an overprediction or an underprediction. It is likely that another set of parameters will result in a better fit.

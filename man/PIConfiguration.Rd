@@ -13,11 +13,6 @@ An object storing configuration for the parameter identification
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulateSteadyState}}{Boolean representing whether the simulation
-should be brought to a steady-state first}
-
-\item{\code{steadyStateTime}}{Time in minutes to simulate if simulating steady-state. May be NULL}
-
 \item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, the objective function value
 will be printed after each function evaluation.
 Default is \code{FALSE}}
@@ -26,8 +21,8 @@ Default is \code{FALSE}}
 to simulation runs. If \code{NULL}, default options are used.}
 
 \item{\code{targetFunctionType}}{Type of the target function used for error
-calculation. Supported target functions  are listed  in
-\code{ospsuite.parameteridentification::ObjectiveFunctions}.}
+calculation. Supported target functions  are listed in
+\code{ospsuite.parameteridentification::ObjectiveFunctions}. Default is \code{lsq}.}
 
 \item{\code{algorithm}}{a string describing the optimization algorithm.
 Supported algorithms are listed  in

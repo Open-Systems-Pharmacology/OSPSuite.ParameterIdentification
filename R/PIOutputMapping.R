@@ -26,7 +26,7 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.dataTransformations
       } else {
-        stop(messages$errorPropertyReadOnly("dataTransformations"))
+        stop(messages$errorPropertyReadOnly("dataTransformations", optionalMessage = "Use $setDataTransformations() to change the value."))
       }
     },
 
