@@ -89,7 +89,7 @@ outputPath <- "Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral 
 outputMappings <- vector("list", length = length(simulations))
 outputMappings[[1]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
                                                                   container = simulations$IV250))
-outputMappings[[1]]$addObservedDataSets(obsData$Clarithromycin_Profiles.IV250SD.IV250SD)
+outputMappings[[1]]$addObservedDataSets(obsData$Clarithromycin_Profiles.IV250.IV250SD)
 
 outputMappings[[2]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
                                                                   container = simulations$PO250))
