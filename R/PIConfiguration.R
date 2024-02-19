@@ -81,14 +81,11 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field algorithmOptions a list of named parameters describing algorithm-specific
-    #' options. Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
+    #' options. Default options are listed  in `AlgorithmOptions_XYZ` where `XYZ` is the name of the algorithm.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
       } else {
-        for (name in names(value)) {
-          validateEnumValue(name, AlgorithmOptions)
-        }
         private$.algorithmOptions <- value
       }
     }
