@@ -11,7 +11,7 @@
 #' `DataCombined$toDataFrame()`. The dataframe must include columns for
 #' "dataType", "xValues", "yValues", and optionally "yErrorValues" if the
 #' `residualWeightingMethod` is set to "error".
-#' @param targetFunctionType A string indicating the target function type for
+#' @param objectiveFunctionType A string indicating the objective function type for
 #' calculating model cost. Options include "lsq" (least squares, default) and "m3"
 #' for handling censored data.
 #' @param residualWeightingMethod A string indicating the method to weight the
@@ -47,9 +47,9 @@
 #'
 #' # View model cost
 #' print(costMetrics$modelCost)
-#'
+#'}
 #' @export
-calculateCostMetrics <- function(df, targetFunctionType = "lsq", residualWeightingMethod = "none",
+calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
                                  robustMethod = "none", scaleVar = FALSE, ...) {
   additionalArgs <- list(...)
 
@@ -93,7 +93,7 @@ calculateCostMetrics <- function(df, targetFunctionType = "lsq", residualWeighti
 
   # Applying M3 method for censored error calculation
   censoredContribution <- 0
-  if (targetFunctionType == "m3") {
+  if (objectiveFunctionType == "m3") {
     censoredContribution <- .calculateCensoredContribution(
       observed = observedData,
       simulated = simulatedData,
@@ -362,7 +362,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   lloq <- unique(na.omit(observed$lloq))
   ospsuite.utils::validateIsNumeric(lloq)
 
-  if (any(is.na(observed$lloq))) {
+  if (length(lloq) == 0) {
+    stop("LLOQ value not provided with the data.")
+  } else if (any(is.na(observed$lloq))) {
     observed$lloq[is.na(observed$lloq)] <- min(lloq, na.rm = TRUE)
   }
 
