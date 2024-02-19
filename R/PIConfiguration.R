@@ -82,6 +82,7 @@ PIConfiguration <- R6::R6Class(
 
     #' @field algorithmOptions a list of named parameters describing algorithm-specific
     #' options. Default options are listed  in `AlgorithmOptions_XYZ` where `XYZ` is the name of the algorithm.
+    #' If `NULL`, default options are used.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -109,7 +110,6 @@ PIConfiguration <- R6::R6Class(
       private$.printEvaluationFeedback <- FALSE
       private$.targetFunctionType <- "lsq"
       private$.algorithm <- "BOBYQA"
-      private$.algorithmOptions <- list()
     },
 
     #' @description

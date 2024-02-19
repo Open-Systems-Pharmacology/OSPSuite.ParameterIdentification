@@ -519,32 +519,32 @@ ParameterIdentification <- R6::R6Class(
       message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
 
       if (private$.configuration$algorithm == "HJKB") {
+        # Default options
+        if (is.null(private$.configuration$algorithmOptions)) {
+          control <- list()
+        }
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
             private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+          }, control = control, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
+        # Default options
+        if (is.null(private$.configuration$algorithmOptions)) {
+          control <- list()
+        }
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
             private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+          }, control = control, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
+        # Default options
+        if (is.null(private$.configuration$algorithmOptions)) {
+          control <- DEoptim::DEoptim.control()
+        }
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
         control <- DEoptim::DEoptim.control()
-        control <- DEoptim::DEoptim.control(
-          VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], control[["VTR"]]),
-          strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], control[["strategy"]]),
-          NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], control[["NP"]]),
-          itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], control[["itermax"]]),
-          CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], control[["CR"]]),
-          F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], control[["F"]]),
-          bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], control[["bs"]]),
-          trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], control[["trace"]]),
-          reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], control[["reltol"]]),
-          steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], control[["steptol"]])
-        )
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
             private$.targetFunction(p)$model
