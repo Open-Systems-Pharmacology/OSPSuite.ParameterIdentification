@@ -1,4 +1,4 @@
-sim <- loadTestSimulation("Aciclovir")
+sim <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 param <- getParameter("Aciclovir|Permeability", sim)
 livVol <- getParameter("Organism|Liver|Volume", sim)
 kidvVol <- getParameter("Organism|Kidney|Volume", sim)
