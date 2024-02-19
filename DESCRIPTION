@@ -28,7 +28,6 @@ Depends:
 Imports:
     ggplot2,
     ggtext,
-    grDevices,
     tibble,
     purrr,
     ospsuite.utils,
