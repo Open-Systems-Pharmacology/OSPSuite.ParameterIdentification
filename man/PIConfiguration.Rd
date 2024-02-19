@@ -29,7 +29,8 @@ Supported algorithms are listed  in
 \code{ospsuite.parameteridentification::Algorithms}.}
 
 \item{\code{algorithmOptions}}{a list of named parameters describing algorithm-specific
-options. Supported options are listed  in \code{ospsuite.parameteridentification::AlgorithmOptions}.}
+options. Default options are listed  in \code{AlgorithmOptions_XYZ} where \code{XYZ} is the name of the algorithm.
+If \code{NULL}, default options are used.}
 }
 \if{html}{\out{</div>}}
 }

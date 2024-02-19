@@ -518,9 +518,10 @@ ParameterIdentification <- R6::R6Class(
       # actual optimization call will use one of the underlying optimization routines
       message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
 
+      control <- private$.configuration$algorithmOptions
       if (private$.configuration$algorithm == "HJKB") {
         # Default options
-        if (is.null(private$.configuration$algorithmOptions)) {
+        if (is.null(control)) {
           control <- list()
         }
         time <- system.time({
@@ -530,7 +531,7 @@ ParameterIdentification <- R6::R6Class(
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
         # Default options
-        if (is.null(private$.configuration$algorithmOptions)) {
+        if (is.null(control)) {
           control <- list()
         }
         time <- system.time({
@@ -540,7 +541,7 @@ ParameterIdentification <- R6::R6Class(
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
         # Default options
-        if (is.null(private$.configuration$algorithmOptions)) {
+        if (is.null(control)) {
           control <- DEoptim::DEoptim.control()
         }
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
