@@ -188,8 +188,14 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
     residualDetails = residualsData
   )
 
-  class(modelCost) <- "modelCost"
-  return(modelCost)
+  # Ensure that the modelCost calculation does not result in NA
+  if (is.na(modelCost$modelCost)) {
+    warning("Invalid model cost detected (NA). Returning infinite error cost structure.")
+    return(.createErrorCostStructure(infinite = TRUE))
+  } else {
+    class(modelCost) <- "modelCost"
+    return(modelCost)
+  }
 }
 
 #' Plot Model Cost Residuals
@@ -276,25 +282,38 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 .createErrorCostStructure <- function(infinite = FALSE) {
   if (infinite) {
     costValue <- Inf
-    nValue <- 1
+    logProbability <- Inf
+    nObservations <- 1
   } else {
     costValue <- 0
-    nValue <- 0
+    logProbability <- 0
+    nObservations <- 0
   }
 
   errorCostStructure <- list(
-    model = costValue,
-    minlogp = costValue,
-    var = data.frame(
-      name = "Values", scale = 1, N = nValue,
-      SSRUnweighted = costValue, SSRUnscaled = costValue, SSR = costValue
+    modelCost = costValue,
+    minLogProbability = logProbability,
+    costVariables = data.frame(
+      scaleFactor = 1,
+      nObservations = nObservations,
+      M3Contribution = costValue,
+      SSR = costValue,
+      weightedSSR = costValue,
+      normalizedSSR = costValue,
+      robustSSR = costValue
     ),
-    residuals = data.frame(
-      name = "Values", x = 0, obs = 0, mod = costValue,
-      weight = 1, resUnweighted = costValue, res = costValue
+    residualDetails = data.frame(
+      x = NA,
+      yObserved = NA,
+      ySimulated = NA,
+      weight = NA,
+      residuals = NA,
+      weightedResiduals = NA,
+      normalizedResiduals = NA,
+      robustWeightedResiduals = NA
     )
   )
-  class(errorCostStructure) <- "modCost"
+  class(errorCostStructure) <- "modelCost"
   return(errorCostStructure)
 }
 
