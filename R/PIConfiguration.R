@@ -1,6 +1,6 @@
 #' @title PIConfiguration
 #' @docType class
-#' @description An object storing configuration for the parameter identification
+#' @description An object storing configuration for parameter identification
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -9,8 +9,7 @@ PIConfiguration <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field simulateSteadyState Boolean representing whether the simulation
-    #' should be brought to a steady-state first
+    #' @field simulateSteadyState Boolean for simulation steady-state first
     simulateSteadyState = function(value) {
       if (missing(value)) {
         private$.simulateSteadyState
@@ -19,7 +18,7 @@ PIConfiguration <- R6::R6Class(
         private$.simulateSteadyState <- value
       }
     },
-    #' @field steadyStateTime Time in minutes to simulate if simulating steady-state. May be NULL
+    #' @field steadyStateTime Time in minutes for steady-state simulation. May be NULL
     steadyStateTime = function(value) {
       if (missing(value)) {
         private$.steadyStateTime
@@ -31,9 +30,8 @@ PIConfiguration <- R6::R6Class(
         private$.steadyStateTime <- value
       }
     },
-    #' @field printEvaluationFeedback Boolean. If `TRUE`, the objective function value
-    #' will be printed after each function evaluation.
-    #' Default is `FALSE`
+    #' @field printEvaluationFeedback Boolean. If `TRUE`, prints objective
+    #' function value after each evaluation. Default is `FALSE`
     printEvaluationFeedback = function(value) {
       if (missing(value)) {
         private$.printEvaluationFeedback
@@ -43,20 +41,21 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field simulationRunOptions Object of type `SimulationRunOptions` that will be passed
-    #' to simulation runs. If `NULL`, default options are used.
+    #' @field simulationRunOptions Object of `SimulationRunOptions` for simulation
+    #' runs. If `NULL`, default options are used.
     simulationRunOptions = function(value) {
       if (missing(value)) {
         private$.simulationRunOptions
       } else {
-        ospsuite.utils::validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
+        ospsuite.utils::validateIsOfType(
+          value, "SimulationRunOptions", nullAllowed = TRUE
+        )
         private$.simulationRunOptions <- value
       }
     },
 
-    #' @field objectiveFunctionOptions Arguments configuring the model fit assessment
-    #' within the `.objectiveFunction`. These parameters influence how errors and
-    #' model fit are calculated using `calculateCostMetrics`.
+    #' @field objectiveFunctionOptions Configuring model fit assessment
+    #' within `.objectiveFunction`. Influences error and model fit calculation.
     #' Supported options and their allowable values are detailed in
     #' `ospsuite.parameteridentification::ObjectiveFunctionOptions`.
     objectiveFunctionOptions = function(options = list()) {
@@ -85,8 +84,8 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions a list of named parameters describing algorithm-specific
-    #' options. Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
+    #' @field algorithmOptions Named parameters for algorithm-specific options.
+    #'  Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -128,21 +127,28 @@ PIConfiguration <- R6::R6Class(
       private$.algorithmOptions <- list()
     },
 
-    #' @description
-    #' Print the object to the console
-    #' @param ... Rest arguments.
-    print = function(...) {
+    #' Print
+    #' @description prints a summary of the PIConfiguration.
+    print = function() {
       private$printClass()
       private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine("Print feedback after each function evaluation",
-                        private$.printEvaluationFeedback)
-      private$printLine("Objective function type ",
-                        private$.objectiveFunctionOptions$objectiveFunctionType)
-      private$printLine("Residual weighting method ",
-                        private$.objectiveFunctionOptions$residualWeightingMethod)
-      private$printLine("Robust residual calculation method ",
-                        private$.objectiveFunctionOptions$robustMethod)
+      private$printLine(
+        "Print feedback after each function evaluation",
+        private$.printEvaluationFeedback
+      )
+      private$printLine(
+        "Objective function type",
+        private$.objectiveFunctionOptions$objectiveFunctionType
+      )
+      private$printLine(
+        "Residual weighting method",
+        private$.objectiveFunctionOptions$residualWeightingMethod
+      )
+      private$printLine(
+        "Robust residual calculation method",
+        private$.objectiveFunctionOptions$robustMethod
+      )
       private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)
     }

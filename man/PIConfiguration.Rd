@@ -25,9 +25,11 @@ Default is \code{FALSE}}
 \item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
 to simulation runs. If \code{NULL}, default options are used.}
 
-\item{\code{targetFunctionType}}{Type of the target function used for error
-calculation. Supported target functions  are listed  in
-\code{ospsuite.parameteridentification::ObjectiveFunctions}.}
+\item{\code{objectiveFunctionOptions}}{Arguments configuring the model fit assessment
+within the \code{.objectiveFunction}. These parameters influence how errors and
+model fit are calculated using \code{calculateCostMetrics}.
+Supported options and their allowable values are detailed in
+\code{ospsuite.parameteridentification::ObjectiveFunctionOptions}.}
 
 \item{\code{algorithm}}{a string describing the optimization algorithm.
 Supported algorithms are listed  in
