@@ -48,25 +48,24 @@ PIConfiguration <- R6::R6Class(
         private$.simulationRunOptions
       } else {
         ospsuite.utils::validateIsOfType(
-          value, "SimulationRunOptions", nullAllowed = TRUE
+          value, "SimulationRunOptions",
+          nullAllowed = TRUE
         )
         private$.simulationRunOptions <- value
       }
     },
 
-    #' @field objectiveFunctionOptions Configuring model fit assessment
-    #' within `.objectiveFunction`. Influences error and model fit calculation.
+    #' @field objectiveFunctionOptions Configures model fit assessment
+    #' options. This setting influences how error and model fit are calculated
     #' Supported options and their allowable values are detailed in
     #' `ospsuite.parameteridentification::ObjectiveFunctionOptions`.
-    objectiveFunctionOptions = function(options = list()) {
-      if (missing(options)) {
+    objectiveFunctionOptions = function(inputOptions = list()) {
+      if (missing(inputOptions)) {
         private$.objectiveFunctionOptions
       } else {
-        values <- enumWithValues(ObjectiveFunctionOptions)
-        ospsuite.utils::validateIsIncluded(names(options), names(values))
-        validateIsOption(options, values)
+        validateIsOption(inputOptions, ObjectiveFunctionOptions)
         private$.objectiveFunctionOptions <- modifyList(
-          private$.objectiveFunctionOptions, options
+          private$.objectiveFunctionOptions, inputOptions
         )
       }
     },
@@ -119,7 +118,7 @@ PIConfiguration <- R6::R6Class(
         residualWeightingMethod = "none",
         robustMethod = "none",
         scaleVar = FALSE,
-        scaling = NULL,
+        scaling = "lin",
         linScaleCV = 0.2,
         logScaleSD = NULL
       )

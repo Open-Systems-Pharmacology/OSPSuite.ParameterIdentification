@@ -46,10 +46,10 @@ ObjectiveFunctionOptions <- list(
   objectiveFunctionType = c("lsq", "m3"),
   residualWeightingMethod = c("none", "std", "mean", "error"),
   robustMethod = c("none", "huber", "bisquare"),
-  scaleVar = "boolean",
+  scaleVar = c(TRUE, FALSE),
   scaling = c("lin", "log"),
-  linScaleCV = "numeric",
-  logScaleSD = "numeric"
+  linScaleCV = list(type = "numeric", min = 1e-9, max = 1),
+  logScaleSD = list(type = "numeric", min = 1e-9, max = Inf)
 )
 
 #' @title ScalingOptions
@@ -57,7 +57,7 @@ ObjectiveFunctionOptions <- list(
 #' @export
 ScalingOptions <- ospsuite.utils::enum(c(
   "lin", # Linear scaling (default)
-  "log"  # Logarithmic scaling
+  "log" # Logarithmic scaling
 ))
 
 #' @title residualWeightingOptions

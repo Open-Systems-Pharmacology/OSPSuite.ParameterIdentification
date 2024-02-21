@@ -51,31 +51,17 @@ test_that("printEvaluationFeedback can be set and retrieved correctly", {
 
 test_that("objectiveFunctionOptions can be set and retrieved correctly", {
   piConfiguration <- PIConfiguration$new()
-  piConfiguration$objectiveFunctionOptions <- list(
-    objectiveFunctionType = "m3",
-    residualWeightingMethod = "std",
-    robustMethod = "huber",
-    scaleVar = TRUE,
-    scaling = "log",
-    linScaleCV = 0.5,
-    logScaleSD = 0.5
+  expect_silent(
+    piConfiguration$objectiveFunctionOptions <- list(
+      objectiveFunctionType = "m3",
+      residualWeightingMethod = "std",
+      robustMethod = "huber",
+      scaleVar = TRUE,
+      scaling = "log",
+      linScaleCV = 0.5,
+      logScaleSD = 0.5
+    )
   )
-  # options <- list(
-  #   invalidField = "m3")
-  #
-  # objectiveFunctionOptions = function(options = list()) {
-  #   if (missing(options)) {
-  #     private$.objectiveFunctionOptions
-  #   } else {
-  #     values <- enumWithValues(ObjectiveFunctionOptions)
-  #     ospsuite.utils::validateIsIncluded(names(options), names(values))
-  #     validateIsOption(options, values)
-  #     private$.objectiveFunctionOptions <- modifyList(
-  #       private$.objectiveFunctionOptions, options
-  #     )
-  #   }
-  # }
-
   expect_equal(
     piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
     "m3"
@@ -102,12 +88,15 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
     0.5
   )
   expect_error(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- list(
+    piConfiguration$objectiveFunctionOptions <- list(
       objectiveFunctionType = "invalidType"
     )
   )
-  # expect_error(piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- list(
-  #   invalidField = "lsq"))
+  expect_error(
+    piConfiguration$objectiveFunctionOptions <- list(
+      invalidField = "lsq"
+    )
+  )
 })
 
 test_that("algorithm can be set and retrieved correctly", {
