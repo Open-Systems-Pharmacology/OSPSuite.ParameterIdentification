@@ -15,7 +15,7 @@ piEnv$packageVersion <- .getPackageVersion()
 
 #' Names of the settings stored in piEnv Can be used with `getOSPSuitePISetting()`
 #' @export
-ospsuitePIRSettingNames <- enum(names(piEnv))
+ospsuitePIRSettingNames <- ospsuite.utils::enum(names(piEnv))
 
 #' Get the value of a global ospsuite.parameteridentification setting.
 #'

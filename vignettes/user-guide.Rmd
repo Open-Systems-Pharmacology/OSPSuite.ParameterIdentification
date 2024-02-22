@@ -82,8 +82,10 @@ Consider the example above. We will create three `PIParameters` objects - one fo
 
 ```{r createPIParameters}
 # Creating a PIParameters object with two simulation parameters retrieved from different simulations
-piParameterLipo <- PIParameters$new(parameters = list(getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
-                                                      getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)))
+piParameterLipo <- PIParameters$new(parameters = list(
+  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+  getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+))
 
 # Creating two separate PIParameters for the renal clearance
 piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_250mg))
@@ -196,7 +198,7 @@ print(piConfiguration)
 
 -   `simulationRunOptions`: Object of type [`SimulationRunOptions`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/SimulationRunOptions.html) that will be passed to simulation runs. If `NULL`, default options are used.
 
--   `targetFunctionType` (possible values: `r paste0(ospsuite.parameteridentification:::ObjectiveFunctions, collapse = ", ")`) indicates which objective function should be used to calculate the difference between observed data and simulated curve. See the article `vignette("error-calculation")` for more information.
+-   `targetFunctionType` (possible values are listed in `ospsuite.parameteridentification::ObjectiveFunctionOptions`) indicates which objective function should be used to calculate the difference between observed data and simulated curve. See the article `vignette("error-calculation")` for more information.
 
 -   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Algorithm options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Supported algorithms and their options are described in `vignette("optimization-algorithms")`.
 
@@ -219,10 +221,12 @@ piConfiguration$algorithmOptions <- defOptions
 After the simulation, identification parameters, mappings of observed and simulated data, and the configuration are defined, they are used in an instance of the `ParameterIdentification` class:
 
 ```{r include=TRUE, eval=TRUE}
-piTask <- ParameterIdentification$new(simulations = list(sim_250mg, sim_500mg),
-                                    parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
-                                    outputMappings = list(outputMapping_250mg, outputMapping_500mg),
-                                    configuration = piConfiguration )
+piTask <- ParameterIdentification$new(
+  simulations = list(sim_250mg, sim_500mg),
+  parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+  outputMappings = list(outputMapping_250mg, outputMapping_500mg),
+  configuration = piConfiguration
+)
 ```
 
 We first can create time profiles comparing simulation results with observed data with the current parameter values. A separate time profile is created for each `PIOutputMapping`.

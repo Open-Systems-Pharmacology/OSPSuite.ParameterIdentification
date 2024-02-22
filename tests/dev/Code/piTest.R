@@ -1,9 +1,9 @@
 # library(ospsuite.parameteridentification)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../Models/Simulations")
+modelFolder <- testthat::test_path("../dev/Models/Simulations")
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../../data")
+dataFolder <- testthat::test_path("../data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
@@ -11,7 +11,7 @@ dataFile <- "DataSet.xlsx"
 dataSheets <- c("Boswell_2012")
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(getwd(), "../../data", "dataImporter_configuration.xml")
+  configurationFilePath = file.path(dataFolder, "dataImporter_configuration.xml")
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -32,7 +32,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
 piConfiguration$printEvaluationFeedback <- TRUE
-piConfiguration$targetFunctionType <- "lsq"
+piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 
 ######### Define parameters to optimize#######
 parameters <- list()

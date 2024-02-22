@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
-#' @description An object storing configuration for the parameter identification
-#' @import ospsuite.utils
+#' @description An object storing configuration for parameter identification
+#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
@@ -31,39 +31,43 @@ PIConfiguration <- R6::R6Class(
     #     private$.steadyStateTime <- value
     #   }
     # },
-    #' @field printEvaluationFeedback Boolean. If `TRUE`, the objective function value
-    #' will be printed after each function evaluation.
-    #' Default is `FALSE`
+    #' @field printEvaluationFeedback Boolean. If `TRUE`, prints objective
+    #' function value after each evaluation. Default is `FALSE`
     printEvaluationFeedback = function(value) {
       if (missing(value)) {
         private$.printEvaluationFeedback
       } else {
-        validateIsLogical(value)
+        ospsuite.utils::validateIsLogical(value)
         private$.printEvaluationFeedback <- value
       }
     },
 
-    #' @field simulationRunOptions Object of type `SimulationRunOptions` that will be passed
-    #' to simulation runs. If `NULL`, default options are used.
+    #' @field simulationRunOptions Object of `SimulationRunOptions` for simulation
+    #' runs. If `NULL`, default options are used.
     simulationRunOptions = function(value) {
       if (missing(value)) {
         private$.simulationRunOptions
       } else {
-        validateIsOfType(value, "SimulationRunOptions", nullAllowed = TRUE)
+        ospsuite.utils::validateIsOfType(
+          value, "SimulationRunOptions",
+          nullAllowed = TRUE
+        )
         private$.simulationRunOptions <- value
       }
     },
 
-    #' @field targetFunctionType Type of the target function used for error
-    #' calculation. Supported target functions  are listed in
-    #' `ospsuite.parameteridentification::ObjectiveFunctions`. Default is `lsq`.
-    targetFunctionType = function(value) {
-      if (missing(value)) {
-        private$.targetFunctionType
+    #' @field objectiveFunctionOptions Configures model fit assessment
+    #' options. This setting influences how error and model fit are calculated
+    #' Supported options and their allowable values are detailed in
+    #' `ospsuite.parameteridentification::ObjectiveFunctionOptions`.
+    objectiveFunctionOptions = function(inputOptions = list()) {
+      if (missing(inputOptions)) {
+        private$.objectiveFunctionOptions
       } else {
-        validateIsCharacter(value)
-        validateEnumValue(tolower(value), ObjectiveFunctions)
-        private$.targetFunctionType <- value
+        validateIsOption(inputOptions, ObjectiveFunctionOptions)
+        private$.objectiveFunctionOptions <- modifyList(
+          private$.objectiveFunctionOptions, inputOptions
+        )
       }
     },
 
@@ -74,8 +78,8 @@ PIConfiguration <- R6::R6Class(
       if (missing(value)) {
         private$.algorithm
       } else {
-        validateIsCharacter(value)
-        validateEnumValue(value, Algorithms)
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, Algorithms)
         private$.algorithm <- value
       }
     },
@@ -96,7 +100,7 @@ PIConfiguration <- R6::R6Class(
     .steadyStateTime = NULL,
     .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
-    .targetFunctionType = NULL,
+    .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL
   ),
@@ -108,19 +112,40 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
-      private$.targetFunctionType <- "lsq"
+      private$.objectiveFunctionOptions <- list(
+        objectiveFunctionType = "lsq",
+        residualWeightingMethod = "none",
+        robustMethod = "none",
+        scaleVar = FALSE,
+        scaling = "lin",
+        linScaleCV = 0.2,
+        logScaleSD = NULL
+      )
       private$.algorithm <- "BOBYQA"
     },
 
-    #' @description
-    #' Print the object to the console
-    #' @param ... Rest arguments.
-    print = function(...) {
+    #' Print
+    #' @description prints a summary of the PIConfiguration.
+    print = function() {
       private$printClass()
       #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       #      private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine("Print feedback after each function evaluation", private$.printEvaluationFeedback)
-      private$printLine("Target function", private$.targetFunctionType)
+      private$printLine(
+        "Print feedback after each function evaluation",
+        private$.printEvaluationFeedback
+      )
+      private$printLine(
+        "Objective function type",
+        private$.objectiveFunctionOptions$objectiveFunctionType
+      )
+      private$printLine(
+        "Residual weighting method",
+        private$.objectiveFunctionOptions$residualWeightingMethod
+      )
+      private$printLine(
+        "Robust residual calculation method",
+        private$.objectiveFunctionOptions$robustMethod
+      )
       private$printLine("Optimization algorithm", private$.algorithm)
       invisible(self)
     }

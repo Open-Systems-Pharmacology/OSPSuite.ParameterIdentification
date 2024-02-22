@@ -5,7 +5,7 @@
 \alias{PIConfiguration}
 \title{PIConfiguration}
 \description{
-An object storing configuration for the parameter identification
+An object storing configuration for parameter identification
 }
 \section{Super class}{
 \code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIConfiguration}
@@ -13,16 +13,16 @@ An object storing configuration for the parameter identification
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, the objective function value
-will be printed after each function evaluation.
-Default is \code{FALSE}}
+\item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
+function value after each evaluation. Default is \code{FALSE}}
 
-\item{\code{simulationRunOptions}}{Object of type \code{SimulationRunOptions} that will be passed
-to simulation runs. If \code{NULL}, default options are used.}
+\item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for simulation
+runs. If \code{NULL}, default options are used.}
 
-\item{\code{targetFunctionType}}{Type of the target function used for error
-calculation. Supported target functions  are listed in
-\code{ospsuite.parameteridentification::ObjectiveFunctions}. Default is \code{lsq}.}
+\item{\code{objectiveFunctionOptions}}{Configures model fit assessment
+options. This setting influences how error and model fit are calculated
+Supported options and their allowable values are detailed in
+\code{ospsuite.parameteridentification::ObjectiveFunctionOptions}.}
 
 \item{\code{algorithm}}{a string describing the optimization algorithm.
 Supported algorithms are listed  in
@@ -53,24 +53,18 @@ Initialize a new instance of the class
 
 \subsection{Returns}{
 A new \code{PIConfiguration} object.
+Print
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-print}{}}}
 \subsection{Method \code{print()}}{
-Print the object to the console
+prints a summary of the PIConfiguration.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$print(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$print()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Rest arguments.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-clone"></a>}}

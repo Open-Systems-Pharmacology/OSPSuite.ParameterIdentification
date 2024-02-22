@@ -66,10 +66,10 @@ parameterInputData <- list(
 parameters <- vector("list", length = length(parameterInputData))
 for (idx in seq_along(parameterInputData)) {
   modelParams <- list()
-    modelParams <- c(modelParams, ospsuite::getParameter(
-      path = parameterInputData[[idx]]$path,
-      container = simulation
-    ))
+  modelParams <- c(modelParams, ospsuite::getParameter(
+    path = parameterInputData[[idx]]$path,
+    container = simulation
+  ))
   parameters[[idx]] <- PIParameters$new(parameters = modelParams)
   parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
   parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
@@ -134,13 +134,17 @@ test_that("The hessian value in the midazolam model is calculated without errors
 # })
 
 # Load clarithromycin 3-parameter model and confirm that the optimal parameter values are as expected
-simulations <- c("IV250" = loadSimulation(system.file("extdata", "Chu1992 iv 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO250" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO250MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO500" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO500MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")))
-setParameterValuesByPath("Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose", simulation = simulations$PO500,
-                         values = 500, units = "mg")
+simulations <- c(
+  "IV250" = loadSimulation(system.file("extdata", "Chu1992 iv 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+  "PO250" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+  "PO250MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+  "PO500" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
+  "PO500MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification"))
+)
+setParameterValuesByPath("Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose",
+  simulation = simulations$PO500,
+  values = 500, units = "mg"
+)
 
 # Get all `Dose` parameters for the MD simulation
 doseParams <- getAllParametersMatching("Applications|**|Dose", container = simulations$PO500MD)
