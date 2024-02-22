@@ -21,5 +21,7 @@ Plots raw residuals and, if different, weighted and robust weighted residuals fr
 }
 \examples{
 # Assuming modelCostObj is a valid `modelCost` object
+\dontrun{
 plot.modelCost(modelCostObj)
+}
 }

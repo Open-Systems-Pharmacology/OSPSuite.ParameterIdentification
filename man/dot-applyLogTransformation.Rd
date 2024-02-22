@@ -19,6 +19,8 @@ which must contain \code{yDimension}, \code{yUnit}, \code{yValues}, and \code{ll
 }
 \examples{
 # Assuming df is a valid obsVsPredDf data frame
+\dontrun{
 transformedDf <- applyLogTransformation(df)
+}
 }
 \keyword{internal}

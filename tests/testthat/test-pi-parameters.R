@@ -1,7 +1,7 @@
 # Testing PIParameters with a Single Parameter ----------------------------
 
-testSimulation <- loadTestSimulation("Aciclovir")
-testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation)
+simulation <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+testParam <- ospsuite::getParameter("Aciclovir|Permeability", simulation)
 refVal <- testParam$value
 
 test_that("PIParameters object is correctly created", {
@@ -68,11 +68,10 @@ test_that("Unit can be changed correctly", {
 
 # Testing PIParameters with a List of Parameters --------------------------
 
-testSimulation <- loadTestSimulation("Aciclovir")
 testParamsList <- list(
-  ospsuite::getParameter("Organism|Liver|Volume", testSimulation),
-  ospsuite::getParameter("Organism|Kidney|Volume", testSimulation),
-  ospsuite::getParameter("Organism|Brain|Volume", testSimulation)
+  ospsuite::getParameter("Organism|Liver|Volume", simulation),
+  ospsuite::getParameter("Organism|Kidney|Volume", simulation),
+  ospsuite::getParameter("Organism|Brain|Volume", simulation)
 )
 refVal <- testParamsList[[1]]$value
 

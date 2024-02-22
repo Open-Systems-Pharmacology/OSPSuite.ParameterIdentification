@@ -9,27 +9,28 @@ PIConfiguration <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field simulateSteadyState Boolean for simulation steady-state first
-    simulateSteadyState = function(value) {
-      if (missing(value)) {
-        private$.simulateSteadyState
-      } else {
-        ospsuite.utils::validateIsLogical(value)
-        private$.simulateSteadyState <- value
-      }
-    },
-    #' @field steadyStateTime Time in minutes for steady-state simulation. May be NULL
-    steadyStateTime = function(value) {
-      if (missing(value)) {
-        private$.steadyStateTime
-      } else {
-        ospsuite.utils::validateIsNumeric(value)
-        if (value < 0) {
-          stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
-        }
-        private$.steadyStateTime <- value
-      }
-    },
+    # #' @field simulateSteadyState Boolean representing whether the simulation
+    # #' should be brought to a steady-state first
+    # simulateSteadyState = function(value) {
+    #   if (missing(value)) {
+    #     private$.simulateSteadyState
+    #   } else {
+    #     validateIsLogical(value)
+    #     private$.simulateSteadyState <- value
+    #   }
+    # },
+    # #' @field steadyStateTime Time in minutes to simulate if simulating steady-state. May be NULL
+    # steadyStateTime = function(value) {
+    #   if (missing(value)) {
+    #     private$.steadyStateTime
+    #   } else {
+    #     validateIsNumeric(value)
+    #     if (value < 0) {
+    #       stop(paste0("steadyStateTime must be a positive numerical value, but the value is ", value))
+    #     }
+    #     private$.steadyStateTime <- value
+    #   }
+    # },
     #' @field printEvaluationFeedback Boolean. If `TRUE`, prints objective
     #' function value after each evaluation. Default is `FALSE`
     printEvaluationFeedback = function(value) {
@@ -83,15 +84,13 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions Named parameters for algorithm-specific options.
-    #'  Supported options are listed  in `ospsuite.parameteridentification::AlgorithmOptions`.
+    #' @field algorithmOptions a list of named parameters describing algorithm-specific
+    #' options. Default options are listed  in `AlgorithmOptions_XYZ` where `XYZ` is the name of the algorithm.
+    #' If `NULL`, default options are used.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
       } else {
-        for (name in names(value)) {
-          ospsuite.utils::validateEnumValue(name, AlgorithmOptions)
-        }
         private$.algorithmOptions <- value
       }
     }
@@ -123,15 +122,14 @@ PIConfiguration <- R6::R6Class(
         logScaleSD = NULL
       )
       private$.algorithm <- "BOBYQA"
-      private$.algorithmOptions <- list()
     },
 
     #' Print
     #' @description prints a summary of the PIConfiguration.
     print = function() {
       private$printClass()
-      private$printLine("Simulate to steady-state", private$.simulateSteadyState)
-      private$printLine("Steady-state time [min]", private$.steadyStateTime)
+      #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
+      #      private$printLine("Steady-state time [min]", private$.steadyStateTime)
       private$printLine(
         "Print feedback after each function evaluation",
         private$.printEvaluationFeedback

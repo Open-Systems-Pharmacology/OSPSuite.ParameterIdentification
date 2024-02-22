@@ -9,38 +9,35 @@ Algorithms <- ospsuite.utils::enum(c(
   "DEoptim" # differential evolution algorithm from the {DEoptim} package
 ))
 
-#' @title AlgorithmOptions
-#' List of options for optimization algorithms, some of them specific to certain algorithms.
+#' @title AlgotitmOptions_HJKB
+#' @description
+#' Default options for the HJKB algorithm.
+#' see [dfoptim::hjkb()] for details.
+#'
 #' @export
-AlgorithmOptions <- ospsuite.utils::enum(c(
-  # applies to "HJKB" algorithm
-  "tol", # absolute error of consecutive iterations for termination
-  "maxfeval", # maximum number of function evaluations
-  "maximize", # flag to maximize function instead
-  "target", # target objective function value for termination
-  "info", # reporting settings
-  # applies to "BOBYQA" algorithm
-  "stopval", # target objective function value for termination
-  "xtol_rel", # relative tolerance for parameter step for termination
-  "maxeval", # maximum number of function evaluations
-  "ftol_rel", # relative tolerance for objective value for termination
-  "ftol_abs", # absolute tolerance for objective value for termination
-  "check_derivatives", # FALSE by default
-  # applies and passed on to the "DEoptim" algorithm
-  "VTR", # target objective function value for termination
-  "strategy", # strategy for differential evolution
-  "bs", # strategy for selection
-  "NP", # population size
-  "itermax", # maximum number of iterations
-  "CR", # crossover probability
-  "F", # differential weight
-  "trace", # reporting settings
-  "reltol", # relative tolerance for termination
-  "steptol" # step count before checking relative tolerance
+AlgotitmOptions_HJKB <- enum(list(
+  tol = 1e-06, maxfeval = Inf, maximize = FALSE,
+  target = Inf, info = FALSE
 ))
 
-#' @title ObjectiveFunctionOptions
-#' List of supported parameter options for calculation of model cost.
+#' @title AlgotitmOptions_BOBYQA
+#' @description
+#' Default options for the BOBYQA algorithm.
+#' see [nloptr::nl.opts()] for details.
+#' @export
+AlgotitmOptions_BOBYQA <- enum(nloptr::nl.opts())
+
+#' @title AlgotitmOptions_DEoptim
+#' @description
+#' Default options for the DEoptim algorithm.
+#' see [DEoptim::DEoptim.control()] for details.
+#'
+#' @export
+AlgotitmOptions_DEoptim <- enum(DEoptim::DEoptim.control())
+
+
+#' @title ObjectiveFunctions
+#' List of supported objective functions to calculate the error.
 #' @export
 ObjectiveFunctionOptions <- list(
   objectiveFunctionType = c("lsq", "m3"),

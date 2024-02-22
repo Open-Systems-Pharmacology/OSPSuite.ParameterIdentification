@@ -210,7 +210,9 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
 #' @return Generates a plot.
 #' @examples
 #' # Assuming modelCostObj is a valid `modelCost` object
+#' \dontrun{
 #' plot.modelCost(modelCostObj)
+#' }
 #' @export
 plot.modelCost <- function(x, legpos = "topright", ...) {
   if (!inherits(x, "modelCost")) {
@@ -336,7 +338,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @examples
 #' # Assuming df is a valid obsVsPredDf data frame
+#' \dontrun{
 #' transformedDf <- applyLogTransformation(df)
+#' }
 .applyLogTransformation <- function(df) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(

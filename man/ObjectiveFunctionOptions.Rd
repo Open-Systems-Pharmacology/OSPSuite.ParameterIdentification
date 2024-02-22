@@ -3,8 +3,8 @@
 \docType{data}
 \name{ObjectiveFunctionOptions}
 \alias{ObjectiveFunctionOptions}
-\title{ObjectiveFunctionOptions
-List of supported parameter options for calculation of model cost.}
+\title{ObjectiveFunctions
+List of supported objective functions to calculate the error.}
 \format{
 An object of class \code{list} of length 7.
 }
@@ -12,7 +12,7 @@ An object of class \code{list} of length 7.
 ObjectiveFunctionOptions
 }
 \description{
-ObjectiveFunctionOptions
-List of supported parameter options for calculation of model cost.
+ObjectiveFunctions
+List of supported objective functions to calculate the error.
 }
 \keyword{datasets}

@@ -5,8 +5,8 @@ test_that("PIConfiguration object is correctly created", {
 
 test_that("Initialization sets default values correctly", {
   piConfiguration <- PIConfiguration$new()
-  expect_false(piConfiguration$simulateSteadyState)
-  expect_equal(piConfiguration$steadyStateTime, 1000)
+  # expect_false(piConfiguration$simulateSteadyState)
+  # expect_equal(piConfiguration$steadyStateTime, 1000)
   expect_false(piConfiguration$printEvaluationFeedback)
   expect_equal(
     piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
@@ -23,23 +23,23 @@ test_that("Initialization sets default values correctly", {
   expect_equal(piConfiguration$algorithm, "BOBYQA")
 })
 
-test_that("simulateSteadyState can be set and retrieved correctly", {
-  piConfiguration <- PIConfiguration$new()
-  piConfiguration$simulateSteadyState <- TRUE
-  expect_true(piConfiguration$simulateSteadyState)
-  piConfiguration$simulateSteadyState <- FALSE
-  expect_false(piConfiguration$simulateSteadyState)
-})
-
-test_that("steadyStateTime can be set and retrieved correctly", {
-  piConfiguration <- PIConfiguration$new()
-  piConfiguration$steadyStateTime <- 500
-  expect_equal(piConfiguration$steadyStateTime, 500)
-  expect_error(
-    piConfiguration$steadyStateTime <- -1,
-    "steadyStateTime must be a positive numerical value, but the value is "
-  )
-})
+# test_that("simulateSteadyState can be set and retrieved correctly", {
+#   piConfiguration <- PIConfiguration$new()
+#   piConfiguration$simulateSteadyState <- TRUE
+#   expect_true(piConfiguration$simulateSteadyState)
+#   piConfiguration$simulateSteadyState <- FALSE
+#   expect_false(piConfiguration$simulateSteadyState)
+# })
+#
+# test_that("steadyStateTime can be set and retrieved correctly", {
+#   piConfiguration <- PIConfiguration$new()
+#   piConfiguration$steadyStateTime <- 500
+#   expect_equal(piConfiguration$steadyStateTime, 500)
+#   expect_error(
+#     piConfiguration$steadyStateTime <- -1,
+#     "steadyStateTime must be a positive numerical value, but the value is "
+#   )
+# })
 
 test_that("printEvaluationFeedback can be set and retrieved correctly", {
   piConfiguration <- PIConfiguration$new()

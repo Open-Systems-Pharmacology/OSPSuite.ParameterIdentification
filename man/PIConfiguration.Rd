@@ -13,10 +13,6 @@ An object storing configuration for parameter identification
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulateSteadyState}}{Boolean for simulation steady-state first}
-
-\item{\code{steadyStateTime}}{Time in minutes for steady-state simulation. May be NULL}
-
 \item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
 function value after each evaluation. Default is \code{FALSE}}
 
@@ -32,8 +28,9 @@ Supported options and their allowable values are detailed in
 Supported algorithms are listed  in
 \code{ospsuite.parameteridentification::Algorithms}.}
 
-\item{\code{algorithmOptions}}{Named parameters for algorithm-specific options.
-Supported options are listed  in \code{ospsuite.parameteridentification::AlgorithmOptions}.}
+\item{\code{algorithmOptions}}{a list of named parameters describing algorithm-specific
+options. Default options are listed  in \code{AlgorithmOptions_XYZ} where \code{XYZ} is the name of the algorithm.
+If \code{NULL}, default options are used.}
 }
 \if{html}{\out{</div>}}
 }
