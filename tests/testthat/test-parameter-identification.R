@@ -81,8 +81,10 @@ filePath <- getTestDataFilePath("AciclovirLaskinData.xlsx")
 dataConfiguration <- ospsuite::createImporterConfigurationForFile(filePath = filePath)
 dataConfiguration$sheets <- "Laskin 1982.Group A"
 dataConfiguration$namingPattern <- "{Source}.{Sheet}"
-observedData <- loadDataSetsFromExcel(xlsFilePath = filePath,
-                                      importerConfigurationOrPath = dataConfiguration)
+observedData <- loadDataSetsFromExcel(
+  xlsFilePath = filePath,
+  importerConfigurationOrPath = dataConfiguration
+)
 
 outputMapping <- PIOutputMapping$new(quantity = testQuantity)
 outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
@@ -126,9 +128,11 @@ test_that("ParameterIdentification run method works", {
 taskResults <- task$run()
 
 test_that("Results object has expected names", {
-  expected_names <- c("par", "value", "iter", "convergence", "message",
-                      "elapsed", "algorithm", "nrOfFnEvaluations", "hessian",
-                      "sigma", "lwr", "upr", "cv")
+  expected_names <- c(
+    "par", "value", "iter", "convergence", "message",
+    "elapsed", "algorithm", "nrOfFnEvaluations", "hessian",
+    "sigma", "lwr", "upr", "cv"
+  )
   expect_named(taskResults, expected_names)
 })
 
@@ -266,4 +270,4 @@ test_that("Objective function options can be set to M3 censored error method and
   ))
   expect_no_error(taskResults <- task$run())
   expect_equal(taskResults$par, 1.32004, tolerance = 1e-4)
-  })
+})

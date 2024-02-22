@@ -9,7 +9,8 @@ test_that("`.calculateCensoredContribution` correctly calculates result with lin
   obsDf$lloq <- 2.5
   result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
     observed = obsDf, simulated = predDf,
-    scaling = "lin", linScaleCV = 0.25)
+    scaling = "lin", linScaleCV = 0.25
+  )
   expect_equal(result, 0.545702, tolerance = 1e-4)
 })
 
@@ -20,7 +21,8 @@ test_that("`.calculateCensoredContribution` correctly calculates result with log
   predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
   result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
     observed = obsDfLog, simulated = predDfLog,
-    scaling = "log", logScaleSD = 0.086)
+    scaling = "log", logScaleSD = 0.086
+  )
   expect_equal(result, 0.437086, tolerance = 1e-4)
 })
 
@@ -30,7 +32,8 @@ test_that("`.calculateCensoredContribution` can handle a minimal dataset with a 
   predDfSingle <- predDf[1, , drop = FALSE]
   result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
     observed = obsDfSingle, simulated = predDfSingle,
-    scaling = "lin", linScaleCV = 0.2)
+    scaling = "lin", linScaleCV = 0.2
+  )
   expect_equal(result, 0, tolerance = 1e-4)
 })
 
@@ -38,13 +41,15 @@ test_that("`.calculateCensoredContribution` throws an error when LLOQ values are
   expect_error(
     result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
       observed = obsDf, simulated = predDf,
-      scaling = "lin", linScaleCV = 0.2)
+      scaling = "lin", linScaleCV = 0.2
+    )
   )
   obsDf$lloq <- NULL
   expect_error(
     result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
       observed = obsDf, simulated = predDf,
-      scaling = "lin", linScaleCV = 0.2)
+      scaling = "lin", linScaleCV = 0.2
+    )
   )
 })
 
@@ -53,17 +58,20 @@ test_that("`.calculateCensoredContribution` throws errors on invalid options", {
   expect_error(
     result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
       observed = obsDf, simulated = predDf,
-      scaling = "invalidOption", linScaleCV = 0.2)
+      scaling = "invalidOption", linScaleCV = 0.2
+    )
   )
   expect_error(
     result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
       observed = obsDf, simulated = predDf,
-      scaling = "lin", logScaleSD = 0.086)
+      scaling = "lin", logScaleSD = 0.086
+    )
   )
   expect_error(
     result <- ospsuite.parameteridentification:::.calculateCensoredContribution(
       observed = obsDf, simulated = predDf,
-      scaling = "log", linScaleCV = 0.2)
+      scaling = "log", linScaleCV = 0.2
+    )
   )
 })
 
@@ -142,8 +150,10 @@ test_that("robust methods (huber, bisquare) modify the residuals appropriately",
 test_that("least squares and M3 methods produce different model costs", {
   obsVsPredDf$lloq <- 2.5
   result_lsq <- calculateCostMetrics(obsVsPredDf, objectiveFunctionType = "lsq")
-  result_m3 <- calculateCostMetrics(obsVsPredDf, objectiveFunctionType = "m3",
-                                    scaling = "lin", linScaleCV = 0.2)
+  result_m3 <- calculateCostMetrics(obsVsPredDf,
+    objectiveFunctionType = "m3",
+    scaling = "lin", linScaleCV = 0.2
+  )
   expect_true(result_lsq$modelCost != result_m3$modelCost)
 })
 

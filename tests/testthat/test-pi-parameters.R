@@ -20,10 +20,14 @@ test_that("Start, min, and max values are set correctly", {
   newStartValue <- refVal * 2
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
-  expect_error(piParam$minValue <- (newStartValue * 2),
-               "minimal value cannot be greater")
-  expect_error(piParam$maxValue <- (newStartValue / 2),
-               "maximal value cannot be smaller")
+  expect_error(
+    piParam$minValue <- (newStartValue * 2),
+    "minimal value cannot be greater"
+  )
+  expect_error(
+    piParam$maxValue <- (newStartValue / 2),
+    "maximal value cannot be smaller"
+  )
   piParam$minValue <- (newStartValue / 2)
   piParam$maxValue <- (newStartValue * 2)
   expect_equal(piParam$minValue, newStartValue / 2)
@@ -51,10 +55,14 @@ test_that("Unit can be changed correctly", {
   newUnit <- "cm/min"
   piParam$unit <- newUnit
   expect_equal(piParam$unit, newUnit)
-  expect_equal(piParam$currValue,
-               ospsuite::toUnit(testParam, refVal, targetUnit = newUnit))
-  expect_error(piParam$unit <- "invalidUnit",
-               "not supported by the dimension")
+  expect_equal(
+    piParam$currValue,
+    ospsuite::toUnit(testParam, refVal, targetUnit = newUnit)
+  )
+  expect_error(
+    piParam$unit <- "invalidUnit",
+    "not supported by the dimension"
+  )
 })
 
 
@@ -85,10 +93,14 @@ test_that("Start, min, and max values are set correctly", {
   newStartValue <- refVal * 2
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
-  expect_error(piParam$minValue <- (newStartValue * 2),
-               "minimal value cannot be greater")
-  expect_error(piParam$maxValue <- (newStartValue / 2),
-               "maximal value cannot be smaller")
+  expect_error(
+    piParam$minValue <- (newStartValue * 2),
+    "minimal value cannot be greater"
+  )
+  expect_error(
+    piParam$maxValue <- (newStartValue / 2),
+    "maximal value cannot be smaller"
+  )
   piParam$minValue <- (newStartValue / 2)
   piParam$maxValue <- (newStartValue * 2)
   expect_equal(piParam$minValue, newStartValue / 2)
@@ -116,8 +128,12 @@ test_that("Unit can be changed correctly", {
   newUnit <- "ml"
   piParam$unit <- newUnit
   expect_equal(piParam$unit, newUnit)
-  expect_equal(piParam$currValue,
-               ospsuite::toUnit(testParamsList[[1]], refVal, targetUnit = newUnit))
-  expect_error(piParam$unit <- "invalidUnit",
-               "not supported by the dimension")
+  expect_equal(
+    piParam$currValue,
+    ospsuite::toUnit(testParamsList[[1]], refVal, targetUnit = newUnit)
+  )
+  expect_error(
+    piParam$unit <- "invalidUnit",
+    "not supported by the dimension"
+  )
 })

@@ -184,7 +184,7 @@ observedData <- c(observedData_IV, observedData_PO)
 outputMappings <- vector("list", length = length(simulations))
 for (idx in seq_along(simulations)) {
   outputMappings[[idx]] <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)",
-                                                                      container = simulations[[idx]]
+    container = simulations[[idx]]
   ))
   outputMappings[[idx]]$addObservedDataSets(observedData[[names(simulations)[[idx]]]])
   outputMappings[[idx]]$scaling <- "lin"

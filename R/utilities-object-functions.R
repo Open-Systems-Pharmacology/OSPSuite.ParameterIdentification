@@ -47,7 +47,7 @@
 #'
 #' # View model cost
 #' print(costMetrics$modelCost)
-#'}
+#' }
 #' @export
 calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
                                  robustMethod = "none", scaleVar = FALSE, ...) {
@@ -119,20 +119,22 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
   # Determining the method for residual weighting
   observedYErr <-
     switch(residualWeightingMethod,
-           "none" = 1,
-           "error" = { observedData[["yErrorValues"]] |>
-               (\(x) replace(x, is.na(x), 1))() },
-           "std" = {
-             if (length(unique(observedYVal)) == 1) {
-               observedYErr <- sqrt(.Machine$double.eps)
-             } else {
-               observedYErr <- sd(observedYVal)
-             }
-           },
-           "mean" = {
-             meanVal <- mean(abs(observedYVal))
-             if (meanVal == 0) 1 else meanVal
-           }
+      "none" = 1,
+      "error" = {
+        observedData[["yErrorValues"]] |>
+          (\(x) replace(x, is.na(x), 1))()
+      },
+      "std" = {
+        if (length(unique(observedYVal)) == 1) {
+          observedYErr <- sqrt(.Machine$double.eps)
+        } else {
+          observedYErr <- sd(observedYVal)
+        }
+      },
+      "mean" = {
+        meanVal <- mean(abs(observedYVal))
+        if (meanVal == 0) 1 else meanVal
+      }
     )
 
   # Scaling residuals by the number of observations if requested
@@ -144,8 +146,7 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
   normalizedResiduals <- weightedResiduals * scaleFactor
 
   # Calculate robust weights based on the specified robust method
-  robustWeights <- switch(
-    robustMethod,
+  robustWeights <- switch(robustMethod,
     "huber" = .calculateHuberWeights(normalizedResiduals),
     "bisquare" = .calculateBisquareWeights(normalizedResiduals),
     rep(1, length(normalizedResiduals))
@@ -178,7 +179,8 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
 
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(log(pmax(0, dnorm(
-    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$weight))))
+    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$weight
+  ))))
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
@@ -224,35 +226,39 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   residualsData <- x$residualDetails
 
   # Setup base plot
-  plot(residualsData$x, residualsData$residuals, xlab = "x", ylab = "Residuals",
-       pch = 16, col = 'black', ...)
+  plot(residualsData$x, residualsData$residuals,
+    xlab = "x", ylab = "Residuals",
+    pch = 16, col = "black", ...
+  )
 
   # Add weightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
     points(residualsData$x, residualsData$weightedResiduals,
-           pch = 17, col = 'red', ...)
+      pch = 17, col = "red", ...
+    )
   }
 
   # Add robustWeightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
     points(residualsData$x, residualsData$robustWeightedResiduals,
-           pch = 18, col = 'blue', ...)
+      pch = 18, col = "blue", ...
+    )
   }
 
   # Legend
   legends <- c("Raw Residuals")
-  colors <- c('black')
+  colors <- c("black")
   pch_values <- c(16)
 
   if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
     legends <- c(legends, "Weighted Residuals")
-    colors <- c(colors, 'red')
+    colors <- c(colors, "red")
     pch_values <- c(pch_values, 17)
   }
 
   if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
     legends <- c(legends, "Robust Weighted Residuals")
-    colors <- c(colors, 'blue')
+    colors <- c(colors, "blue")
     pch_values <- c(pch_values, 18)
   }
 
@@ -345,10 +351,12 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   )
 
   df$yValues <- ospsuite.utils::logSafe(
-    df$yValues, epsilon = UNITS_EPSILON, base = exp(1)
+    df$yValues,
+    epsilon = UNITS_EPSILON, base = exp(1)
   )
   df$lloq <- ospsuite.utils::logSafe(
-    df$lloq, epsilon = UNITS_EPSILON, base = exp(1)
+    df$lloq,
+    epsilon = UNITS_EPSILON, base = exp(1)
   )
 
   return(df)
@@ -373,7 +381,6 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' }
 .calculateCensoredContribution <- function(observed, simulated, scaling,
                                            linScaleCV = NULL, logScaleSD = NULL) {
-
   ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
   ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
@@ -389,9 +396,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   # Identify censored and uncensored observations based on LLOQ
   observedUncensored <- observed[is.na(observed$lloq) |
-                                   (observed$yValues > observed$lloq), ]
+    (observed$yValues > observed$lloq), ]
   observedCensored <- observed[!is.na(observed$lloq) &
-                                 (observed$yValues <= observed$lloq), ]
+    (observed$yValues <= observed$lloq), ]
   simulatedCensored <- merge(
     observedCensored[c("xValues", "xUnit", "xDimension")], simulated,
     by = c("xValues", "xUnit", "xDimension"), all.x = TRUE
@@ -465,7 +472,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   standardizedResiduals <- residuals / (k * mad)
   # Huber weights
   weights <- ifelse(abs(standardizedResiduals) <= 1, 1,
-                    1 / abs(standardizedResiduals))
+    1 / abs(standardizedResiduals)
+  )
   return(weights)
 }
 
@@ -484,6 +492,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   standardizedResiduals <- residuals / (c * mad)
   # Bisquare weights
   weights <- ifelse(abs(standardizedResiduals) < 1,
-                    (1 - standardizedResiduals^2)^2, 0)
+    (1 - standardizedResiduals^2)^2, 0
+  )
   return(weights)
 }

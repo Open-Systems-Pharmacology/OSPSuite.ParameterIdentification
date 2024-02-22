@@ -28,17 +28,22 @@ test_that("Observed data sets can be added", {
   dataConfiguration <- ospsuite::createImporterConfigurationForFile(filePath = filePath)
   dataConfiguration$sheets <- "Laskin 1982.Group A"
   dataConfiguration$namingPattern <- "{Source}.{Sheet}"
-  observedData <- loadDataSetsFromExcel(xlsFilePath = filePath,
-                                        importerConfigurationOrPath = dataConfiguration)
+  observedData <- loadDataSetsFromExcel(
+    xlsFilePath = filePath,
+    importerConfigurationOrPath = dataConfiguration
+  )
 
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   expect_no_error(
     outputMapping$addObservedDataSets(
       observedData$`AciclovirLaskinData.Laskin 1982.Group A`
-    ))
+    )
+  )
 
-  expect_equal(outputMapping$observedDataSets[["AciclovirLaskinData.Laskin 1982.Group A"]],
-               observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
+  expect_equal(
+    outputMapping$observedDataSets[["AciclovirLaskinData.Laskin 1982.Group A"]],
+    observedData$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
 })
 
 test_that("Scaling can be changed to predefined values", {
