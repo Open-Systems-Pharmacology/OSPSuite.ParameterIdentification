@@ -1,4 +1,4 @@
-# yValues and lloq are correctly log-transformed
+# `.applyLogTransformation` correctly log-transforms yValues and lloq
 
     WAoAAAACAAQDAgACAwAAAAMTAAAAGAAAAA4AAAAXAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -230,7 +230,7 @@
     AAQACQAAAAtzcGVjX3RibF9kZgAEAAkAAAAGdGJsX2RmAAQACQAAAAN0YmwABAAJAAAACmRh
     dGEuZnJhbWUAAAD+
 
-# the function returns correct cost metric values for default parameters
+# `calculateCostMetrics` returns correct cost metric values for default parameters
 
     WAoAAAACAAQDAgACAwAAAAMTAAAABAAAAA4AAAABQIUrH0zc2DoAAAAOAAAAAUB1zNr+qwJT
     AAADEwAAAAcAAAAOAAAAAT/wAAAAAAAAAAAADQAAAAEAAAALAAAADgAAAAEAAAAAAAAAAAAA
