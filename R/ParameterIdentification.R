@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import ospsuite.utils
+#' @import R6 ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -34,7 +34,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(value, "PIConfiguration")
+        ospsuite.utils::validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -78,13 +78,13 @@ ParameterIdentification <- R6::R6Class(
     # stored in this variable
     .savedSimulationState = NULL,
     .fnEvaluations = 0,
-    # CV for M3 target function
+    # CV for M3 objective function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
-    .cvM3 = 0.2,
+    .linScaleCV = 0.2,
     # pre-calculate SD for log-transformed data assuming CV of 20%
-    # Used for M3 target function
+    # Used for M3 objective function
     # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
-    .sdForLogCV = NULL,
+    .logScaleSD = NULL,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -130,8 +130,8 @@ ParameterIdentification <- R6::R6Class(
 
         # Clear output intervals and output quantities of all simulations
         for (simulation in private$.simulations) {
-          clearOutputIntervals(simulation)
-          clearOutputs(simulation)
+          ospsuite::clearOutputIntervals(simulation)
+          ospsuite::clearOutputs(simulation)
         }
 
         # Add time points to the output schema that are present in the observed data.
@@ -156,8 +156,8 @@ ParameterIdentification <- R6::R6Class(
               xOffset <- xOffset[[label]]
             }
             xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-                                          values = (dataset$xValues + xOffset) * xFactor,
-                                          unit = dataset$xUnit
+              values = (dataset$xValues + xOffset) * xFactor,
+              unit = dataset$xUnit
             )
             simulation$outputSchema$addTimePoints(xVals)
           }
@@ -177,7 +177,7 @@ ParameterIdentification <- R6::R6Class(
         for (simulation in private$.simulations) {
           simId <- simulation$root$id
           # Parameters and molecules defined in the previous steps will be variable.
-          simBatch <- createSimulationBatch(
+          simBatch <- ospsuite::createSimulationBatch(
             simulation = simulation,
             parametersOrPaths = names(private$.variableParameters[[simId]]),
             moleculesOrPaths = names(private$.variableMolecules[[simId]])
@@ -215,9 +215,9 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Calculate the target function that is going to be minimized during
+    # Calculate the objective function that is going to be minimized during
     # parameter estimation.
-    .targetFunction = function(currVals) {
+    .objectiveFunction = function(currVals) {
       # Increase function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
@@ -234,50 +234,20 @@ ParameterIdentification <- R6::R6Class(
           NA
         }
       )
-      # Returning a list of `Inf`s as otherwise the "Marq" method complains about
-      # receiving only single value and not residuals.
-      # (I think this would also lead to a failure where only one observed data
-      # point is fitted).
-      if (any(is.na(obsVsPredList))) {
-        out <- list(
-          model = Inf,
-          minlogp = Inf,
-          var = data.frame(
-            name           = "Values",
-            scale          = 1,
-            N              = 1,
-            SSR.unweighted = Inf,
-            SSR.unscaled   = Inf,
-            SSR            = Inf
-          ),
-          residuals = data.frame(
-            name = "Values",
-            x = 0,
-            obs = 0,
-            mod = Inf,
-            weight = 1,
-            res.unweighted = Inf,
-            res = Inf
-          )
-        )
-        class(out) <- "modCost"
-        return(out)
+      # Return an infinite cost structure if the simulation is NA
+      failureResponse <- .handleSimulationFailure(obsVsPredList)
+      if (!is.null(failureResponse)) {
+        return(failureResponse)
       }
 
-      # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
-      # Summed up over all output mappings
-      unscensoredError <- NULL
-      # Error calculated for censored values (i.e., below LQ if LLOQ censoring)
-      # Summed up over all output mappings
-      censoredError <- NULL
-
-      # Calculate error for each output mapping separately and add them up
+      # Calculate error for each output mapping separately
+      costSummaryList <- vector("list", length(private$.outputMappings))
       for (idx in seq_along(private$.outputMappings)) {
         # Calling unit converter to unify the units within the DataCombined
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-        # For least squares target function, values below LLOQ will be set to
+        # For least squares objective function, values below LLOQ will be set to
         # LLOQ/2 for simulation data and therefore always equal to the observed values
-        if (private$.configuration$targetFunctionType == "lsq") {
+        if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
           # replacing values below LLOQ with LLOQ / 2
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
@@ -288,114 +258,31 @@ ParameterIdentification <- R6::R6Class(
 
         # Transform to log if required.
         if (private$.outputMappings[[idx]]$scaling == "log") {
-          UNITS_EPSILON <- ospsuite::toUnit(
-            quantityOrDimension = obsVsPredDf$yDimension[[1]],
-            values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-            targetUnit = obsVsPredDf$yUnit[[1]],
-            molWeight = 1
-          )
-          obsVsPredDf$yValues <- ospsuite.utils::logSafe(obsVsPredDf$yValues, epsilon = UNITS_EPSILON, base = exp(1))
-          obsVsPredDf$lloq <- ospsuite.utils::logSafe(obsVsPredDf$lloq, epsilon = UNITS_EPSILON, base = exp(1))
+          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
-        # Extract simulated and observed data
-        simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-        observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+        # Calculate model costs
+        costSummary <- calculateCostMetrics(
+          df = obsVsPredDf,
+          objectiveFunctionType = private$.configuration$objectiveFunctionOptions$objectiveFunctionType,
+          residualWeightingMethod = private$.configuration$objectiveFunctionOptions$residualWeightingMethod,
+          robustMethod = private$.configuration$objectiveFunctionOptions$robustMethod,
+          scaleVar = private$.configuration$objectiveFunctionOptions$scaleVar,
+          scaling = private$.outputMappings[[idx]]$scaling,
+          linScaleCV = private$.linScaleCV,
+          logScaleSD = private$.logScaleSD
+        )
 
-        # Least squares target function.
-        if (private$.configuration$targetFunctionType == "lsq") {
-          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-        }
-
-        # M3 LLOQ method. Implementation based on DOI: 10.1023/a:1012299115260
-        # In particular, equation 6
-        if (private$.configuration$targetFunctionType == "m3") {
-          # Separate censored and uncensored data
-          observed_uncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
-          observed_censored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
-          simulated_uncensored <- merge(observed_uncensored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-          simulated_censored <- merge(observed_censored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-
-          # Data frames used for calculation of uncensored error
-          modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
-          # 'merge()' produces multiple entries for the same x value when multiple
-          # observed data sets are present. Apply 'unique()' to avoid duplication
-          # of values and a warning during interpolation.
-          modelDf <- unique(modelDf)
-          obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
-
-          # sd for untransformed data is defined as CV * mean, while mean is the LQ
-          if (private$.outputMappings[[idx]]$scaling == "lin") {
-            sd <- abs(private$.cvM3 * observed_censored$lloq)
-          } else {
-            sd <- private$.sdForLogCV
-          }
-
-          # Calculate censored residuals for this output mapping and add it to
-          # the total censored residuals vector
-          if (nrow(observed_censored) > 0) {
-            # First calculate the probabilities
-            censoderProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
-            # Replace zeros by the minimal number to avoid Inf for censoder error
-            censoderProbabilities[censoderProbabilities == 0] <- .Machine$double.xmin
-
-            # As desctibed in Equation 6. Calculate a vector of residuals
-            censoredErrorVector <- -2 * log(censoderProbabilities,
-              base = 10
-            )
-            # We must take the square root of the censored residuals because modFit
-            # expects the unsquared residuals! The total error value is then calculated
-            # as squared residuals but as can be seen in Equation 5, M3 method returns
-            # already squared values
-            censoredErrorVector <- sqrt(censoredErrorVector)
-
-            # Construct the data frame with censored residuals with the same structure
-            # as the 'residuals'  df
-            censoredError <- rbind(censoredError, data.frame(
-              name = "Values",
-              x = observed_censored$xValues,
-              obs = observed_censored$yValues,
-              mod = simulated_censored$yValues,
-              weight = 1,
-              res.unweighted = censoredErrorVector,
-              res = censoredErrorVector
-            ))
-          }
-        }
-
-        # Calculate uncensored error.
-        unscensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+        costSummaryList[[idx]] <- costSummary
       }
-
-      # Total error. Either the uncensored error,
-      # or with addition of censored values
-      runningCost <- unscensoredError
-      if (!is.null(censoredError)) {
-        # Add censored error
-        totalCost <- runningCost$model + sum(censoredError$res^2)
-        # Extend the structure of the results object returned by modCost by
-        # the uncensored cost
-        # Append the data frame to the $residuals df
-        runningCost$residuals <- rbind(runningCost$residuals, censoredError)
-        #
-        # # Update the total cost 'model'
-        runningCost$model <- totalCost
-        runningCost$var$N <- length(runningCost$residuals$res)
-        runningCost$var$SSR.unweighted <- totalCost
-        runningCost$var$SSR.unscaled <- totalCost
-        runningCost$var$SSR <- totalCost
-        runningCost$minlogp <- -sum(log(pmax(0, dnorm(
-          runningCost$residuals$mod, runningCost$residuals$obs,
-          1 / runningCost$residuals$weight
-        ))))
-      }
+      # Summed up over all output mappings
+      runningCost <- Reduce(.summarizeCostLists, costSummaryList)
 
       # Print current error if requested
       if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", target function ", signif(runningCost$model, 3), "\n"
+          ", objective function ", signif(runningCost$modelCost, 4), "\n"
         ))
       }
       return(runningCost)
@@ -450,7 +337,7 @@ ParameterIdentification <- R6::R6Class(
       #   }
       #
       #   # Run steady-state batches
-      #   ssResults <- runSimulationBatches(simulationBatches = private$.steadyStateBatches,
+      #   ssResults <- ospsuite::runSimulationBatches(simulationBatches = private$.steadyStateBatches,
       #                        simulationRunOptions = private$.configuration$simulationRunOptions)
       #####
 
@@ -463,13 +350,13 @@ ParameterIdentification <- R6::R6Class(
         )
       }
       # Run simulation batches
-      simulationResults <- runSimulationBatches(
+      simulationResults <- ospsuite::runSimulationBatches(
         simulationBatches = private$.simulationBatches,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
       for (idx in seq_along(private$.outputMappings)) {
-        obsVsPred <- DataCombined$new()
+        obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
@@ -521,30 +408,32 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.objectiveFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.objectiveFunction(p)$modelCost
           }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
-        control <- DEoptim::DEoptim.control(VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
-                                            strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
-                                            bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
-                                            NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
-                                            itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
-                                            CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
-                                            F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
-                                            trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
-                                            reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
-                                            steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
+        control <- DEoptim::DEoptim.control(
+          VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
+          strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
+          bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
+          NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
+          itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
+          CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
+          F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
+          trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
+          reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
+          steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200))
+        )
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.objectiveFunction(p)$modelCost
           }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
@@ -561,7 +450,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate sigma if it has not been calculated previously
       if (is.null(results$sigma)) {
-        # For the target function that represents the deviation = -2 * log(L),
+        # For the objective function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
         results$sigma <- tryCatch(
@@ -574,7 +463,7 @@ ParameterIdentification <- R6::R6Class(
               # of 1e-4
               hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
               results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.targetFunction(p)$model
+                private$.objectiveFunction(p)$modelCost
               }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
@@ -593,8 +482,8 @@ ParameterIdentification <- R6::R6Class(
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      results$lwr <- results$par - qnorm(p = 1 - 0.05/2) * results$sigma
-      results$upr <- results$par + qnorm(p = 1 - 0.05/2) * results$sigma
+      results$lwr <- results$par - qnorm(p = 1 - 0.05 / 2) * results$sigma
+      results$upr <- results$par + qnorm(p = 1 - 0.05 / 2) * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
       return(results)
     }
@@ -618,11 +507,11 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
-      private$.sdForLogCV <- sqrt(log(1 + private$.cvM3^2, base = 10) / log(10))
+      private$.logScaleSD <- sqrt(log(1 + private$.linScaleCV^2, base = 10) / log(10))
 
-      simulations <- toList(simulations)
-      parameters <- toList(parameters)
-      outputMappings <- toList(outputMappings)
+      simulations <- ospsuite.utils::toList(simulations)
+      parameters <- ospsuite.utils::toList(parameters)
+      outputMappings <- ospsuite.utils::toList(outputMappings)
 
       # We have to use the id of the root container of the simulation instead of
       # the id of the simulation itself, because later we have to find the
@@ -710,21 +599,21 @@ ParameterIdentification <- R6::R6Class(
       dataCombined <- private$.evaluate(parValues)
 
       # Create figures and plot
-      plotConfiguration <- DefaultPlotConfiguration$new()
+      plotConfiguration <- ospsuite::DefaultPlotConfiguration$new()
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$legendPosition <- "none"
         plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        obsVsSim <- ospsuite::plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
-        plotGridConfiguration <- PlotGridConfiguration$new()
+        resVsTime <- ospsuite::plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
         plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
-        return(plotGrid(plotGridConfiguration))
+        return(ospsuite::plotGrid(plotGridConfiguration))
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -786,7 +675,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::isSameLength(lower, private$.piParameters)
       ospsuite.utils::isSameLength(upper, private$.piParameters)
 
-      gridSize <- floor(totalEvaluations^(1/nrOfParameters))
+      gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
       gridList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         if (logScaleFlag[[idx]]) {
@@ -802,7 +691,7 @@ ParameterIdentification <- R6::R6Class(
       OFVGrid <- expand.grid(gridList)
       # all columns from the OFVGrid are passed in the same order to the objective function
       OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
-        private$.targetFunction(c(...))$model
+        private$.objectiveFunction(c(...))$modelCost
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -881,7 +770,7 @@ ParameterIdentification <- R6::R6Class(
         # creates a tibble with the column name from the `parameterName` variable
         profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
         profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
-          private$.targetFunction(c(...))$model
+          private$.objectiveFunction(c(...))$modelCost
         })
         names(profileList)[[idx]] <- parameterName
       }
