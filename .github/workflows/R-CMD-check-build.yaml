@@ -1,4 +1,4 @@
-name: main workflow
+name: R-CMD-check-build
 
 on:
   push:
