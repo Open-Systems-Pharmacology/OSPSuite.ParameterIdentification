@@ -8,6 +8,6 @@ on:
 
 jobs:
   call-workflow:
-    uses: Felixmil/Workflows/.github/workflows/R-CMD-check-build.yaml
+    uses: Felixmil/Workflows/.github/workflows/R-CMD-check-build.yaml@f5d5ae4
     with:
       RCLR_VERSION: 0.9.2
