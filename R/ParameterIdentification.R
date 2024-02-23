@@ -409,7 +409,7 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         # Default options
         if (is.null(control)) {
-          control <- AlgotitmOptions_HJKB
+          control <- AlgorithmOptions_HJKB
         }
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
@@ -419,7 +419,7 @@ ParameterIdentification <- R6::R6Class(
       } else if (private$.configuration$algorithm == "BOBYQA") {
         # Default options
         if (is.null(control)) {
-          control <- AlgotitmOptions_BOBYQA
+          control <- AlgorithmOptions_BOBYQA
         }
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
@@ -429,7 +429,7 @@ ParameterIdentification <- R6::R6Class(
       } else if (private$.configuration$algorithm == "DEoptim") {
         # Default options
         if (is.null(control)) {
-          control <- AlgotitmOptions_DEoptim
+          control <- AlgorithmOptions_DEoptim
         }
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
         time <- system.time({

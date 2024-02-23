@@ -1,48 +1,86 @@
-# OSPSuite.ParameterIdentification
-R package for parameter identification in Open Systems Pharmacology models.
 
-  <!-- badges: start -->
+# ospsuite.parameteridentification
 
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification?branch=develop&svg=true)](https://ci.appveyor.com/project/open-systems-pharmacology-ci/ospsuite-parameteridentification)
+<!-- badges: start -->
+
+[![AppVeyor build
+status](https://ci.appveyor.com/api/projects/status/github/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification?branch=develop&svg=true)](https://ci.appveyor.com/project/open-systems-pharmacology-ci/ospsuite-parameteridentification)
 [![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/branch/develop/graph/badge.svg)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
 
-  <!-- badges: end -->
+<!-- badges: end -->
 
-# Overview
-The **OSPSuite.ParameterIdentification** is used to set up, run and validate parameter identification problems (i.e., fitting the model to observed data) for simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. 
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Installation
+The **ospsuite.parameteridentification** R package provides the
+functionality of performing parameter identification (i.e., fitting the
+model to observed data) with simulations created in the Open Systems
+Pharmacology Software tools PK-Sim and MoBi. The package requires the
+[**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R)
+package to run the simulations.
 
-**OSPSuite.ParameterIdentification** requires following packages to be installed:
+## Installation
 
-- [rClr](https://github.com/Open-Systems-Pharmacology/rClr/releases/latest) >0.9
-- [ospsuite](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) >10
-- [R6](https://github.com/r-lib/R6)
+### Windows
 
-### For building from source and developing
-- Rtools (https://cran.r-project.org/bin/windows/Rtools/)
-  - After installation, add the folder to your $PATH: In start menu, type in "PATH", select "Change path environment for user", and add the path to Rtools folder.
-- roxygen2 (CRAN)
-- devtools (CRAN)
-- rmarkdown (CRAN)
-- testthat (CRAN)
-- pander (CRAN)
-- knitr (CRAN)
-- styler (CRAN)
+The package can be installed from GitHub using the `{remotes}` package.
+Under Windows, simply run the following code:
+
+``` r
+# {ospsuite.parameteridentification} and its Open Systems Pharmacology Suite's dependencies relies on
+# {rClr} (https://github.com/Open-Systems-Pharmacology/rClr) which is not
+# available on CRAN.
+# Therefore, these must be installed from github using `{remotes}`.
+# You can skip this step if you have already installed the `{ospsuite`} package.
+
+install.packages("remotes")
+install.packages("https://github.com/Open-Systems-Pharmacology/rClr/releases/download/v0.9.2/rClr_0.9.2.zip",
+  type = "binary"
+)
+
+remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+```
+
+Get the latest development version with:
+
+``` r
+remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
+```
+
+### Linux
+
+For Linux, follow the instructions to install
+[{`ospsuite`}](https://github.com/Open-Systems-Pharmacology/OSPSuite-R?tab=readme-ov-file#on-linux)
+first and then run
+
+``` r
+remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+```
+
+(remove `@*release` to get the latest development version).
 
 ## User guide
-Examples of running parameter estimation tasks using this package are detailed in [the user guide](articles/user-guide.html).
+
+Examples of running parameter estimation tasks using this package are
+detailed in `vignette('user-guide')`.
+
+## Code of conduct
+
+Everyone interacting in the Open Systems Pharmacology community
+(codebases, issue trackers, chat rooms, mailing lists etc…) is expected
+to follow the Open Systems Pharmacology [code of
+conduct](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODE_OF_CONDUCT.md).
 
 ## Contribution
 
-We encourage contribution to the Open Systems Pharmacology community. Before getting started please read the [contribution guidelines](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CONTRIBUTING.md). If you are contributing code, please be familiar with the [coding standards](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODING_STANDARDS_R.md).
-
-### Code of conduct
-
-Everyone interacting in the Open Systems Pharmacology community (codebases, issue trackers, chat rooms, mailing lists etc...) is expected to follow the Open Systems Pharmacology [code of conduct](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODE_OF_CONDUCT.md).
+We encourage contribution to the Open Systems Pharmacology community.
+Before getting started please read the [contribution
+guidelines](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CONTRIBUTING.md).
+If you are contributing code, please be familiar with the [coding
+standards](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODING_STANDARDS_R.md).
 
 ## License
 
-OSPSuite-R is released under the [GPLv2 License](LICENSE).
+The `{OSPSuite.ParameterIdentification}` package is released under the
+[GPLv2 License](LICENSE).
 
 All trademarks within this document belong to their legitimate owners.

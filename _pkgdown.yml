@@ -3,3 +3,61 @@ url: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/
 template:
   bootstrap: 5
 
+authors:
+  esqLABS GmbH:
+    href: https://esqlabs.com/
+    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png'
+      style='max-width:33px'>esqLABS
+  Open-Systems-Pharmacology Community:
+    href: https://www.open-systems-pharmacology.org/
+    html: <img src='https://open-systems-pharmacology.github.io/ospsuiteR/reference/figures/osp.png'
+      style='max-width:33px'>Open Systems Pharmacology
+  Pavel Balazki:
+    href: https://github.com/PavelBal
+  Sergei Vavilov:
+    href: https://github.com/svavil
+  Rudi Engelke:
+    href: https://github.com/rengelke
+  Felix Mil:
+    href: https://github.com/Felixmil
+
+development:
+  mode: auto
+
+reference:
+- title: Parameter identification workflow
+  contents:
+  - ParameterIdentification
+  - PIConfiguration
+  - PIOutputMapping
+  - PIParameters
+- title: Supported options
+  contents:
+  - Algorithms
+  - contains("AlgorithmOptions")
+  - ObjectiveFunctionOptions
+  - residualWeightingOptions
+  - robustMethodOptions
+  - ScalingOptions
+- title: Internal functions
+  contents:
+  - calculateCostMetrics
+  - plot.modelCost
+- title: Miscelaneous
+  contents:
+  - getOSPSuitePISetting
+  - ospsuitePIRSettingNames
+  - validateIsOption
+  - getSteadyState
+
+articles:
+- title: Parameter identification workflow
+  navbar: Parameter identification workflow
+  contents:
+  - user-guide
+- title: Details
+  navbar: Details
+  contents:
+  - error-calculation
+  - optimization-algorithms
+

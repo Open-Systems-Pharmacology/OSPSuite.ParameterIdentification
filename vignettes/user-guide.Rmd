@@ -202,16 +202,16 @@ print(piConfiguration)
 
 -   `algorithm` (possible values: `r paste0(ospsuite.parameteridentification:::Algorithms, collapse = ", ")`) indicates which of the optimization algorithms should be used. Algorithm options can be specified as a list and passed to `piConfiguration$algorithmOptions`. Supported algorithms and their options are described in `vignette("optimization-algorithms")`.
 
-The default settings are listed in `AlgotitmOptions_XYZ`, where `XYZ` is the algorithm's name. For example, the default settings for the `BOBYQA` algorithm are stored in `AlgotitmOptions_BOBYQA`:
+The default settings are listed in `AlgorithmOptions_XYZ`, where `XYZ` is the algorithm's name. For example, the default settings for the `BOBYQA` algorithm are stored in `AlgorithmOptions_BOBYQA`:
 
 ```{r}
-print(AlgotitmOptions_BOBYQA)
+print(AlgorithmOptions_BOBYQA)
 ```
 
 E.g. to set the maximal number of function evaluations to 1500 for the `BOBYQA` algorithm, we can use the following code:
 
 ```{r}
-defOptions <- AlgotitmOptions_BOBYQA
+defOptions <- AlgorithmOptions_BOBYQA
 defOptions$maxFunctionEvaluations <- 1500
 piConfiguration$algorithmOptions <- defOptions
 ```

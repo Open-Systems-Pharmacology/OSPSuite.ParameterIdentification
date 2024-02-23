@@ -9,31 +9,31 @@ Algorithms <- ospsuite.utils::enum(c(
   "DEoptim" # differential evolution algorithm from the {DEoptim} package
 ))
 
-#' @title AlgotitmOptions_HJKB
+#' @title AlgorithmOptions_HJKB
 #' @description
 #' Default options for the HJKB algorithm.
 #' see [dfoptim::hjkb()] for details.
 #'
 #' @export
-AlgotitmOptions_HJKB <- enum(list(
+AlgorithmOptions_HJKB <- enum(list(
   tol = 1e-06, maxfeval = Inf, maximize = FALSE,
   target = Inf, info = FALSE
 ))
 
-#' @title AlgotitmOptions_BOBYQA
+#' @title AlgorithmOptions_BOBYQA
 #' @description
 #' Default options for the BOBYQA algorithm.
 #' see [nloptr::nl.opts()] for details.
 #' @export
-AlgotitmOptions_BOBYQA <- enum(nloptr::nl.opts())
+AlgorithmOptions_BOBYQA <- enum(nloptr::nl.opts())
 
-#' @title AlgotitmOptions_DEoptim
+#' @title AlgorithmOptions_DEoptim
 #' @description
 #' Default options for the DEoptim algorithm.
 #' see [DEoptim::DEoptim.control()] for details.
 #'
 #' @export
-AlgotitmOptions_DEoptim <- enum(DEoptim::DEoptim.control())
+AlgorithmOptions_DEoptim <- enum(DEoptim::DEoptim.control())
 
 
 #' @title ObjectiveFunctions
