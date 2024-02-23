@@ -7,7 +7,7 @@ on:
     branches: [main, master, develop]
 
 jobs:
-  call-workflow:
+  R-CMD-check-build:
     uses: Felixmil/Workflows/.github/workflows/R-CMD-check-build.yaml@test-from-fork
     with:
       RCLR_VERSION: 0.9.2
