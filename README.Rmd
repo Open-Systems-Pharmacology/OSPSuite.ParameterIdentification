@@ -1,12 +1,10 @@
 ---
 output: 
-  github_document:
-    df_print: "kable"
+  github_document
 ---
 
 # ospsuite.parameteridentification
 
-R package for parameter identification for OSPS models.
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -17,9 +15,6 @@ knitr::opts_chunk$set(
   warning = FALSE,
     out.width = "100%"
 )
-
-library(tidyr)
-library(dplyr)
 ```
 
 
@@ -32,9 +27,8 @@ library(dplyr)
   
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-## Overview
 
-The **OSPSuite.ParameterIdentification** R-package provides the functionality of performing parameter identification (i.e., fitting the model to observed data) with simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. The package requires the [**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) package to run the simulations.
+The **ospsuite.parameteridentification** R package provides the functionality of performing parameter identification (i.e., fitting the model to observed data) with simulations created in the Open Systems Pharmacology Software tools PK-Sim and MoBi. The package requires the [**ospsuite**](https://github.com/Open-Systems-Pharmacology/OSPSuite-R) package to run the simulations.
 
 ## Installation
 

@@ -1,8 +1,6 @@
 
 # ospsuite.parameteridentification
 
-R package for parameter identification for OSPS models.
-
 <!-- badges: start -->
 
 [![AppVeyor build
@@ -13,9 +11,7 @@ status](https://ci.appveyor.com/api/projects/status/github/Open-Systems-Pharmaco
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-## Overview
-
-The **OSPSuite.ParameterIdentification** R-package provides the
+The **ospsuite.parameteridentification** R package provides the
 functionality of performing parameter identification (i.e., fitting the
 model to observed data) with simulations created in the Open Systems
 Pharmacology Software tools PK-Sim and MoBi. The package requires the

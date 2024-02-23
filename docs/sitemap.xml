@@ -4,6 +4,18 @@
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/404.html</loc>
   </url>
   <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/error-calculation.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/optimization-algorithms.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/user-guide.html</loc>
+  </url>
+  <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/authors.html</loc>
   </url>
   <url>
@@ -13,10 +25,58 @@
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/LICENSE-text.html</loc>
   </url>
   <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/news/index.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/Algorithms.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_BOBYQA.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_DEoptim.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_HJKB.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/calculateCostMetrics.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-applyLogTransformation.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateBisquareWeights.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateCensoredContribution.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateHuberWeights.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-createErrorCostStructure.html</loc>
+  </url>
+  <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-getSimulationContainer.html</loc>
   </url>
   <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-handleSimulationFailure.html</loc>
+  </url>
+  <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-isSameDimension.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-removeFormulaPaths.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-restoreSimulationState.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-storeSimulationState.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-summarizeCostLists.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-validateIsSameDimension.html</loc>
@@ -29,6 +89,9 @@
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionOptions.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ospsuitePIRSettingNames.html</loc>
@@ -44,5 +107,20 @@
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIParameters.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/plot.modelCost.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/residualWeightingOptions.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/robustMethodOptions.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ScalingOptions.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/validateIsOption.html</loc>
   </url>
 </urlset>
