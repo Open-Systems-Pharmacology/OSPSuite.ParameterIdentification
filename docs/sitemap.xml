@@ -28,6 +28,15 @@
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/news/index.html</loc>
   </url>
   <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_BOBYQA.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_DEoptim.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_HJKB.html</loc>
+  </url>
+  <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/Algorithms.html</loc>
   </url>
   <url>

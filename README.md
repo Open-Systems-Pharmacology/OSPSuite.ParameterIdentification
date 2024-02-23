@@ -20,14 +20,17 @@ package to run the simulations.
 
 ## Installation
 
-Currently, ospsuite.parameteridentification is available only for
-Windows system. You can install the package by running:
+### Windows
+
+The package can be installed from GitHub using the `{remotes}` package.
+Under Windows, simply run the following code:
 
 ``` r
 # {ospsuite.parameteridentification} and its Open Systems Pharmacology Suite's dependencies relies on
 # {rClr} (https://github.com/Open-Systems-Pharmacology/rClr) which is not
 # available on CRAN.
 # Therefore, these must be installed from github using `{remotes}`.
+# You can skip this step if you have already installed the `{ospsuite`} package.
 
 install.packages("remotes")
 install.packages("https://github.com/Open-Systems-Pharmacology/rClr/releases/download/v0.9.2/rClr_0.9.2.zip",
@@ -42,6 +45,18 @@ Get the latest development version with:
 ``` r
 remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
+
+### Linux
+
+For Linux, follow the instructions to install
+[{`ospsuite`}](https://github.com/Open-Systems-Pharmacology/OSPSuite-R?tab=readme-ov-file#on-linux)
+first and then run
+
+``` r
+remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+```
+
+(remove `@*release` to get the latest development version).
 
 ## User guide
 
@@ -65,6 +80,7 @@ standards](https://github.com/Open-Systems-Pharmacology/Suite/blob/master/CODING
 
 ## License
 
-OSPSuite-R is released under the [GPLv2 License](LICENSE).
+The `{OSPSuite.ParameterIdentification}` package is released under the
+[GPLv2 License](LICENSE).
 
 All trademarks within this document belong to their legitimate owners.

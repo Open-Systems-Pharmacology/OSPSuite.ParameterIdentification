@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,9 +24,12 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <h6 class="dropdown-header" data-toc-skip>Parameter identification workflow</h6>
+    <a class="dropdown-item" href="../articles/user-guide.html">User guide</a>
+    <div class="dropdown-divider"></div>
+    <h6 class="dropdown-header" data-toc-skip>Details</h6>
     <a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a>
     <a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a>
-    <a class="dropdown-item" href="../articles/user-guide.html">User guide</a>
   </div>
 </li>
 <li class="nav-item">
@@ -52,7 +55,7 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="parameter-identification-workflow">Parameter identification workflow<a class="anchor" aria-label="anchor" href="#parameter-identification-workflow"></a></h2>
       
       
 
@@ -63,54 +66,6 @@
       
 
       <dl><dt>
-          
-          <code><a href="Algorithms.html">Algorithms</a></code> 
-        </dt>
-        <dd>Algorithms
-List of optimization algorithms supported by optimization routines and, consequently,
-by the ParameterIdentification class</dd>
-      </dl><dl><dt>
-          
-          <code><a href="AlgotitmOptions_BOBYQA.html">AlgotitmOptions_BOBYQA</a></code> 
-        </dt>
-        <dd>AlgotitmOptions_BOBYQA</dd>
-      </dl><dl><dt>
-          
-          <code><a href="AlgotitmOptions_DEoptim.html">AlgotitmOptions_DEoptim</a></code> 
-        </dt>
-        <dd>AlgotitmOptions_DEoptim</dd>
-      </dl><dl><dt>
-          
-          <code><a href="AlgotitmOptions_HJKB.html">AlgotitmOptions_HJKB</a></code> 
-        </dt>
-        <dd>AlgotitmOptions_HJKB</dd>
-      </dl><dl><dt>
-          
-          <code><a href="calculateCostMetrics.html">calculateCostMetrics()</a></code> 
-        </dt>
-        <dd>Calculate Cost Metrics for Model Evaluation</dd>
-      </dl><dl><dt>
-          
-          <code><a href="getOSPSuitePISetting.html">getOSPSuitePISetting()</a></code> 
-        </dt>
-        <dd>Get the value of a global ospsuite.parameteridentification setting.</dd>
-      </dl><dl><dt>
-          
-          <code><a href="getSteadyState.html">getSteadyState()</a></code> 
-        </dt>
-        <dd>Get the steady-state values of species and state variable parameters.</dd>
-      </dl><dl><dt>
-          
-          <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code> 
-        </dt>
-        <dd>ObjectiveFunctions
-List of supported objective functions to calculate the error.</dd>
-      </dl><dl><dt>
-          
-          <code><a href="ospsuitePIRSettingNames.html">ospsuitePIRSettingNames</a></code> 
-        </dt>
-        <dd>Names of the settings stored in piEnv Can be used with <code><a href="../reference/getOSPSuitePISetting.html">getOSPSuitePISetting()</a></code></dd>
-      </dl><dl><dt>
           
           <code><a href="ParameterIdentification.html">ParameterIdentification</a></code> 
         </dt>
@@ -130,11 +85,45 @@ List of supported objective functions to calculate the error.</dd>
           <code><a href="PIParameters.html">PIParameters</a></code> 
         </dt>
         <dd>PIParameters</dd>
+      </dl></div><div class="section level2">
+      <h2 id="supported-options">Supported options<a class="anchor" aria-label="anchor" href="#supported-options"></a></h2>
+      
+      
+
+      
+    </div><div id="" class="section level2">
+      
+      
+      
+
+      <dl><dt>
+          
+          <code><a href="Algorithms.html">Algorithms</a></code> 
+        </dt>
+        <dd>Algorithms
+List of optimization algorithms supported by optimization routines and, consequently,
+by the ParameterIdentification class</dd>
       </dl><dl><dt>
           
-          <code><a href="plot.modelCost.html">plot(<i>&lt;modelCost&gt;</i>)</a></code> 
+          <code><a href="AlgorithmOptions_BOBYQA.html">AlgorithmOptions_BOBYQA</a></code> 
         </dt>
-        <dd>Plot Model Cost Residuals</dd>
+        <dd>AlgorithmOptions_BOBYQA</dd>
+      </dl><dl><dt>
+          
+          <code><a href="AlgorithmOptions_DEoptim.html">AlgorithmOptions_DEoptim</a></code> 
+        </dt>
+        <dd>AlgorithmOptions_DEoptim</dd>
+      </dl><dl><dt>
+          
+          <code><a href="AlgorithmOptions_HJKB.html">AlgorithmOptions_HJKB</a></code> 
+        </dt>
+        <dd>AlgorithmOptions_HJKB</dd>
+      </dl><dl><dt>
+          
+          <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code> 
+        </dt>
+        <dd>ObjectiveFunctions
+List of supported objective functions to calculate the error.</dd>
       </dl><dl><dt>
           
           <code><a href="residualWeightingOptions.html">residualWeightingOptions</a></code> 
@@ -153,17 +142,65 @@ List of robust weighting methods used in the cost function for handling outliers
         </dt>
         <dd>ScalingOptions
 List of scaling options for output mappings.</dd>
+      </dl></div><div class="section level2">
+      <h2 id="internal-functions">Internal functions<a class="anchor" aria-label="anchor" href="#internal-functions"></a></h2>
+      
+      
+
+      
+    </div><div id="" class="section level2">
+      
+      
+      
+
+      <dl><dt>
+          
+          <code><a href="calculateCostMetrics.html">calculateCostMetrics()</a></code> 
+        </dt>
+        <dd>Calculate Cost Metrics for Model Evaluation</dd>
+      </dl><dl><dt>
+          
+          <code><a href="plot.modelCost.html">plot(<i>&lt;modelCost&gt;</i>)</a></code> 
+        </dt>
+        <dd>Plot Model Cost Residuals</dd>
+      </dl></div><div class="section level2">
+      <h2 id="miscelaneous">Miscelaneous<a class="anchor" aria-label="anchor" href="#miscelaneous"></a></h2>
+      
+      
+
+      
+    </div><div id="" class="section level2">
+      
+      
+      
+
+      <dl><dt>
+          
+          <code><a href="getOSPSuitePISetting.html">getOSPSuitePISetting()</a></code> 
+        </dt>
+        <dd>Get the value of a global ospsuite.parameteridentification setting.</dd>
+      </dl><dl><dt>
+          
+          <code><a href="ospsuitePIRSettingNames.html">ospsuitePIRSettingNames</a></code> 
+        </dt>
+        <dd>Names of the settings stored in piEnv Can be used with <code><a href="../reference/getOSPSuitePISetting.html">getOSPSuitePISetting()</a></code></dd>
       </dl><dl><dt>
           
           <code><a href="validateIsOption.html">validateIsOption()</a></code> 
         </dt>
         <dd>Validate Input Options Against Valid Options</dd>
+      </dl><dl><dt>
+          
+          <code><a href="getSteadyState.html">getSteadyState()</a></code> 
+        </dt>
+        <dd>Get the steady-state values of species and state variable parameters.</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p></p><p>Developed by Pavel Balazki, Sergei Vavilov.</p>
+  <p></p><p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
