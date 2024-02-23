@@ -5,7 +5,7 @@ on:
     branches: [main, master, develop]
   pull_request:
     branches: [main, master, develop]
-  workflow_dispatch
+  workflow_dispatch:
 
 jobs:
   R-CMD-check-build:
