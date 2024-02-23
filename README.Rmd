@@ -60,7 +60,9 @@ Get the latest development version with:
 remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
 
-<!-- ## Usage -->
+## User guide
+
+Examples of running parameter estimation tasks using this package are detailed in `vignette('user-guide')`.
 
 
 ## Code of conduct

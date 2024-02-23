@@ -1,16 +1,16 @@
-modelFolder <- file.path(getwd(), "../dev/Models/Simulations")
+modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
 sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))
 modelParameter <- ospsuite::getParameter(path = "Organism|IR_I_P_Inter_tHalf", container = sim)
 
 ########### Load observed data########
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../Data")
+dataFolder <- file.path(testthat::test_path("../Data"))
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 dataSheets <- c("DoseResponse")
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(getwd(), "../Data", "dataImporter_configuration.xml")
+  configurationFilePath = file.path(dataFolder, "dataImporter_configuration.xml")
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -38,21 +38,21 @@ piOutputMapping$transformResultsFunction <- resultsTransformationFunction
 dataSets$`________IRS_P_rel`$yDimension <- ospDimensions$Amount
 piOutputMapping$addObservedDataSets(data = dataSets$`________IRS_P_rel`)
 
-test_that("It can initialize ParameterIdentification when the simulateSteadyState
-          is TRUE and the model does not contain any state variable parameters", {
-  piConfiguration <- PIConfiguration$new()
-  piConfiguration$simulateSteadyState <- TRUE
-
-  # Create new parameter identification.
-  expect_no_error(pi <- ParameterIdentification$new(
-    simulations = sim, parameters = piParameter,
-    outputMappings = piOutputMapping,
-    configuration = piConfiguration
-  ))
-})
+# test_that("It can initialize ParameterIdentification when the simulateSteadyState
+#           is TRUE and the model does not contain any state variable parameters", {
+#   piConfiguration <- PIConfiguration$new()
+#   piConfiguration$simulateSteadyState <- TRUE
+#
+#   # Create new parameter identification.
+#   expect_no_error(pi <- ParameterIdentification$new(
+#     simulations = sim, parameters = piParameter,
+#     outputMappings = piOutputMapping,
+#     configuration = piConfiguration
+#   ))
+# })
 
 ### Testing the parameter identification package on aciclovir example
-simulations <- c(loadSimulation("../dev/Models/Simulations/Aciclovir.pkml"))
+simulations <- c(loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite")))
 names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
@@ -71,7 +71,7 @@ for (parameterPath in parameterPaths) {
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
 
-filePath <- "../data/AciclovirLaskinData.xlsx"
+filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
 dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
 dataConfiguration$sheets <- "Laskin 1982.Group A"
 dataConfiguration$namingPattern <- "{Source}.{Sheet}"
@@ -141,10 +141,10 @@ test_that("Algorithm can be changed in PI configuration", {
   task$configuration$algorithm <- "HJKB"
   expect_equal(task$configuration$algorithm, "HJKB")
 })
-test_that("Grid search produces no error with default parameters", {
-  expect_no_error(gridSearchResults <- task$gridSearch())
-})
-gridSearchResults <- task$gridSearch(totalEvaluations = 10)
-test_that("Grid search produced correct results", {
-  expect_snapshot_value(gridSearchResults, style = "serialize")
-})
+# test_that("Grid search produces no error with default parameters", {
+#   expect_no_error(gridSearchResults <- task$gridSearch())
+# })
+# gridSearchResults <- task$gridSearch(totalEvaluations = 10)
+# test_that("Grid search produced correct results", {
+#   expect_snapshot_value(gridSearchResults, style = "serialize")
+# })

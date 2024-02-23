@@ -1,10 +1,9 @@
 # library(ospsuite.parameteridentification)
-library(esqlabsRLegacy)
 ##### VARIABLE DEFINITION#####
 # Path to the folder where the model file is located.
-modelFolder <- file.path(getwd(), "../Models/Simulations")
+modelFolder <- testthat::test_path("../dev/Models/Simulations")
 # Path to the folder where experimental data files are located
-dataFolder <- file.path(getwd(), "../../data")
+dataFolder <- testthat::test_path("../data")
 # Name of the excel file with experimental data
 dataFile <- "DataSet.xlsx"
 
@@ -40,7 +39,7 @@ names(simulations) <- simNames
 
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
-piConfiguration$targetFunctionType <- "lsq"
+piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 piConfiguration$simulateSteadyState <- TRUE
 piConfiguration$steadyStateTime <- 1000
 

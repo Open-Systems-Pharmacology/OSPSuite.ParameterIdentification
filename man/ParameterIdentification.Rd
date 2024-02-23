@@ -4,6 +4,11 @@
 \name{ParameterIdentification}
 \alias{ParameterIdentification}
 \title{ParameterIdentification}
+\value{
+A new \code{ParameterIdentification} object.
+
+A list of ggplot2 objects, one plot per \code{PIOutputMapping}
+}
 \description{
 A task to identify optimal parameter values based on simulation
 outputs and observed data
@@ -33,8 +38,6 @@ Evaluate all simulations with given parameter values}
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
 \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
-\item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
-\item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -114,94 +117,10 @@ values are supplied, the they must be in the same order as \code{ParameterIdenti
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Runs all simulations with current (default) or supplied
-parameter values and creates plots of every output mapping
+Runs all simulations with current (default) or supplied parameter
+values and creates plots of every output mapping
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-gridSearch"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-gridSearch}{}}}
-\subsection{Method \code{gridSearch()}}{
-Calculates the values of the objective function on an n-dimensional grid, where n is the number
-of parameters, and optionally saves the best result as the starting point for next optimization runs.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$gridSearch(
-  lower = NULL,
-  upper = NULL,
-  logScaleFlag = FALSE,
-  totalEvaluations = 50,
-  margin = 0,
-  setStartingPoint = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{lower}}{A vector of lower bounds for parameters, with the same length as the number of parameters
-optimized in this parameter identification task. By default, uses the minimal values
-defined in the \code{PIParameter} objects.}
-
-\item{\code{upper}}{A vector of upper bounds for parameters, with the same length as the number of parameters
-optimized in this parameter identification task. By default, uses the maximal values
-defined in the \code{PIParameter} objects.}
-
-\item{\code{logScaleFlag}}{A single logical value or a vector of logical values indicating
-if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to \code{FALSE}.}
-
-\item{\code{totalEvaluations}}{An integer number. The grid will have as many points so that the
-total number of grid points does not exceed \code{totalEvaluations}. Defaults to \code{50}.}
-
-\item{\code{margin}}{Can be set to a non-zero positive value so that the edges of the grid will be away
-from the exact parameter bounds.}
-
-\item{\code{setStartingPoint}}{(logical) If \code{TRUE}, the best result will be saved as the starting point for
-the next optimization runs. Defaults to \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A tibble with one column for each parameter and one column for the objective function value.
-The tibble will have at most \code{totalEvaluations} rows.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-calculateOFVProfiles"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-calculateOFVProfiles}{}}}
-\subsection{Method \code{calculateOFVProfiles()}}{
-Calculates the values of the objective function on all orthogonal lines
-passing through a given point in the parameter space.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$calculateOFVProfiles(
-  par = NULL,
-  lower = NULL,
-  upper = NULL,
-  totalEvaluations = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{par}}{A vector of parameter values, with the same length as the number of parameters.
-If not supplied, the current parameter values are used.}
-
-\item{\code{lower}}{A vector of lower bounds for parameters, with the same length as the number of parameters.
-By default, uses 0.9 of the current parameter value.}
-
-\item{\code{upper}}{A vector of upper bounds for parameters, with the same length as the number of parameters.
-By default, uses 1.1 of the current parameter value.}
-
-\item{\code{totalEvaluations}}{An integer number. The combined profiles will not contain more than \code{totalEvaluations}
-points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list of tibbles, one tibble per parameter, with one column for parameter values
-and one column for the matching objective function values.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}

@@ -1,0 +1,26 @@
+---
+title: "Optimization algorithms"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Optimization algorithms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Short intro
+
+## Used algorithms
+
+Describe BRIEFLY the different algorithms that are used in the PI package.
+If implemented in a third-party package, refer to the documentation of that package.
+
+If feasible, list algorithm options.
+
+Give rough guidlines which algorithm to use in which situation.
+
+
+Default algorithm is the BOBYQA method (bound optimization by quadratic approximation), a local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, HJKB for derivative-free Hooke-Jeeves algorithm or DEoptim for global stochastic differential evolution algorithm may provide better results at the cost of overall execution time.

@@ -2,7 +2,7 @@
 #' @docType class
 #' @description A task to identify optimal parameter values based on simulation
 #'   outputs and observed data
-#' @import ospsuite.utils
+#' @import R6 ospsuite.utils
 #' @format NULL
 #' @export
 ParameterIdentification <- R6::R6Class(
@@ -34,7 +34,7 @@ ParameterIdentification <- R6::R6Class(
       if (missing(value)) {
         private$.configuration
       } else {
-        validateIsOfType(value, "PIConfiguration")
+        ospsuite.utils::validateIsOfType(value, "PIConfiguration")
         private$.configuration <- value
       }
     },
@@ -78,13 +78,13 @@ ParameterIdentification <- R6::R6Class(
     # stored in this variable
     .savedSimulationState = NULL,
     .fnEvaluations = 0,
-    # CV for M3 target function
+    # CV for M3 objective function
     # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
-    .cvM3 = 0.2,
+    .linScaleCV = 0.2,
     # pre-calculate SD for log-transformed data assuming CV of 20%
-    # Used for M3 target function
+    # Used for M3 objective function
     # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
-    .sdForLogCV = NULL,
+    .logScaleSD = NULL,
 
     # Creates simulation batches from simulations.
     .batchInitialization = function() {
@@ -130,8 +130,8 @@ ParameterIdentification <- R6::R6Class(
 
         # Clear output intervals and output quantities of all simulations
         for (simulation in private$.simulations) {
-          clearOutputIntervals(simulation)
-          clearOutputs(simulation)
+          ospsuite::clearOutputIntervals(simulation)
+          ospsuite::clearOutputs(simulation)
         }
 
         # Add time points to the output schema that are present in the observed data.
@@ -156,8 +156,8 @@ ParameterIdentification <- R6::R6Class(
               xOffset <- xOffset[[label]]
             }
             xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
-                                          values = (dataset$xValues + xOffset) * xFactor,
-                                          unit = dataset$xUnit
+              values = (dataset$xValues + xOffset) * xFactor,
+              unit = dataset$xUnit
             )
             simulation$outputSchema$addTimePoints(xVals)
           }
@@ -177,7 +177,7 @@ ParameterIdentification <- R6::R6Class(
         for (simulation in private$.simulations) {
           simId <- simulation$root$id
           # Parameters and molecules defined in the previous steps will be variable.
-          simBatch <- createSimulationBatch(
+          simBatch <- ospsuite::createSimulationBatch(
             simulation = simulation,
             parametersOrPaths = names(private$.variableParameters[[simId]]),
             moleculesOrPaths = names(private$.variableMolecules[[simId]])
@@ -215,9 +215,9 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Calculate the target function that is going to be minimized during
+    # Calculate the objective function that is going to be minimized during
     # parameter estimation.
-    .targetFunction = function(currVals) {
+    .objectiveFunction = function(currVals) {
       # Increase function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
       # List of DataCombined objects, one for each output mapping
@@ -234,50 +234,20 @@ ParameterIdentification <- R6::R6Class(
           NA
         }
       )
-      # Returning a list of `Inf`s as otherwise the "Marq" method complains about
-      # receiving only single value and not residuals.
-      # (I think this would also lead to a failure where only one observed data
-      # point is fitted).
-      if (any(is.na(obsVsPredList))) {
-        out <- list(
-          model = Inf,
-          minlogp = Inf,
-          var = data.frame(
-            name           = "Values",
-            scale          = 1,
-            N              = 1,
-            SSR.unweighted = Inf,
-            SSR.unscaled   = Inf,
-            SSR            = Inf
-          ),
-          residuals = data.frame(
-            name = "Values",
-            x = 0,
-            obs = 0,
-            mod = Inf,
-            weight = 1,
-            res.unweighted = Inf,
-            res = Inf
-          )
-        )
-        class(out) <- "modCost"
-        return(out)
+      # Return an infinite cost structure if the simulation is NA
+      failureResponse <- .handleSimulationFailure(obsVsPredList)
+      if (!is.null(failureResponse)) {
+        return(failureResponse)
       }
 
-      # Error calculated for uncensored values (i.e., above LQ or no LLOQ censoring)
-      # Summed up over all output mappings
-      unscensoredError <- NULL
-      # Error calculated for censored values (i.e., below LQ if LLOQ censoring)
-      # Summed up over all output mappings
-      censoredError <- NULL
-
-      # Calculate error for each output mapping separately and add them up
+      # Calculate error for each output mapping separately
+      costSummaryList <- vector("list", length(private$.outputMappings))
       for (idx in seq_along(private$.outputMappings)) {
         # Calling unit converter to unify the units within the DataCombined
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-        # For least squares target function, values below LLOQ will be set to
+        # For least squares objective function, values below LLOQ will be set to
         # LLOQ/2 for simulation data and therefore always equal to the observed values
-        if (private$.configuration$targetFunctionType == "lsq") {
+        if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
           # replacing values below LLOQ with LLOQ / 2
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
@@ -288,114 +258,31 @@ ParameterIdentification <- R6::R6Class(
 
         # Transform to log if required.
         if (private$.outputMappings[[idx]]$scaling == "log") {
-          UNITS_EPSILON <- ospsuite::toUnit(
-            quantityOrDimension = obsVsPredDf$yDimension[[1]],
-            values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-            targetUnit = obsVsPredDf$yUnit[[1]],
-            molWeight = 1
-          )
-          obsVsPredDf$yValues <- ospsuite.utils::logSafe(obsVsPredDf$yValues, epsilon = UNITS_EPSILON, base = exp(1))
-          obsVsPredDf$lloq <- ospsuite.utils::logSafe(obsVsPredDf$lloq, epsilon = UNITS_EPSILON, base = exp(1))
+          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
-        # Extract simulated and observed data
-        simulated <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-        observed <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
+        # Calculate model costs
+        costSummary <- calculateCostMetrics(
+          df = obsVsPredDf,
+          objectiveFunctionType = private$.configuration$objectiveFunctionOptions$objectiveFunctionType,
+          residualWeightingMethod = private$.configuration$objectiveFunctionOptions$residualWeightingMethod,
+          robustMethod = private$.configuration$objectiveFunctionOptions$robustMethod,
+          scaleVar = private$.configuration$objectiveFunctionOptions$scaleVar,
+          scaling = private$.outputMappings[[idx]]$scaling,
+          linScaleCV = private$.linScaleCV,
+          logScaleSD = private$.logScaleSD
+        )
 
-        # Least squares target function.
-        if (private$.configuration$targetFunctionType == "lsq") {
-          modelDf <- data.frame("Time" = simulated$xValues, "Values" = simulated$yValues)
-          obsDf <- data.frame("Time" = observed$xValues, "Values" = observed$yValues)
-        }
-
-        # M3 LLOQ method. Implementation based on DOI: 10.1023/a:1012299115260
-        # In particular, equation 6
-        if (private$.configuration$targetFunctionType == "m3") {
-          # Separate censored and uncensored data
-          observed_uncensored <- observed[is.na(observed$lloq) | (observed$yValues > observed$lloq), ]
-          observed_censored <- observed[!is.na(observed$lloq) & (observed$yValues <= observed$lloq), ]
-          simulated_uncensored <- merge(observed_uncensored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-          simulated_censored <- merge(observed_censored[c("xValues", "xUnit", "xDimension")], simulated, by = c("xValues", "xUnit", "xDimension"), all.x = TRUE)
-
-          # Data frames used for calculation of uncensored error
-          modelDf <- data.frame("Time" = simulated_uncensored$xValues, "Values" = simulated_uncensored$yValues)
-          # 'merge()' produces multiple entries for the same x value when multiple
-          # observed data sets are present. Apply 'unique()' to avoid duplication
-          # of values and a warning during interpolation.
-          modelDf <- unique(modelDf)
-          obsDf <- data.frame("Time" = observed_uncensored$xValues, "Values" = observed_uncensored$yValues)
-
-          # sd for untransformed data is defined as CV * mean, while mean is the LQ
-          if (private$.outputMappings[[idx]]$scaling == "lin") {
-            sd <- abs(private$.cvM3 * observed_censored$lloq)
-          } else {
-            sd <- private$.sdForLogCV
-          }
-
-          # Calculate censored residuals for this output mapping and add it to
-          # the total censored residuals vector
-          if (nrow(observed_censored) > 0) {
-            # First calculate the probabilities
-            censoderProbabilities <- pnorm((observed_censored$lloq - simulated_censored$yValues) / sd)
-            # Replace zeros by the minimal number to avoid Inf for censoder error
-            censoderProbabilities[censoderProbabilities == 0] <- .Machine$double.xmin
-
-            # As desctibed in Equation 6. Calculate a vector of residuals
-            censoredErrorVector <- -2 * log(censoderProbabilities,
-              base = 10
-            )
-            # We must take the square root of the censored residuals because modFit
-            # expects the unsquared residuals! The total error value is then calculated
-            # as squared residuals but as can be seen in Equation 5, M3 method returns
-            # already squared values
-            censoredErrorVector <- sqrt(censoredErrorVector)
-
-            # Construct the data frame with censored residuals with the same structure
-            # as the 'residuals'  df
-            censoredError <- rbind(censoredError, data.frame(
-              name = "Values",
-              x = observed_censored$xValues,
-              obs = observed_censored$yValues,
-              mod = simulated_censored$yValues,
-              weight = 1,
-              res.unweighted = censoredErrorVector,
-              res = censoredErrorVector
-            ))
-          }
-        }
-
-        # Calculate uncensored error.
-        unscensoredError <- modCost(model = modelDf, obs = obsDf, x = "Time", cost = unscensoredError)
+        costSummaryList[[idx]] <- costSummary
       }
-
-      # Total error. Either the uncensored error,
-      # or with addition of censored values
-      runningCost <- unscensoredError
-      if (!is.null(censoredError)) {
-        # Add censored error
-        totalCost <- runningCost$model + sum(censoredError$res^2)
-        # Extend the structure of the results object returned by modCost by
-        # the uncensored cost
-        # Append the data frame to the $residuals df
-        runningCost$residuals <- rbind(runningCost$residuals, censoredError)
-        #
-        # # Update the total cost 'model'
-        runningCost$model <- totalCost
-        runningCost$var$N <- length(runningCost$residuals$res)
-        runningCost$var$SSR.unweighted <- totalCost
-        runningCost$var$SSR.unscaled <- totalCost
-        runningCost$var$SSR <- totalCost
-        runningCost$minlogp <- -sum(log(pmax(0, dnorm(
-          runningCost$residuals$mod, runningCost$residuals$obs,
-          1 / runningCost$residuals$weight
-        ))))
-      }
+      # Summed up over all output mappings
+      runningCost <- Reduce(.summarizeCostLists, costSummaryList)
 
       # Print current error if requested
       if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", target function ", signif(runningCost$model, 3), "\n"
+          ", objective function ", signif(runningCost$modelCost, 4), "\n"
         ))
       }
       return(runningCost)
@@ -450,7 +337,7 @@ ParameterIdentification <- R6::R6Class(
       #   }
       #
       #   # Run steady-state batches
-      #   ssResults <- runSimulationBatches(simulationBatches = private$.steadyStateBatches,
+      #   ssResults <- ospsuite::runSimulationBatches(simulationBatches = private$.steadyStateBatches,
       #                        simulationRunOptions = private$.configuration$simulationRunOptions)
       #####
 
@@ -463,13 +350,13 @@ ParameterIdentification <- R6::R6Class(
         )
       }
       # Run simulation batches
-      simulationResults <- runSimulationBatches(
+      simulationResults <- ospsuite::runSimulationBatches(
         simulationBatches = private$.simulationBatches,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
       for (idx in seq_along(private$.outputMappings)) {
-        obsVsPred <- DataCombined$new()
+        obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- private$.outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
@@ -518,33 +405,36 @@ ParameterIdentification <- R6::R6Class(
       # actual optimization call will use one of the underlying optimization routines
       message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
 
+      control <- private$.configuration$algorithmOptions
       if (private$.configuration$algorithm == "HJKB") {
+        # Default options
+        if (is.null(control)) {
+          control <- AlgotitmOptions_HJKB
+        }
         time <- system.time({
           results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+            private$.objectiveFunction(p)$modelCost
+          }, control = control, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "BOBYQA") {
+        # Default options
+        if (is.null(control)) {
+          control <- AlgotitmOptions_BOBYQA
+        }
         time <- system.time({
           results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.targetFunction(p)$model
-          }, control = private$.configuration$algorithmOptions, lower = lower, upper = upper)
+            private$.objectiveFunction(p)$modelCost
+          }, control = control, lower = lower, upper = upper)
         })
       } else if (private$.configuration$algorithm == "DEoptim") {
+        # Default options
+        if (is.null(control)) {
+          control <- AlgotitmOptions_DEoptim
+        }
         # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
-        control <- DEoptim::DEoptim.control(VTR = ifelse("VTR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["VTR"]], -Inf),
-                                            strategy = ifelse("strategy" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["strategy"]], 2),
-                                            bs = ifelse("bs" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["bs"]], FALSE),
-                                            NP = ifelse("NP" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["NP"]], NA),
-                                            itermax = ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200),
-                                            CR = ifelse("CR" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["CR"]], 0.5),
-                                            F = ifelse("F" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["F"]], 0.8),
-                                            trace = ifelse("trace" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["trace"]], TRUE),
-                                            reltol = ifelse("reltol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["reltol"]], sqrt(.Machine$double.eps)),
-                                            steptol = ifelse("steptol" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["steptol"]], ifelse("itermax" %in% names(private$.configuration$algorithmOptions), private$.configuration$algorithmOptions[["itermax"]], 200)))
         time <- system.time({
           results <- DEoptim::DEoptim(fn = function(p) {
-            private$.targetFunction(p)$model
+            private$.objectiveFunction(p)$modelCost
           }, lower = lower, upper = upper, control = control)
           results$par <- results$optim$bestmem
           results$value <- results$optim$bestval
@@ -561,7 +451,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate sigma if it has not been calculated previously
       if (is.null(results$sigma)) {
-        # For the target function that represents the deviation = -2 * log(L),
+        # For the objective function that represents the deviation = -2 * log(L),
         # results$hessian / 2 is the observed information matrix
         # https://stats.stackexchange.com/questions/27033/
         results$sigma <- tryCatch(
@@ -574,7 +464,7 @@ ParameterIdentification <- R6::R6Class(
               # of 1e-4
               hessianEpsilon <- min(1e-4, 0.1 * abs(results$par - lower), 0.1 * abs(results$par - upper))
               results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.targetFunction(p)$model
+                private$.objectiveFunction(p)$modelCost
               }, x = results$par, method.args = list(eps = hessianEpsilon))
             }
 
@@ -593,8 +483,8 @@ ParameterIdentification <- R6::R6Class(
       # The 95% confidence intervals are defined by two sigma values away from the
       # point estimate. The coefficient of variation (CV) is the ratio of standard
       # deviation to the point estimate.
-      results$lwr <- results$par - qnorm(p = 1 - 0.05/2) * results$sigma
-      results$upr <- results$par + qnorm(p = 1 - 0.05/2) * results$sigma
+      results$lwr <- results$par - qnorm(p = 1 - 0.05 / 2) * results$sigma
+      results$upr <- results$par + qnorm(p = 1 - 0.05 / 2) * results$sigma
       results$cv <- results$sigma / abs(results$par) * 100
       return(results)
     }
@@ -611,18 +501,18 @@ ParameterIdentification <- R6::R6Class(
     #' @param outputMappings List of objects of the class `PIOutputMapping`. Each objects
     #' maps a model output (represented by a `Quantity`) with a set of observed data given as `XYData` objects.
     #' is used.
-    #' @return A new `ParameterIdentification` object.
+    #' @returns A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
-      private$.sdForLogCV <- sqrt(log(1 + private$.cvM3^2, base = 10) / log(10))
+      private$.logScaleSD <- sqrt(log(1 + private$.linScaleCV^2, base = 10) / log(10))
 
-      simulations <- toList(simulations)
-      parameters <- toList(parameters)
-      outputMappings <- toList(outputMappings)
+      simulations <- ospsuite.utils::toList(simulations)
+      parameters <- ospsuite.utils::toList(parameters)
+      outputMappings <- ospsuite.utils::toList(outputMappings)
 
       # We have to use the id of the root container of the simulation instead of
       # the id of the simulation itself, because later we have to find the
@@ -691,8 +581,9 @@ ParameterIdentification <- R6::R6Class(
     #' @description
     #' Plot the results of parameter estimation
     #'
-    #' @details Runs all simulations with current (default) or supplied
-    #' parameter values and creates plots of every output mapping
+    #' @details Runs all simulations with current (default) or supplied parameter
+    #' values and creates plots of every output mapping
+    #' @returns A list of ggplot2 objects, one plot per `PIOutputMapping`
     plotResults = function(par = NULL) {
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
@@ -710,21 +601,21 @@ ParameterIdentification <- R6::R6Class(
       dataCombined <- private$.evaluate(parValues)
 
       # Create figures and plot
-      plotConfiguration <- DefaultPlotConfiguration$new()
+      plotConfiguration <- ospsuite::DefaultPlotConfiguration$new()
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$legendPosition <- "none"
         plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        obsVsSim <- ospsuite::plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
         plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
-        plotGridConfiguration <- PlotGridConfiguration$new()
+        resVsTime <- ospsuite::plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
         plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
-        return(plotGrid(plotGridConfiguration))
+        return(ospsuite::plotGrid(plotGridConfiguration))
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -734,164 +625,165 @@ ParameterIdentification <- R6::R6Class(
       return(multiPlot)
     },
 
-    #' @description
-    #' Calculates the values of the objective function on an n-dimensional grid, where n is the number
-    #' of parameters, and optionally saves the best result as the starting point for next optimization runs.
-    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters
-    #' optimized in this parameter identification task. By default, uses the minimal values
-    #' defined in the `PIParameter` objects.
-    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters
-    #' optimized in this parameter identification task. By default, uses the maximal values
-    #' defined in the `PIParameter` objects.
-    #' @param logScaleFlag A single logical value or a vector of logical values indicating
-    #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
-    #' @param totalEvaluations An integer number. The grid will have as many points so that the
-    #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
-    #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
-    #' from the exact parameter bounds.
-    #' @param setStartingPoint (logical) If `TRUE`, the best result will be saved as the starting point for
-    #' the next optimization runs. Defaults to `FALSE`.
-    #' @return A tibble with one column for each parameter and one column for the objective function value.
-    #' The tibble will have at most `totalEvaluations` rows.
-    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
-      # If the batches have not been initialized yet (i.e., no run has been
-      # performed), this must be done prior to plotting
-      private$.batchInitialization()
+    ## Commented out until https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/92 is fixed
+    # #' @description
+    # #' Calculates the values of the objective function on an n-dimensional grid, where n is the number
+    # #' of parameters, and optionally saves the best result as the starting point for next optimization runs.
+    # #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters
+    # #' optimized in this parameter identification task. By default, uses the minimal values
+    # #' defined in the `PIParameter` objects.
+    # #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters
+    # #' optimized in this parameter identification task. By default, uses the maximal values
+    # #' defined in the `PIParameter` objects.
+    # #' @param logScaleFlag A single logical value or a vector of logical values indicating
+    # #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
+    # #' @param totalEvaluations An integer number. The grid will have as many points so that the
+    # #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
+    # #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
+    # #' from the exact parameter bounds.
+    # #' @param setStartingPoint (logical) If `TRUE`, the best result will be saved as the starting point for
+    # #' the next optimization runs. Defaults to `FALSE`.
+    # #' @return A tibble with one column for each parameter and one column for the objective function value.
+    # #' The tibble will have at most `totalEvaluations` rows.
+    # gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
+    #   # If the batches have not been initialized yet (i.e., no run has been
+    #   # performed), this must be done prior to plotting
+    #   private$.batchInitialization()
+    #
+    #   nrOfParameters <- length(private$.piParameters)
+    #   # logScaleFlag can be specified as a single value (common for all parameters)
+    #   # or as a vector of values (one for each parameter)
+    #   if (length(logScaleFlag) == 1) {
+    #     logScaleFlag <- rep(logScaleFlag, length.out = nrOfParameters)
+    #   }
+    #   # This will catch the cases where logScaleFlag is a vector longer than 1,
+    #   # but does not match the number of parameters
+    #   ospsuite.utils::isSameLength(logScaleFlag, private$.piParameters)
+    #
+    #   # if lower and upper are not supplied, we reuse parameter bounds
+    #   # By default, margin = 0, but we can use a non-zero value
+    #   # so that the grid does not start exactly at the parameter bound
+    #   if (missing(lower)) {
+    #     lower <- vector(mode = "list", length = nrOfParameters)
+    #     for (idx in seq_along(private$.piParameters)) {
+    #       lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
+    #     }
+    #   }
+    #   if (missing(upper)) {
+    #     upper <- vector(mode = "list", length = nrOfParameters)
+    #     for (idx in seq_along(private$.piParameters)) {
+    #       upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
+    #     }
+    #   }
+    #   ospsuite.utils::isSameLength(lower, private$.piParameters)
+    #   ospsuite.utils::isSameLength(upper, private$.piParameters)
+    #
+    #   gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
+    #   gridList <- vector(mode = "list", length = nrOfParameters)
+    #   for (idx in seq_along(private$.piParameters)) {
+    #     if (logScaleFlag[[idx]]) {
+    #       grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
+    #     } else {
+    #       grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+    #     }
+    #     gridList[[idx]] <- grid
+    #     # creating unique column names for the grid
+    #     names(gridList)[[idx]] <- paste0("par", idx, ": ", private$.piParameters[[idx]]$parameters[[1]]$path)
+    #   }
+    #
+    #   OFVGrid <- expand.grid(gridList)
+    #   # all columns from the OFVGrid are passed in the same order to the objective function
+    #   OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
+    #     private$.targetFunction(c(...))$model
+    #   })
+    #
+    #   if (!is.null(private$.savedSimulationState)) {
+    #     .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+    #   }
+    #
+    #   if (setStartingPoint) {
+    #     bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
+    #     for (idx in seq_along(private$.piParameters)) {
+    #       private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
+    #     }
+    #     message(messages$gridSearchParameterValueSet())
+    #   }
+    #
+    #   return(tibble::as_tibble(OFVGrid))
+    # },
 
-      nrOfParameters <- length(private$.piParameters)
-      # logScaleFlag can be specified as a single value (common for all parameters)
-      # or as a vector of values (one for each parameter)
-      if (length(logScaleFlag) == 1) {
-        logScaleFlag <- rep(logScaleFlag, length.out = nrOfParameters)
-      }
-      # This will catch the cases where logScaleFlag is a vector longer than 1,
-      # but does not match the number of parameters
-      ospsuite.utils::isSameLength(logScaleFlag, private$.piParameters)
-
-      # if lower and upper are not supplied, we reuse parameter bounds
-      # By default, margin = 0, but we can use a non-zero value
-      # so that the grid does not start exactly at the parameter bound
-      if (missing(lower)) {
-        lower <- vector(mode = "list", length = nrOfParameters)
-        for (idx in seq_along(private$.piParameters)) {
-          lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
-        }
-      }
-      if (missing(upper)) {
-        upper <- vector(mode = "list", length = nrOfParameters)
-        for (idx in seq_along(private$.piParameters)) {
-          upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
-        }
-      }
-      ospsuite.utils::isSameLength(lower, private$.piParameters)
-      ospsuite.utils::isSameLength(upper, private$.piParameters)
-
-      gridSize <- floor(totalEvaluations^(1/nrOfParameters))
-      gridList <- vector(mode = "list", length = nrOfParameters)
-      for (idx in seq_along(private$.piParameters)) {
-        if (logScaleFlag[[idx]]) {
-          grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
-        } else {
-          grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
-        }
-        gridList[[idx]] <- grid
-        # creating unique column names for the grid
-        names(gridList)[[idx]] <- paste0("par", idx, ": ", private$.piParameters[[idx]]$parameters[[1]]$path)
-      }
-
-      OFVGrid <- expand.grid(gridList)
-      # all columns from the OFVGrid are passed in the same order to the objective function
-      OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
-        private$.targetFunction(c(...))$model
-      })
-
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
-      }
-
-      if (setStartingPoint) {
-        bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
-        for (idx in seq_along(private$.piParameters)) {
-          private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
-        }
-        message(messages$gridSearchParameterValueSet())
-      }
-
-      return(tibble::as_tibble(OFVGrid))
-    },
-
-    #' @description
-    #' Calculates the values of the objective function on all orthogonal lines
-    #' passing through a given point in the parameter space.
-    #' @param par A vector of parameter values, with the same length as the number of parameters.
-    #' If not supplied, the current parameter values are used.
-    #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
-    #' By default, uses 0.9 of the current parameter value.
-    #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
-    #' By default, uses 1.1 of the current parameter value.
-    #' @param totalEvaluations An integer number. The combined profiles will not contain more than `totalEvaluations`
-    #' points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.
-    #' @return A list of tibbles, one tibble per parameter, with one column for parameter values
-    #' and one column for the matching objective function values.
-    calculateOFVProfiles = function(par = NULL, lower = NULL, upper = NULL, totalEvaluations = NULL) {
-      # If the batches have not been initialized yet (i.e., no run has been
-      # performed), this must be done prior to plotting
-      private$.batchInitialization()
-
-      nrOfParameters <- length(private$.piParameters)
-
-      # if par is not supplied, we use the current parameter values
-      if (missing(par)) {
-        par <- unlist(lapply(private$.piParameters, function(x) {
-          x$currValue
-        }), use.names = FALSE)
-      }
-
-      # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
-      # of the current parameter values
-      if (missing(lower)) {
-        lower <- 0.9 * par
-      }
-      if (missing(upper)) {
-        upper <- 1.1 * par
-      }
-
-      # calculate the grid for each parameter separately
-      if (missing(totalEvaluations)) {
-        gridSize <- 21
-        # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
-        # of the current parameter values
-      } else {
-        gridSize <- floor(totalEvaluations / nrOfParameters)
-      }
-      gridList <- vector(mode = "list", length = nrOfParameters)
-      for (idx in seq_along(private$.piParameters)) {
-        gridList[[idx]] <- rep(par[[idx]], gridSize)
-        names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
-      }
-      defaultGrid <- tibble::as_tibble(gridList)
-
-      profileList <- vector(mode = "list", length = nrOfParameters)
-      for (idx in seq_along(private$.piParameters)) {
-        # the names of the parameters are extracted from the first available path
-        parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
-        grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
-        currentGrid <- defaultGrid
-        currentGrid[[parameterName]] <- grid
-        # creates a tibble with the column name from the `parameterName` variable
-        profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
-        profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
-          private$.targetFunction(c(...))$model
-        })
-        names(profileList)[[idx]] <- parameterName
-      }
-
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
-      }
-
-      return(profileList)
-    },
+    # #' @description
+    # #' Calculates the values of the objective function on all orthogonal lines
+    # #' passing through a given point in the parameter space.
+    # #' @param par A vector of parameter values, with the same length as the number of parameters.
+    # #' If not supplied, the current parameter values are used.
+    # #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
+    # #' By default, uses 0.9 of the current parameter value.
+    # #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
+    # #' By default, uses 1.1 of the current parameter value.
+    # #' @param totalEvaluations An integer number. The combined profiles will not contain more than `totalEvaluations`
+    # #' points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.
+    # #' @return A list of tibbles, one tibble per parameter, with one column for parameter values
+    # #' and one column for the matching objective function values.
+    # calculateOFVProfiles = function(par = NULL, lower = NULL, upper = NULL, totalEvaluations = NULL) {
+    #   # If the batches have not been initialized yet (i.e., no run has been
+    #   # performed), this must be done prior to plotting
+    #   private$.batchInitialization()
+    #
+    #   nrOfParameters <- length(private$.piParameters)
+    #
+    #   # if par is not supplied, we use the current parameter values
+    #   if (missing(par)) {
+    #     par <- unlist(lapply(private$.piParameters, function(x) {
+    #       x$currValue
+    #     }), use.names = FALSE)
+    #   }
+    #
+    #   # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
+    #   # of the current parameter values
+    #   if (missing(lower)) {
+    #     lower <- 0.9 * par
+    #   }
+    #   if (missing(upper)) {
+    #     upper <- 1.1 * par
+    #   }
+    #
+    #   # calculate the grid for each parameter separately
+    #   if (missing(totalEvaluations)) {
+    #     gridSize <- 21
+    #     # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
+    #     # of the current parameter values
+    #   } else {
+    #     gridSize <- floor(totalEvaluations / nrOfParameters)
+    #   }
+    #   gridList <- vector(mode = "list", length = nrOfParameters)
+    #   for (idx in seq_along(private$.piParameters)) {
+    #     gridList[[idx]] <- rep(par[[idx]], gridSize)
+    #     names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
+    #   }
+    #   defaultGrid <- tibble::as_tibble(gridList)
+    #
+    #   profileList <- vector(mode = "list", length = nrOfParameters)
+    #   for (idx in seq_along(private$.piParameters)) {
+    #     # the names of the parameters are extracted from the first available path
+    #     parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
+    #     grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
+    #     currentGrid <- defaultGrid
+    #     currentGrid[[parameterName]] <- grid
+    #     # creates a tibble with the column name from the `parameterName` variable
+    #     profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
+    #     profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
+    #       private$.objectiveFunction(c(...))$modelCost
+    #     })
+    #     names(profileList)[[idx]] <- parameterName
+    #   }
+    #
+    #   if (!is.null(private$.savedSimulationState)) {
+    #     .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+    #   }
+    #
+    #   return(profileList)
+    # },
 
     #' @description
     #' Print the object to the console
@@ -902,8 +794,8 @@ ParameterIdentification <- R6::R6Class(
         x$sourceFile
       }), use.names = FALSE))
       private$printLine("Number of parameters", length(private$.piParameters))
-      private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
-      private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
+      # private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
+      # private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
       private$printLine("Print feedback after each function evaluation", private$.configuration$printEvaluationFeedback)
       invisible(self)
     }

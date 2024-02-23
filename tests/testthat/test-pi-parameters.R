@@ -1,121 +1,138 @@
-sim <- loadTestSimulation("Aciclovir")
-param <- getParameter("Aciclovir|Permeability", sim)
-livVol <- getParameter("Organism|Liver|Volume", sim)
-kidvVol <- getParameter("Organism|Kidney|Volume", sim)
-brainVol <- getParameter("Organism|Brain|Volume", sim)
-params <- list(livVol, kidvVol, brainVol)
-refVal <- param$value
+# Testing PIParameters with a Single Parameter ----------------------------
 
-test_that("It can create a PIParameters object", {
-  piParam <- PIParameters$new(param)
-  expect_error(capture.output(print(piParam)), NA)
+simulation <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+testParam <- ospsuite::getParameter("Aciclovir|Permeability", simulation)
+refVal <- testParam$value
+
+test_that("PIParameters object is correctly created", {
+  piParam <- PIParameters$new(testParam)
+  expect_s3_class(piParam, "PIParameters")
+  expect_equal(piParam$parameters, list(testParam))
+  expect_equal(piParam$startValue, refVal)
+  expect_equal(piParam$currValue, refVal)
+  expect_equal(piParam$minValue, refVal * 0.1)
+  expect_equal(piParam$maxValue, refVal * 10)
+  expect_equal(piParam$unit, testParam$unit)
 })
 
-test_that("It can retrieve the parameter object", {
-  piParam <- PIParameters$new(param)
-  expect_error(capture.output(piParam$parameters), NA)
+test_that("Start, min, and max values are set correctly", {
+  piParam <- PIParameters$new(testParam)
+  newStartValue <- refVal * 2
+  piParam$startValue <- newStartValue
+  expect_equal(piParam$startValue, newStartValue)
+  expect_error(
+    piParam$minValue <- (newStartValue * 2),
+    "minimal value cannot be greater"
+  )
+  expect_error(
+    piParam$maxValue <- (newStartValue / 2),
+    "maximal value cannot be smaller"
+  )
+  piParam$minValue <- (newStartValue / 2)
+  piParam$maxValue <- (newStartValue * 2)
+  expect_equal(piParam$minValue, newStartValue / 2)
+  expect_equal(piParam$maxValue, newStartValue * 2)
 })
 
-test_that("It can return the current value", {
-  piParam <- PIParameters$new(param)
+test_that("Parameter value is set and retrieved correctly", {
+  piParam <- PIParameters$new(testParam)
+  newValue <- refVal * 1.5
+  piParam$setValue(newValue)
+  expect_equal(piParam$currValue, newValue)
+
+  piParam$setValue(refVal)
   expect_equal(piParam$currValue, refVal)
 })
 
-test_that("It can change the value", {
-  piParam <- PIParameters$new(param)
-  piParam$setValue(1)
-  expect_equal(piParam$currValue, 1)
-  piParam$setValue(refVal)
+test_that("Read-only fields cannot be set", {
+  piParam <- PIParameters$new(testParam)
+  expect_error(piParam$parameters <- list(testParam), "is readonly")
+  expect_error(piParam$currValue <- refVal, "is readonly")
 })
 
-test_that("It can return the start value", {
-  piParam <- PIParameters$new(param)
+test_that("Unit can be changed correctly", {
+  piParam <- PIParameters$new(testParam)
+  newUnit <- "cm/min"
+  piParam$unit <- newUnit
+  expect_equal(piParam$unit, newUnit)
+  expect_equal(
+    piParam$currValue,
+    ospsuite::toUnit(testParam, refVal, targetUnit = newUnit)
+  )
+  expect_error(
+    piParam$unit <- "invalidUnit",
+    "not supported by the dimension"
+  )
+})
+
+
+# Testing PIParameters with a List of Parameters --------------------------
+
+testParamsList <- list(
+  ospsuite::getParameter("Organism|Liver|Volume", simulation),
+  ospsuite::getParameter("Organism|Kidney|Volume", simulation),
+  ospsuite::getParameter("Organism|Brain|Volume", simulation)
+)
+refVal <- testParamsList[[1]]$value
+
+test_that("PIParameters object is correctly created from list of parameters", {
+  piParam <- PIParameters$new(testParamsList)
+  expect_s3_class(piParam, "PIParameters")
+  expect_equal(piParam$parameters, testParamsList)
+  expect_equal(length(piParam$parameters), length(testParamsList))
   expect_equal(piParam$startValue, refVal)
-})
-
-test_that("It can return and set the min value", {
-  piParam <- PIParameters$new(param)
+  expect_equal(piParam$currValue, refVal)
   expect_equal(piParam$minValue, refVal * 0.1)
-  piParam$minValue <- refVal * 0.5
-  expect_equal(piParam$minValue, refVal * 0.5)
-
-  expect_error(capture.output(piParam$minValue <- 1))
-})
-
-test_that("It can return and set the max value", {
-  piParam <- PIParameters$new(param)
   expect_equal(piParam$maxValue, refVal * 10)
-  piParam$maxValue <- refVal * 5
-  expect_equal(piParam$maxValue, refVal * 5)
-
-  expect_error(capture.output(piParam$maxValue <- 0))
+  expect_equal(piParam$unit, testParamsList[[1]]$unit)
 })
 
-test_that("It can change the unit", {
-  piParam <- PIParameters$new(param)
-  expect_equal(piParam$unit, param$unit)
-  piParam$unit <- "cm/min"
-  expect_equal(piParam$currValue, toUnit(param, refVal, targetUnit = "cm/min"))
+test_that("Start, min, and max values are set correctly", {
+  piParam <- PIParameters$new(testParamsList)
+  newStartValue <- refVal * 2
+  piParam$startValue <- newStartValue
+  expect_equal(piParam$startValue, newStartValue)
+  expect_error(
+    piParam$minValue <- (newStartValue * 2),
+    "minimal value cannot be greater"
+  )
+  expect_error(
+    piParam$maxValue <- (newStartValue / 2),
+    "maximal value cannot be smaller"
+  )
+  piParam$minValue <- (newStartValue / 2)
+  piParam$maxValue <- (newStartValue * 2)
+  expect_equal(piParam$minValue, newStartValue / 2)
+  expect_equal(piParam$maxValue, newStartValue * 2)
 })
 
+test_that("Parameter value is set and retrieved correctly", {
+  piParam <- PIParameters$new(testParamsList)
+  newValue <- refVal * 1.5
+  piParam$setValue(newValue)
+  expect_equal(piParam$currValue, newValue)
 
-##### Now the same but with a list of parameters...
-refVal <- params[[1]]$value
-test_that("It can create a PIParameters object", {
-  piParam <- PIParameters$new(params)
-  expect_error(capture.output(print(piParam)), NA)
-})
-
-test_that("It can retrieve the parameter object", {
-  piParam <- PIParameters$new(params)
-  expect_error(capture.output(piParam$parameters), NA)
-})
-
-test_that("It can return the current value", {
-  piParam <- PIParameters$new(params)
+  piParam$setValue(refVal)
   expect_equal(piParam$currValue, refVal)
 })
 
-test_that("It can change the value", {
-  piParam <- PIParameters$new(params)
-  piParam$setValue(1)
-  expect_equal(piParam$currValue, 1)
-  piParam$setValue(refVal)
+test_that("Read-only properties cannot be set", {
+  piParam <- PIParameters$new(testParamsList)
+  expect_error(piParam$parameters <- testParamsList, "is readonly")
+  expect_error(piParam$currValue <- refVal, "is readonly")
 })
 
-test_that("It can return the start value", {
-  piParam <- PIParameters$new(params)
-  piParam$setValue(1)
-  expect_equal(piParam$startValue, refVal)
-  piParam$setValue(refVal)
-})
-
-test_that("It can return and set the min value", {
-  piParam <- PIParameters$new(params)
-  expect_equal(piParam$minValue, refVal * 0.1)
-  piParam$minValue <- refVal * 0.5
-  expect_equal(piParam$minValue, refVal * 0.5)
-
-  expect_error(capture.output(piParam$minValue <- 100))
-})
-
-test_that("It can return and set the max value", {
-  piParam <- PIParameters$new(params)
-  expect_equal(piParam$maxValue, refVal * 10)
-  piParam$maxValue <- refVal * 5
-  expect_equal(piParam$maxValue, refVal * 5)
-
-  expect_error(capture.output(piParam$maxValue <- 0))
-})
-
-test_that("It can change the unit", {
-  piParam <- PIParameters$new(params)
-  expect_equal(piParam$unit, params[[1]]$unit)
-  piParam$unit <- "ml"
-  expect_equal(piParam$currValue, toUnit(params[[1]], refVal, targetUnit = "ml"))
-})
-
-test_that("Trying to set wrong unit", {
-  piParam <- PIParameters$new(params)
-  expect_error(capture.output(piParam$unit <- "cm"))
+test_that("Unit can be changed correctly", {
+  piParam <- PIParameters$new(testParamsList)
+  newUnit <- "ml"
+  piParam$unit <- newUnit
+  expect_equal(piParam$unit, newUnit)
+  expect_equal(
+    piParam$currValue,
+    ospsuite::toUnit(testParamsList[[1]], refVal, targetUnit = newUnit)
+  )
+  expect_error(
+    piParam$unit <- "invalidUnit",
+    "not supported by the dimension"
+  )
 })
