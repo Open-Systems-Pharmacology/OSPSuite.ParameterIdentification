@@ -3,9 +3,9 @@
 
 <!-- badges: start -->
 
-[![AppVeyor build
-status](https://ci.appveyor.com/api/projects/status/github/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification?branch=develop&svg=true)](https://ci.appveyor.com/project/open-systems-pharmacology-ci/ospsuite-parameteridentification)
+[![R-CMD-check](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml)
 [![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/branch/develop/graph/badge.svg)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
+[![pkgdown](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml)
 
 <!-- badges: end -->
 
