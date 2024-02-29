@@ -42,10 +42,28 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(nloptr::nl.opts())
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
-#' @title ObjectiveFunctions
-#' List of supported objective functions to calculate the error.
+
+#' Objective Function Specifications
+#'
+#' Specifies supported objective function configurations for error calculation
+#' in parameter optimization. These specifications detail the allowable options
+#' for tailoring how model fit is assessed, configured within `PIConfiguration`.
+#'
 #' @export
-ObjectiveFunctionOptions <- list(
+#' @name ObjectiveFunctionSpecs
+#' @details Includes:
+#' \itemize{
+#'   \item \code{objectiveFunctionType}: Types of error calculations ("lsq" for least squares, "m3" for method 3).
+#'   \item \code{residualWeightingMethod}: Methods for weighting residuals ("none", "std", "mean", "error").
+#'   \item \code{robustMethod}: Approaches for robust outlier handling ("none", "huber", "bisquare").
+#'   \item \code{scaleVar}: Boolean for variance scaling (TRUE, FALSE).
+#'   \item \code{scaling}: Data scaling methods ("lin" for linear, "log" for logarithmic).
+#'   \item \code{linScaleCV}: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.
+#'   \item \code{logScaleSD}: Standard deviation for log scale, with numeric range 1e-9 to Inf.
+#' }
+#' These options directly influence the optimization process by defining how
+#' discrepancies between simulated and observed data are quantified and managed.
+ObjectiveFunctionSpecs <- list(
   objectiveFunctionType = c("lsq", "m3"),
   residualWeightingMethod = c("none", "std", "mean", "error"),
   robustMethod = c("none", "huber", "bisquare"),
