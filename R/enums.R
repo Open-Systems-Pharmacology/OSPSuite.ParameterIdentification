@@ -1,12 +1,25 @@
-#' @title Algorithms
-#' List of optimization algorithms supported by optimization routines and, consequently,
-#' by the ParameterIdentification class
+#' Optimization Algorithms
+#'
+#' Optimization algorithms supported by optimization routines, available for use
+#' in the `ParameterIdentification` class. These algorithms are configured via
+#' the `PIConfiguration` class.
+#'
 #' @export
+#' @name Algorithms
+#' @details Supported algorithms include:
+#' \describe{
+#'   \item{\code{"HJKB"}}{Hooke-Jeeves algorithm from the \pkg{dfoptim} package.}
+#'   \item{\code{"BOBYQA"}}{BOBYQA algorithm from the \pkg{nloptr} package.}
+#'   \item{\code{"DEoptim"}}{Differential evolution algorithm from the \pkg{DEoptim}
+#'   package, suitable for stochastic global optimization.}
+#' }
+#'
+#' These algorithms can be specified and configured within the `PIConfiguration`
+#' class to tailor the parameter identification process to specific needs.
 Algorithms <- ospsuite.utils::enum(c(
-  "HJKB", # Hooke-Jeeves algorithm from the {dfoptim} package
-  "BOBYQA", # BOBYQA algorithm from the {nloptr} package
-  ## Stochastic global optimization methods
-  "DEoptim" # differential evolution algorithm from the {DEoptim} package
+  "HJKB",
+  "BOBYQA",
+  "DEoptim"
 ))
 
 #' Algorithm Options for Optimization Algorithms
@@ -104,29 +117,63 @@ ObjectiveFunctionSpecs <- list(
   logScaleSD = list(type = "numeric", min = 1e-9, max = Inf)
 )
 
-#' @title ScalingOptions
-#' List of scaling options for output mappings.
+#' Scaling Options for Output Mapping
+#'
+#' Scaling options applicable to output mappings, impacting how simulation
+#' results are compared to observed data.
+#'
 #' @export
+#' @name ScalingOptions
+#' @details Available scaling options are:
+#' \describe{
+#'   \item{\code{"lin"}}{Linear scaling, used by default.}
+#'   \item{\code{"log"}}{Logarithmic scaling, for when data spans several orders
+#'   of magnitude.}
+#' }
 ScalingOptions <- ospsuite.utils::enum(c(
-  "lin", # Linear scaling (default)
-  "log" # Logarithmic scaling
+  "lin",
+  "log"
 ))
 
-#' @title residualWeightingOptions
-#' List of residual weighting methods used in the cost function.
+#' Residual Weighting Methods for Cost Function
+#'
+#' Methods for weighting residuals in the model cost function, affecting how
+#' discrepancies between simulations and observed data are evaluated.
+#'
 #' @export
+#' @name residualWeightingOptions
+#' @details The methods include:
+#' \describe{
+#'   \item{\code{"none"}}{No weighting applied, treating all residuals equally.}
+#'   \item{\code{"error"}}{Weights based on error estimates for the dependent
+#'   variable in observed data.}
+#'   \item{\code{"std"}}{Weights equal to the reciprocal of the standard deviation
+#'   of the observed data.}
+#'   \item{\code{"mean"}}{Weights based on the reciprocal of the mean of the absolute
+#'   values of the observed data, useful for relative error scaling.}
+#' }
 residualWeightingOptions <- ospsuite.utils::enum(c(
-  "none", # no weighting
-  "error", # error estimates for dependent variable in observed data
-  "std", #  weights equal to the reciprocal of the standard deviation of the observed data
-  "mean" # 1/mean of the absolute value of the observed data
+  "none",
+  "error",
+  "std",
+  "mean"
 ))
 
-#' @title robustMethodOptions
-#' List of robust weighting methods used in the cost function for handling outliers.
+#' Robust Weighting Methods for Cost Function
+#'
+#' Robust weighting methods to address outliers in the cost function calculation
+#' during parameter optimization.
+#'
 #' @export
+#' @name robustMethodOptions
+#' @details The available methods are:
+#' \describe{
+#'   \item{\code{"none"}}{No robust weighting applied.}
+#'   \item{\code{"huber"}}{Huber weighting for moderate outliers.}
+#'   \item{\code{"bisquare"}}{Bisquare (Tukey's biweight) weighting for severe outliers.}
+#' }
 robustMethodOptions <- ospsuite.utils::enum(c(
-  "none", # No robust weighting applied
-  "huber", # Huber weighting for moderate outliers
-  "bisquare" # Bisquare (Tukey's biweight) weighting for severe outliers
+  "none",
+  "huber",
+  "bisquare"
 ))
