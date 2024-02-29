@@ -1,0 +1,12 @@
+pandoc: 3.1.11
+pkgdown: 2.0.7
+pkgdown_sha: ~
+articles:
+  error-calculation: error-calculation.html
+  optimization-algorithms: optimization-algorithms.html
+  user-guide: user-guide.html
+last_built: 2024-02-29T13:17Z
+urls:
+  reference: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference
+  article: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles
+
