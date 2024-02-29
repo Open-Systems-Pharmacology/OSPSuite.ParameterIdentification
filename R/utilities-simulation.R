@@ -137,9 +137,9 @@ getSteadyState <- function(quantitiesPaths = NULL,
 #' Get the simulation container of the entity
 #'
 #' @param entity Object of type `Entity`
-#' @keywords internal
 #'
 #' @return The root container that is the parent of the entity.
+#' @keywords internal
 .getSimulationContainer <- function(entity) {
   ospsuite.utils::validateIsOfType(entity, "Entity")
   if (ospsuite.utils::isOfType(entity, "Container")) {

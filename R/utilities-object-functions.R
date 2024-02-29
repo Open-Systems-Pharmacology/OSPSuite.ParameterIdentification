@@ -25,16 +25,15 @@
 #'
 #' @details
 #' The function calculates the residuals between the simulated and observed
-#' values, applies the specified weighting method, and computes the cost metrics
-#' based on the scaled or unscaled residuals.
+#' values, applies the specified weighting method, and computes the cost metrics.
 #'
 #' @return
-#' A list containing the following elements:
+#' A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
 #' - `costDetails`: A dataframe with details on the cost calculations.
 #' - `residualDetails`: A dataframe with the calculated residuals and their weights.
-#' The list has the class `modelCost` for easy identification and further processing.
+#' The summary has the class `modelCost`.
 #'
 #' @examples
 #' \dontrun{
@@ -202,7 +201,8 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
 
 #' Plot Model Cost Residuals
 #'
-#' Plots raw residuals and, if different, weighted and robust weighted residuals from a `modelCost` object.
+#' Plots raw residuals and, if different, weighted and robust weighted residuals
+#' from a `modelCost` object.
 #'
 #' @param x A `modelCost` object containing residuals to plot.
 #' @param legpos Position of the legend; default is "topright". Use NA to omit the legend.
@@ -271,9 +271,11 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Handle Simulation Failure
 #'
-#' This function checks for NA in simulation results and returns an infinite cost structure if any are found.
+#' This function checks for NA in simulation results and returns an infinite cost
+#' structure if any are found.
 #' @param simulationResults A list of simulation results.
-#' @return Returns an infinite cost structure if NA values are found in the simulation results, NULL otherwise.
+#' @return Returns an infinite cost structure if NA values are found in the
+#' simulation results, NULL otherwise.
 #' @keywords internal
 .handleSimulationFailure <- function(simulationResults) {
   if (any(is.na(simulationResults))) {
@@ -282,10 +284,18 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   return(NULL)
 }
 
-#' Create Infinite Cost Structure
+#' Constructs Model Cost Summary for Error Handling
 #'
-#' Generates a cost structure with infinite values, used in cases of simulation failure.
-#' @return Returns a list with infinite values for model, minlogp, var, and residuals components.
+#' Creates a model cost summary compatible with the structure returned by
+#' `calculateCostMetrics`, filled with either infinite values (for simulation
+#' failures) or zeros (for objective function failures).
+#'
+#' @param infinite Logical flag indicating if the structure should contain
+#' infinite values (TRUE) or zeros (FALSE).
+#' @return A model cost summary structured identically to the output of
+#' `calculateCostMetrics`, with fields for model cost, minimum log probability,
+#' statistical measures, and detailed residuals, tailored for failure scenarios
+#' or initial setup.
 #' @keywords internal
 .createErrorCostStructure <- function(infinite = FALSE) {
   if (infinite) {
@@ -368,16 +378,27 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Calculate Contribution of Censored Data
 #'
-#' This function computes the contribution of censored data based on the lower limit of quantification (LLOQ)
-#' for observed values. It supports both linear and logarithmic scaling methods to calculate the standard deviation (SD)
-#' used in deriving censored probabilities and their contribution to the overall model cost.
 #'
-#' @param observed Data frame containing observed data, must include 'lloq', 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
-#' @param simulated Data frame containing simulated data, must include 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
-#' @param scaling Character string specifying the scaling method; should be one of the predefined scaling options.
-#' @param linScaleCV Numeric, coefficient used to calculate standard deviation for linear scaling, applied to 'lloq' values.
-#' @param logScaleSD Numeric, standard deviation for logarithmic scaling, applied uniformly to all censored observations.
-#' @return Numeric value representing the sum of squared errors for censored observations, contributing to the model's total cost.
+#' Evaluates the impact of censored data (below quantification limit, BQL) on
+#' model cost, employing maximum likelihood estimation to integrate BQL observations
+#' effectively. By acknowledging BQL data as censored observations, this method
+#' ensures such data contribute to model accuracy without misrepresenting actual
+#' concentrations. It applies linear or logarithmic scaling to calculate standard
+#' deviations for censored probabilities, enhancing overall model cost assessment
+#' with respect to detection limits.
+#'
+#' @param observed Data frame containing observed data, must include 'lloq',
+#' 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param simulated Data frame containing simulated data, must include 'xValues',
+#' 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param scaling Character string specifying the scaling method; should be one
+#' of the predefined scaling options.
+#' @param linScaleCV Numeric, coefficient used to calculate standard deviation
+#' for linear scaling, applied to 'lloq' values.
+#' @param logScaleSD Numeric, standard deviation for logarithmic scaling, applied
+#' uniformly to all censored observations.
+#' @return Numeric value representing the sum of squared errors for censored
+#' observations, contributing to the model's total cost.
 #' @keywords internal
 #' @examples
 #' \dontrun{
@@ -446,16 +467,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @keywords internal
 .summarizeCostLists <- function(list1, list2) {
-  # Sum modelCost
   list1$modelCost <- list1$modelCost + list2$modelCost
-
-  # Sum minLogProbability
   list1$minLogProbability <- list1$minLogProbability + list2$minLogProbability
-
-  # rbind costDetails
   list1$costDetails <- rbind(list1$costDetails, list2$costDetails)
-
-  # rbind residualDetails
   list1$residualDetails <- rbind(list1$residualDetails, list2$residualDetails)
 
   return(list1)
@@ -463,8 +477,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Calculate Huber Weights for Residuals
 #'
-#' This function calculates Huber weights for residuals, reducing the influence of outliers.
-#' Uses MAD for scaling and applies a cutoff at `k` times MAD.
+#' This function calculates Huber weights for residuals, reducing the influence
+#' of outliers. Uses MAD for scaling and applies a cutoff at `k` times MAD.
 #' @param residuals Numeric vector of residuals.
 #' @param k Tuning parameter for outlier cutoff. Default is 1.345.
 #' @return Numeric vector of Huber weights.
@@ -483,8 +497,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Calculate Bisquare Weights for Residuals
 #'
-#' This function calculates Bisquare (Tukey's biweight) weights for residuals, aggressively reducing outlier influence.
-#' Scales residuals using MAD with a cutoff at `c` times MAD.
+#' This function calculates Bisquare (Tukey's biweight) weights for residuals,
+#' aggressively reducing outlier influence. Scales residuals using MAD with a
+#' cutoff at `c` times MAD.
 #' @param residuals Numeric vector of residuals.
 #' @param c Tuning parameter for outlier exclusion. Default is 4.685.
 #' @return Numeric vector of Bisquare weights.

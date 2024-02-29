@@ -37,13 +37,13 @@ number of observations. Defaults to \code{FALSE}.}
 including 'scaling', 'linScaleCV', and 'logScaleSD'.}
 }
 \value{
-A list containing the following elements:
+A cost metrics summary list containing the following fields:
 \itemize{
 \item \code{modelCost}: The total cost calculated from the scaled sum of squared residuals.
 \item \code{minLogProbability}: The minimum log probability indicating the model fit.
 \item \code{costDetails}: A dataframe with details on the cost calculations.
 \item \code{residualDetails}: A dataframe with the calculated residuals and their weights.
-The list has the class \code{modelCost} for easy identification and further processing.
+The summary has the class \code{modelCost}.
 }
 }
 \description{
@@ -53,8 +53,7 @@ methods for weighting residuals.
 }
 \details{
 The function calculates the residuals between the simulated and observed
-values, applies the specified weighting method, and computes the cost metrics
-based on the scaled or unscaled residuals.
+values, applies the specified weighting method, and computes the cost metrics.
 }
 \examples{
 \dontrun{

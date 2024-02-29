@@ -10,9 +10,11 @@
 \item{simulationResults}{A list of simulation results.}
 }
 \value{
-Returns an infinite cost structure if NA values are found in the simulation results, NULL otherwise.
+Returns an infinite cost structure if NA values are found in the
+simulation results, NULL otherwise.
 }
 \description{
-This function checks for NA in simulation results and returns an infinite cost structure if any are found.
+This function checks for NA in simulation results and returns an infinite cost
+structure if any are found.
 }
 \keyword{internal}
