@@ -9,32 +9,38 @@ Algorithms <- ospsuite.utils::enum(c(
   "DEoptim" # differential evolution algorithm from the {DEoptim} package
 ))
 
-#' @title AlgorithmOptions_HJKB
-#' @description
-#' Default options for the HJKB algorithm.
-#' see [dfoptim::hjkb()] for details.
+#' Algorithm Options for Optimization Algorithms
 #'
+#' Default options for various optimization algorithms used within the package.
+#' These algorithms are configured via the `PIConfiguration` class.
+#'
+#' @section AlgorithmOptions_HJKB:
+#' Default options for the HJKB algorithm. See [dfoptim::hjkb()] for more details
+#' on the options.
+#'
+#' @section AlgorithmOptions_BOBYQA:
+#' Default options for the BOBYQA algorithm. See [nloptr::nl.opts()] for more
+#' details on the options.
+#'
+#' @section AlgorithmOptions_DEoptim:
+#' Default options for the DEoptim algorithm. See [DEoptim::DEoptim.control()]
+#' for more details on the options.
+#'
+#' @name AlgorithmOptions
+#' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_HJKB <- enum(list(
+AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
   tol = 1e-06, maxfeval = Inf, maximize = FALSE,
   target = Inf, info = FALSE
 ))
 
-#' @title AlgorithmOptions_BOBYQA
-#' @description
-#' Default options for the BOBYQA algorithm.
-#' see [nloptr::nl.opts()] for details.
+#' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_BOBYQA <- enum(nloptr::nl.opts())
+AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(nloptr::nl.opts())
 
-#' @title AlgorithmOptions_DEoptim
-#' @description
-#' Default options for the DEoptim algorithm.
-#' see [DEoptim::DEoptim.control()] for details.
-#'
+#' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_DEoptim <- enum(DEoptim::DEoptim.control())
-
+AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
 #' @title ObjectiveFunctions
 #' List of supported objective functions to calculate the error.
