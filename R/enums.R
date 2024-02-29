@@ -42,6 +42,37 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(nloptr::nl.opts())
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
+#' Objective Function Options for Model Fit Assessment
+#'
+#' Default settings for objective function options in model fit analysis,
+#' pivotal for calculating error and fit. These configurations enable tailored
+#' analysis approaches, pivotal in the `ParameterIdentification` process for
+#' optimizing parameter values against observed data. These options are
+#' configured via the `PIConfiguration` class.
+#'
+#' @export
+#' @name ObjectiveFunctionOptions
+#' @details Settings include:
+#' \describe{
+#'   \item{\code{objectiveFunctionType}}{"lsq" for least squares; influences error calculation.}
+#'   \item{\code{residualWeightingMethod}}{"none" by default; specifies method for residual weighting.}
+#'   \item{\code{robustMethod}}{"none" for standard analysis; selects method for robust outlier handling.}
+#'   \item{\code{scaleVar}}{FALSE by default; determines if scaling is applied to residuals.}
+#'   \item{\code{scaling}}{"lin" for linear scaling; affects data scaling approach.}
+#'   \item{\code{linScaleCV}}{0.2; coefficient of variation for linear scaling.}
+#'   \item{\code{logScaleSD}}{NULL; standard deviation for log scaling.}
+#' }
+#' These options are configurable in `PIConfiguration`, directly influencing the
+#' `calculateCostMetrics` functionality for detailed model fit assessment.
+ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
+  objectiveFunctionType = "lsq",
+  residualWeightingMethod = "none",
+  robustMethod = "none",
+  scaleVar = FALSE,
+  scaling = "lin",
+  linScaleCV = 0.2,
+  logScaleSD = NULL
+))
 
 #' Objective Function Specifications
 #'
