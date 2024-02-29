@@ -9,7 +9,8 @@ PIParameters <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field parameters List of parameter object. Adding or removing parameters is not supported.
+    #' @field parameters A list of parameter objects.
+    #' Adding or removing parameters is not supported.
     parameters = function(value) {
       if (missing(value)) {
         private$.parameters
@@ -18,8 +19,8 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field currValue Current value of the parameters as used in the
-    #' simulation. The unit of the value is `PIParameters$unit`.
+    #' @field currValue The current parameter values for simulations,
+    #' in units specified by `PIParameters$unit`.
     currValue = function(value) {
       if (missing(value)) {
         toUnit(
@@ -32,7 +33,7 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field startValue Start value in the optimization.
+    #' @field startValue Initial value used for optimization.
     startValue = function(value) {
       if (missing(value)) {
         private$.startValue
@@ -42,7 +43,7 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field minValue Minimal allowed value of the parameter.
+    #' @field minValue Lowest permissible parameter value.
     minValue = function(value) {
       if (missing(value)) {
         private$.minValue
@@ -57,7 +58,7 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field maxValue Maximal allowed value of the parameter.
+    #' @field maxValue Highest permissible parameter value.
     maxValue = function(value) {
       if (missing(value)) {
         private$.maxValue
@@ -72,8 +73,7 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field unit Unit of parameter values. If the unit is changed, the min/max/start values are NOT
-    #' adjusted automatically.
+    #' @field unit Parameter value units. Changing the unit does NOT auto-adjust min/max/start values.
     unit = function(value) {
       if (missing(value)) {
         private$.unit
@@ -91,12 +91,11 @@ PIParameters <- R6::R6Class(
     .unit = NULL
   ),
   public = list(
-    #' @description
-    #' Initialize a new instance of the class
-    #' The start value is set to the value of the first parameter at time of creation
-    #' and can be changed with `PIParameters$startValue`
-    #' @param parameters A list of objects of class `Parameter`.
-    #' All parameters will be optimized using the same value.
+    #' @description Initialize a new instance of the class.
+    #' The initial start value is derived from the first parameter upon creation,
+    #' modifiable via `PIParameters$startValue`. All parameters are optimized
+    #' using this unified value.
+    #' @param parameters List of `Parameter` class objects to be optimized.
     #' @return A new `PIParameters` object.
     initialize = function(parameters) {
       parameters <- c(parameters)
@@ -115,10 +114,9 @@ PIParameters <- R6::R6Class(
       private$.unit <- parameters[[1]]$unit
     },
 
-    #' @description
-    #' Change the value of the parameter(s)
-    #' The unit of the value is $unit
-    #' @param value Numerical value.
+    #' @description Updates parameter(s) value.
+    #' Value is specified in units of `PIParameters$unit`.
+    #' @param value Numeric value to set.
     setValue = function(value) {
       ospsuite.utils::validateIsNumeric(value)
       for (param in private$.parameters) {
@@ -128,10 +126,8 @@ PIParameters <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description
-    #' Print the object to the console
-    #' @param ... Rest arguments.
-    print = function(...) {
+    #' @description Prints a summary of the PIParameters.
+    print = function() {
       private$printClass()
       private$printLine("Number of parameters", length(self$parameters))
       private$printLine("Value", self$currValue)

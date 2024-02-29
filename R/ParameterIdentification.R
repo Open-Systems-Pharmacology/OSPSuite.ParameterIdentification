@@ -1,17 +1,17 @@
 #' @title ParameterIdentification
 #' @docType class
-#' @description A task to identify optimal parameter values based on simulation
-#'   outputs and observed data
+#' @description Executes optimization to find the best parameter values by comparing
+#' simulation results against observed data.
 #' @import R6 ospsuite.utils
-#' @format NULL
 #' @export
+#' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
   inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
-    #' @field simulations Named list with simulation objects, where names are
-    #'   IDs of the root container of the simulation
+    #' @field simulations A named list of simulation objects, keyed by the IDs
+    #' of their root containers.
     simulations = function(value) {
       if (missing(value)) {
         as.list(private$.simulations)
@@ -20,7 +20,7 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field parameters List of `PIParameters` objects to be optimized. Read-only
+    #' @field parameters Read-only list of `PIParameters` objects for optimization.
     parameters = function(value) {
       if (missing(value)) {
         private$.piParameters
@@ -29,7 +29,7 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field configuration An object of `PIConfiguration`
+    #' @field configuration A `PIConfiguration` object instance.
     configuration = function(value) {
       if (missing(value)) {
         private$.configuration
@@ -39,8 +39,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field outputMappings List of `PIOutputMapping` objects. Each
-    #' mapping assigns a set of observed data to a simulation output
+    #' @field outputMappings A list of `PIOutputMapping` objects linking
+    #' observed data to simulation outputs.
     outputMappings = function(value) {
       if (missing(value)) {
         private$.outputMappings
@@ -50,43 +50,40 @@ ParameterIdentification <- R6::R6Class(
     }
   ),
   private = list(
-    # Named list of simulations, with names being the IDs of the root container
+    # Named list of simulations keyed by root container IDs
     .simulations = NULL,
-    # Simulation batches for calculation of results. Names are the IDs of the
-    # root container of the underlying simulations.
+    # Batches for result calculations, named by root container IDs
     .simulationBatches = NULL,
-    # Separate batches for calculation of steady state. Required as they have
-    # other output paths and simulation time that actual simulations. Names are
-    # the IDs of the root container of the underlying simulations.
+    # For steady state calculations, with different outputs and times, named by root container IDs
     .steadyStateBatches = NULL,
-    # A named list with names being the IDs of the root container of the
-    # simulations. Each entry is a named list, with names being the paths of the
-    # variable molecules/parameters, and values being the start values.
+    # Named list by simulation IDs, with paths and start values for variable molecules
     .variableMolecules = NULL,
+    # Named list by simulation IDs, detailing paths and start values for variable parameters
     .variableParameters = NULL,
-    # List of PIParameter objects defining the simulation parameters to be
-    # optimized
+    # List of `PIParameter` objects for optimization
     .piParameters = NULL,
-    # List of PIOutputMapping objects
+    # List of `PIOutputMapping` objects
     .outputMappings = NULL,
-    # PIConfiguration
+    # `PIConfiguration` object instance
     .configuration = NULL,
-    # Flag if simulation batches must be created from simulations. Used for
-    # plotting current results.
+    # Indicates if simulation batches need initialization. Used for plotting.
     .needBatchInitialization = TRUE,
-    # If previous simulation state has been saved during batch creation, it is
-    # stored in this variable
+    # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
+    # Number of function evaluations
     .fnEvaluations = 0,
-    # CV for M3 objective function
-    # Assume CV of 20% for LQ. From DOI: 10.1023/a:1012299115260
+    # Coefficient of variation for M3 objective function, assumed 20% for linear scale.
     .linScaleCV = 0.2,
-    # pre-calculate SD for log-transformed data assuming CV of 20%
-    # Used for M3 objective function
-    # From https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
+    # Standard deviation for log-transformed data, pre-calculated for an assumed
+    # CV of 20% for M3 objective function.
+    # https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
     .logScaleSD = NULL,
 
-    # Creates simulation batches from simulations.
+    # Batch Initialization for Simulations
+    #
+    # Initializes simulation batches, preparing them for parameter
+    # identification by clearing outputs, updating schemas with observed data, and setting
+    # variable parameters. Optimizes repeated calls by checking initialization necessity.
     .batchInitialization = function() {
       # If the flag is already set to FALSE, short-cuts the execution of the function
       # This way, the function call be called repeatedly with minimal overhead
@@ -215,8 +212,14 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Calculate the objective function that is going to be minimized during
-    # parameter estimation.
+    # Aggregate Model Cost Calculation
+    #
+    # Calculates and aggregates the model cost across all output
+    # mappings for parameter estimation. Adjusts the evaluations counter, processes
+    # each output mapping's cost via `calculateCostMetrics`, and aggregates the
+    # results into total cost summary.
+    # @param currVals Vector of parameter values for simulation.
+    # @return Aggregated total cost summary.
     .objectiveFunction = function(currVals) {
       # Increase function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
@@ -288,7 +291,13 @@ ParameterIdentification <- R6::R6Class(
       return(runningCost)
     },
 
-    # Apply final identified values to simulation parameter objects.
+    # Apply Identified Parameter Values
+    #
+    # Assigns the final optimized parameter values back to the respective
+    # `PIParameters` objects within the simulation, aligning with their order
+    # in the `$parameters` list.
+    #
+    # @param values Optimized parameter values to be applied.
     .applyFinalValues = function(values) {
       # Iterate through PIParameters
 
@@ -302,11 +311,14 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' Evaluate all simulations with given parameter values
-    #' @param currVals Numerical vector of the parameter values to be applied
-    #' @return An list of objects of `DataCombined` class that includes values simulated
-    #' with the given parameters, and corresponding datasets with observed data.
-    #' Returns one `DataCombined` object for each output mapping.
+    # Simulation Evaluation with Parameter Values
+    #
+    # Evaluates simulations using specified parameter values, updating each
+    # parameter before simulation runs. Generates `DataCombined` objects for
+    # each output mapping, encapsulating both simulated and observed data.
+    #
+    # @param currVals Vector of parameter values for simulation.
+    # @return List of `DataCombined` objects, one per output mapping.
     .evaluate = function(currVals) {
       obsVsPredList <- vector("list", length(private$.outputMappings))
       # Iterate through the values and update current parameter values
@@ -388,8 +400,15 @@ ParameterIdentification <- R6::R6Class(
       return(obsVsPredList)
     },
 
-    # Runs the optimization algorithm and returns the results produced by the
-    # algorithms. Called from public $run() method.
+    # Execute Optimization Algorithm
+    #
+    # Executes the selected optimization algorithm, configured in `PIConfiguration`,
+    # on the current parameter set. It returns a comprehensive summary of the
+    # optimization results, including parameter estimates, function evaluations,
+    # and computation time.
+    #
+    # @return Optimization results with parameter estimates, elapsed time, and
+    # additional metrics.
     .runAlgorithm = function() {
       startValues <- unlist(lapply(self$parameters, function(x) {
         x$startValue
@@ -490,17 +509,21 @@ ParameterIdentification <- R6::R6Class(
     }
   ),
   public = list(
-    #' @description
-    #' Initialize a new instance of the class
+    #' @description Initializes a `ParameterIdentification` instance.
     #'
     #' @param simulations An object or a list of objects of class `Simulation`.
-    #' Parameters of the simulation object will be varied and the results simulated
-    #' @param parameters An object or a list of objects of class `PIParameter`. These parameters will be varied.
-    #' @param configuration Optional. Object of type `PIConfiguration` defining
-    #' further options of the parameter identification. If no `PIConfiguration` is passed, a default one
-    #' @param outputMappings List of objects of the class `PIOutputMapping`. Each objects
-    #' maps a model output (represented by a `Quantity`) with a set of observed data given as `XYData` objects.
-    #' is used.
+    #' Parameters of the simulation object will be varied and the results simulated.
+    #' For creating `Simulation` objects, see \code{\link[ospsuite]{loadSimulation}}.
+    #' @param parameters An object or a list of objects of class `PIParameter`.
+    #' These parameters will be varied. For creating `PIParameter` objects, refer to
+    #' \code{\link[ospsuite.parameteridentification]{PIParameters}}.
+    #' @param configuration (Optional) `PIConfiguration` for additional settings.
+    #' Uses default if omitted. For details on creating a `PIConfiguration` object,
+    #' see \code{\link[ospsuite.parameteridentification]{PIConfiguration}}.
+    #' @param outputMappings List of objects of the class `PIOutputMapping`. Each
+    #' object maps a model output (represented by a `Quantity`) with a set of
+    #' observed data given as `XYData` objects. For guidance on creating `PIOutputMapping`
+    #' objects, see \code{\link[ospsuite.parameteridentification]{PIOutputMapping}}.
     #' @returns A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
@@ -540,12 +563,13 @@ ParameterIdentification <- R6::R6Class(
         names(private$.steadyStateBatches) <- ids
     },
 
-    #' @description
-    #' Start identification of parameters
-    #' @details When the identification if finished, the best identified values of the parameters
-    #' are accessible via the `currValue`-field of the `PIParameters`-object.
+    #' Executes Parameter Identification
     #'
-    #' @return Output of the PI algorithm. Depends on the selected algorithm.
+    #' @description Initiates parameter identification process.
+    #' Upon completion, access optimal parameter values through `PIParameters$currValue`.
+    #'
+    #' @return Results from the parameter identification algorithm, varying by
+    #' algorithm choice.
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
@@ -574,16 +598,15 @@ ParameterIdentification <- R6::R6Class(
       return(results)
     },
 
-    #' @param par Values of paramterers to be applied to the simulations.
-    #' If `NULL` (default), current parameter values are applied. If custom
-    #' values are supplied, the they must be in the same order as `ParameterIdentification$parameters`
+    #' Plots Parameter Estimation Results
     #'
-    #' @description
-    #' Plot the results of parameter estimation
+    #' @description Generates plots for each output mapping based on the current
+    #' or provided parameter values. Simulations are executed with these parameters
+    #' to visualize the estimation results.
     #'
-    #' @details Runs all simulations with current (default) or supplied parameter
-    #' values and creates plots of every output mapping
-    #' @returns A list of ggplot2 objects, one plot per `PIOutputMapping`
+    #' @param par Optional parameter values for simulations, in the order of
+    #' `ParameterIdentification$parameters`. Use current values if `NULL`.
+    #' @return A list of `ggplot2` plots, one for each `PIOutputMapping`.
     plotResults = function(par = NULL) {
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
@@ -785,10 +808,8 @@ ParameterIdentification <- R6::R6Class(
     #   return(profileList)
     # },
 
-    #' @description
-    #' Print the object to the console
-    #' @param ... Rest arguments.
-    print = function(...) {
+    #' @description Prints a summary of ParameterIdentification instance.
+    print = function() {
       private$printClass()
       private$printLine("Simulations", unlist(lapply(private$.simulations, function(x) {
         x$sourceFile

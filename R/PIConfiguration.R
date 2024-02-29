@@ -1,6 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
-#' @description An object storing configuration for parameter identification
+#' @description Encapsulates configurations such as optimization algorithm choice,
+#' and evaluation settings for parameter identification.
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -32,7 +33,7 @@ PIConfiguration <- R6::R6Class(
     #   }
     # },
     #' @field printEvaluationFeedback Boolean. If `TRUE`, prints objective
-    #' function value after each evaluation. Default is `FALSE`
+    #' function value after each evaluation. Default is `FALSE`.
     printEvaluationFeedback = function(value) {
       if (missing(value)) {
         private$.printEvaluationFeedback
@@ -56,24 +57,25 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field objectiveFunctionOptions Configures model fit assessment
-    #' options. This setting influences how error and model fit are calculated
-    #' Supported options and their allowable values are detailed in
-    #' `ospsuite.parameteridentification::ObjectiveFunctionOptions`.
+    #' @field objectiveFunctionOptions Configures model fit evaluation settings,
+    #' influencing error and fit metrics. For option details and impact on cost metrics,
+    #' see \code{\link[ospsuite.parameteridentification]{ObjectiveFunctionSpecs}} and
+    #' \code{\link[ospsuite.parameteridentification]{calculateCostMetrics}}. Defaults found in
+    #' \code{\link[ospsuite.parameteridentification]{ObjectiveFunctionOptions}}.
     objectiveFunctionOptions = function(inputOptions = list()) {
       if (missing(inputOptions)) {
         private$.objectiveFunctionOptions
       } else {
-        validateIsOption(inputOptions, ObjectiveFunctionOptions)
+        validateIsOption(inputOptions, ObjectiveFunctionSpecs)
         private$.objectiveFunctionOptions <- modifyList(
           private$.objectiveFunctionOptions, inputOptions
         )
       }
     },
 
-    #' @field algorithm a string describing the optimization algorithm.
-    #' Supported algorithms are listed  in
-    #' `ospsuite.parameteridentification::Algorithms`.
+    #' @field algorithm A string specifying the optimization algorithm to use. See
+    #' \code{\link[ospsuite.parameteridentification]{Algorithms}} for a list of supported
+    #' algorithms. Defaults to `BOBYQA`.
     algorithm = function(value) {
       if (missing(value)) {
         private$.algorithm
@@ -84,9 +86,11 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions a list of named parameters describing algorithm-specific
-    #' options. Default options are listed  in `AlgorithmOptions_XYZ` where `XYZ` is the name of the algorithm.
-    #' If `NULL`, default options are used.
+    #' @field algorithmOptions A list of named parameters for algorithm-specific
+    #' settings. Refer to \code{\link[ospsuite.parameteridentification]{AlgorithmOptions}}
+    #' for default settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
+    #' denotes the algorithm name). If `NULL`, the algorithm's default settings
+    #' are applied.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -105,8 +109,7 @@ PIConfiguration <- R6::R6Class(
     .algorithmOptions = NULL
   ),
   public = list(
-    #' @description
-    #' Initialize a new instance of the class
+    #' @description Initialize a new instance of the class.
     #' @return A new `PIConfiguration` object.
     initialize = function() {
       private$.simulateSteadyState <- FALSE
@@ -124,8 +127,7 @@ PIConfiguration <- R6::R6Class(
       private$.algorithm <- "BOBYQA"
     },
 
-    #' Print
-    #' @description prints a summary of the PIConfiguration.
+    #' @description Prints a summary of the PIConfiguration.
     print = function() {
       private$printClass()
       #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
