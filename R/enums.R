@@ -49,7 +49,10 @@ AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
 
 #' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(nloptr::nl.opts())
+AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
+  nloptr::nl.opts() |>
+    (\(x) x[names(x) != "algorithm"])()
+)
 
 #' @rdname AlgorithmOptions
 #' @export
