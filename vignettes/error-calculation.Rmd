@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 library(ospsuite.parameteridentification)
 knitr::opts_knit$set(
-  root.dir = ".." 
+  root.dir = ".."
 )
 ```
 
@@ -41,8 +41,8 @@ To apply an error model, set the `targetFunctionType` attribute in `objectFuncti
 ```{r, eval=FALSE}
 piConfiguration <- PIConfiguration$new()
 piConfiguration$objectiveFunctionOptions <- list(
-  objectiveFunctionType = "lsq"  # or "m3"
-)  
+  objectiveFunctionType = "lsq" # or "m3"
+)
 ```
 
 The error calculation between simulated results and observer datasets within each `PIOutputMapping` directly affects the optimization process, aggregating errors across all mappings.
@@ -65,7 +65,7 @@ To apply residual weighting, set the `residualWeightingMethod` attribute in `obj
 ```{r, eval=FALSE}
 piConfiguration$objectiveFunctionOptions <- list(
   objectiveFunctionType = "lsq",
-  residualWeightingMethod = "std"  # or "mean" or "error"
+  residualWeightingMethod = "std" # or "mean" or "error"
 )
 ```
 
@@ -83,7 +83,7 @@ To apply robust residual calculation, set the `robustResidualCalculation` attrib
 ```{r, eval=FALSE}
 piConfiguration$objectiveFunctionOptions <- list(
   objectiveFunctionType = "lsq",
-  robustResidualCalculation = "huber"  # or "bisquare"
+  robustResidualCalculation = "huber" # or "bisquare"
 )
 ```
 
@@ -96,7 +96,7 @@ To change the default ´lin` scaling, set the `scaling` attribute in `PIOutputMa
 
 ```{r, eval=FALSE}
 outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-outputMapping$scaling <- "log"  
+outputMapping$scaling <- "log"
 ```
 
 
