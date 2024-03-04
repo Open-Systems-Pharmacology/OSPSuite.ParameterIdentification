@@ -1,5 +1,7 @@
 # Testing PIParameters with a Single Parameter ----------------------------
 
+refVal <- testParam$value
+
 test_that("PIParameters object is correctly created", {
   piParam <- PIParameters$new(testParam)
   expect_s3_class(piParam, "PIParameters")
