@@ -20,7 +20,6 @@ simulations <- list(simulation)
 names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$printEvaluationFeedback <- FALSE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 parameters <- list()
