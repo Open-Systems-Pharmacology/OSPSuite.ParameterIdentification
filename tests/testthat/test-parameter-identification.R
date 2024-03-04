@@ -1,67 +1,114 @@
+# ParameterIdentification
 
-test_that("A parameter identification object is correctly created", {
-  expect_no_error(task <- ParameterIdentification$new(
+test_that("ParameterIdentification object is correctly created", {
+  expect_silent(piTask <- ParameterIdentification$new(
     simulations = simulations,
     parameters = parameters,
     outputMappings = outputMapping,
     configuration = piConfiguration
   ))
+  testthat::expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
 })
-task <- ParameterIdentification$new(
-  simulations = simulations,
-  parameters = parameters,
-  outputMappings = outputMapping,
-  configuration = piConfiguration
-)
-test_that("Plotting works before running the parameter estimation task", {
-  vdiffr::expect_doppelganger("before_estimation", task$plotResults()[[1]])
-  # plotResults returns a list of plots, one plot for each output mapping
-  # in this example, we have a single output mapping
+
+test_that("ParameterIdentification read-only fields can't be modified", {
+  piTask <- createPiTask()
+  expect_error(piTask$simulations <- simulations)
+  expect_error(piTask$parameters <- parameters)
+  expect_error(piTask$outputMappings <- outputMapping)
 })
-taskResults <- task$run()
-test_that("Plotting works after running the parameter estimation task", {
-  vdiffr::expect_doppelganger("after_estimation", task$plotResults()[[1]])
+
+test_that("ParameterIdentification instance prints without error", {
+  piTask <- createPiTask()
+  expect_no_error(print(piTask))
 })
-test_that("Plotting returns a different plot when supplied with input parameters", {
-  vdiffr::expect_doppelganger("custom_parameter", task$plotResults(1.2)[[1]])
+
+test_that("ParameterIdentification returns an infinite cost structure if the
+          simulation is NA", {
+  piTask <- createPiTask()
+  expect_message(
+    modCost <- piTask$.__enclos_env__$private$.objectiveFunction(NA),
+    "Simulation was not successful"
+  )
+  expect_equal(
+    modCost,
+    ospsuite.parameteridentification:::.createErrorCostStructure(infinite = TRUE)
+  )
 })
-test_that("The results object contains a parameter estimate", {
-  expect_equal(taskResults$par, 1.318853, tolerance = 1e-4)
+
+test_that("plotResults() returns expected plot before running a parameter estimation task", {
+  piTask <- createPiTask()
+  vdiffr::expect_doppelganger("before_estimation", piTask$plotResults()[[1]])
 })
-test_that("The results object contains a number of function evaluations", {
-  expect_equal(taskResults$nrOfFnEvaluations, 22)
+
+test_that("ParameterIdentification configuration can be changed without error", {
+  piTask <- createPiTask()
+  expect_no_error(piTask$configuration$algorithm <- "HJKB")
+  expect_equal(piTask$configuration$algorithm, "HJKB")
+  expect_no_error(piTask$configuration$printEvaluationFeedback <- TRUE)
+  expect_true(piTask$configuration$printEvaluationFeedback)
+  expect_no_error(piTask$configuration$algorithmOptions <- list(maxeval = 3))
+  expect_equal(piTask$configuration$algorithmOptions$maxeval, 3)
 })
-test_that("The results object contains a lower bound of the confidence interval", {
-  expect_equal(taskResults$lwr, 1.216545, tolerance = 1e-3)
+
+
+# Test BOBYQA Algorithm (Default)
+
+test_that("ParameterIdentification$run() runs without error and produces expected
+          results using default BOBYQA algorithm", {
+  piTask <- createPiTask()
+  expect_no_error(piResults <- piTask$run())
+  resultFields <- c("par", "value", "nrOfFnEvaluations", "hessian", "sigma", "lwr", "upr", "cv")
+  resultValues <- piResults[names(piResults) %in% resultFields]
+  resultValues <- unlist(resultValues)
+  referenceValues <- c(1.3189, 156.2574, 22, 730.5977, 0.0523, 1.2163, 1.4214, 3.9671)
+  names(referenceValues) <- resultFields
+  expect_equal(!!resultValues, referenceValues, tolerance = 1e-03)
 })
-test_that("The results object contains an upper bound of the confidence interval", {
-  expect_equal(taskResults$upr, 1.42116, tolerance = 1e-3)
+
+test_that("ParameterIdentification$run() prints expected evaluation feedback using BOBYQA algorithm", {
+  piTask <- createPiTask()
+  piTask$configuration$algorithm <- "BOBYQA"
+  piTask$configuration$printEvaluationFeedback <- TRUE
+  piTask$configuration$algorithmOptions <- list(maxeval = 3)
+  evalOutput <- capture_output(piTask$run())
+  expect_snapshot_value(evalOutput, style = "serialize")
 })
-outputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-  container = simulations$Aciclovir
-))
-outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
-outputMapping$scaling <- "log"
-outputMappings <- c(outputMapping)
-test_that("Output mappings with log scaling are processed without errors", {
-  expect_no_error(task <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = parameters,
-    outputMappings = outputMapping,
-    configuration = piConfiguration
-  ))
-  expect_no_error(taskResults <- task$run())
+
+piTask <- createPiTask()
+piResults <- piTask$run()
+test_that("plotResults() returns expected plot after running a parameter estimation task", {
+  vdiffr::expect_doppelganger("after_estimation", piTask$plotResults()[[1]])
 })
-test_that("Algorithm can be changed in PI configuration", {
-  expect_equal(task$configuration$algorithm, "BOBYQA")
-  task$configuration$algorithm <- "HJKB"
-  expect_equal(task$configuration$algorithm, "HJKB")
+
+test_that("plotResults() returns expected plot whith parameter input", {
+  vdiffr::expect_doppelganger("custom_parameter", piTask$plotResults(1.2)[[1]])
 })
+
+
+# Test HJBK Algorithm
+
+test_that("ParameterIdentification$run() fails using HJKB algorithm with one parameter", {
+  piTask <- createPiTask()
+  piTask$configuration$algorithm <- "HJKB"
+  expect_error(piTask$run())
+})
+
+
+# Test DEoptim Algorithm
+
+test_that("ParameterIdentification$run() runs without error using HJKB algorithm", {
+  piTask <- createPiTask()
+  piTask$configuration$algorithm <- "DEoptim"
+  piTask$configuration$printEvaluationFeedback <- FALSE
+  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  expect_no_error(piTask$run())
+})
+
 
 # test_that("Grid search produces no error with default parameters", {
-#   expect_no_error(gridSearchResults <- task$gridSearch())
+#   expect_no_error(gridSearchResults <- piTask$gridSearch())
 # })
-# gridSearchResults <- task$gridSearch(totalEvaluations = 10)
+# gridSearchResults <- piTask$gridSearch(totalEvaluations = 10)
 # test_that("Grid search produced correct results", {
 #   expect_snapshot_value(gridSearchResults, style = "serialize")
 # })
