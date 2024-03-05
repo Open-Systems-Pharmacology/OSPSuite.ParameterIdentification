@@ -1,9 +1,4 @@
-simulation <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-
-testQuantity <- ospsuite::getQuantity(
-  path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-  container = simulation
-)
+# PIOutputMapping
 
 test_that("PIOutputMapping object is correctly created", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
