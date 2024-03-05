@@ -25,13 +25,7 @@
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/news/index.html</loc>
   </url>
   <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions_BOBYQA.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions_DEoptim.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions_HJKB.html</loc>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/Algorithms.html</loc>
@@ -89,6 +83,9 @@
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionOptions.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionSpecs.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ospsuitePIRSettingNames.html</loc>
