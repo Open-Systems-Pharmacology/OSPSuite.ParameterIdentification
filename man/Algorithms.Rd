@@ -3,9 +3,7 @@
 \docType{data}
 \name{Algorithms}
 \alias{Algorithms}
-\title{Algorithms
-List of optimization algorithms supported by optimization routines and, consequently,
-by the ParameterIdentification class}
+\title{Optimization Algorithms}
 \format{
 An object of class \code{list} of length 3.
 }
@@ -13,8 +11,20 @@ An object of class \code{list} of length 3.
 Algorithms
 }
 \description{
-Algorithms
-List of optimization algorithms supported by optimization routines and, consequently,
-by the ParameterIdentification class
+Optimization algorithms supported by optimization routines, available for use
+in the \code{ParameterIdentification} class. These algorithms are configured via
+the \code{PIConfiguration} class.
+}
+\details{
+Supported algorithms include:
+\describe{
+\item{\code{"HJKB"}}{Hooke-Jeeves algorithm from the \pkg{dfoptim} package.}
+\item{\code{"BOBYQA"}}{BOBYQA algorithm from the \pkg{nloptr} package.}
+\item{\code{"DEoptim"}}{Differential evolution algorithm from the \pkg{DEoptim}
+package, suitable for stochastic global optimization.}
+}
+
+These algorithms can be specified and configured within the \code{PIConfiguration}
+class to tailor the parameter identification process to specific needs.
 }
 \keyword{datasets}

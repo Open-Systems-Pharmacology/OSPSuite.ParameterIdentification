@@ -5,7 +5,8 @@
 \alias{PIConfiguration}
 \title{PIConfiguration}
 \description{
-An object storing configuration for parameter identification
+Encapsulates configurations such as optimization algorithm choice,
+and evaluation settings for parameter identification.
 }
 \section{Super class}{
 \code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIConfiguration}
@@ -14,23 +15,26 @@ An object storing configuration for parameter identification
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
-function value after each evaluation. Default is \code{FALSE}}
+function value after each evaluation. Default is \code{FALSE}.}
 
 \item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for simulation
 runs. If \code{NULL}, default options are used.}
 
-\item{\code{objectiveFunctionOptions}}{Configures model fit assessment
-options. This setting influences how error and model fit are calculated
-Supported options and their allowable values are detailed in
-\code{ospsuite.parameteridentification::ObjectiveFunctionOptions}.}
+\item{\code{objectiveFunctionOptions}}{Configures model fit evaluation settings,
+influencing error and fit metrics. For option details and impact on cost metrics,
+see \code{\link{ObjectiveFunctionSpecs}} and
+\code{\link{calculateCostMetrics}}. Defaults found in
+\code{\link{ObjectiveFunctionOptions}}.}
 
-\item{\code{algorithm}}{a string describing the optimization algorithm.
-Supported algorithms are listed  in
-\code{ospsuite.parameteridentification::Algorithms}.}
+\item{\code{algorithm}}{A string specifying the optimization algorithm to use. See
+\code{\link{Algorithms}} for a list of supported
+algorithms. Defaults to \code{BOBYQA}.}
 
-\item{\code{algorithmOptions}}{a list of named parameters describing algorithm-specific
-options. Default options are listed  in \code{AlgorithmOptions_XYZ} where \code{XYZ} is the name of the algorithm.
-If \code{NULL}, default options are used.}
+\item{\code{algorithmOptions}}{A list of named parameters for algorithm-specific
+settings. Refer to \code{\link{AlgorithmOptions}}
+for default settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
+denotes the algorithm name). If \code{NULL}, the algorithm's default settings
+are applied.}
 }
 \if{html}{\out{</div>}}
 }
@@ -46,21 +50,20 @@ If \code{NULL}, default options are used.}
 \if{html}{\out{<a id="method-PIConfiguration-new"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a new instance of the class
+Initialize a new instance of the class.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$new()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
 A new \code{PIConfiguration} object.
-Print
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-print}{}}}
 \subsection{Method \code{print()}}{
-prints a summary of the PIConfiguration.
+Prints a summary of the PIConfiguration.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$print()}\if{html}{\out{</div>}}
 }

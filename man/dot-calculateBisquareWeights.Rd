@@ -15,7 +15,8 @@
 Numeric vector of Bisquare weights.
 }
 \description{
-This function calculates Bisquare (Tukey's biweight) weights for residuals, aggressively reducing outlier influence.
-Scales residuals using MAD with a cutoff at \code{c} times MAD.
+This function calculates Bisquare (Tukey's biweight) weights for residuals,
+aggressively reducing outlier influence. Scales residuals using MAD with a
+cutoff at \code{c} times MAD.
 }
 \keyword{internal}

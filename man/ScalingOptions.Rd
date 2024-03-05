@@ -3,8 +3,7 @@
 \docType{data}
 \name{ScalingOptions}
 \alias{ScalingOptions}
-\title{ScalingOptions
-List of scaling options for output mappings.}
+\title{Scaling Options for Output Mapping}
 \format{
 An object of class \code{list} of length 2.
 }
@@ -12,7 +11,15 @@ An object of class \code{list} of length 2.
 ScalingOptions
 }
 \description{
-ScalingOptions
-List of scaling options for output mappings.
+Scaling options applicable to output mappings, impacting how simulation
+results are compared to observed data.
+}
+\details{
+Available scaling options are:
+\describe{
+\item{\code{"lin"}}{Linear scaling, used by default.}
+\item{\code{"log"}}{Logarithmic scaling, for when data spans several orders
+of magnitude.}
+}
 }
 \keyword{datasets}

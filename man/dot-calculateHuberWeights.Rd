@@ -15,7 +15,7 @@
 Numeric vector of Huber weights.
 }
 \description{
-This function calculates Huber weights for residuals, reducing the influence of outliers.
-Uses MAD for scaling and applies a cutoff at \code{k} times MAD.
+This function calculates Huber weights for residuals, reducing the influence
+of outliers. Uses MAD for scaling and applies a cutoff at \code{k} times MAD.
 }
 \keyword{internal}
