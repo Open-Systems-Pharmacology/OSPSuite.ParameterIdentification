@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
   <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml)
-[![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/branch/develop/graph/badge.svg)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
+[![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/branch/main/graph/badge.svg)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
 [![pkgdown](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml)
 
   <!-- badges: end -->
