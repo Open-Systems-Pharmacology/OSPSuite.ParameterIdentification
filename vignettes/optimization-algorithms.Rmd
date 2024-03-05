@@ -2,7 +2,7 @@
 title: "Optimization algorithms"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{User guide}
+  %\VignetteIndexEntry{Optimization algorithms}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

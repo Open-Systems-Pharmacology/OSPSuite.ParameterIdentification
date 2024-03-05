@@ -36,6 +36,7 @@ reference:
   - Algorithms
   - contains("AlgorithmOptions")
   - ObjectiveFunctionOptions
+  - ObjectiveFunctionSpecs
   - residualWeightingOptions
   - robustMethodOptions
   - ScalingOptions
