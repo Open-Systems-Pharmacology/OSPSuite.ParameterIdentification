@@ -28,25 +28,10 @@
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/news/index.html</loc>
   </url>
   <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_BOBYQA.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_DEoptim.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions_HJKB.html</loc>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/Algorithms.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_BOBYQA.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_DEoptim.html</loc>
-  </url>
-  <url>
-    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgotitmOptions_HJKB.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/calculateCostMetrics.html</loc>
@@ -101,6 +86,9 @@
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionOptions.html</loc>
+  </url>
+  <url>
+    <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionSpecs.html</loc>
   </url>
   <url>
     <loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ospsuitePIRSettingNames.html</loc>

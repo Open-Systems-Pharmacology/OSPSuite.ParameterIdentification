@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.0.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,24 +85,197 @@
 
     
     
-<p>Short intro</p>
 <div class="section level2">
-<h2 id="used-algorithms">Used algorithms<a class="anchor" aria-label="anchor" href="#used-algorithms"></a>
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>Describe BRIEFLY the different algorithms that are used in the PI
-package. If implemented in a third-party package, refer to the
-documentation of that package.</p>
-<p>If feasible, list algorithm options.</p>
-<p>Give rough guidlines which algorithm to use in which situation.</p>
-<p>Default algorithm is the BOBYQA method (bound optimization by
-quadratic approximation), a local derivative-based method. For complex
-problems where the objective function may lack stable numerical
-derivatives or may have a large number of local minima, HJKB for
-derivative-free Hooke-Jeeves algorithm or DEoptim for global stochastic
-differential evolution algorithm may provide better results at the cost
-of overall execution time.</p>
+<p>The <code>ospsuite.parameteridentification</code> package
+incorporates a selection of optimization algorithms for model parameter
+estimation. By utilizing such algorithms from third-party R packages, it
+offers a solution to optimize parameter values effectively. In this
+guide, we will explore the distinct algorithms included, detail their
+adjustable options, and provide recommendations on selecting the most
+suitable algorithm for various optimization challenges.</p>
 </div>
-  </main>
+<div class="section level2">
+<h2 id="choosing-an-algorithm">Choosing an Algorithm<a class="anchor" aria-label="anchor" href="#choosing-an-algorithm"></a>
+</h2>
+<ul>
+<li><p><strong><code>BOBYQA</code></strong> is the default algorithm due
+to its computational efficiency in handling typical optimization tasks
+with relatively small number of parameters and smooth objective
+functions.</p></li>
+<li><p><strong><code>HJKB</code></strong> should be considered for
+problems with discontinuous objective functions or when derivative
+information is problematic.</p></li>
+<li><p><strong><code>DEoptim</code></strong> is best suited for highly
+complex problems, especially those with many local minima or requiring
+global optimization strategies.</p></li>
+</ul>
+<p>Selecting the appropriate algorithm depends on the nature of your
+optimization problem and the characteristics of the objective function.
+Experimenting with different algorithms under varying settings can
+provide insights into the most effective approach for your specific
+task.</p>
+</div>
+<div class="section level2">
+<h2 id="advanced-configuration-options">Advanced Configuration Options<a class="anchor" aria-label="anchor" href="#advanced-configuration-options"></a>
+</h2>
+<div class="section level3">
+<h3 id="bobyqa-from-nloptr-package">BOBYQA from <code>nloptr</code> package<a class="anchor" aria-label="anchor" href="#bobyqa-from-nloptr-package"></a>
+</h3>
+<p><code>BOBYQA</code> (Bound Optimization BY Quadratic Approximation)
+performs derivative-free bound-constrained optimization using an
+iteratively constructed quadratic approximation for the objective
+function (Powell, 2009).</p>
+<p><strong>Default Options:</strong></p>
+<ul>
+<li>
+<code>stopval = -Inf</code>: Stops the minimization process if the
+objective function reaches this value.</li>
+<li>
+<code>xtol_rel = 1e-6</code>: Terminates optimization when the
+relative size of the optimization step is less than this value.</li>
+<li>
+<code>maxeval = 1000</code>: Limits the number of function
+evaluations to this value, after which the optimization process
+stops.</li>
+<li>
+<code>ftol_rel = 0.0</code>: Stops the optimization when the
+relative change in the objective function value between iterations is
+smaller than this value.</li>
+<li>
+<code>ftol_abs = 0.0</code>: Ends the optimization process when the
+absolute change in the objective function value between iterations falls
+below this threshold.</li>
+<li>
+<code>check_derivatives = FALSE</code>: If <code>TRUE</code>, the
+derivatives of the objective function (if provided) are checked for
+correctness.</li>
+</ul>
+<p>Example usage:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"BOBYQA"</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithmOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  stopval <span class="op">=</span> <span class="op">-</span><span class="fl">1e-06</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For detailed documentation on BOBYQA and its implementation, refer to
+the <a href="https://CRAN.R-project.org/package=nloptr" class="external-link"><code>nloptr</code>
+package documentation on CRAN</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="hjkb-from-dfoptim-package">HJKB from <code>dfoptim</code> package<a class="anchor" aria-label="anchor" href="#hjkb-from-dfoptim-package"></a>
+</h3>
+<p>The Hooke-Jeeves algorithm, encapsulated in the <code>HJKB</code>
+method, is a derivative-free optimization technique that systematically
+explores the search space using a pattern of trial points to find the
+minimum of a function (Kelley, 2009).</p>
+<p><strong>Default Options:</strong></p>
+<ul>
+<li>
+<code>tol = 1e-06</code>: Terminates optimization when the relative
+size of the optimization step is smaller than this value, indicating
+convergence.</li>
+<li>
+<code>maxfeval = Inf</code>: Specifies the maximum number of
+objective function evaluations allowed before halting the optimization,
+offering a boundless evaluation scope by default.</li>
+<li>
+<code>maximize = FALSE</code>: Determines the optimization
+direction; set to <code>FALSE</code> to minimize the objective function,
+aligning with common optimization tasks.</li>
+<li>
+<code>target = Inf</code>: Sets a stopping criterion based on
+achieving an objective function value; optimization halts if this target
+is exceeded, providing a theoretical bound in practical scenarios.</li>
+<li>
+<code>info = FALSE</code>: Controls the verbosity of the
+optimization process; set to <code>FALSE</code> to suppress intermediate
+status information, maintaining a cleaner output.</li>
+</ul>
+<p>Example usage:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"HJKB"</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithmOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  tol <span class="op">=</span> <span class="fl">1e-09</span>,</span>
+<span>  maxfeval <span class="op">=</span> <span class="fl">1000</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For detailed documentation on HJKB and its implementation, refer to
+the <a href="https://CRAN.R-project.org/package=dfoptim" class="external-link"><code>dfoptim</code>
+package documentation on CRAN</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="deoptim-from-deoptim-package">DEoptim from <code>DEoptim</code> package<a class="anchor" aria-label="anchor" href="#deoptim-from-deoptim-package"></a>
+</h3>
+<p><code>DEoptim</code> utilizes the Differential Evolution (DE)
+algorithm, for robust global stochastic optimization of a real-valued
+function of a real-valued parameter vector (Mullen et <em>al.</em>,
+2011)</p>
+<p><strong>Default Options:</strong></p>
+<ul>
+<li>
+<code>VTR = -Inf</code>: Specifies the value to reach for
+termination. Optimization stops if the function value of the best
+parameter vector is less than or equal to this threshold or if
+<code>itermax</code> is reached.</li>
+<li>
+<code>strategy = 2</code>: Determines the DE strategy employed in
+the optimization process, with various strategies available to influence
+how new solutions are generated.</li>
+<li>
+<code>NP = NA</code>: The population size. A larger population may
+improve the search but increases computational cost.</li>
+<li>
+<code>itermax = 200</code>: The maximum number of generations before
+the optimization halts, ensuring the process concludes even in complex
+search spaces.</li>
+<li>
+<code>CR = 0.5</code>: The crossover probability, dictating the
+likelihood of offspring inheriting traits from different parents,
+influencing diversity in the population.</li>
+<li>
+<code>F = 0.8</code>: The differential weight factor, affecting the
+variation between generations and the convergence rate.</li>
+<li>
+<code>bs = FALSE</code>: Toggles between standard selection
+(<code>FALSE</code>) and “best of parent and offspring” selection
+(<code>TRUE</code>), affecting survival criteria.</li>
+<li>
+<code>trace = TRUE</code>: Enables printing of algorithm progress
+and status information, offering insights into the optimization
+process.</li>
+</ul>
+<p>Example usage:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"DEoptim"</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithmOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  VTR <span class="op">=</span> <span class="op">-</span><span class="fl">1e-06</span>,</span>
+<span>  strategy <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For detailed documentation on DEoptim and its implementation, refer
+to the <a href="https://CRAN.R-project.org/package=DEoptim" class="external-link"><code>DEoptim</code>
+package documentation on CRAN</a>.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li><p>Powell MJD. (2009). The BOBYQA algorithm for bound constrained
+optimization without derivatives. <em>Cambridge NA Report
+NA2009/06</em>, University of Cambridge, Cambridge.</p></li>
+<li><p>Kelley CT. (2009). Iterative Methods for Optimization.
+<em>Frontiers in Applied Mathematics</em>. <a href="https://epubs.siam.org/doi/book/10.1137/1.9781611970920" class="external-link">https://doi.org/10.1137/1.9781611970920</a></p></li>
+<li><p>Mullen KM, Ardia D, Gil D, Windover D, Cline J. (2011). DEoptim:
+An R Package for Global Optimization by Differential Evolution.
+<em>Journal of Statistical Software</em>, 40(6), 1-26. <a href="https://doi.org/10.18637/jss.v040.i06" class="external-link">DOI:
+10.18637/jss.v040.i06</a>.</p></li>
+</ul>
+</div>
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

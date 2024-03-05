@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.0.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,39 +85,149 @@
 
     
     
-<p>This article describes how the error for the minimization function is
-calculated in the PI package. The error is a measure of the difference
-between the simulated results and observed data. Following error models
-are implemented:</p>
-<ul>
-<li>
-<code>lsq</code> - least squares error</li>
-<li>
-<code>m3</code> - extended least squares error considering the
-likelihood of observed data being below quantification limit.
-Implementation based on DOI: 10.1023/a:1012299115260, in particular,
-equation 6 (the M3 method).</li>
-</ul>
-<p>To specify which error model should be used in the PI, set the value
-of the method <code>targetFunctionType</code> of the
-<code>PIConfiguration</code> object to the desired error model. The
-default error model is <code>lsq</code>.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">piConfig</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">piConfig</span><span class="op">$</span><span class="va">targetFunctionType</span> <span class="op">&lt;-</span> <span class="st">"lsq"</span></span></code></pre></div>
-<p>For each <code>PIOutputMapping</code>, the error is calculated
-between the simulated results and all observer data sets linked in the
-<code>PIOutputMapping</code> object. The total error is the sum of all
-errors for each <code>PIOutputMapping</code>.</p>
-<p>Differences between when <code>PIOutputMapping$scaling</code> is
-<code>log</code> and <code>lin</code>.</p>
 <div class="section level2">
-<h2 id="details-on-lsq">Details on lsq<a class="anchor" aria-label="anchor" href="#details-on-lsq"></a>
+<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
+<p>In the parameter identification (PI) process, measuring the
+discrepancy between simulated results and observed data is crucial. The
+<code>ospsuite.parameteridentification</code> package offers two primary
+error models to quantify this difference: the least squares error
+(<code>lsq</code>) and the M3 method (<code>m3</code>) for handling data
+below the quantification limit (BQL).</p>
 </div>
 <div class="section level2">
-<h2 id="details-on-m3">Details on M3<a class="anchor" aria-label="anchor" href="#details-on-m3"></a>
+<h2 id="error-models">Error Models<a class="anchor" aria-label="anchor" href="#error-models"></a>
 </h2>
+<div class="section level3">
+<h3 id="lsq---least-squares-error">LSQ - Least Squares Error<a class="anchor" aria-label="anchor" href="#lsq---least-squares-error"></a>
+</h3>
+<p>The <code>lsq</code> method is a traditional approach that minimizes
+the sum of the squared differences between observed and simulated
+values. This method is widely used in pharmacokinetic modeling, offering
+a straightforward and intuitive error calculation. By default, selecting
+this method will transform BQL data by replacing it with LLOQ/2.</p>
+</div>
+<div class="section level3">
+<h3 id="m3---extended-least-squares-error">M3 - Extended Least Squares Error<a class="anchor" aria-label="anchor" href="#m3---extended-least-squares-error"></a>
+</h3>
+<p>The <code>m3</code> method extends the least squares error by
+incorporating the likelihood of observed data being below the
+quantification limit. This method treats BQL data as censored, applying
+maximum likelihood estimation to include all data in the model fit, thus
+offering a more accurate and statistically robust approach to handling
+BQL observations.</p>
+</div>
+<div class="section level3">
+<h3 id="configuring-error-models-in-pi">Configuring Error Models in PI<a class="anchor" aria-label="anchor" href="#configuring-error-models-in-pi"></a>
+</h3>
+<p>To apply an error model, set the <code>targetFunctionType</code>
+attribute in <code>objectFunctionOptions</code> of the
+<code>PIConfiguration</code> object:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  objectiveFunctionType <span class="op">=</span> <span class="st">"lsq"</span> <span class="co"># or "m3"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The error calculation between simulated results and observer datasets
+within each <code>PIOutputMapping</code> directly affects the
+optimization process, aggregating errors across all mappings.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="advanced-error-model-customization">Advanced Error Model Customization<a class="anchor" aria-label="anchor" href="#advanced-error-model-customization"></a>
+</h2>
+<div class="section level3">
+<h3 id="residual-weighting">Residual Weighting<a class="anchor" aria-label="anchor" href="#residual-weighting"></a>
+</h3>
+<p><code>PIConfiguration</code> offers further customization for error
+calculation through the <code>residualWeightingMethod</code>. This
+option specifies how residuals are weighted. These methods are
+advantageous when observed data comes from diverse populations, when
+datasets comprise different observation counts, or when error of
+dependent variable is measured. Available options include:</p>
+<ul>
+<li>
+<strong><code>std</code></strong>: Useful when variability in
+observed data points is high, as it normalizes residuals by the standard
+deviation, mitigating the impact of outliers.</li>
+<li>
+<strong><code>mean</code></strong>: Beneficial for datasets with
+significant differences in observation magnitudes, scaling residuals by
+the mean to ensure equal contribution across data points.</li>
+<li>
+<strong><code>error</code></strong>: Ideal when individual data
+points come with their variance estimates, allowing for weighting by the
+inverse of these variances, which can provide a more tailored fit given
+the know error.</li>
+</ul>
+<p>To apply residual weighting, set the
+<code>residualWeightingMethod</code> attribute in
+<code>objectFunctionOptions</code> of the <code>PIConfiguration</code>
+object:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  objectiveFunctionType <span class="op">=</span> <span class="st">"lsq"</span>,</span>
+<span>  residualWeightingMethod <span class="op">=</span> <span class="st">"std"</span> <span class="co"># or "mean" or "error"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="robust-residual-calculation">Robust Residual Calculation<a class="anchor" aria-label="anchor" href="#robust-residual-calculation"></a>
+</h3>
+<p>For enhanced flexibility in handling outliers, ´PIConfiguration´
+allows specifying a robust method for residual adjustment. Implementing
+a robustMethod for residuals directly addresses outlier influence,
+refining model robustness and ensuring more reliable parameter
+identification outcomes. Available options include:</p>
+<ul>
+<li>
+<strong><code>none</code></strong> (default): No robust adjustments,
+treating all residuals equally.</li>
+<li>
+<strong><code>huber</code></strong>: Minimizes the impact of
+outliers by combining squared and absolute values, making it less
+sensitive to extreme deviations.</li>
+<li>
+<strong><code>bisquare</code></strong>: Further reduces the
+influence of outliers by applying a weighting scheme that diminishes the
+role of residuals as they move away from the median.</li>
+</ul>
+<p>To apply robust residual calculation, set the
+<code>robustResidualCalculation</code> attribute in
+<code>objectFunctionOptions</code> of the <code>PIConfiguration</code>
+object:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  objectiveFunctionType <span class="op">=</span> <span class="st">"lsq"</span>,</span>
+<span>  robustResidualCalculation <span class="op">=</span> <span class="st">"huber"</span> <span class="co"># or "bisquare"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="scaling-impact">Scaling Impact<a class="anchor" aria-label="anchor" href="#scaling-impact"></a>
+</h3>
+<p>The PIOutputMapping$scaling attribute, adjustable to log or lin,
+crucially shapes the error model’s effectiveness and residual
+calculations. Logarithmic scaling is particularly advantageous for
+datasets with broad ranges, ensuring proportionate errors and uniform
+residuals, thereby reducing skewness in error distribution and enhancing
+model convergence stability.</p>
+<p>To change the default
+´lin<code>scaling, set the</code>scaling<code>attribute in</code>PIOutputMapping`:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">outputMapping</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>quantity <span class="op">=</span> <span class="va">testQuantity</span><span class="op">)</span></span>
+<span><span class="va">outputMapping</span><span class="op">$</span><span class="va">scaling</span> <span class="op">&lt;-</span> <span class="st">"log"</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<ul>
+<li><p>Beal SL. (2001). Ways to fit a PK model with some data below the
+quantification limit. <em>Journal of Pharmacokinetics and
+Pharmacodynamics</em>, 28(5), 481-504. <a href="https://doi.org/10.1023/a:1012299115260" class="external-link">DOI:
+10.1023/a:1012299115260</a>.</p></li>
+<li><p>Fox, J. &amp; Weisberg, S. (2013). Robust Regression. College of
+Liberal Arts - Statistics, Minneapolis.</p></li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

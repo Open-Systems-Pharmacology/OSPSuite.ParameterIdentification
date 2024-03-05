@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.0.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -398,10 +398,7 @@ settings for the <code>BOBYQA</code> algorithm are stored in
 <span><span class="co">#&gt; [1] 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $check_derivatives</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $algorithm</span></span>
-<span><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 <p>E.g. to set the maximal number of function evaluations to 1500 for
 the <code>BOBYQA</code> algorithm, we can use the following code:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -447,8 +444,6 @@ parameters, not the start values!</p>
 <code class="sourceCode R"><span><span class="va">piResults</span> <span class="op">&lt;-</span> <span class="va">piTask</span><span class="op">$</span><span class="fu">run</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Running optimization algorithm: BOBYQA</span></span>
 <span><span class="co">#&gt; Warning in nl.opts(control): Unknown names in control: maxFunctionEvaluations</span></span>
-<span><span class="co">#&gt; Warning in nl.opts(control): Option 'algorithm can not be set here; will be</span></span>
-<span><span class="co">#&gt; overwritten.</span></span>
 <span><span class="co">#&gt; Post-hoc estimation of Hessian matrix.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piResults</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $par</span></span>
@@ -467,7 +462,7 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt; [1] "NLOPT_SUCCESS: Generic success return value."</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $elapsed</span></span>
-<span><span class="co">#&gt; [1] 32.77</span></span>
+<span><span class="co">#&gt; [1] 35.19</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $algorithm</span></span>
 <span><span class="co">#&gt; [1] "BOBYQA"</span></span>
