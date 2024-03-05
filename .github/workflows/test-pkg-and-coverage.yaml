@@ -9,7 +9,7 @@ on:
 
 jobs:
   test-pkg-and-coverage:
-    uses: Open-Systems-Pharmacology/Workflows/.github/workflows/test-pkg-and-coverage.yaml@main
+    uses: Open-Systems-Pharmacology/Workflows/.github/workflows/test-pkg-and-coverage.yml@main
     with:
       install-pksim: true
       install-rClr: true
