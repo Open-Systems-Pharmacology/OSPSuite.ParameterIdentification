@@ -58,20 +58,20 @@ Initializes a \code{ParameterIdentification} instance.
 \describe{
 \item{\code{simulations}}{An object or a list of objects of class \code{Simulation}.
 Parameters of the simulation object will be varied and the results simulated.
-For creating \code{Simulation} objects, see \code{\link[ospsuite]{loadSimulation}}.}
+For creating \code{Simulation} objects, see \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation}}.}
 
 \item{\code{parameters}}{An object or a list of objects of class \code{PIParameter}.
 These parameters will be varied. For creating \code{PIParameter} objects, refer to
-\code{\link[ospsuite.parameteridentification]{PIParameters}}.}
+\code{\link{PIParameters}}.}
 
 \item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each
 object maps a model output (represented by a \code{Quantity}) with a set of
 observed data given as \code{XYData} objects. For guidance on creating \code{PIOutputMapping}
-objects, see \code{\link[ospsuite.parameteridentification]{PIOutputMapping}}.}
+objects, see \code{\link{PIOutputMapping}}.}
 
 \item{\code{configuration}}{(Optional) \code{PIConfiguration} for additional settings.
 Uses default if omitted. For details on creating a \code{PIConfiguration} object,
-see \code{\link[ospsuite.parameteridentification]{PIConfiguration}}.}
+see \code{\link{PIConfiguration}}.}
 }
 \if{html}{\out{</div>}}
 }

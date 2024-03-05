@@ -513,17 +513,17 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @param simulations An object or a list of objects of class `Simulation`.
     #' Parameters of the simulation object will be varied and the results simulated.
-    #' For creating `Simulation` objects, see \code{\link[ospsuite]{loadSimulation}}.
+    #' For creating `Simulation` objects, see [`ospsuite::loadSimulation`].
     #' @param parameters An object or a list of objects of class `PIParameter`.
     #' These parameters will be varied. For creating `PIParameter` objects, refer to
-    #' \code{\link[ospsuite.parameteridentification]{PIParameters}}.
+    #' [`ospsuite.parameteridentification::PIParameters`].
     #' @param configuration (Optional) `PIConfiguration` for additional settings.
     #' Uses default if omitted. For details on creating a `PIConfiguration` object,
-    #' see \code{\link[ospsuite.parameteridentification]{PIConfiguration}}.
+    #' see [`ospsuite.parameteridentification::PIConfiguration`].
     #' @param outputMappings List of objects of the class `PIOutputMapping`. Each
     #' object maps a model output (represented by a `Quantity`) with a set of
     #' observed data given as `XYData` objects. For guidance on creating `PIOutputMapping`
-    #' objects, see \code{\link[ospsuite.parameteridentification]{PIOutputMapping}}.
+    #' objects, see [`ospsuite.parameteridentification::PIOutputMapping`].
     #' @returns A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")

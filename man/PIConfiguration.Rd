@@ -22,16 +22,16 @@ runs. If \code{NULL}, default options are used.}
 
 \item{\code{objectiveFunctionOptions}}{Configures model fit evaluation settings,
 influencing error and fit metrics. For option details and impact on cost metrics,
-see \code{\link[ospsuite.parameteridentification]{ObjectiveFunctionSpecs}} and
-\code{\link[ospsuite.parameteridentification]{calculateCostMetrics}}. Defaults found in
-\code{\link[ospsuite.parameteridentification]{ObjectiveFunctionOptions}}.}
+see \code{\link{ObjectiveFunctionSpecs}} and
+\code{\link{calculateCostMetrics}}. Defaults found in
+\code{\link{ObjectiveFunctionOptions}}.}
 
 \item{\code{algorithm}}{A string specifying the optimization algorithm to use. See
-\code{\link[ospsuite.parameteridentification]{Algorithms}} for a list of supported
+\code{\link{Algorithms}} for a list of supported
 algorithms. Defaults to \code{BOBYQA}.}
 
 \item{\code{algorithmOptions}}{A list of named parameters for algorithm-specific
-settings. Refer to \code{\link[ospsuite.parameteridentification]{AlgorithmOptions}}
+settings. Refer to \code{\link{AlgorithmOptions}}
 for default settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
 denotes the algorithm name). If \code{NULL}, the algorithm's default settings
 are applied.}

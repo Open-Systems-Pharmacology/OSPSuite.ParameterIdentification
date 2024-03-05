@@ -59,9 +59,9 @@ PIConfiguration <- R6::R6Class(
 
     #' @field objectiveFunctionOptions Configures model fit evaluation settings,
     #' influencing error and fit metrics. For option details and impact on cost metrics,
-    #' see \code{\link[ospsuite.parameteridentification]{ObjectiveFunctionSpecs}} and
-    #' \code{\link[ospsuite.parameteridentification]{calculateCostMetrics}}. Defaults found in
-    #' \code{\link[ospsuite.parameteridentification]{ObjectiveFunctionOptions}}.
+    #' see [`ospsuite.parameteridentification::ObjectiveFunctionSpecs`] and
+    #' [`ospsuite.parameteridentification::calculateCostMetrics`]. Defaults found in
+    #' [`ospsuite.parameteridentification::ObjectiveFunctionOptions`].
     objectiveFunctionOptions = function(inputOptions = list()) {
       if (missing(inputOptions)) {
         private$.objectiveFunctionOptions
@@ -74,7 +74,7 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field algorithm A string specifying the optimization algorithm to use. See
-    #' \code{\link[ospsuite.parameteridentification]{Algorithms}} for a list of supported
+    #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
     #' algorithms. Defaults to `BOBYQA`.
     algorithm = function(value) {
       if (missing(value)) {
@@ -87,7 +87,7 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field algorithmOptions A list of named parameters for algorithm-specific
-    #' settings. Refer to \code{\link[ospsuite.parameteridentification]{AlgorithmOptions}}
+    #' settings. Refer to [`ospsuite.parameteridentification::AlgorithmOptions`]
     #' for default settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
     #' denotes the algorithm name). If `NULL`, the algorithm's default settings
     #' are applied.
