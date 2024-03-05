@@ -2,14 +2,23 @@
 % Please edit documentation in R/utilities-object-functions.R
 \name{.createErrorCostStructure}
 \alias{.createErrorCostStructure}
-\title{Create Infinite Cost Structure}
+\title{Constructs Model Cost Summary for Error Handling}
 \usage{
 .createErrorCostStructure(infinite = FALSE)
 }
+\arguments{
+\item{infinite}{Logical flag indicating if the structure should contain
+infinite values (TRUE) or zeros (FALSE).}
+}
 \value{
-Returns a list with infinite values for model, minlogp, var, and residuals components.
+A model cost summary structured identically to the output of
+\code{calculateCostMetrics}, with fields for model cost, minimum log probability,
+statistical measures, and detailed residuals, tailored for failure scenarios
+or initial setup.
 }
 \description{
-Generates a cost structure with infinite values, used in cases of simulation failure.
+Creates a model cost summary compatible with the structure returned by
+\code{calculateCostMetrics}, filled with either infinite values (for simulation
+failures) or zeros (for objective function failures).
 }
 \keyword{internal}

@@ -1,8 +1,8 @@
 #' @title PIOutputMapping
 #' @docType class
-#' @description An object that links together quantities from the simulation
-#' to observed data. This object is passed to the ParameterIdentification
-#' objects
+#' @description Establishes connections between simulated quantities and corresponding
+#' observed data sets. Utilized within `ParameterIdentification` instances to align
+#' and compare simulation outputs with empirical data.
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -11,8 +11,8 @@ PIOutputMapping <- R6::R6Class(
   inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
-    #' @field observedDataSets Named list of `DataSet` objects that will be compared
-    #' to simulation results.
+    #' @field observedDataSets A named list containing `DataSet` objects for comparison
+    #' with simulation outcomes.
     observedDataSets = function(value) {
       if (missing(value)) {
         as.list(private$.observedDataSets)
@@ -21,7 +21,7 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field dataTransformations a named list of factors and offsets
+    #' @field dataTransformations A named list of factors and offsets.
     dataTransformations = function(value) {
       if (missing(value)) {
         private$.dataTransformations
@@ -30,8 +30,7 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field quantity Simulation quantities which values are matched to the
-    #' observed data
+    #' @field quantity Simulation quantities to be aligned with observed data values.
     quantity = function(value) {
       if (missing(value)) {
         private$.quantity
@@ -40,7 +39,7 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field scaling Linear (default) or logarithmic scaling for this output mapping
+    #' @field scaling Specifies scaling for output mapping: linear (default) or logarithmic.
     scaling = function(value) {
       if (missing(value)) {
         private$.scaling
@@ -51,13 +50,10 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field transformResultsFunction Function that will be applied to
-    #'   simulated results. Allows to manipulate simulated values before
-    #'   calculating the residuals. The function should manipulate numeric
-    #'   vectors 'xVals' and 'yVals' (that being the simulated time- and
-    #'   observation values) that will be than assigned to the x- and y-values
-    #'   of the simulated result. The function must return a named list with key
-    #'   'xVals' and 'yVals'.
+    #' @field transformResultsFunction A function to preprocess simulated results
+    #' (time and observation values) before residual calculation. It takes
+    #' numeric vectors 'xVals' and 'yVals', and returns a named list with keys
+    #' 'xVals' and 'yVals'.
     transformResultsFunction = function(value) {
       if (missing(value)) {
         private$.transformResultsFunction
@@ -77,9 +73,8 @@ PIOutputMapping <- R6::R6Class(
     .scaling = NULL
   ),
   public = list(
-    #' @description
-    #' Initialize a new instance of the class
-    #' @param quantity An object of the type `Quantity`
+    #' @description Initialize a new instance of the class.
+    #' @param quantity An object of the type `Quantity`.
     #' @return A new `PIOutputMapping` object.
     initialize = function(quantity) {
       ospsuite.utils::validateIsOfType(quantity, "Quantity")
@@ -89,19 +84,17 @@ PIOutputMapping <- R6::R6Class(
       private$.scaling <- "lin"
     },
 
-    #' Add observed data as `DataSet` objects
-    #' @details If an observed data object with the same label already exists,
-    #' it will be overwritten.
-    #' @param data Object or a list of objects of the type
-    #' `DataSet`. Each data set must be of the same dimension as the simulation
-    #' quantity of the mapping.
+    #' Adds or updates observed data using `DataSet` objects.
+    #' @details Replaces any existing data set with the same label.
+    #' @param data A `DataSet` object or a list thereof, matching the simulation
+    #' quantity dimensions.
     #' @export
     addObservedDataSets = function(data) {
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
       for (idx in seq_along(data)) {
-        # Test if the dimension of the data to be added can be converted to the
-        # dimension of the quantity of this Output Mapping.
+        # Verify if the data's dimension can match the quantity's dimension
+        # in this Output Mapping
         invisible(ospsuite::toBaseUnit(
           quantityOrDimension = private$.quantity,
           values = 1,
@@ -112,21 +105,20 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @param label label of the x-y values series to be removed
-    #' @description
-    #' Remove the observed data.
+    #' @description Removes specified observed data series.
+    #' @param label The label of the observed data series to remove.
     removeObservedDataSet = function(label) {
       private$.observedDataSets[[label]] <- NULL
       invisible(self)
     },
 
-    #' @description Set the data transformations
-    #' @param labels A list of labels, each corresponding to one of the datasets.
-    #' If labels are not specified, data transformations are set across all datasets
-    #' @param xOffsets A numeric list or a value of X-offsets
-    #' @param yOffsets A numeric list or a value of Y-offsets
-    #' @param xFactors A numeric list or a value of X-factors
-    #' @param yFactors A numeric list or a value of Y-factors
+    #' @description Configures transformations for dataset(s).
+    #' @param labels List of dataset labels for targeted transformations.
+    #' Absence of labels applies transformations globally.
+    #' @param xOffsets Numeric list/value for X-offset adjustments.
+    #' @param yOffsets Numeric list/value for Y-offset adjustments.
+    #' @param xFactors Numeric list/value for X-scaling factors.
+    #' @param yFactors Numeric list/value for Y-scaling factors.
     setDataTransformations = function(labels = NULL,
                                       xOffsets = 0,
                                       yOffsets = 0,
@@ -169,10 +161,8 @@ PIOutputMapping <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description
-    #' Print the object to the console
-    #' @param ... Rest arguments.
-    print = function(...) {
+    #' @description Prints a summary of the PIOutputMapping.
+    print = function() {
       private$printClass()
       private$printLine("Output path", private$.quantity$path)
       private$printLine("Observed data labels", names(private$.observedDataSets))

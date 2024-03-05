@@ -2,25 +2,134 @@
 title: "Optimization algorithms"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Optimization algorithms}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{User guide}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ospsuite.parameteridentification)
+knitr::opts_knit$set(
+  root.dir = ".."
+)
 ```
 
-Short intro
 
-## Used algorithms
+## Introduction
 
-Describe BRIEFLY the different algorithms that are used in the PI package.
-If implemented in a third-party package, refer to the documentation of that package.
-
-If feasible, list algorithm options.
-
-Give rough guidlines which algorithm to use in which situation.
+The `ospsuite.parameteridentification` package incorporates a selection of optimization algorithms for model parameter estimation. By utilizing such algorithms from third-party R packages, it offers a solution to optimize parameter values effectively. In this guide, we will explore the distinct algorithms included, detail their adjustable options, and provide recommendations on selecting the most suitable algorithm for various optimization challenges.
 
 
-Default algorithm is the BOBYQA method (bound optimization by quadratic approximation), a local derivative-based method. For complex problems where the objective function may lack stable numerical derivatives or may have a large number of local minima, HJKB for derivative-free Hooke-Jeeves algorithm or DEoptim for global stochastic differential evolution algorithm may provide better results at the cost of overall execution time.
+
+## Choosing an Algorithm
+
+- **`BOBYQA`** is the default algorithm due to its computational efficiency in handling typical optimization tasks with relatively small number of parameters and smooth objective functions.
+
+- **`HJKB`** should be considered for problems with discontinuous objective functions or when derivative information is problematic.
+
+- **`DEoptim`** is best suited for highly complex problems, especially those with many local minima or requiring global optimization strategies.
+
+Selecting the appropriate algorithm depends on the nature of your optimization problem and the characteristics of the objective function. Experimenting with different algorithms under varying settings can provide insights into the most effective approach for your specific task.
+
+
+## Advanced Configuration Options
+
+### BOBYQA from `nloptr` package
+
+`BOBYQA` (Bound Optimization BY Quadratic Approximation) performs derivative-free bound-constrained optimization using an iteratively constructed quadratic approximation for the objective function (Powell, 2009).
+
+
+**Default Options:**
+
+- `stopval = -Inf`: Stops the minimization process if the objective function reaches this value.
+- `xtol_rel = 1e-6`: Terminates optimization when the relative size of the optimization step is less than this value.
+- `maxeval = 1000`: Limits the number of function evaluations to this value, after which the optimization process stops.
+- `ftol_rel = 0.0`: Stops the optimization when the relative change in the objective function value between iterations is smaller than this value.
+- `ftol_abs = 0.0`: Ends the optimization process when the absolute change in the objective function value between iterations falls below this threshold.
+- `check_derivatives = FALSE`: If `TRUE`, the derivatives of the objective function (if provided) are checked for correctness.
+
+Example usage:
+
+```{r, eval=FALSE}
+piConfiguration <- PIConfiguration$new()
+piConfiguration$algorithm <- "BOBYQA"
+piConfiguration$algorithmOptions <- list(
+  stopval = -1e-06
+)
+```
+
+For detailed documentation on BOBYQA and its implementation, refer to the [`nloptr` package documentation on CRAN](https://CRAN.R-project.org/package=nloptr).
+
+
+### HJKB from `dfoptim` package
+
+The Hooke-Jeeves algorithm, encapsulated in the `HJKB` method, is a derivative-free optimization technique that systematically explores the search space using a pattern of trial points to find the minimum of a function (Kelley, 2009).
+
+
+**Default Options:**
+
+- `tol = 1e-06`: Terminates optimization when the relative size of the optimization step is smaller than this value, indicating convergence.
+- `maxfeval = Inf`: Specifies the maximum number of objective function evaluations allowed before halting the optimization, offering a boundless evaluation scope by default.
+- `maximize = FALSE`: Determines the optimization direction; set to `FALSE` to minimize the objective function, aligning with common optimization tasks.
+- `target = Inf`: Sets a stopping criterion based on achieving an objective function value; optimization halts if this target is exceeded, providing a theoretical bound in practical scenarios.
+- `info = FALSE`: Controls the verbosity of the optimization process; set to `FALSE` to suppress intermediate status information, maintaining a cleaner output.
+
+Example usage:
+
+```{r, eval=FALSE}
+piConfiguration <- PIConfiguration$new()
+piConfiguration$algorithm <- "HJKB"
+piConfiguration$algorithmOptions <- list(
+  tol = 1e-09,
+  maxfeval = 1000
+)
+```
+
+
+For detailed documentation on HJKB and its implementation, refer to the [`dfoptim` package documentation on CRAN](https://CRAN.R-project.org/package=dfoptim).
+
+
+### DEoptim from `DEoptim` package
+
+`DEoptim` utilizes the Differential Evolution (DE) algorithm, for robust global stochastic optimization of a real-valued function of a real-valued parameter vector (Mullen et *al.*, 2011)
+
+
+**Default Options:**
+
+- `VTR = -Inf`: Specifies the value to reach for termination. Optimization stops if the function value of the best parameter vector is less than or equal to this threshold or if `itermax` is reached.
+- `strategy = 2`: Determines the DE strategy employed in the optimization process, with various strategies available to influence how new solutions are generated.
+- `NP = NA`: The population size. A larger population may improve the search but increases computational cost.
+- `itermax = 200`: The maximum number of generations before the optimization halts, ensuring the process concludes even in complex search spaces.
+- `CR = 0.5`: The crossover probability, dictating the likelihood of offspring inheriting traits from different parents, influencing diversity in the population.
+- `F = 0.8`: The differential weight factor, affecting the variation between generations and the convergence rate.
+- `bs = FALSE`: Toggles between standard selection (`FALSE`) and "best of parent and offspring" selection (`TRUE`), affecting survival criteria.
+- `trace = TRUE`: Enables printing of algorithm progress and status information, offering insights into the optimization process.
+
+Example usage:
+
+```{r, eval=FALSE}
+piConfiguration <- PIConfiguration$new()
+piConfiguration$algorithm <- "DEoptim"
+piConfiguration$algorithmOptions <- list(
+  VTR = -1e-06,
+  strategy = 4
+)
+```
+
+For detailed documentation on DEoptim and its implementation, refer to the [`DEoptim` package documentation on CRAN](https://CRAN.R-project.org/package=DEoptim).
+
+
+## References
+
+- Powell MJD. (2009). The BOBYQA algorithm for bound constrained optimization without derivatives. *Cambridge NA Report NA2009/06*, University of Cambridge, Cambridge.
+
+- Kelley CT. (2009). Iterative Methods for Optimization. *Frontiers in Applied Mathematics*.  [https://doi.org/10.1137/1.9781611970920](https://epubs.siam.org/doi/book/10.1137/1.9781611970920)
+
+- Mullen KM, Ardia D, Gil D, Windover D, Cline J. (2011). DEoptim: An R Package for Global Optimization by Differential Evolution. *Journal of Statistical Software*, 40(6), 1-26. [DOI: 10.18637/jss.v040.i06](https://doi.org/10.18637/jss.v040.i06).
+

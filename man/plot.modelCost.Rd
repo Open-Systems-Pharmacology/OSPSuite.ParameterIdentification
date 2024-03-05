@@ -17,7 +17,8 @@
 Generates a plot.
 }
 \description{
-Plots raw residuals and, if different, weighted and robust weighted residuals from a \code{modelCost} object.
+Plots raw residuals and, if different, weighted and robust weighted residuals
+from a \code{modelCost} object.
 }
 \examples{
 # Assuming modelCostObj is a valid `modelCost` object

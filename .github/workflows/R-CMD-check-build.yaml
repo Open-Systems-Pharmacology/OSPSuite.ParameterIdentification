@@ -9,7 +9,7 @@ on:
 
 jobs:
   R-CMD-check-build:
-    uses: Open-Systems-Pharmacology/Workflows/.github/workflows/R-CMD-check-build.yaml@main
+    uses: Open-Systems-Pharmacology/Workflows/.github/workflows/R-CMD-check-build.yml@main
     with:
       install-pksim: true
       install-rClr: true
