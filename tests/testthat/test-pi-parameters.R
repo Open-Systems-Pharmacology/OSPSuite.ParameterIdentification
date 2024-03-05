@@ -1,7 +1,5 @@
 # Testing PIParameters with a Single Parameter ----------------------------
 
-simulation <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-testParam <- ospsuite::getParameter("Aciclovir|Permeability", simulation)
 refVal <- testParam$value
 
 test_that("PIParameters object is correctly created", {

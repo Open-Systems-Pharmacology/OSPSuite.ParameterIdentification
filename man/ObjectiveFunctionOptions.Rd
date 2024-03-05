@@ -3,8 +3,7 @@
 \docType{data}
 \name{ObjectiveFunctionOptions}
 \alias{ObjectiveFunctionOptions}
-\title{ObjectiveFunctions
-List of supported objective functions to calculate the error.}
+\title{Objective Function Options for Model Fit Assessment}
 \format{
 An object of class \code{list} of length 7.
 }
@@ -12,7 +11,24 @@ An object of class \code{list} of length 7.
 ObjectiveFunctionOptions
 }
 \description{
-ObjectiveFunctions
-List of supported objective functions to calculate the error.
+Default settings for objective function options in model fit analysis,
+pivotal for calculating error and fit. These configurations enable tailored
+analysis approaches, pivotal in the \code{ParameterIdentification} process for
+optimizing parameter values against observed data. These options are
+configured via the \code{PIConfiguration} class.
+}
+\details{
+Settings include:
+\describe{
+\item{\code{objectiveFunctionType}}{"lsq" for least squares; influences error calculation.}
+\item{\code{residualWeightingMethod}}{"none" by default; specifies method for residual weighting.}
+\item{\code{robustMethod}}{"none" for standard analysis; selects method for robust outlier handling.}
+\item{\code{scaleVar}}{FALSE by default; determines if scaling is applied to residuals.}
+\item{\code{scaling}}{"lin" for linear scaling; affects data scaling approach.}
+\item{\code{linScaleCV}}{0.2; coefficient of variation for linear scaling.}
+\item{\code{logScaleSD}}{NULL; standard deviation for log scaling.}
+}
+These options are configurable in \code{PIConfiguration}, directly influencing the
+\code{calculateCostMetrics} functionality for detailed model fit assessment.
 }
 \keyword{datasets}

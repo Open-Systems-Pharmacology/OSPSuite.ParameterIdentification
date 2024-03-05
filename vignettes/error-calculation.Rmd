@@ -7,33 +7,107 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ospsuite.parameteridentification)
+knitr::opts_knit$set(
+  root.dir = ".."
+)
 ```
 
-This article describes how the error for the minimization function is calculated 
-in the PI package. The error is a measure of the difference between the
-simulated results and observed data. Following error models are implemented:
 
-- `lsq` - least squares error
-- `m3` - extended least squares error considering the likelihood of observed data
-being below quantification limit. Implementation based on DOI: 10.1023/a:1012299115260, 
-in particular, equation 6 (the M3 method).
+## Introduction
 
-To specify which error model should be used in the PI, set the value of the method `targetFunctionType`
-of the `PIConfiguration` object to the desired error model. The default error model is `lsq`.
+In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. The `ospsuite.parameteridentification` package offers two primary error models to quantify this difference: the least squares error (`lsq`) and the M3 method (`m3`) for handling data below the quantification limit (BQL).
 
-```{r eval = FALSE}
-piConfig <- PIConfiguration$new()
-piConfig$targetFunctionType <- "lsq"
+
+## Error Models
+
+### LSQ - Least Squares Error
+
+The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation. By default, selecting this method will transform BQL data by replacing it with LLOQ/2.
+
+### M3 - Extended Least Squares Error
+
+The `m3` method extends the least squares error by incorporating the likelihood of observed data being below the quantification limit. This method treats BQL data as censored, applying maximum likelihood estimation to include all data in the model fit, thus offering a more accurate and statistically robust approach to handling BQL observations.
+
+### Configuring Error Models in PI
+
+To apply an error model, set the `targetFunctionType` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+
+```{r, eval=FALSE}
+piConfiguration <- PIConfiguration$new()
+piConfiguration$objectiveFunctionOptions <- list(
+  objectiveFunctionType = "lsq" # or "m3"
+)
 ```
 
-For each `PIOutputMapping`, the error is calculated between the simulated results 
-and all observer data sets linked in the `PIOutputMapping` object. The total error is 
-the sum of all errors for each `PIOutputMapping`.
+The error calculation between simulated results and observer datasets within each `PIOutputMapping` directly affects the optimization process, aggregating errors across all mappings.
 
-Differences between when `PIOutputMapping$scaling` is `log` and `lin`.
 
-## Details on lsq
 
-## Details on M3
+## Advanced Error Model Customization
+
+### Residual Weighting 
+
+`PIConfiguration` offers further customization for error calculation through the `residualWeightingMethod`. This option specifies how residuals are weighted. These methods are advantageous when observed data comes from diverse populations, when datasets comprise different observation counts, or when error of dependent variable is measured. Available options include:
+
+- **`std`**: Useful when variability in observed data points is high, as it normalizes residuals by the standard deviation, mitigating the impact of outliers.
+- **`mean`**: Beneficial for datasets with significant differences in observation magnitudes, scaling residuals by the mean to ensure equal contribution across data points.
+- **`error`**: Ideal when individual data points come with their variance estimates, allowing for weighting by the inverse of these variances, which can provide a more tailored fit given the know error.
+
+
+To apply residual weighting, set the `residualWeightingMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+
+```{r, eval=FALSE}
+piConfiguration$objectiveFunctionOptions <- list(
+  objectiveFunctionType = "lsq",
+  residualWeightingMethod = "std" # or "mean" or "error"
+)
+```
+
+
+### Robust Residual Calculation 
+
+For enhanced flexibility in handling outliers, ´PIConfiguration´ allows specifying a robust method for residual adjustment. Implementing a robustMethod for residuals directly addresses outlier influence, refining model robustness and ensuring more reliable parameter identification outcomes. Available options include:
+
+- **`none`** (default): No robust adjustments, treating all residuals equally.
+- **`huber`**: Minimizes the impact of outliers by combining squared and absolute values, making it less sensitive to extreme deviations.
+- **`bisquare`**: Further reduces the influence of outliers by applying a weighting scheme that diminishes the role of residuals as they move away from the median.
+
+To apply robust residual calculation, set the `robustResidualCalculation` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+
+```{r, eval=FALSE}
+piConfiguration$objectiveFunctionOptions <- list(
+  objectiveFunctionType = "lsq",
+  robustResidualCalculation = "huber" # or "bisquare"
+)
+```
+
+
+### Scaling Impact
+
+The PIOutputMapping$scaling attribute, adjustable to log or lin, crucially shapes the error model's effectiveness and residual calculations. Logarithmic scaling is particularly advantageous for datasets with broad ranges, ensuring proportionate errors and uniform residuals, thereby reducing skewness in error distribution and enhancing model convergence stability.
+
+To change the default ´lin` scaling, set the `scaling` attribute in `PIOutputMapping`:
+
+```{r, eval=FALSE}
+outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+outputMapping$scaling <- "log"
+```
+
+
+## References
+
+- Beal SL. (2001). Ways to fit a PK model with some data below the quantification limit. *Journal of Pharmacokinetics and Pharmacodynamics*, 28(5), 481-504. [DOI: 10.1023/a:1012299115260](https://doi.org/10.1023/a:1012299115260).
+
+- Fox, J. & Weisberg, S. (2013). Robust Regression. College of Liberal Arts - Statistics, Minneapolis.
+
+
+
+
+
+

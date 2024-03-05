@@ -5,9 +5,9 @@
 \alias{PIOutputMapping}
 \title{PIOutputMapping}
 \description{
-An object that links together quantities from the simulation
-to observed data. This object is passed to the ParameterIdentification
-objects
+Establishes connections between simulated quantities and corresponding
+observed data sets. Utilized within \code{ParameterIdentification} instances to align
+and compare simulation outputs with empirical data.
 }
 \section{Super class}{
 \code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIOutputMapping}
@@ -15,22 +15,18 @@ objects
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{observedDataSets}}{Named list of \code{DataSet} objects that will be compared
-to simulation results.}
+\item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for comparison
+with simulation outcomes.}
 
-\item{\code{dataTransformations}}{a named list of factors and offsets}
+\item{\code{dataTransformations}}{A named list of factors and offsets.}
 
-\item{\code{quantity}}{Simulation quantities which values are matched to the
-observed data}
+\item{\code{quantity}}{Simulation quantities to be aligned with observed data values.}
 
-\item{\code{scaling}}{Linear (default) or logarithmic scaling for this output mapping}
+\item{\code{scaling}}{Specifies scaling for output mapping: linear (default) or logarithmic.}
 
-\item{\code{transformResultsFunction}}{Function that will be applied to
-simulated results. Allows to manipulate simulated values before
-calculating the residuals. The function should manipulate numeric
-vectors 'xVals' and 'yVals' (that being the simulated time- and
-observation values) that will be than assigned to the x- and y-values
-of the simulated result. The function must return a named list with key
+\item{\code{transformResultsFunction}}{A function to preprocess simulated results
+(time and observation values) before residual calculation. It takes
+numeric vectors 'xVals' and 'yVals', and returns a named list with keys
 'xVals' and 'yVals'.}
 }
 \if{html}{\out{</div>}}
@@ -50,7 +46,7 @@ of the simulated result. The function must return a named list with key
 \if{html}{\out{<a id="method-PIOutputMapping-new"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a new instance of the class
+Initialize a new instance of the class.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$new(quantity)}\if{html}{\out{</div>}}
 }
@@ -58,13 +54,13 @@ Initialize a new instance of the class
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{quantity}}{An object of the type \code{Quantity}}
+\item{\code{quantity}}{An object of the type \code{Quantity}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A new \code{PIOutputMapping} object.
-Add observed data as \code{DataSet} objects
+Adds or updates observed data using \code{DataSet} objects.
 }
 }
 \if{html}{\out{<hr>}}
@@ -78,15 +74,13 @@ Add observed data as \code{DataSet} objects
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data}}{Object or a list of objects of the type
-\code{DataSet}. Each data set must be of the same dimension as the simulation
-quantity of the mapping.}
+\item{\code{data}}{A \code{DataSet} object or a list thereof, matching the simulation
+quantity dimensions.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If an observed data object with the same label already exists,
-it will be overwritten.
+Replaces any existing data set with the same label.
 }
 
 }
@@ -94,7 +88,7 @@ it will be overwritten.
 \if{html}{\out{<a id="method-PIOutputMapping-removeObservedDataSet"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-removeObservedDataSet}{}}}
 \subsection{Method \code{removeObservedDataSet()}}{
-Remove the observed data.
+Removes specified observed data series.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$removeObservedDataSet(label)}\if{html}{\out{</div>}}
 }
@@ -102,7 +96,7 @@ Remove the observed data.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{label}}{label of the x-y values series to be removed}
+\item{\code{label}}{The label of the observed data series to remove.}
 }
 \if{html}{\out{</div>}}
 }
@@ -111,7 +105,7 @@ Remove the observed data.
 \if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
 \subsection{Method \code{setDataTransformations()}}{
-Set the data transformations
+Configures transformations for dataset(s).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setDataTransformations(
   labels = NULL,
@@ -125,16 +119,16 @@ Set the data transformations
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{labels}}{A list of labels, each corresponding to one of the datasets.
-If labels are not specified, data transformations are set across all datasets}
+\item{\code{labels}}{List of dataset labels for targeted transformations.
+Absence of labels applies transformations globally.}
 
-\item{\code{xOffsets}}{A numeric list or a value of X-offsets}
+\item{\code{xOffsets}}{Numeric list/value for X-offset adjustments.}
 
-\item{\code{yOffsets}}{A numeric list or a value of Y-offsets}
+\item{\code{yOffsets}}{Numeric list/value for Y-offset adjustments.}
 
-\item{\code{xFactors}}{A numeric list or a value of X-factors}
+\item{\code{xFactors}}{Numeric list/value for X-scaling factors.}
 
-\item{\code{yFactors}}{A numeric list or a value of Y-factors}
+\item{\code{yFactors}}{Numeric list/value for Y-scaling factors.}
 }
 \if{html}{\out{</div>}}
 }
@@ -143,18 +137,11 @@ If labels are not specified, data transformations are set across all datasets}
 \if{html}{\out{<a id="method-PIOutputMapping-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-print}{}}}
 \subsection{Method \code{print()}}{
-Print the object to the console
+Prints a summary of the PIOutputMapping.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$print(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$print()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Rest arguments.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIOutputMapping-clone"></a>}}

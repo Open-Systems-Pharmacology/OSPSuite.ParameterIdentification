@@ -6,12 +6,11 @@
 \title{ParameterIdentification}
 \value{
 A new \code{ParameterIdentification} object.
-
-A list of ggplot2 objects, one plot per \code{PIOutputMapping}
+Executes Parameter Identification
 }
 \description{
-A task to identify optimal parameter values based on simulation
-outputs and observed data
+Executes optimization to find the best parameter values by comparing
+simulation results against observed data.
 }
 \section{Super class}{
 \code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{ParameterIdentification}
@@ -19,16 +18,15 @@ outputs and observed data
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulations}}{Named list with simulation objects, where names are
-IDs of the root container of the simulation}
+\item{\code{simulations}}{A named list of simulation objects, keyed by the IDs
+of their root containers.}
 
-\item{\code{parameters}}{List of \code{PIParameters} objects to be optimized. Read-only}
+\item{\code{parameters}}{Read-only list of \code{PIParameters} objects for optimization.}
 
-\item{\code{configuration}}{An object of \code{PIConfiguration}}
+\item{\code{configuration}}{A \code{PIConfiguration} object instance.}
 
-\item{\code{outputMappings}}{List of \code{PIOutputMapping} objects. Each
-mapping assigns a set of observed data to a simulation output
-Evaluate all simulations with given parameter values}
+\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects linking
+observed data to simulation outputs.}
 }
 \if{html}{\out{</div>}}
 }
@@ -45,7 +43,7 @@ Evaluate all simulations with given parameter values}
 \if{html}{\out{<a id="method-ParameterIdentification-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a new instance of the class
+Initializes a \code{ParameterIdentification} instance.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$new(
   simulations,
@@ -59,50 +57,48 @@ Initialize a new instance of the class
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{simulations}}{An object or a list of objects of class \code{Simulation}.
-Parameters of the simulation object will be varied and the results simulated}
+Parameters of the simulation object will be varied and the results simulated.
+For creating \code{Simulation} objects, see \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation}}.}
 
-\item{\code{parameters}}{An object or a list of objects of class \code{PIParameter}. These parameters will be varied.}
+\item{\code{parameters}}{An object or a list of objects of class \code{PIParameter}.
+These parameters will be varied. For creating \code{PIParameter} objects, refer to
+\code{\link{PIParameters}}.}
 
-\item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each objects
-maps a model output (represented by a \code{Quantity}) with a set of observed data given as \code{XYData} objects.
-is used.}
+\item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each
+object maps a model output (represented by a \code{Quantity}) with a set of
+observed data given as \code{XYData} objects. For guidance on creating \code{PIOutputMapping}
+objects, see \code{\link{PIOutputMapping}}.}
 
-\item{\code{configuration}}{Optional. Object of type \code{PIConfiguration} defining
-further options of the parameter identification. If no \code{PIConfiguration} is passed, a default one}
-
-\item{\code{currVals}}{Numerical vector of the parameter values to be applied}
+\item{\code{configuration}}{(Optional) \code{PIConfiguration} for additional settings.
+Uses default if omitted. For details on creating a \code{PIConfiguration} object,
+see \code{\link{PIConfiguration}}.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-An list of objects of \code{DataCombined} class that includes values simulated
-with the given parameters, and corresponding datasets with observed data.
-Returns one \code{DataCombined} object for each output mapping.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
 \subsection{Method \code{run()}}{
-Start identification of parameters
+Initiates parameter identification process.
+Upon completion, access optimal parameter values through \code{PIParameters$currValue}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$run()}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-When the identification if finished, the best identified values of the parameters
-are accessible via the \code{currValue}-field of the \code{PIParameters}-object.
-}
-
 \subsection{Returns}{
-Output of the PI algorithm. Depends on the selected algorithm.
+Results from the parameter identification algorithm, varying by
+algorithm choice.
+Plots Parameter Estimation Results
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-plotResults"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-plotResults}{}}}
 \subsection{Method \code{plotResults()}}{
-Plot the results of parameter estimation
+Generates plots for each output mapping based on the current
+or provided parameter values. Simulations are executed with these parameters
+to visualize the estimation results.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotResults(par = NULL)}\if{html}{\out{</div>}}
 }
@@ -110,33 +106,23 @@ Plot the results of parameter estimation
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{par}}{Values of paramterers to be applied to the simulations.
-If \code{NULL} (default), current parameter values are applied. If custom
-values are supplied, the they must be in the same order as \code{ParameterIdentification$parameters}}
+\item{\code{par}}{Optional parameter values for simulations, in the order of
+\code{ParameterIdentification$parameters}. Use current values if \code{NULL}.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-Runs all simulations with current (default) or supplied parameter
-values and creates plots of every output mapping
+\subsection{Returns}{
+A list of \code{ggplot2} plots, one for each \code{PIOutputMapping}.
 }
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-print}{}}}
 \subsection{Method \code{print()}}{
-Print the object to the console
+Prints a summary of ParameterIdentification instance.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$print(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$print()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Rest arguments.}
-}
-\if{html}{\out{</div>}}
-}
 }
 }

@@ -20,3 +20,15 @@ executeWithTestFile <- function(actionWithFile) {
   actionWithFile(newFile)
   file.remove(newFile)
 }
+
+# Helper function to create a parameter identification task
+# Start with clean configuration state to avoid side effects from shared configurations
+createPiTask <- function() {
+  piTask <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = parameters,
+    outputMappings = outputMapping,
+    configuration = NULL
+  )
+  return(piTask)
+}
