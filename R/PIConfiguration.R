@@ -120,7 +120,6 @@ PIConfiguration <- R6::R6Class(
         residualWeightingMethod = "none",
         robustMethod = "none",
         scaleVar = FALSE,
-        scaling = "lin",
         linScaleCV = 0.2,
         logScaleSD = NULL
       )

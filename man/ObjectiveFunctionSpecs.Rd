@@ -5,7 +5,7 @@
 \alias{ObjectiveFunctionSpecs}
 \title{Objective Function Specifications}
 \format{
-An object of class \code{list} of length 7.
+An object of class \code{list} of length 6.
 }
 \usage{
 ObjectiveFunctionSpecs
@@ -22,7 +22,6 @@ Includes:
 \item \code{residualWeightingMethod}: Methods for weighting residuals ("none", "std", "mean", "error").
 \item \code{robustMethod}: Approaches for robust outlier handling ("none", "huber", "bisquare").
 \item \code{scaleVar}: Boolean for variance scaling (TRUE, FALSE).
-\item \code{scaling}: Data scaling methods ("lin" for linear, "log" for logarithmic).
 \item \code{linScaleCV}: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.
 \item \code{logScaleSD}: Standard deviation for log scale, with numeric range 1e-9 to Inf.
 }
