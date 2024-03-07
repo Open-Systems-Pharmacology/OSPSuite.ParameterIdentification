@@ -548,6 +548,9 @@ ParameterIdentification <- R6::R6Class(
         private$.simulations[[idx]] <- simulation
         ids[[idx]] <- simulation$root$id
       }
+
+      .validateSimulationIds(ids, parameters, outputMappings)
+
       names(private$.simulations) <- ids
       private$.piParameters <- parameters
       private$.outputMappings <- c(outputMappings)

@@ -22,6 +22,20 @@ test_that("ParameterIdentification instance prints without error", {
   expect_no_error(print(piTask))
 })
 
+test_that("ParameterIdentification correctly throws an error upon missing Simulation IDs", {
+  simulationMismatch <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  expect_error(
+    ParameterIdentification$new(
+      simulations = simulationMismatch,
+      parameters = parameters,
+      outputMappings = outputMapping,
+    ),
+    "Mismatch or missing ID detected"
+  )
+})
+
 test_that("ParameterIdentification returns an infinite cost structure if the
           simulation is NA", {
   piTask <- createPiTask()

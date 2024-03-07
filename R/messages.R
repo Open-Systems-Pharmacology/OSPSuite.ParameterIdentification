@@ -31,3 +31,10 @@ messages$runningOptimizationAlgorithm <- function(name) {
 messages$hessianEstimation <- function() {
   "Post-hoc estimation of Hessian matrix."
 }
+
+messages$errorSimulationIdMissing <- function(id) {
+  paste0(
+    "Mismatch or missing ID detected: ", id,
+    ". Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs."
+  )
+}

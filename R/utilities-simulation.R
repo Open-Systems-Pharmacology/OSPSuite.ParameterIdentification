@@ -150,6 +150,41 @@ getSteadyState <- function(quantitiesPaths = NULL,
   return(.getSimulationContainer(entity$parentContainer))
 }
 
+#' Validates Matching IDs across Simulation IDs, PI Parameters, and Output Mappings
+#'
+#' Ensures that every Simulation ID is present and matches with corresponding IDs
+#' in PIParameter and OutputMapping instances. This function is crucial for
+#' maintaining consistency and preventing mismatches that could disrupt parameter
+#' identification processes.
+#'
+#' @param simulationIds Vector of simulation IDs.
+#' @param piParameters List of `PIParameter` instances, from which IDs are extracted
+#' and validated against simulationIds.
+#' @param outputMappings List of `OutputMapping` instances, from which IDs are
+#' extracted and validated against simulationIds.
+#'
+#' @return TRUE if all IDs match accordingly, otherwise throws an error detailing
+#' the mismatch or absence of IDs.
+#' @keywords internal
+.validateSimulationIds <- function(simulationIds, piParameters, outputMappings) {
+  # Extract unique IDs from piParameters
+  piParamIds <- lapply(piParameters, function(param) .getSimulationContainer(param$parameters[[1]])$id)
+  piParamIds <- unique(unlist(piParamIds))
+
+  # Extract unique IDs from outputMappings
+  outputMappingIds <- lapply(outputMappings, function(mapping) .getSimulationContainer(mapping$quantity)$id)
+  outputMappingIds <- unique(unlist(outputMappingIds))
+
+  # Validate that each simulationId is present in both piParamIds and outputMappingIds
+  for (id in simulationIds) {
+    if (!(id %in% piParamIds && id %in% outputMappingIds)) {
+      stop(messages$errorSimulationIdMissing(id))
+    }
+  }
+
+  return()
+}
+
 #' Stores current simulation output state
 #'
 #' @description Stores simulation output intervals, output time points,
