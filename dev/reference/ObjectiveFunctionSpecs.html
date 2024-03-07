@@ -73,7 +73,7 @@ for tailoring how model fit is assessed, configured within <code>PIConfiguration
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>An object of class <code>list</code> of length 7.</p>
+    <p>An object of class <code>list</code> of length 6.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -81,7 +81,6 @@ for tailoring how model fit is assessed, configured within <code>PIConfiguration
 <li><p><code>residualWeightingMethod</code>: Methods for weighting residuals ("none", "std", "mean", "error").</p></li>
 <li><p><code>robustMethod</code>: Approaches for robust outlier handling ("none", "huber", "bisquare").</p></li>
 <li><p><code>scaleVar</code>: Boolean for variance scaling (TRUE, FALSE).</p></li>
-<li><p><code>scaling</code>: Data scaling methods ("lin" for linear, "log" for logarithmic).</p></li>
 <li><p><code>linScaleCV</code>: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.</p></li>
 <li><p><code>logScaleSD</code>: Standard deviation for log scale, with numeric range 1e-9 to Inf.</p></li>
 </ul><p>These options directly influence the optimization process by defining how
