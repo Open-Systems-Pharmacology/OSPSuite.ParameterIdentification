@@ -74,7 +74,6 @@ AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 #'   \item{\code{residualWeightingMethod}}{"none" by default; specifies method for residual weighting.}
 #'   \item{\code{robustMethod}}{"none" for standard analysis; selects method for robust outlier handling.}
 #'   \item{\code{scaleVar}}{FALSE by default; determines if scaling is applied to residuals.}
-#'   \item{\code{scaling}}{"lin" for linear scaling; affects data scaling approach.}
 #'   \item{\code{linScaleCV}}{0.2; coefficient of variation for linear scaling.}
 #'   \item{\code{logScaleSD}}{NULL; standard deviation for log scaling.}
 #' }
@@ -85,7 +84,6 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   residualWeightingMethod = "none",
   robustMethod = "none",
   scaleVar = FALSE,
-  scaling = "lin",
   linScaleCV = 0.2,
   logScaleSD = NULL
 ))
@@ -104,7 +102,6 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
 #'   \item \code{residualWeightingMethod}: Methods for weighting residuals ("none", "std", "mean", "error").
 #'   \item \code{robustMethod}: Approaches for robust outlier handling ("none", "huber", "bisquare").
 #'   \item \code{scaleVar}: Boolean for variance scaling (TRUE, FALSE).
-#'   \item \code{scaling}: Data scaling methods ("lin" for linear, "log" for logarithmic).
 #'   \item \code{linScaleCV}: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.
 #'   \item \code{logScaleSD}: Standard deviation for log scale, with numeric range 1e-9 to Inf.
 #' }
@@ -115,7 +112,6 @@ ObjectiveFunctionSpecs <- list(
   residualWeightingMethod = c("none", "std", "mean", "error"),
   robustMethod = c("none", "huber", "bisquare"),
   scaleVar = c(TRUE, FALSE),
-  scaling = c("lin", "log"),
   linScaleCV = list(type = "numeric", min = 1e-9, max = 1),
   logScaleSD = list(type = "numeric", min = 1e-9, max = Inf)
 )

@@ -57,7 +57,6 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
       residualWeightingMethod = "std",
       robustMethod = "huber",
       scaleVar = TRUE,
-      scaling = "log",
       linScaleCV = 0.5,
       logScaleSD = 0.5
     )
@@ -75,10 +74,6 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
     "huber"
   )
   expect_true(piConfiguration$objectiveFunctionOptions$scaleVar)
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$scaling,
-    "log"
-  )
   expect_equal(
     piConfiguration$objectiveFunctionOptions$linScaleCV,
     0.5
