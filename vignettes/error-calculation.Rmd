@@ -55,6 +55,7 @@ The error calculation between simulated results and observer datasets within eac
 
 `PIConfiguration` offers further customization for error calculation through the `residualWeightingMethod`. This option specifies how residuals are weighted. These methods are advantageous when observed data comes from diverse populations, when datasets comprise different observation counts, or when error of dependent variable is measured. Available options include:
 
+- **`none`**: (default): No residual weighting.
 - **`std`**: Useful when variability in observed data points is high, as it normalizes residuals by the standard deviation, mitigating the impact of outliers.
 - **`mean`**: Beneficial for datasets with significant differences in observation magnitudes, scaling residuals by the mean to ensure equal contribution across data points.
 - **`error`**: Ideal when individual data points come with their variance estimates, allowing for weighting by the inverse of these variances, which can provide a more tailored fit given the know error.
