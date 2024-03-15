@@ -121,7 +121,7 @@ PIConfiguration <- R6::R6Class(
         robustMethod = "none",
         scaleVar = FALSE,
         linScaleCV = 0.2,
-        logScaleSD = NULL
+        logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
       )
       private$.algorithm <- "BOBYQA"
     },
