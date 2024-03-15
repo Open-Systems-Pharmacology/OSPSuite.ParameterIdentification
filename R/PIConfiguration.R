@@ -62,14 +62,11 @@ PIConfiguration <- R6::R6Class(
     #' see [`ospsuite.parameteridentification::ObjectiveFunctionSpecs`] and
     #' [`ospsuite.parameteridentification::calculateCostMetrics`]. Defaults found in
     #' [`ospsuite.parameteridentification::ObjectiveFunctionOptions`].
-    objectiveFunctionOptions = function(inputOptions = list()) {
-      if (missing(inputOptions)) {
+    objectiveFunctionOptions = function(value) {
+      if (missing(value)) {
         private$.objectiveFunctionOptions
       } else {
-        validateIsOption(inputOptions, ObjectiveFunctionSpecs)
-        private$.objectiveFunctionOptions <- modifyList(
-          private$.objectiveFunctionOptions, inputOptions
-        )
+        private$.objectiveFunctionOptions <- value
       }
     },
 
@@ -115,14 +112,7 @@ PIConfiguration <- R6::R6Class(
       private$.simulateSteadyState <- FALSE
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
-      private$.objectiveFunctionOptions <- list(
-        objectiveFunctionType = "lsq",
-        residualWeightingMethod = "none",
-        robustMethod = "none",
-        scaleVar = FALSE,
-        linScaleCV = 0.2,
-        logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
-      )
+      private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
       private$.algorithm <- "BOBYQA"
     },
 

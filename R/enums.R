@@ -85,7 +85,7 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   robustMethod = "none",
   scaleVar = FALSE,
   linScaleCV = 0.2,
-  logScaleSD = NULL
+  logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
 ))
 
 #' Objective Function Specifications
