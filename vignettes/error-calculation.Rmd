@@ -40,9 +40,7 @@ To apply an error model, set the `targetFunctionType` attribute in `objectFuncti
 
 ```{r, eval=FALSE}
 piConfiguration <- PIConfiguration$new()
-piConfiguration$objectiveFunctionOptions <- list(
-  objectiveFunctionType = "lsq" # or "m3"
-)
+piConfiguration$objectiveFunctionOptions$objectiveFunctionType = "lsq" # or "m3"
 ```
 
 The error calculation between simulated results and observer datasets within each `PIOutputMapping` directly affects the optimization process, aggregating errors across all mappings.
@@ -63,10 +61,7 @@ The error calculation between simulated results and observer datasets within eac
 To apply residual weighting, set the `residualWeightingMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
-piConfiguration$objectiveFunctionOptions <- list(
-  objectiveFunctionType = "lsq",
-  residualWeightingMethod = "std" # or "mean" or "error"
-)
+piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "std" # or "mean" or "error"
 ```
 
 
@@ -78,13 +73,10 @@ For enhanced flexibility in handling outliers, ´PIConfiguration´ allows specif
 - **`huber`**: Minimizes the impact of outliers by combining squared and absolute values, making it less sensitive to extreme deviations.
 - **`bisquare`**: Further reduces the influence of outliers by applying a weighting scheme that diminishes the role of residuals as they move away from the median.
 
-To apply robust residual calculation, set the `robustResidualCalculation` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply robust residual calculation, set the `robustMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
-piConfiguration$objectiveFunctionOptions <- list(
-  objectiveFunctionType = "lsq",
-  robustResidualCalculation = "huber" # or "bisquare"
-)
+piConfiguration$objectiveFunctionOptions$robustMethod <- "huber" # or "bisquare"
 ```
 
 
