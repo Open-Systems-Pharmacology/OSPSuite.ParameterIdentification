@@ -62,6 +62,10 @@ test_that("ParameterIdentification configuration can be changed without error", 
   expect_true(piTask$configuration$printEvaluationFeedback)
   expect_no_error(piTask$configuration$algorithmOptions <- list(maxeval = 3))
   expect_equal(piTask$configuration$algorithmOptions$maxeval, 3)
+  expect_no_error(piTask$configuration$objectiveFunctionOptions$robustMethod <- "huber")
+  expect_equal(piTask$configuration$objectiveFunctionOptions$robustMethod, "huber")
+  expect_no_error(piTask$configuration$objectiveFunctionOptions$linScaleCV <- 0.3)
+  expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
 })
 
 
