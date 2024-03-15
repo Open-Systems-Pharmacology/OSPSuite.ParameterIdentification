@@ -68,6 +68,15 @@ test_that("ParameterIdentification configuration can be changed without error", 
   expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
 })
 
+test_that("ParameterIdentification$run() errors on invalid objective function option", {
+  piTask <- createPiTask()
+  piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
+  expect_error(piTask$run(), "Invalid value for objectiveFunctionType")
+
+  piTask <- createPiTask()
+  piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
+  expect_error(piTask$run(), "linScaleCV must be in the range 1e-09 to 1")
+})
 
 # Test BOBYQA Algorithm (Default)
 

@@ -112,8 +112,9 @@ ObjectiveFunctionSpecs <- list(
   residualWeightingMethod = c("none", "std", "mean", "error"),
   robustMethod = c("none", "huber", "bisquare"),
   scaleVar = c(TRUE, FALSE),
+  scaling = c("lin", "log"),
   linScaleCV = list(type = "numeric", min = 1e-9, max = 1),
-  logScaleSD = list(type = "numeric", min = 1e-9, max = Inf)
+  logScaleSD = list(type = "numeric", min = 1e-9, max = 1)
 )
 
 #' Scaling Options for Output Mapping

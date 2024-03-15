@@ -259,15 +259,20 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate model costs
+        costControl <- private$.configuration$objectiveFunctionOptions
+        costControl$scaling <- private$.outputMappings[[idx]]$scaling
+        ospsuite.parameteridentification::validateIsOption(
+          costControl, ObjectiveFunctionSpecs
+        )
         costSummary <- calculateCostMetrics(
           df = obsVsPredDf,
-          objectiveFunctionType = private$.configuration$objectiveFunctionOptions$objectiveFunctionType,
-          residualWeightingMethod = private$.configuration$objectiveFunctionOptions$residualWeightingMethod,
-          robustMethod = private$.configuration$objectiveFunctionOptions$robustMethod,
-          scaleVar = private$.configuration$objectiveFunctionOptions$scaleVar,
-          linScaleCV = private$.configuration$objectiveFunctionOptions$linScaleCV,
-          logScaleSD = private$.configuration$objectiveFunctionOptions$logScaleSD,
-          scaling = private$.outputMappings[[idx]]$scaling
+          objectiveFunctionType = costControl$objectiveFunctionType,
+          residualWeightingMethod = costControl$residualWeightingMethod,
+          robustMethod = costControl$robustMethod,
+          scaleVar = costControl$scaleVar,
+          linScaleCV = costControl$linScaleCV,
+          logScaleSD = costControl$logScaleSD,
+          scaling = costControl$scaling
         )
 
         costSummaryList[[idx]] <- costSummary
