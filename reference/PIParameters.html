@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.0.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,29 +68,29 @@
     <div class="section level2">
     <h2 id="active-bindings">Active bindings<a class="anchor" aria-label="anchor" href="#active-bindings"></a></h2>
     <p></p><div class="r6-active-bindings"><dl><dt><code>parameters</code></dt>
-<dd><p>List of parameter object. Adding or removing parameters is not supported.</p></dd>
+<dd><p>A list of parameter objects.
+Adding or removing parameters is not supported.</p></dd>
 
 
 <dt><code>currValue</code></dt>
-<dd><p>Current value of the parameters as used in the
-simulation. The unit of the value is <code>PIParameters$unit</code>.</p></dd>
+<dd><p>The current parameter values for simulations,
+in units specified by <code>PIParameters$unit</code>.</p></dd>
 
 
 <dt><code>startValue</code></dt>
-<dd><p>Start value in the optimization.</p></dd>
+<dd><p>Initial value used for optimization.</p></dd>
 
 
 <dt><code>minValue</code></dt>
-<dd><p>Minimal allowed value of the parameter.</p></dd>
+<dd><p>Lowest permissible parameter value.</p></dd>
 
 
 <dt><code>maxValue</code></dt>
-<dd><p>Maximal allowed value of the parameter.</p></dd>
+<dd><p>Highest permissible parameter value.</p></dd>
 
 
 <dt><code>unit</code></dt>
-<dd><p>Unit of parameter values. If the unit is changed, the min/max/start values are NOT
-adjusted automatically.</p></dd>
+<dd><p>Parameter value units. Changing the unit does NOT auto-adjust min/max/start values.</p></dd>
 
 
 </dl><p></p></div>
@@ -107,9 +107,10 @@ adjusted automatically.</p></dd>
 <li><p><a href="#method-PIParameters-clone"><code>PIParameters$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-PIParameters-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
-<p>Initialize a new instance of the class
-The start value is set to the value of the first parameter at time of creation
-and can be changed with <code>PIParameters$startValue</code></p><div class="section">
+<p>Initialize a new instance of the class.
+The initial start value is derived from the first parameter upon creation,
+modifiable via <code>PIParameters$startValue</code>. All parameters are optimized
+using this unified value.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">parameters</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
@@ -117,8 +118,7 @@ and can be changed with <code>PIParameters$startValue</code></p><div class="sect
 <div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>parameters</code></dt>
-<dd><p>A list of objects of class <code>Parameter</code>.
-All parameters will be optimized using the same value.</p></dd>
+<dd><p>List of <code>Parameter</code> class objects to be optimized.</p></dd>
 
 
 </dl><p></p></div>
@@ -130,8 +130,8 @@ All parameters will be optimized using the same value.</p></dd>
 
 </div><p></p><hr><a id="method-PIParameters-setValue"></a><div class="section">
 <h3 id="method-setvalue-">Method <code>setValue()</code><a class="anchor" aria-label="anchor" href="#method-setvalue-"></a></h3>
-<p>Change the value of the parameter(s)
-The unit of the value is $unit</p><div class="section">
+<p>Updates parameter(s) value.
+Value is specified in units of <code>PIParameters$unit</code>.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">setValue</span><span class="op">(</span><span class="va">value</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
@@ -139,7 +139,7 @@ The unit of the value is $unit</p><div class="section">
 <div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>value</code></dt>
-<dd><p>Numerical value.</p></dd>
+<dd><p>Numeric value to set.</p></dd>
 
 
 </dl><p></p></div>
@@ -147,19 +147,11 @@ The unit of the value is $unit</p><div class="section">
 
 </div><p></p><hr><a id="method-PIParameters-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
-<p>Print the object to the console</p><div class="section">
+<p>Prints a summary of the PIParameters.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
-<div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>...</code></dt>
-<dd><p>Rest arguments.</p></dd>
-
-
-</dl><p></p></div>
-</div>
 
 </div><p></p><hr><a id="method-PIParameters-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
@@ -169,7 +161,7 @@ The unit of the value is $unit</p><div class="section">
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

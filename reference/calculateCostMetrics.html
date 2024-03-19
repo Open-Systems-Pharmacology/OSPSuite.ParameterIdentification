@@ -14,7 +14,7 @@ methods for weighting residuals."><!-- mathjax --><script src="https://cdnjs.clo
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.0.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,17 +118,16 @@ including 'scaling', 'linScaleCV', and 'logScaleSD'.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p>A list containing the following elements:</p><ul><li><p><code>modelCost</code>: The total cost calculated from the scaled sum of squared residuals.</p></li>
+<p>A cost metrics summary list containing the following fields:</p><ul><li><p><code>modelCost</code>: The total cost calculated from the scaled sum of squared residuals.</p></li>
 <li><p><code>minLogProbability</code>: The minimum log probability indicating the model fit.</p></li>
 <li><p><code>costDetails</code>: A dataframe with details on the cost calculations.</p></li>
 <li><p><code>residualDetails</code>: A dataframe with the calculated residuals and their weights.
-The list has the class <code>modelCost</code> for easy identification and further processing.</p></li>
+The summary has the class <code>modelCost</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function calculates the residuals between the simulated and observed
-values, applies the specified weighting method, and computes the cost metrics
-based on the scaled or unscaled residuals.</p>
+values, applies the specified weighting method, and computes the cost metrics.</p>
     </div>
 
     <div class="section level2">
