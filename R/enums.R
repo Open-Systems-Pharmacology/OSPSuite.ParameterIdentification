@@ -85,7 +85,7 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   robustMethod = "none",
   scaleVar = FALSE,
   linScaleCV = 0.2,
-  logScaleSD = NULL
+  logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
 ))
 
 #' Objective Function Specifications
@@ -112,8 +112,9 @@ ObjectiveFunctionSpecs <- list(
   residualWeightingMethod = c("none", "std", "mean", "error"),
   robustMethod = c("none", "huber", "bisquare"),
   scaleVar = c(TRUE, FALSE),
+  scaling = c("lin", "log"),
   linScaleCV = list(type = "numeric", min = 1e-9, max = 1),
-  logScaleSD = list(type = "numeric", min = 1e-9, max = Inf)
+  logScaleSD = list(type = "numeric", min = 1e-9, max = 1)
 )
 
 #' Scaling Options for Output Mapping

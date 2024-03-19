@@ -5,7 +5,7 @@
 \alias{ObjectiveFunctionSpecs}
 \title{Objective Function Specifications}
 \format{
-An object of class \code{list} of length 6.
+An object of class \code{list} of length 7.
 }
 \usage{
 ObjectiveFunctionSpecs

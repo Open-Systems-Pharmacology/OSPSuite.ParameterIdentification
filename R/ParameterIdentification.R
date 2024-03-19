@@ -72,12 +72,6 @@ ParameterIdentification <- R6::R6Class(
     .savedSimulationState = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
-    # Coefficient of variation for M3 objective function, assumed 20% for linear scale.
-    .linScaleCV = 0.2,
-    # Standard deviation for log-transformed data, pre-calculated for an assumed
-    # CV of 20% for M3 objective function.
-    # https://medcraveonline.com/MOJPB/correct-use-of-percent-coefficient-of-variation-cv-formula-for-log-transformed-data.html
-    .logScaleSD = NULL,
 
     # Batch Initialization for Simulations
     #
@@ -265,15 +259,20 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Calculate model costs
+        costControl <- private$.configuration$objectiveFunctionOptions
+        costControl$scaling <- private$.outputMappings[[idx]]$scaling
+        ospsuite.parameteridentification::validateIsOption(
+          costControl, ObjectiveFunctionSpecs
+        )
         costSummary <- calculateCostMetrics(
           df = obsVsPredDf,
-          objectiveFunctionType = private$.configuration$objectiveFunctionOptions$objectiveFunctionType,
-          residualWeightingMethod = private$.configuration$objectiveFunctionOptions$residualWeightingMethod,
-          robustMethod = private$.configuration$objectiveFunctionOptions$robustMethod,
-          scaleVar = private$.configuration$objectiveFunctionOptions$scaleVar,
-          scaling = private$.outputMappings[[idx]]$scaling,
-          linScaleCV = private$.linScaleCV,
-          logScaleSD = private$.logScaleSD
+          objectiveFunctionType = costControl$objectiveFunctionType,
+          residualWeightingMethod = costControl$residualWeightingMethod,
+          robustMethod = costControl$robustMethod,
+          scaleVar = costControl$scaleVar,
+          linScaleCV = costControl$linScaleCV,
+          logScaleSD = costControl$logScaleSD,
+          scaling = costControl$scaling
         )
 
         costSummaryList[[idx]] <- costSummary
@@ -531,8 +530,6 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       private$.configuration <- configuration %||% PIConfiguration$new()
-      private$.logScaleSD <- sqrt(log(1 + private$.linScaleCV^2, base = 10) / log(10))
-
       simulations <- ospsuite.utils::toList(simulations)
       parameters <- ospsuite.utils::toList(parameters)
       outputMappings <- ospsuite.utils::toList(outputMappings)

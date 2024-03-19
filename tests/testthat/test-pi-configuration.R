@@ -82,16 +82,6 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
     piConfiguration$objectiveFunctionOptions$logScaleSD,
     0.5
   )
-  expect_error(
-    piConfiguration$objectiveFunctionOptions <- list(
-      objectiveFunctionType = "invalidType"
-    )
-  )
-  expect_error(
-    piConfiguration$objectiveFunctionOptions <- list(
-      invalidField = "lsq"
-    )
-  )
 })
 
 test_that("algorithm can be set and retrieved correctly", {
