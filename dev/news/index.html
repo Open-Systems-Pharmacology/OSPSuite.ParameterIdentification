@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.0.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,35 +59,77 @@
 <h2 class="pkg-version" data-toc-text="development version" id="ospsuiteparameteridentification-development-version">ospsuite.parameteridentification (development version)<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-development-version"></a></h2>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.3" id="ospsuite-parameteridentification-13">ospsuite-parameteridentification 1.3<a class="anchor" aria-label="anchor" href="#ospsuite-parameteridentification-13"></a></h2>
-<ul><li>Added new optimization algorithms: the default local algorithm is now an implementation of the BOBYQA algorithm (bounded optimization by quadratic approximation) from the <a href="https://astamm.github.io/nloptr/index.html" class="external-link">nloptr</a> package; additional local algorithm is <code>HJKB</code>, a bounded implementation of the Hooke-Jeeves derivative-free algorithm from the <code>{dfoptim}</code> package; a global algorithm is <code>DEoptim</code> for differential evolution optimization.</li>
-<li>
-<code>FME::modCost()</code> is re-implemented as part of the parameter identification package and used for calculation of residuals.</li>
-</ul><div class="section level4">
-<h4 id="breaking-changes-1-3">BREAKING CHANGES<a class="anchor" aria-label="anchor" href="#breaking-changes-1-3"></a></h4>
-<ul><li>The parameter in the <code>PIConfiguration</code> class that is controlling the feedback at each function evaluation is now called <code>printEvaluationFeedback</code> instead of <code>printIterationFeedback</code>
-</li>
+<h2 class="pkg-version" data-toc-text="2.0.0" id="ospsuiteparameteridentification-200">ospsuite.parameteridentification 2.0.0<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-200"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-2-0-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-2-0-0"></a></h3>
+<ul><li><p>Requires {ospsuite} version 12.0 or later (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/98" class="external-link">#98</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/114" class="external-link">#114</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p><code>PIConfiguration</code> now configures the objective function via <code>objectiveFunctionOptions</code>. Users can specify options directly, including <code>objectiveFunctionType</code>, <code>residualWeightingMethod</code>, <code>robustMethod</code>, <code>scaleVar</code>, and <code>linScaleCV</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p><code>ParameterIdentification$gridSearch()</code> and<code>ParameterIdentification$calculateOFVProfiles()</code> functions have been disabled until fixed (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/91" class="external-link">#91</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/92" class="external-link">#92</a>).</p></li>
 </ul></div>
-<div class="section level4">
-<h4 id="bug-fixes-1-3">BUG FIXES<a class="anchor" aria-label="anchor" href="#bug-fixes-1-3"></a></h4>
-<ul><li>Calculation of residals does not fail if observed data contains only one time point.</li>
-<li>Calculation of the hessian close to the bounds of parameter values is improved</li>
+<div class="section level3">
+<h3 id="major-changes-2-0-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-2-0-0"></a></h3>
+<ul><li>
+<p>New <code><a href="../reference/calculateCostMetrics.html">calculateCostMetrics()</a></code> function in <code>ParameterIdentification</code> enhances model evaluation with integrated configuration via <code>PIConfiguration</code>. Settings and defaults are specified in <code>ObjectiveFunctionOptions</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/64" class="external-link">#64</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/65" class="external-link">#65</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p>
+<ul><li>
+<code>objectiveFunctionType</code>: <code>lsq</code> for least squares or <code>m3</code> for censored data maximum likelihood estimation.</li>
+<li>
+<code>residualWeightingMethod</code>: options include <code>none</code>, <code>std</code> normalizes by standard deviation for variable data, <code>mean</code> scales by mean for diverse magnitudes, and <code>error</code> weights by inverse variance for known error data.</li>
+<li>
+<code>robustMethod</code>: <code>none</code> for uniform treatment, <code>huber</code> or <code>bisquare</code> for outlier minimization.</li>
+<li>
+<code>scaleVar</code>: A boolean indicating whether to scale residuals by the number of observations.</li>
+<li>
+<code>linScaleCV</code>: Numeric coefficient used to calculate standard deviation for linear scaling, applied to <code>lloq</code> values when <code>m3</code>method is used.</li>
+<li>
+<code>logScaleSD</code>: Numeric standard deviation for logarithmic scaling, applied to <code>lloq</code> values when <code>m3</code>method is used.</li>
+</ul></li>
+<li><p>New <code>error-calculation</code> vignette, explaining error model methodologies within the ospsuite.parameteridentification package. The document elaborates on the lsq (Least Squares Error) and m3 (Extended Least Squares Error for censored data) error models, along with advanced customization options for error modeling. This resource aids users in refining their parameter identification processes. (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/102" class="external-link">#102</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/111" class="external-link">#111</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>New <code>optimization-algorithms</code> vignette, introducing algorithms available for parameter estimation and offering insights on their optimal application scenarios (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/104" class="external-link">#104</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/111" class="external-link">#111</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>New <code>user-guide</code> vignette on parameter identification (PI). This vignette provides a comprehensive overview for setting up PI tasks, including defining simulations, specifying parameters to be identified, mapping model outputs to observed data, and configuring optimization tasks. Examples across three complexity levels of models demonstrate the package’s functionality in detail (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/48" class="external-link">#48</a>, <a href="https://github.com/svavil" class="external-link">@svavil</a>, <a href="https://github.com/PavelBal" class="external-link">@PavelBal</a>).</p></li>
+<li><p>New <code><a href="../reference/plot.modelCost.html">plot.modelCost()</a></code> function for visualizing raw and weighted residuals from <code>modelCost</code> objects (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>Comprehensive overhaul of documentation, for clarity, comprehensiveness, and ease of navigation for all users (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/111" class="external-link">#111</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>Unit test overhaul and coverage enhancement, increasing from 67% to 85% (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/99" class="external-link">#99</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/113" class="external-link">#113</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-improvements-and-fixes-2-0-0">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-2-0-0"></a></h3>
+<ul><li><p>Enhanced error handling now ensures <code>ParameterIdentification</code> tasks validate the existence of simulation objects referenced by <code>PIParameters</code> and <code>OutputMapping</code> to prevent runtime errors due to missing dependencies (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/117" class="external-link">#117</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/120" class="external-link">#120</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>Enhanced <code><a href="../reference/calculateCostMetrics.html">calculateCostMetrics()</a></code> output in <code>ParameterIdentification</code> offers a more detailed results summary for model evaluation. The summary now includes <code>modelCost</code>, <code>minLogProbability</code>, and a <code>costVariables</code> dataframe with <code>scaleFactor</code>, <code>nObservations</code>, <code>M3Contribution</code>, <code>SSR</code> (sum of squared residuals), <code>weightedSSR</code>, <code>normalizedSSR</code>, and <code>robustSSR</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>README file conversion to .rmd format and subsequent updates (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/86" class="external-link">#86</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/93" class="external-link">#93</a>, <a href="https://github.com/FelixMil" class="external-link">@FelixMil</a>).</p></li>
+<li><p>Improved error handling in <code>ParameterIdentification</code> for cases of simulation failure, ensuring consistent and informative error cost structure in output (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/66" class="external-link">#66</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/70" class="external-link">#70</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/svavil" class="external-link">@svavil</a>, <a href="https://github.com/PaveBal" class="external-link">@PaveBal</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p><code><a href="../reference/validateIsOption.html">validateIsOption()</a></code> ensures user-specified options adhere to defined constraints, enhancing the robustness of user inputs (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p><code>ParameterIdentification</code> now directly accesses default optimization algorithm options for <code>BOBYQA</code>, <code>HJKB</code>, and <code>DEoptim</code> from their respective packages (<a href="https://astamm.github.io/nloptr/index.html" class="external-link">nloptr</a>, <code>{dfoptim}</code>, and <a href="https://github.com/ArdiaD/DEoptim" class="external-link">DEoptim</a>) if not explicitly defined in <code>PIConfiguration</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/48" class="external-link">#48</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/81" class="external-link">#81</a>, <a href="https://github.com/PavelBal" class="external-link">@PavelBal</a>).</p></li>
+<li><p>Continuous Integration/Continuous Deployment pipeline improvements (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/95" class="external-link">#95</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/106" class="external-link">#106</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/110" class="external-link">#110</a>, <a href="https://github.com/FelixMil" class="external-link">@FelixMil</a>)</p></li>
+<li><p>Several bug fixes (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/83" class="external-link">#83</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/109" class="external-link">#109</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/110" class="external-link">#110</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/115" class="external-link">#115</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/119" class="external-link">#119</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/122" class="external-link">#122</a>, <a href="https://github.com/PavelBal" class="external-link">@PavelBal</a>, <a href="https://github.com/FelixMil" class="external-link">@FelixMil</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>)</p></li>
 </ul></div>
 </div>
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.2" id="ospsuite-parameteridentification-12">ospsuite-parameteridentification 1.2<a class="anchor" aria-label="anchor" href="#ospsuite-parameteridentification-12"></a></h2>
-<div class="section level4">
-<h4 id="breaking-changes-1-2">BREAKING CHANGES<a class="anchor" aria-label="anchor" href="#breaking-changes-1-2"></a></h4>
-<ul><li>requires <a href="https://github.com/open-systems-pharmacology/ospsuite-r" class="external-link">ospsuite</a> v11.1 or later</li>
+<h2 class="pkg-version" data-toc-text="1.3" id="ospsuiteparameteridentification-13">ospsuite.parameteridentification 1.3<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-13"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-3">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-3"></a></h3>
+<ul><li>The parameter in the <code>PIConfiguration</code> class that is controlling the feedback at each function evaluation is now called <code>printEvaluationFeedback</code> instead of <code>printItera tionFeedback</code>.</li>
 </ul></div>
-<div class="section level4">
-<h4 id="major-changes-1-2">MAJOR CHANGES<a class="anchor" aria-label="anchor" href="#major-changes-1-2"></a></h4>
+<div class="section level3">
+<h3 id="major-changes-1-3">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-1-3"></a></h3>
+<ul><li><p>Added new optimization algorithms: the default local algorithm is now an implementation of the BOBYQA algorithm (bounded optimization by quadratic approximation) from the <a href="https://astamm.github.io/nloptr/index.html" class="external-link">nloptr</a> package; additional local algorithm is <code>HJKB</code>, a bounded implementation of the Hooke-Jeeves derivative-free algorithm from the <code>{dfoptim}</code> package; a global algorithm is <code>DEoptim</code> for differential evolution optimization.</p></li>
+<li><p><code>FME::modCost()</code> is re-implemented as part of the parameter identification package and used for calculation of residuals.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-bug-fixes-and-improvements-1-3">Minor bug fixes and improvements<a class="anchor" aria-label="anchor" href="#minor-bug-fixes-and-improvements-1-3"></a></h3>
+<ul><li>Calculation of residuals does not fail if observed data contains only one time point.</li>
+<li>Calculation of the hessian close to the bounds of parameter values is improved.</li>
+</ul></div>
 </div>
-<div class="section level4">
-<h4 id="minor-changes-1-2">MINOR CHANGES<a class="anchor" aria-label="anchor" href="#minor-changes-1-2"></a></h4>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2" id="ospsuiteparameteridentification-12">ospsuite.parameteridentification 1.2<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-12"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-1-2">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-1-2"></a></h3>
+<ul><li>requires <a href="https://github.com/open-systems-pharmacology/ospsuite-r" class="external-link">ospsuite</a> v11.1 or later.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-bug-fixes-and-improvements-1-2">Minor bug fixes and improvements<a class="anchor" aria-label="anchor" href="#minor-bug-fixes-and-improvements-1-2"></a></h3>
 <ul><li>
-<code><a href="../reference/getSteadyState.html">getSteadyState()</a></code> accepts steady state time invidiaul for each simulation.</li>
-</ul><hr></div>
+<code><a href="../reference/getSteadyState.html">getSteadyState()</a></code> accepts steady state time individually for each simulation.</li>
+</ul></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
