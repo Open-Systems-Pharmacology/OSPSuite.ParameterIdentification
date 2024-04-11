@@ -40,7 +40,7 @@ To apply an error model, set the `targetFunctionType` attribute in `objectFuncti
 
 ```{r, eval=FALSE}
 piConfiguration <- PIConfiguration$new()
-piConfiguration$objectiveFunctionOptions$objectiveFunctionType = "lsq" # or "m3"
+piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq" # or "m3"
 ```
 
 The error calculation between simulated results and observer datasets within each `PIOutputMapping` directly affects the optimization process, aggregating errors across all mappings.

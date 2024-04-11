@@ -49,7 +49,6 @@ reference:
   - getOSPSuitePISetting
   - ospsuitePIRSettingNames
   - validateIsOption
-  - getSteadyState
 
 articles:
 - title: Parameter identification workflow
