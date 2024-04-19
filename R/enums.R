@@ -108,13 +108,22 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
 #' These options directly influence the optimization process by defining how
 #' discrepancies between simulated and observed data are quantified and managed.
 ObjectiveFunctionSpecs <- list(
-  objectiveFunctionType = c("lsq", "m3"),
-  residualWeightingMethod = c("none", "std", "mean", "error"),
-  robustMethod = c("none", "huber", "bisquare"),
-  scaleVar = c(TRUE, FALSE),
-  scaling = c("lin", "log"),
-  linScaleCV = list(type = "numeric", min = 1e-9, max = 1),
-  logScaleSD = list(type = "numeric", min = 1e-9, max = 1)
+  objectiveFunctionType = list(
+    type = "character",
+    allowedValues = c("lsq", "m3")
+  ),
+  residualWeightingMethod = list(
+    type = "character",
+    allowedValues = c("none", "std", "mean", "error")
+  ),
+  robustMethod = list(
+    type = "character",
+    allowedValues = c("none", "huber", "bisquare")
+  ),
+  scaleVar = list(type = "logical"),
+  scaling = list(type = "character", allowedValues = c("lin", "log")),
+  linScaleCV = list(type = "numeric", valueRange = c(1e-9, 1)),
+  logScaleSD = list(type = "numeric", valueRange = c(1e-9, 1))
 )
 
 #' Scaling Options for Output Mapping

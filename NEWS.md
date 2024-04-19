@@ -3,6 +3,7 @@
 ## Breaking changes
 
 - Function `getSteadyState` has been removed in favor of `getSteadyState` from the {ospsuite} package.
+- Function `validateIsOption` has been removed in favor of `ospsuite.utils::validateIsOption`.
 
 # ospsuite.parameteridentification 2.0.0
 
