@@ -48,7 +48,6 @@ reference:
   contents:
   - getOSPSuitePISetting
   - ospsuitePIRSettingNames
-  - validateIsOption
 
 articles:
 - title: Parameter identification workflow
