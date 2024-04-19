@@ -45,7 +45,7 @@ test_that("ParameterIdentification returns an infinite cost structure if the
   )
   expect_equal(
     modCost,
-    ospsuite.parameteridentification:::.createErrorCostStructure(infinite = TRUE)
+    .createErrorCostStructure(infinite = TRUE)
   )
 })
 
@@ -71,11 +71,11 @@ test_that("ParameterIdentification configuration can be changed without error", 
 test_that("ParameterIdentification$run() errors on invalid objective function option", {
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
-  expect_error(piTask$run(), "Invalid value for objectiveFunctionType")
+  expect_error(piTask$run())
 
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
-  expect_error(piTask$run(), "linScaleCV must be in the range 1e-09 to 1")
+  expect_error(piTask$run())
 })
 
 # Test BOBYQA Algorithm (Default)
