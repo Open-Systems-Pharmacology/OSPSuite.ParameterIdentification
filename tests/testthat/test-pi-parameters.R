@@ -67,9 +67,9 @@ test_that("Unit can be changed correctly", {
 # Testing PIParameters with a List of Parameters --------------------------
 
 testParamsList <- list(
-  ospsuite::getParameter("Organism|Liver|Volume", simulation),
-  ospsuite::getParameter("Organism|Kidney|Volume", simulation),
-  ospsuite::getParameter("Organism|Brain|Volume", simulation)
+  ospsuite::getParameter("Organism|Liver|Volume", testSimulation()),
+  ospsuite::getParameter("Organism|Kidney|Volume", testSimulation()),
+  ospsuite::getParameter("Organism|Brain|Volume", testSimulation())
 )
 refVal <- testParamsList[[1]]$value
 

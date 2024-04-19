@@ -1,60 +1,105 @@
-# PIOutputMapping setup
+# Function factories to create object only the first time they are accessed
 
-simulation <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+## Simulation function factory
+getTestSimulation <- function() {
+  .simulation <- NULL
+  function() {
+    if (is.null(.simulation)) {
+      .simulation <<- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+    }
+    return(.simulation)
+  }
+}
+
+testSimulation <- getTestSimulation()
+
+testSimulations <- function() {
+  list("Aciclovir" = testSimulation())
+}
+
+## observedData function factory
+getTestObservedData <- function() {
+  .observedData <- NULL
+  function() {
+    if (is.null(.observedData)) {
+      filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
+      dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
+      dataConfiguration$sheets <- "Laskin 1982.Group A"
+      dataConfiguration$namingPattern <- "{Source}.{Sheet}"
+      .observedData <<- loadDataSetsFromExcel(
+        xlsFilePath = filePath,
+        importerConfigurationOrPath = dataConfiguration
+      )
+    }
+    return(.observedData)
+  }
+}
+
+testObservedData <- getTestObservedData()
+
+## Parameters function factory
+getTestParameters <- function() {
+  .parameters <- NULL
+  function() {
+    if (is.null(.parameters)) {
+      parameterPaths <- c("Aciclovir|Lipophilicity")
+      parameters <- list()
+      for (parameterPath in parameterPaths) {
+        modelParams <- list()
+        for (simulation in testSimulations()) {
+          modelParams <- c(
+            modelParams,
+            ospsuite::getParameter(path = parameterPath, container = simulation)
+          )
+        }
+        piParameter <- PIParameters$new(parameters = modelParams)
+        parameters <- c(parameters, piParameter)
+      }
+      parameters[[1]]$minValue <- -10
+      parameters[[1]]$maxValue <- 10
+
+      .parameters <<- parameters
+    }
+    return(.parameters)
+  }
+}
+
+testParameters <- getTestParameters()
+
+
+## OutputMapping function factory
+getTestOutputMapping <- function() {
+  .outputMapping <- NULL
+  function() {
+    if (is.null(.outputMapping)) {
+      outputMapping <- PIOutputMapping$new(
+        quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+          container = testSimulations()$Aciclovir
+        )
+      )
+      outputMapping$addObservedDataSets(testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`)
+      .outputMapping <<- list(outputMapping)
+    }
+    return(.outputMapping)
+  }
+}
+
+testOutputMapping <- getTestOutputMapping()
+
+
+# Variables
 
 testQuantity <- ospsuite::getQuantity(
   path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-  container = simulation
+  container = testSimulation()
 )
-
-
-# PIParameters setup
-
-testParam <- ospsuite::getParameter("Aciclovir|Permeability", simulation)
+testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
 refVal <- testParam$value
-
-
-# ParameterIdentification
-
-simulations <- list(simulation)
-names(simulations) <- "Aciclovir"
 
 piConfiguration <- PIConfiguration$new()
 
-parameterPaths <- c("Aciclovir|Lipophilicity")
-parameters <- list()
-for (parameterPath in parameterPaths) {
-  modelParams <- list()
-  for (simulation in simulations) {
-    modelParams <- c(
-      modelParams,
-      ospsuite::getParameter(path = parameterPath, container = simulation)
-    )
-  }
-  piParameter <- PIParameters$new(parameters = modelParams)
-  parameters <- c(parameters, piParameter)
-}
-parameters[[1]]$minValue <- -10
-parameters[[1]]$maxValue <- 10
 
-filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
-dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-dataConfiguration$sheets <- "Laskin 1982.Group A"
-dataConfiguration$namingPattern <- "{Source}.{Sheet}"
-observedData <- loadDataSetsFromExcel(
-  xlsFilePath = filePath,
-  importerConfigurationOrPath = dataConfiguration
-)
-
-outputMapping <- PIOutputMapping$new(
-  quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-                         container = simulations$Aciclovir
-  )
-)
-outputMapping$addObservedDataSets(observedData$`AciclovirLaskinData.Laskin 1982.Group A`)
-outputMappings <- list(outputMapping)
-
-
+# Helper functions
 
 getTestDataFilePath <- function(fileName) {
   dataPath <- testthat::test_path("../data")
@@ -83,9 +128,9 @@ executeWithTestFile <- function(actionWithFile) {
 # Start with clean configuration state to avoid side effects from shared configurations
 createPiTask <- function() {
   piTask <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = parameters,
-    outputMappings = outputMapping,
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = testOutputMapping(),
     configuration = NULL
   )
   return(piTask)

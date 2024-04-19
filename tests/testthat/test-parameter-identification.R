@@ -2,9 +2,9 @@
 
 test_that("ParameterIdentification object is correctly created", {
   expect_silent(piTask <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = parameters,
-    outputMappings = outputMapping,
+    simulations = testSimulations(),
+    parameters = testParameters(),
+    outputMappings = testOutputMapping(),
     configuration = piConfiguration
   ))
   testthat::expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
@@ -12,9 +12,9 @@ test_that("ParameterIdentification object is correctly created", {
 
 test_that("ParameterIdentification read-only fields can't be modified", {
   piTask <- createPiTask()
-  expect_error(piTask$simulations <- simulations)
-  expect_error(piTask$parameters <- parameters)
-  expect_error(piTask$outputMappings <- outputMapping)
+  expect_error(piTask$simulations <- testSimulation())
+  expect_error(piTask$parameters <- testParameters())
+  expect_error(piTask$outputMappings <- testOutputMapping())
 })
 
 test_that("ParameterIdentification instance prints without error", {
@@ -29,8 +29,8 @@ test_that("ParameterIdentification correctly throws an error upon missing Simula
   expect_error(
     ParameterIdentification$new(
       simulations = simulationMismatch,
-      parameters = parameters,
-      outputMappings = outputMapping,
+      parameters = testParameters(),
+      outputMappings = testOutputMapping(),
     ),
     "Mismatch or missing ID detected"
   )
@@ -71,11 +71,13 @@ test_that("ParameterIdentification configuration can be changed without error", 
 test_that("ParameterIdentification$run() errors on invalid objective function option", {
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
-  expect_error(piTask$run())
+  expect_error(piTask$run(),
+               regexp = "Value\\(s\\) 'invalidType' not included in allowed values: 'lsq, m3'")
 
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
-  expect_error(piTask$run())
+  expect_error(piTask$run(),
+               regexp = "Value\\(s\\) out of the allowed range: \\[1e-09, 1\\]")
 })
 
 # Test BOBYQA Algorithm (Default)
