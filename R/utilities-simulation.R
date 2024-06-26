@@ -47,11 +47,14 @@
   outputMappingIds <- lapply(outputMappings, function(mapping) .getSimulationContainer(mapping$quantity)$id)
   outputMappingIds <- unique(unlist(outputMappingIds))
 
-  # Validate that each simulationId is present in both piParamIds and outputMappingIds
-  for (id in simulationIds) {
-    if (!(id %in% piParamIds && id %in% outputMappingIds)) {
-      stop(messages$errorSimulationIdMissing(id))
-    }
+  # sort IDs before comparison
+  simulationIds <- sort(unique(unlist(simulationIds)))
+  piParamIds <- sort(piParamIds)
+  outputMappingIds <- sort(outputMappingIds)
+
+  # Validate that simulationId is idnetical with piParamIds and outputMappingIds
+  if (!identical(simulationIds, piParamIds) || !identical(simulationIds, outputMappingIds)) {
+    stop(messages$errorSimulationIdMissing(id))
   }
 
   return()
