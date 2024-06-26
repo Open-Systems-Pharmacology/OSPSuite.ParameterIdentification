@@ -31,8 +31,16 @@
 #' the mismatch or absence of IDs.
 #' @keywords internal
 .validateSimulationIds <- function(simulationIds, piParameters, outputMappings) {
-  # Extract unique IDs from piParameters
-  piParamIds <- lapply(piParameters, function(param) .getSimulationContainer(param$parameters[[1]])$id)
+  # Extract unique IDs from piParameters assuming up to two levels of list depth
+  piParamIds <- lapply(piParameters, function(param) {
+    if (is.list(param$parameters)) {
+      return(lapply(param$parameters, function(sub_param) {
+        .getSimulationContainer(sub_param)$id
+      }))
+    } else {
+      return(.getSimulationContainer(param$parameters[[1]])$id)
+    }
+  })
   piParamIds <- unique(unlist(piParamIds))
 
   # Extract unique IDs from outputMappings
