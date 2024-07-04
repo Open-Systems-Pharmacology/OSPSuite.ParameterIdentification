@@ -52,9 +52,11 @@
   piParamIds <- sort(piParamIds)
   outputMappingIds <- sort(outputMappingIds)
 
-  # Validate that simulationId is idnetical with piParamIds and outputMappingIds
+  # Validate that simulationId is identical with piParamIds and outputMappingIds
   if (!identical(simulationIds, piParamIds) || !identical(simulationIds, outputMappingIds)) {
-    stop(messages$errorSimulationIdMissing(id))
+    stop(messages$errorSimulationIdMissing(
+      simulationIds, piParamIds, outputMappingIds
+    ), call. = TRUE)
   }
 
   return()
