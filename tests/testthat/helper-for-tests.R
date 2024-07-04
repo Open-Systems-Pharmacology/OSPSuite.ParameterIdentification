@@ -87,6 +87,47 @@ getTestOutputMapping <- function() {
 testOutputMapping <- getTestOutputMapping()
 
 
+# PI multiple simulations and parameter paths
+
+sim_250mg <- loadSimulation(
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_500mg <- loadSimulation(
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+
+piParameterLipo <- PIParameters$new(parameters = list(
+  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+  getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+))
+piParameterCl_250mg <- PIParameters$new(
+  parameters = getParameter(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    container = sim_250mg
+  )
+)
+piParameterCl_500mg <- PIParameters$new(
+  parameters = getParameter(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    container = sim_500mg
+  )
+)
+
+# outputMapping_250mg <- testOutputMapping()
+# outputMapping_500mg <- testOutputMapping()
+
+simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+outputMapping_250mg <- PIOutputMapping$new(
+  quantity = getQuantity(path = simOutputPath, container = sim_250mg)
+)
+outputMapping_500mg <- PIOutputMapping$new(
+  quantity = getQuantity(path = simOutputPath, container = sim_500mg)
+)
+outputMapping_250mg$addObservedDataSets(
+  testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+)
+outputMapping_500mg$addObservedDataSets(
+  testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+)
+
 # Variables
 
 testQuantity <- ospsuite::getQuantity(

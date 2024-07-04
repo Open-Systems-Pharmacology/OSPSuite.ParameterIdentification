@@ -36,6 +36,50 @@ test_that("ParameterIdentification correctly throws an error upon missing Simula
   )
 })
 
+test_that("ParameterIdentification verifies simulation IDs with multiple simulations and parameters correctly", {
+
+  # no error with multiple simulations and parameter paths
+  expect_no_error(
+    ParameterIdentification$new(
+      simulations = list(sim_250mg, sim_500mg),
+      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      outputMappings = list(outputMapping_250mg, outputMapping_500mg),
+      configuration = piConfiguration
+    )
+  )
+
+  # error missing simulation ID
+  expect_error(
+    ParameterIdentification$new(
+      simulations = list(sim_250mg),
+      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      outputMappings = list(outputMapping_250mg, outputMapping_500mg),
+      configuration = piConfiguration
+    ),
+    "Mismatch or missing ID detected"
+  )
+  # error missing parameter ID
+  expect_error(
+    ParameterIdentification$new(
+      simulations = list(sim_250mg, sim_500mg),
+      parameters = list(piParameterCl_250mg),
+      outputMappings = list(outputMapping_250mg, outputMapping_500mg),
+      configuration = piConfiguration
+    ),
+    "Mismatch or missing ID detected"
+  )
+  # error missing output mapping ID
+  expect_error(
+    ParameterIdentification$new(
+      simulations = list(sim_250mg, sim_500mg),
+      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      outputMappings = list(outputMapping_500mg),
+      configuration = piConfiguration
+    ),
+    "Mismatch or missing ID detected"
+  )
+})
+
 test_that("ParameterIdentification returns an infinite cost structure if the
           simulation is NA", {
   piTask <- createPiTask()
@@ -72,12 +116,14 @@ test_that("ParameterIdentification$run() errors on invalid objective function op
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
   expect_error(piTask$run(),
-               regexp = "Value\\(s\\) 'invalidType' not included in allowed values: 'lsq, m3'")
+    regexp = "Value\\(s\\) 'invalidType' not included in allowed values: 'lsq, m3'"
+  )
 
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
   expect_error(piTask$run(),
-               regexp = "Value\\(s\\) out of the allowed range: \\[1e-09, 1\\]")
+    regexp = "Value\\(s\\) out of the allowed range: \\[1e-09, 1\\]"
+  )
 })
 
 # Test BOBYQA Algorithm (Default)
