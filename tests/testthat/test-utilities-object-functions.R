@@ -1,7 +1,8 @@
 ## context(".calculateCensoredContribution")
 
 obsVsPredDf <- readr::read_csv(getTestDataFilePath("Aciclovir_obsVsPredDf.csv"),
-                               show_col_types = FALSE)
+  show_col_types = FALSE
+)
 
 obsDf <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
 predDf <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]

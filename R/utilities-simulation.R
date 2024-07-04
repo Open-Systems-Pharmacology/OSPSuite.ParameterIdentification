@@ -44,7 +44,9 @@
   piParamIds <- unique(unlist(piParamIds))
 
   # Extract unique IDs from outputMappings
-  outputMappingIds <- lapply(outputMappings, function(mapping) .getSimulationContainer(mapping$quantity)$id)
+  outputMappingIds <- lapply(outputMappings, function(mapping) {
+    .getSimulationContainer(mapping$quantity)$id
+  })
   outputMappingIds <- unique(unlist(outputMappingIds))
 
   # sort IDs before comparison
