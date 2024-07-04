@@ -263,7 +263,7 @@ ParameterIdentification <- R6::R6Class(
         costControl$scaling <- private$.outputMappings[[idx]]$scaling
         ospsuite.utils::validateIsOption(
           options = costControl,
-          validOptions =  ObjectiveFunctionSpecs
+          validOptions = ObjectiveFunctionSpecs
         )
         costSummary <- calculateCostMetrics(
           df = obsVsPredDf,

@@ -32,9 +32,14 @@ messages$hessianEstimation <- function() {
   "Post-hoc estimation of Hessian matrix."
 }
 
-messages$errorSimulationIdMissing <- function(id) {
-  paste0(
-    "Mismatch or missing ID detected: ", id,
-    ". Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs."
-  )
+messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
+  message <- capture.output(cat(
+    "Mismatch or missing ID detected.\n",
+    "Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs.\n",
+    "Simulation IDs: ", paste(simulationIds, collapse = ", "), "\n",
+    "PIParameter IDs: ", paste(piParamIds, collapse = ", "), "\n",
+    "OutputMapping IDs: ", paste(outputMappingIds, collapse = ", ")
+  ))
+
+  return(paste(message, collapse = "\n"))
 }

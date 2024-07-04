@@ -31,19 +31,34 @@
 #' the mismatch or absence of IDs.
 #' @keywords internal
 .validateSimulationIds <- function(simulationIds, piParameters, outputMappings) {
-  # Extract unique IDs from piParameters
-  piParamIds <- lapply(piParameters, function(param) .getSimulationContainer(param$parameters[[1]])$id)
+  # Extract unique IDs from piParameters assuming up to two levels of list depth
+  piParamIds <- lapply(piParameters, function(param) {
+    if (is.list(param$parameters)) {
+      return(lapply(param$parameters, function(sub_param) {
+        .getSimulationContainer(sub_param)$id
+      }))
+    } else {
+      return(.getSimulationContainer(param$parameters[[1]])$id)
+    }
+  })
   piParamIds <- unique(unlist(piParamIds))
 
   # Extract unique IDs from outputMappings
-  outputMappingIds <- lapply(outputMappings, function(mapping) .getSimulationContainer(mapping$quantity)$id)
+  outputMappingIds <- lapply(outputMappings, function(mapping) {
+    .getSimulationContainer(mapping$quantity)$id
+  })
   outputMappingIds <- unique(unlist(outputMappingIds))
 
-  # Validate that each simulationId is present in both piParamIds and outputMappingIds
-  for (id in simulationIds) {
-    if (!(id %in% piParamIds && id %in% outputMappingIds)) {
-      stop(messages$errorSimulationIdMissing(id))
-    }
+  # sort IDs before comparison
+  simulationIds <- sort(unique(unlist(simulationIds)))
+  piParamIds <- sort(piParamIds)
+  outputMappingIds <- sort(outputMappingIds)
+
+  # Validate that simulationId is identical with piParamIds and outputMappingIds
+  if (!identical(simulationIds, piParamIds) || !identical(simulationIds, outputMappingIds)) {
+    stop(messages$errorSimulationIdMissing(
+      simulationIds, piParamIds, outputMappingIds
+    ), call. = TRUE)
   }
 
   return()
