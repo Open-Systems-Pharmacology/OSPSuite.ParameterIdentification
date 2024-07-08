@@ -1,9 +1,14 @@
-# ospsuite.parameteridentification (development version)
+# ospsuite.parameteridentification 2.0.1
 
 ## Breaking changes
 
-- Function `getSteadyState` has been removed in favor of `getSteadyState` from the {ospsuite} package.
-- Function `validateIsOption` has been removed in favor of `ospsuite.utils::validateIsOption`.
+- Function `getSteadyState` has been removed in favor of `getSteadyState` from the {ospsuite} package (#128, @PavelBal).
+- Function `validateIsOption` has been removed in favor of `ospsuite.utils::validateIsOption` (#130, @Felixmil).
+
+## Minor improvements and fixes
+
+- Fix pkgdown build (#131, @Felixmil)
+- Fix bug in simulation ID verification (#138, @rengelke)
 
 # ospsuite.parameteridentification 2.0.0
 
