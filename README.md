@@ -22,28 +22,19 @@ package to run the simulations.
 
 ### Windows
 
-The package can be installed from GitHub using the `{remotes}` package.
+The package can be installed from GitHub using the `{pak}` package.
 Under Windows, simply run the following code:
 
 ``` r
-# {ospsuite.parameteridentification} and its Open Systems Pharmacology Suite's dependencies relies on
-# {rClr} (https://github.com/Open-Systems-Pharmacology/rClr) which is not
-# available on CRAN.
-# Therefore, these must be installed from github using `{remotes}`.
-# You can skip this step if you have already installed the `{ospsuite`} package.
+install.packages("pak")
 
-install.packages("remotes")
-install.packages("https://github.com/Open-Systems-Pharmacology/rClr/releases/download/v0.9.2/rClr_0.9.2.zip",
-  type = "binary"
-)
-
-remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
 ```
 
 Get the latest development version with:
 
 ``` r
-remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
+pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
 
 ### Linux
@@ -53,7 +44,7 @@ For Linux, follow the instructions to install
 first and then run
 
 ``` r
-remotes::install_github("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
 ```
 
 (remove `@*release` to get the latest development version).
