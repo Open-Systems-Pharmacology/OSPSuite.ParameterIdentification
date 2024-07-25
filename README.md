@@ -3,9 +3,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/R-CMD-check-build.yaml)
-[![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/branch/main/graph/badge.svg)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
-[![pkgdown](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/pkgdown.yaml)
+[![Main-Workflow](https://img.shields.io/github/actions/workflow/status/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/Main-Workflow.yaml?branch=main&label=Build)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/Main-Workflow.yaml)
+[![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/graph/badge.svg?token=FL1AEQ7316)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
 
 <!-- badges: end -->
 
@@ -20,10 +19,8 @@ package to run the simulations.
 
 ## Installation
 
-### Windows
-
 The package can be installed from GitHub using the `{pak}` package.
-Under Windows, simply run the following code:
+Simply run the following code:
 
 ``` r
 install.packages("pak")
@@ -36,18 +33,6 @@ Get the latest development version with:
 ``` r
 pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
-
-### Linux
-
-For Linux, follow the instructions to install
-[{`ospsuite`}](https://github.com/Open-Systems-Pharmacology/OSPSuite-R?tab=readme-ov-file#on-linux)
-first and then run
-
-``` r
-pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
-```
-
-(remove `@*release` to get the latest development version).
 
 ## User guide
 
