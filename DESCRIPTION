@@ -41,7 +41,8 @@ Imports:
     nloptr,
     DEoptim,
     numDeriv
-Suggests: 
+Suggests:
+    devtools,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
