@@ -1,14 +1,21 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/LICENSE-text.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/error-calculation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/optimization-algorithms.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/user-guide.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/authors.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/index.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/LICENSE-text.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/news/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/Algorithms.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionOptions.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionSpecs.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIConfiguration.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ParameterIdentification.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ScalingOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/calculateCostMetrics.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-applyLogTransformation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateBisquareWeights.html</loc></url>
@@ -26,16 +33,9 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-validateSimulationIds.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/getOSPSuitePISetting.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/index.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionSpecs.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ospsuitePIRSettingNames.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ParameterIdentification.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIConfiguration.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plot.modelCost.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/residualWeightingOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/robustMethodOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ScalingOptions.html</loc></url>
 </urlset>
 
