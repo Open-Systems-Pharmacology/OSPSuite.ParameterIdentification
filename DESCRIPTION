@@ -35,7 +35,6 @@ Imports:
     ggtext,
     tibble,
     purrr,
-    ospsuite.utils,
     R6,
     dfoptim,
     nloptr,
