@@ -535,6 +535,8 @@ ParameterIdentification <- R6::R6Class(
       parameters <- ospsuite.utils::toList(parameters)
       outputMappings <- ospsuite.utils::toList(outputMappings)
 
+      .validateOutputMappingHasData(outputMappings)
+
       # We have to use the id of the root container of the simulation instead of
       # the id of the simulation itself, because later we have to find the
       # simulations based on the id of the root when assigning quantities to

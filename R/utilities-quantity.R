@@ -26,3 +26,30 @@
     use.names = FALSE
   )
 }
+
+#' Validate Observed Data Availability in PIOutputMapping
+#'
+#' Ensures each PIOutputMapping object has observed datasets. Throws an error
+#' if no observed data is found.
+#'
+#' @param object A PIOutputMapping object or a list of PIOutputMapping objects.
+#' @keywords internal
+.validateOutputMappingHasData <- function(object) {
+  mappings <- ospsuite.utils::toList(object)
+
+  for (mapping in mappings) {
+    if (inherits(mapping, "PIOutputMapping") &&
+      length(mapping$observedDataSets) == 0) {
+      quantityPath <- mapping$quantity$fullPath
+      rootContainer <- mapping$quantity$call("get_RootContainer")
+      rootContainerName <- rootContainer$call("get_Name")
+
+      caller <- deparse(sys.call(-1)[[1]])
+      stop(
+        messages$errorObservedDataNotFound(
+          caller, quantityPath, rootContainerName
+        )
+      )
+    }
+  }
+}

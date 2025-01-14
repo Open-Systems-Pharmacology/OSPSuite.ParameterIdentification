@@ -7,7 +7,7 @@ test_that("ParameterIdentification object is correctly created", {
     outputMappings = testOutputMapping(),
     configuration = piConfiguration
   ))
-  testthat::expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
+  expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
 })
 
 test_that("ParameterIdentification read-only fields can't be modified", {
@@ -22,7 +22,7 @@ test_that("ParameterIdentification instance prints without error", {
   expect_no_error(print(piTask))
 })
 
-test_that("ParameterIdentification correctly throws an error upon missing Simulation IDs", {
+test_that("ParameterIdentification correctly throws an error upon missing simulation IDs", {
   simulationMismatch <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -36,8 +36,22 @@ test_that("ParameterIdentification correctly throws an error upon missing Simula
   )
 })
 
-test_that("ParameterIdentification verifies simulation IDs with multiple simulations and parameters correctly", {
+test_that("ParameterIdentification throws an error when PIOutputMapping does not
+          contain observed data", {
+  expect_error(
+    ParameterIdentification$new(
+      simulations = testSimulation(),
+      parameters = testParameters(),
+      outputMappings = testOutputMappingWoObservedData(),
+    ),
+    'initialize: No observed data found for quantity path: "Vergin 1995 IV|
+    Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+    in simulation: "Vergin 1995 IV"'
+  )
+})
 
+test_that("ParameterIdentification verifies simulation IDs with multiple
+          simulations and parameters correctly", {
   # no error with multiple simulations and parameter paths
   expect_no_error(
     ParameterIdentification$new(
