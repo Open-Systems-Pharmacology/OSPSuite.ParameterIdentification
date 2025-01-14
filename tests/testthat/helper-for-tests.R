@@ -68,31 +68,44 @@ testParameters <- getTestParameters()
 
 
 ## OutputMapping function factory
-getTestOutputMapping <- function() {
+getTestOutputMapping <- function(includeObservedData = TRUE) {
   .outputMapping <- NULL
+
   function() {
     if (is.null(.outputMapping)) {
       outputMapping <- PIOutputMapping$new(
-        quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+        quantity = getQuantity(
+          "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
           container = testSimulations()$Aciclovir
         )
       )
-      outputMapping$addObservedDataSets(testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`)
+
+      if (includeObservedData) {
+        outputMapping$addObservedDataSets(
+          testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+        )
+      }
+
       .outputMapping <<- list(outputMapping)
     }
     return(.outputMapping)
   }
 }
 
+# Example usage
 testOutputMapping <- getTestOutputMapping()
+testOutputMappingWoObservedData <- getTestOutputMapping(includeObservedData = FALSE)
+
 
 
 # PI multiple simulations and parameter paths
 
 sim_250mg <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+)
 sim_500mg <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+)
 
 piParameterLipo <- PIParameters$new(parameters = list(
   getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),

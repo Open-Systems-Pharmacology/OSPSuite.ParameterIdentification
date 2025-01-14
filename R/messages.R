@@ -43,3 +43,10 @@ messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputM
 
   return(paste(message, collapse = "\n"))
 }
+
+messages$errorObservedDataNotFound <- function(caller, quantityPath, simulationPath) {
+  sprintf(
+    "%s: No observed data found for quantity path: \"%s\"\nin simulation: \"%s\"",
+    caller, quantityPath, simulationPath
+  )
+}
