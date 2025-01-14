@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Minor improvements and fixes
+
+- `ParameterIdentification`will validate observed data availability in `PIOutputMapping` during initialization (#145).  
+
 # ospsuite.parameteridentification 2.0.1
 
 ## Breaking changes
