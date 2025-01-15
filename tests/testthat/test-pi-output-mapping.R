@@ -41,6 +41,54 @@ test_that("Observed data sets can be added", {
 })
 
 test_that("Scaling can be changed to predefined values", {
+test_that("PIOutputMapping adds data without molecular weight and retrieves it", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  observedData <- testObservedData()
+  observedData[[1]]$molWeight <- NA_real_
+
+  expect_no_error(
+    outputMapping$addObservedDataSets(
+      observedData$`AciclovirLaskinData.Laskin 1982.Group A`
+    )
+  )
+  expect_equal(
+    outputMapping$observedDataSets[[1]]$molWeight,
+    225.21
+  )
+})
+
+test_that("PIOutputMapping throws error when unit conversion fails", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  observedData <- testObservedData()
+
+  observedData[[1]]$yDimension <- "Amount"
+  observedData[[1]]$yUnit <- "mol"
+
+  expect_error(
+    outputMapping$addObservedDataSets(
+      observedData$`AciclovirLaskinData.Laskin 1982.Group A`
+    ),
+    "Unit conversion failed for quantity .* and observed data .*"
+  )
+})
+
+test_that("PIOutputMapping errors when mol weight is missing and can't be retrieved", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  observedData <- testObservedData()
+  observedData[[1]]$molWeight <- NA_real_
+
+  mockthat::with_mock(
+    `.getMolWeightFor` = function(quantity) stop(),
+    {
+      expect_error(
+        outputMapping$addObservedDataSets(
+          observedData$`AciclovirLaskinData.Laskin 1982.Group A`
+        ),
+        "Unit conversion failed for quantity .* and observed data .*"
+      )
+    }
+  )
+})
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   outputMapping$scaling <- "log"
   expect_equal(outputMapping$scaling, "log")
