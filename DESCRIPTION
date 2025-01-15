@@ -46,10 +46,10 @@ Suggests:
     knitr,
     mockthat,
     rmarkdown,
-    testthat (>= 3.0.0),
-    vdiffr,
     showtext,
-    sysfonts
+    sysfonts,
+    testthat (>= 3.0.0),
+    vdiffr
 RoxygenNote: 7.3.2
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
