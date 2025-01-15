@@ -14,6 +14,26 @@
   return(.getSimulationContainer(entity$parentContainer))
 }
 
+#' Get the parent container of the entity
+#'
+#' @param entity Object of type `Entity`
+#'
+#' @return The container type that is the parent of the entity.
+#' @keywords internal
+.getParentContainer <- function(entity, type) {
+  if (is.null(entity)) {
+    stop(messages$errorNoParentContainer(type))
+  }
+  ospsuite.utils::validateIsOfType(entity, "Entity")
+  if (ospsuite.utils::isOfType(entity, "Container")) {
+    if (entity$containerType == type) {
+      return(entity)
+    }
+  }
+
+  return(.getParentContainer(entity$parentContainer, type = type))
+}
+
 #' Validates Matching IDs across Simulation IDs, PI Parameters, and Output Mappings
 #'
 #' Ensures that every Simulation ID is present and matches with corresponding IDs

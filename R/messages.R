@@ -50,3 +50,8 @@ messages$errorObservedDataNotFound <- function(caller, quantityPath, simulationP
     caller, quantityPath, simulationPath
   )
 }
+
+messages$errorNoParentContainer <- function(type) {
+  paste0(type, " is not a parent container of entity.")
+}
+
