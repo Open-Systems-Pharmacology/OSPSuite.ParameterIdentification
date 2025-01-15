@@ -39,6 +39,15 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field simId Identifier of the simulation associated with the mapped quantity.
+    simId = function(value) {
+      if (missing(value)) {
+        private$.simId
+      } else {
+        stop(messages$errorPropertyReadOnly("simId"))
+      }
+    },
+
     #' @field scaling Specifies scaling for output mapping: linear (default) or logarithmic.
     scaling = function(value) {
       if (missing(value)) {
@@ -67,6 +76,7 @@ PIOutputMapping <- R6::R6Class(
   ),
   private = list(
     .quantity = NULL,
+    .simId = NULL,
     .observedDataSets = NULL,
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
@@ -79,6 +89,7 @@ PIOutputMapping <- R6::R6Class(
     initialize = function(quantity) {
       ospsuite.utils::validateIsOfType(quantity, "Quantity")
       private$.quantity <- quantity
+      private$.simId <- .getSimulationContainer(quantity)$id
       private$.observedDataSets <- list()
       private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
       private$.scaling <- "lin"

@@ -2,7 +2,8 @@
 
 ## Minor improvements and fixes
 
-- `ParameterIdentification`will validate observed data availability in `PIOutputMapping` during initialization (#145).  
+- `ParameterIdentification` will validate observed data availability in `PIOutputMapping` during initialization (#145).  
+- Cache Simulation ID in `PIOutputMapping`(#146).
 
 # ospsuite.parameteridentification 2.0.1
 

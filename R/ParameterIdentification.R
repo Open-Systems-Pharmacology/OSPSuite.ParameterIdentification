@@ -129,7 +129,7 @@ ParameterIdentification <- R6::R6Class(
         # Also add output quantities.
         for (outputMapping in private$.outputMappings) {
           # ID of the and the parent simulation of the quantity of the mapping.
-          simId <- .getSimulationContainer(outputMapping$quantity)$id
+          simId <- outputMapping$simId
           simulation <- private$.simulations[[simId]]
           # Add the quantity to the outputs of the simulations.
           ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
@@ -324,7 +324,7 @@ ParameterIdentification <- R6::R6Class(
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
-        # $parameters list
+        # parameters list
         piParameter <- private$.piParameters[[idx]]
         # Update the values of the parameters
         for (parameter in piParameter$parameters) {
