@@ -56,6 +56,8 @@ messages$errorNoParentContainer <- function(type) {
 }
 
 messages$errorUnitConversion <- function(quantityName, observedDataName) {
-  paste0("Unit conversion failed for quantity '", quantityName,
-  "' and observed data '", observedDataName, "'.")
+  paste0(
+    "Unit conversion failed for quantity '", quantityName,
+    "' and observed data '", observedDataName, "'."
+  )
 }
