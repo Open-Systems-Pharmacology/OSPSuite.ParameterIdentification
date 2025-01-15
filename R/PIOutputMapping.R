@@ -39,7 +39,7 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field simId Simulation quantities to be aligned with observed data values.
+    #' @field simId Identifier of the simulation associated with the mapped quantity.
     simId = function(value) {
       if (missing(value)) {
         private$.simId
