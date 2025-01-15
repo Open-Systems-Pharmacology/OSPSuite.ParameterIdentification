@@ -53,3 +53,27 @@
     }
   }
 }
+
+#' Retrieve molecular weight for the molecule of a quantity
+#'
+#' @description Gets the molecular weight of a quantity's parent molecule in
+#' `kg/µmol`.
+#'
+#' @param quantity A `Quantity` object.
+#' @return Numeric value of the molecular weight in `kg/µmol`.
+#' @keywords internal
+.getMolWeightFor <- function(quantity) {
+  ospsuite.utils::validateIsOfType(quantity, "Quantity")
+
+  rootContainer <- .getParentContainer(quantity, "Simulation")
+  moleculeContainer <- .getParentContainer(quantity, "Molecule")
+
+  moleculeName <- moleculeContainer$name
+  paramPath <- paste(moleculeName, "Molecular weight", sep = "|")
+
+  task <- ospsuite:::.getNetTask("ContainerTask")
+  paramMW <- task$call("AllParametersMatching", rootContainer, paramPath)
+  molWeight <- paramMW[[1]]$call("get_Value")
+
+  return(molWeight)
+}
