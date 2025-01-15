@@ -103,15 +103,35 @@ PIOutputMapping <- R6::R6Class(
     addObservedDataSets = function(data) {
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
+
       for (idx in seq_along(data)) {
         # Verify if the data's dimension can match the quantity's dimension
         # in this Output Mapping
-        invisible(ospsuite::toBaseUnit(
-          quantityOrDimension = private$.quantity,
-          values = 1,
-          unit = data[[idx]]$yUnit,
-          molWeight = data[[idx]]$molWeight
-        ))
+        tryConvert <- function() {
+          ospsuite::toBaseUnit(
+            quantityOrDimension = private$.quantity,
+            values = 1,
+            unit = data[[idx]]$yUnit,
+            molWeight = data[[idx]]$molWeight
+          )
+        }
+        result <- try(tryConvert(), silent = TRUE)
+
+        if (inherits(result, "try-error")) {
+          result <- try(
+            {
+              data[[idx]]$molWeight <- .getMolWeightFor(private$.quantity) * 1e9
+              tryConvert()
+            }, silent = TRUE
+          )
+
+          if (inherits(result, "try-error")) {
+            stop(messages$errorUnitConversion(
+              private$.quantity$name, data[[idx]]$name
+            ))
+          }
+        }
+
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
     },
