@@ -96,6 +96,34 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
 testOutputMapping <- getTestOutputMapping()
 testOutputMappingWoObservedData <- getTestOutputMapping(includeObservedData = FALSE)
 
+getModTask <- function() {
+  function() {
+    testSim <- loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+    )
+    testSim$solver$mxStep <- 1
+
+    simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+    testMapping <- PIOutputMapping$new(
+      quantity = getQuantity(path = simOutputPath, container = testSim)
+    )
+    testMapping$addObservedDataSets(testObservedData())
+
+    testParameters <- PIParameters$new(parameters = list(
+      getParameter(path = "Aciclovir|Lipophilicity", container = testSim)
+    ))
+
+    testPITask <<- ParameterIdentification$new(
+      simulations = testSim,
+      parameters = testParameters,
+      outputMappings = testMapping
+    )
+
+    return(testPITask)
+  }
+}
+
+testModTask <- getModTask()
 
 
 # PI multiple simulations and parameter paths

@@ -94,17 +94,41 @@ test_that("ParameterIdentification verifies simulation IDs with multiple
   )
 })
 
-test_that("ParameterIdentification returns an infinite cost structure if the
-          simulation is NA", {
-  piTask <- createPiTask()
-  expect_message(
-    modCost <- piTask$.__enclos_env__$private$.objectiveFunction(NA),
-    "Simulation was not successful"
+test_that("ParameterIdentification returns an infinite value if simulation fails", {
+  PITester <- R6::R6Class(
+    inherit = ParameterIdentification,
+    private = list(
+      .evaluate = function(currVals) {
+        private$.fnEvaluations <- private$.fnEvaluations + 2
+        stop("Simulated failure in evaluation")
+      }
+    )
   )
-  expect_equal(
-    modCost,
-    .createErrorCostStructure(infinite = TRUE)
+
+  testTask <- PITester$new(
+    simulations = testSimulations(),
+    parameters = testParameters(),
+    outputMappings = testOutputMapping()
   )
+
+  suppressMessages(
+    expect_message(
+      piResult <- testTask$run(),
+      "Returning infinite cost structure due to simulation failure"
+    )
+  )
+
+  expect_identical(piResult$value, Inf)
+})
+
+test_that("ParameterIdentification errors if initial simulation fails", {
+  modPITask <- testModTask()
+  suppressMessages(suppressWarnings(
+    expect_error(
+      modPITask$run(),
+      ".*Stopping optimization: Initial simulation failed.*"
+    )
+  ))
 })
 
 test_that("plotResults() returns expected plot before running a parameter estimation task", {
