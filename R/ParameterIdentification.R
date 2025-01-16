@@ -215,26 +215,26 @@ ParameterIdentification <- R6::R6Class(
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
     .objectiveFunction = function(currVals) {
-      # Increase function evaluations counter
+      # Increment function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
-      # List of DataCombined objects, one for each output mapping
-      # If the simulation was not successful, return `Inf` for the objective function value.
-      obsVsPredList <- tryCatch(
-        {
-          private$.evaluate(currVals)
-        },
-        error = function(cond) {
-          message(messages$simulationNotSuccessful(currVals))
-          message("Original error message:")
-          message(cond$message)
 
-          NA
+      # Evaluate simulation and handle errors
+      obsVsPredList <- tryCatch(
+        private$.evaluate(currVals),
+        error = function(cond) {
+          messages$logSimulationError(currVals, cond)
+          return(NA)
         }
       )
-      # Return an infinite cost structure if the simulation is NA
-      failureResponse <- .handleSimulationFailure(obsVsPredList)
-      if (!is.null(failureResponse)) {
-        return(failureResponse)
+
+      # Check for simulation failure
+      if (anyNA(obsVsPredList)) {
+        if (private$.fnEvaluations == 1) {
+          stop(messages$initialSimulationError())
+        } else {
+          message(messages$simulationError())
+          return(.createErrorCostStructure(infinite = TRUE))
+        }
       }
 
       # Calculate error for each output mapping separately

@@ -269,21 +269,6 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 }
 
-#' Handle Simulation Failure
-#'
-#' This function checks for NA in simulation results and returns an infinite cost
-#' structure if any are found.
-#' @param simulationResults A list of simulation results.
-#' @return Returns an infinite cost structure if NA values are found in the
-#' simulation results, NULL otherwise.
-#' @keywords internal
-.handleSimulationFailure <- function(simulationResults) {
-  if (any(is.na(simulationResults))) {
-    return(.createErrorCostStructure(infinite = TRUE))
-  }
-  return(NULL)
-}
-
 #' Constructs Model Cost Summary for Error Handling
 #'
 #' Creates a model cost summary compatible with the structure returned by
