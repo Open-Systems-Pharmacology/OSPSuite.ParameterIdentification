@@ -1,6 +1,4 @@
-# Function factories to create object only the first time they are accessed
-
-## Simulation function factory
+# Simulation function factory
 getTestSimulation <- function() {
   .simulation <- NULL
   function() {
@@ -17,18 +15,18 @@ testSimulations <- function() {
   list("Aciclovir" = testSimulation())
 }
 
-## observedData function factory
+# Observed data function factory
 getTestObservedData <- function() {
   .observedData <- NULL
   function() {
     if (is.null(.observedData)) {
       filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
-      dataConfiguration <- createImporterConfigurationForFile(filePath = filePath)
-      dataConfiguration$sheets <- "Laskin 1982.Group A"
-      dataConfiguration$namingPattern <- "{Source}.{Sheet}"
+      dataConfig <- createImporterConfigurationForFile(filePath)
+      dataConfig$sheets <- "Laskin 1982.Group A"
+      dataConfig$namingPattern <- "{Source}.{Sheet}"
       .observedData <<- loadDataSetsFromExcel(
         xlsFilePath = filePath,
-        importerConfigurationOrPath = dataConfiguration
+        importerConfigurationOrPath = dataConfig
       )
     }
     return(.observedData)
@@ -37,7 +35,7 @@ getTestObservedData <- function() {
 
 testObservedData <- getTestObservedData()
 
-## Parameters function factory
+# Parameters function factory
 getTestParameters <- function() {
   .parameters <- NULL
   function() {
@@ -66,68 +64,67 @@ getTestParameters <- function() {
 
 testParameters <- getTestParameters()
 
-
-## OutputMapping function factory
+# OutputMapping function factory
 getTestOutputMapping <- function(includeObservedData = TRUE) {
   .outputMapping <- NULL
-
   function() {
     if (is.null(.outputMapping)) {
-      outputMapping <- PIOutputMapping$new(
+      mapping <- PIOutputMapping$new(
         quantity = getQuantity(
           "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
           container = testSimulations()$Aciclovir
         )
       )
-
       if (includeObservedData) {
-        outputMapping$addObservedDataSets(
+        mapping$addObservedDataSets(
           testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
         )
       }
-
-      .outputMapping <<- list(outputMapping)
+      .outputMapping <<- list(mapping)
     }
     return(.outputMapping)
   }
 }
 
-# Example usage
 testOutputMapping <- getTestOutputMapping()
-testOutputMappingWoObservedData <- getTestOutputMapping(includeObservedData = FALSE)
+testOutputMappingWithoutObsData <- getTestOutputMapping(includeObservedData = FALSE)
 
-getModTask <- function() {
+# Function to create a ParameterIdentification task
+createPiTask <- function() {
+  ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = testOutputMapping(),
+    configuration = NULL
+  )
+}
+
+# Function to create a modified ParameterIdentification task (simulation failure)
+getTestModifiedTask <- function() {
   function() {
-    testSim <- loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+    sim <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+    sim$solver$mxStep <- 1
+    mapping <- PIOutputMapping$new(
+      quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)", container = sim)
     )
-    testSim$solver$mxStep <- 1
+    mapping$addObservedDataSets(testObservedData())
 
-    simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
-    testMapping <- PIOutputMapping$new(
-      quantity = getQuantity(path = simOutputPath, container = testSim)
-    )
-    testMapping$addObservedDataSets(testObservedData())
-
-    testParameters <- PIParameters$new(parameters = list(
-      getParameter(path = "Aciclovir|Lipophilicity", container = testSim)
+    params <- PIParameters$new(parameters = list(
+      getParameter("Aciclovir|Lipophilicity", container = sim)
     ))
 
-    testPITask <<- ParameterIdentification$new(
-      simulations = testSim,
-      parameters = testParameters,
-      outputMappings = testMapping
+    task <- ParameterIdentification$new(
+      simulations = sim,
+      parameters = params,
+      outputMappings = mapping
     )
-
-    return(testPITask)
+    return(task)
   }
 }
 
-testModTask <- getModTask()
+testModifiedTask <- getTestModifiedTask()
 
-
-# PI multiple simulations and parameter paths
-
+# Multiple simulation and parameter paths
 sim_250mg <- loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
@@ -152,9 +149,6 @@ piParameterCl_500mg <- PIParameters$new(
   )
 )
 
-# outputMapping_250mg <- testOutputMapping()
-# outputMapping_500mg <- testOutputMapping()
-
 simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 outputMapping_250mg <- PIOutputMapping$new(
   quantity = getQuantity(path = simOutputPath, container = sim_250mg)
@@ -169,8 +163,7 @@ outputMapping_500mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
 
-# Variables
-
+# Other variables
 testQuantity <- ospsuite::getQuantity(
   path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = testSimulation()
@@ -182,7 +175,6 @@ piConfiguration <- PIConfiguration$new()
 
 
 # Helper functions
-
 getTestDataFilePath <- function(fileName) {
   dataPath <- testthat::test_path("../data")
   file.path(dataPath, fileName, fsep = .Platform$file.sep)
@@ -192,28 +184,16 @@ getSimulationFilePath <- function(simulationName) {
   getTestDataFilePath(paste0(simulationName, ".pkml"))
 }
 
-# Helper function to load a model easily. In the test environment, we do not
-# want to load from cache by default. Instead new instances should be created
-# unless specifically specified otherwise
 loadTestSimulation <- function(simulationName, loadFromCache = FALSE, addToCache = TRUE) {
   simFile <- getSimulationFilePath(simulationName)
-  sim <- ospsuite::loadSimulation(simFile, loadFromCache = loadFromCache, addToCache = addToCache)
+  sim <- ospsuite::loadSimulation(
+    simFile,
+    loadFromCache = loadFromCache, addToCache = addToCache
+  )
 }
 
 executeWithTestFile <- function(actionWithFile) {
   newFile <- tempfile()
   actionWithFile(newFile)
   file.remove(newFile)
-}
-
-# Helper function to create a parameter identification task
-# Start with clean configuration state to avoid side effects from shared configurations
-createPiTask <- function() {
-  piTask <- ParameterIdentification$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = testOutputMapping(),
-    configuration = NULL
-  )
-  return(piTask)
 }

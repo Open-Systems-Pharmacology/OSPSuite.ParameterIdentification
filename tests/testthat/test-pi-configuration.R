@@ -3,6 +3,11 @@ test_that("PIConfiguration object is correctly created", {
   expect_s3_class(piConfiguration, "PIConfiguration")
 })
 
+test_that("PIConfiguration instance prints without errors", {
+  piConfiguration <- PIConfiguration$new()
+  expect_no_error(print(piConfiguration))
+})
+
 test_that("Initialization sets default values correctly", {
   piConfiguration <- PIConfiguration$new()
   # expect_false(piConfiguration$simulateSteadyState)
