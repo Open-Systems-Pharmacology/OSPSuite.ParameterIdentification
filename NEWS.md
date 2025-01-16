@@ -4,6 +4,8 @@
 
 - `ParameterIdentification` will validate observed data availability in `PIOutputMapping` during initialization (#145).  
 - Cache Simulation ID in `PIOutputMapping`(#146).
+- `PIOutputMapping` will attempt to retrieve the molecular weight for unit conversion when adding observed data (#147).  
+
 
 # ospsuite.parameteridentification 2.0.1
 
