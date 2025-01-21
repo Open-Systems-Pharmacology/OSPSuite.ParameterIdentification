@@ -658,10 +658,9 @@ ParameterIdentification <- R6::R6Class(
     #' optimizations.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
-    #' `PIParameter` minimum values plus margin.
+    #' `PIParameter` minimum values.
     #' @param upper Numeric vector of parameter upper bounds, defaulting to
-    #' `PIParameter` maximum values minus margin.
-    #' @param margin Numeric offset applied to parameter bounds. Default is 0.
+    #' `PIParameter` maximum values.
     #' @param logScaleFlag Logical scalar or vector; determines if grid points
     #' are spaced logarithmically. Default is `FALSE`.
     #' @param totalEvaluations Integer specifying the total grid points. Default
@@ -670,9 +669,8 @@ ParameterIdentification <- R6::R6Class(
     #' values to the best grid point. Default is `FALSE`.
     #'
     #' @return A tibble with parameter values and their corresponding OFV.
-    gridSearch = function(lower = NULL, upper = NULL, margin = 0,
-                          logScaleFlag = FALSE, totalEvaluations = 50,
-                          setStartValue = FALSE) {
+    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
+                          totalEvaluations = 50, setStartValue = FALSE) {
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
@@ -685,10 +683,10 @@ ParameterIdentification <- R6::R6Class(
 
       # Initialize bounds for parameters
       if (is.null(lower)) {
-        lower <- sapply(private$.piParameters, function(x) x$minValue + margin)
+        lower <- sapply(private$.piParameters, function(x) x$minValue)
       }
       if (is.null(upper)) {
-        upper <- sapply(private$.piParameters, function(x) x$maxValue - margin)
+        upper <- sapply(private$.piParameters, function(x) x$maxValue)
       }
       ospsuite.utils::validateIsOfLength(lower, nrOfParameters)
       ospsuite.utils::validateIsOfLength(upper, nrOfParameters)
