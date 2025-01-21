@@ -36,6 +36,7 @@ observed data to simulation outputs.}
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
 \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
+\item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -113,6 +114,53 @@ to visualize the estimation results.
 }
 \subsection{Returns}{
 A list of \code{ggplot2} plots, one for each \code{PIOutputMapping}.
+Calculate Objective Function Values (OFV) on an n-Dimensional Grid
+
+Generates a grid of parameter combinations, computes the OFV for each,
+and optionally sets the best result as the starting point for subsequent
+optimizations.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ParameterIdentification-gridSearch"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-gridSearch}{}}}
+\subsection{Method \code{gridSearch()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$gridSearch(
+  lower = NULL,
+  upper = NULL,
+  margin = 0,
+  logScaleFlag = FALSE,
+  totalEvaluations = 50,
+  setStartValue = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
+\code{PIParameter} minimum values plus margin.}
+
+\item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
+\code{PIParameter} maximum values minus margin.}
+
+\item{\code{margin}}{Numeric offset applied to parameter bounds. Default is 0.}
+
+\item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
+are spaced logarithmically. Default is \code{FALSE}.}
+
+\item{\code{totalEvaluations}}{Integer specifying the total grid points. Default
+is 50.}
+
+\item{\code{setStartValue}}{Logical. If \code{TRUE}, updates \code{PIParameter} starting
+values to the best grid point. Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A tibble with parameter values and their corresponding OFV.
+Calculate Objective Function Value (OFV) Profiles
 }
 }
 \if{html}{\out{<hr>}}

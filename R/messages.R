@@ -29,8 +29,12 @@ messages$plotGridParameterCount <- function(count) {
   paste0("The plotGrid() function requires a data frame with 3 columns, but ", count, " columns were supplied")
 }
 
-messages$gridSearchParameterValueSet <- function() {
-  "The best parameter value has been set as the starting point."
+messages$gridSearchParameterValueSet <- function(bestValues) {
+  cat(
+    "Grid search completed.", "\n",
+    "Starting point for the next optimization updated to parameter values: ", "\n",
+    paste(signif(bestValues, 4), collapse = " ")
+  )
 }
 
 messages$runningOptimizationAlgorithm <- function(name) {
