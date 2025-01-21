@@ -671,6 +671,12 @@ ParameterIdentification <- R6::R6Class(
     #' @return A tibble with parameter values and their corresponding OFV.
     gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
                           totalEvaluations = 50, setStartValue = FALSE) {
+      ospsuite.utils::validateIsNumeric(lower, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(upper, nullAllowed = TRUE)
+      ospsuite.utils::validateIsLogical(logScaleFlag)
+      ospsuite.utils::validateIsNumeric(totalEvaluations)
+      ospsuite.utils::validateIsLogical(setStartValue)
+
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
@@ -755,6 +761,10 @@ ParameterIdentification <- R6::R6Class(
     #' @return A list of tibbles, one per parameter, with columns for parameter
     #' values and OFVs (`ofv`).
     calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
+      ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(boundFactor)
+      ospsuite.utils::validateIsInteger(totalEvaluations)
+
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
