@@ -1,6 +1,6 @@
 # ParameterIdentification
 
-test_that("ParameterIdentification object is correctly created", {
+test_that("ParameterIdentification is created successfully", {
   expect_silent(piTask <- ParameterIdentification$new(
     simulations = testSimulations(),
     parameters = testParameters(),
@@ -10,19 +10,19 @@ test_that("ParameterIdentification object is correctly created", {
   expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
 })
 
-test_that("ParameterIdentification read-only fields can't be modified", {
+test_that("ParameterIdentification read-only fields cannot be modified", {
   piTask <- createPiTask()
   expect_error(piTask$simulations <- testSimulation())
   expect_error(piTask$parameters <- testParameters())
   expect_error(piTask$outputMappings <- testOutputMapping())
 })
 
-test_that("ParameterIdentification instance prints without error", {
+test_that("ParameterIdentification instance prints without errors", {
   piTask <- createPiTask()
   expect_no_error(print(piTask))
 })
 
-test_that("ParameterIdentification correctly throws an error upon missing simulation IDs", {
+test_that("ParameterIdentification errors on missing simulation IDs", {
   simulationMismatch <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -36,13 +36,12 @@ test_that("ParameterIdentification correctly throws an error upon missing simula
   )
 })
 
-test_that("ParameterIdentification throws an error when PIOutputMapping does not
-          contain observed data", {
+test_that("ParameterIdentification errors when PIOutputMapping lacks observed data", {
   expect_error(
     ParameterIdentification$new(
       simulations = testSimulation(),
       parameters = testParameters(),
-      outputMappings = testOutputMappingWoObservedData(),
+      outputMappings = testOutputMappingWithoutObsData(),
     ),
     'initialize: No observed data found for quantity path: "Vergin 1995 IV|
     Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
@@ -50,8 +49,7 @@ test_that("ParameterIdentification throws an error when PIOutputMapping does not
   )
 })
 
-test_that("ParameterIdentification verifies simulation IDs with multiple
-          simulations and parameters correctly", {
+test_that("ParameterIdentification verifies IDs with multiple simulations and parameters", {
   # no error with multiple simulations and parameter paths
   expect_no_error(
     ParameterIdentification$new(
@@ -94,25 +92,49 @@ test_that("ParameterIdentification verifies simulation IDs with multiple
   )
 })
 
-test_that("ParameterIdentification returns an infinite cost structure if the
-          simulation is NA", {
-  piTask <- createPiTask()
-  expect_message(
-    modCost <- piTask$.__enclos_env__$private$.objectiveFunction(NA),
-    "Simulation was not successful"
+test_that("ParameterIdentification returns infinite value if simulation fails", {
+  PITester <- R6::R6Class(
+    inherit = ParameterIdentification,
+    private = list(
+      .evaluate = function(currVals) {
+        private$.fnEvaluations <- private$.fnEvaluations + 2
+        stop("Simulated failure in evaluation")
+      }
+    )
   )
-  expect_equal(
-    modCost,
-    .createErrorCostStructure(infinite = TRUE)
+
+  testTask <- PITester$new(
+    simulations = testSimulations(),
+    parameters = testParameters(),
+    outputMappings = testOutputMapping()
   )
+
+  suppressMessages(
+    expect_message(
+      piResult <- testTask$run(),
+      "Returning infinite cost structure due to simulation failure"
+    )
+  )
+
+  expect_identical(piResult$value, Inf)
 })
 
-test_that("plotResults() returns expected plot before running a parameter estimation task", {
+test_that("ParameterIdentification errors if initial simulation fails", {
+  modPiTask <- testModifiedTask()
+  suppressMessages(suppressWarnings(
+    expect_error(
+      modPiTask$run(),
+      ".*Stopping optimization: Initial simulation failed.*"
+    )
+  ))
+})
+
+test_that("plotResults() generates expected plot before parameter estimation", {
   piTask <- createPiTask()
   vdiffr::expect_doppelganger("before_estimation", piTask$plotResults()[[1]])
 })
 
-test_that("ParameterIdentification configuration can be changed without error", {
+test_that("ParameterIdentification configuration can be modified without errors", {
   piTask <- createPiTask()
   expect_no_error(piTask$configuration$algorithm <- "HJKB")
   expect_equal(piTask$configuration$algorithm, "HJKB")
@@ -126,7 +148,7 @@ test_that("ParameterIdentification configuration can be changed without error", 
   expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
 })
 
-test_that("ParameterIdentification$run() errors on invalid objective function option", {
+test_that("ParameterIdentification$run() errors on invalid objective function options", {
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
   expect_error(piTask$run(),
@@ -141,9 +163,7 @@ test_that("ParameterIdentification$run() errors on invalid objective function op
 })
 
 # Test BOBYQA Algorithm (Default)
-
-test_that("ParameterIdentification$run() runs without error and produces expected
-          results using default BOBYQA algorithm", {
+test_that("ParameterIdentification$run() runs successfully using default BOBYQA algorithm", {
   piTask <- createPiTask()
   expect_no_error(piResults <- piTask$run())
   resultFields <- c("par", "value", "nrOfFnEvaluations", "hessian", "sigma", "lwr", "upr", "cv")
@@ -154,7 +174,7 @@ test_that("ParameterIdentification$run() runs without error and produces expecte
   expect_equal(!!resultValues, referenceValues, tolerance = 1e-03)
 })
 
-test_that("ParameterIdentification$run() prints expected evaluation feedback using BOBYQA algorithm", {
+test_that("ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm", {
   piTask <- createPiTask()
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$printEvaluationFeedback <- TRUE
@@ -165,27 +185,23 @@ test_that("ParameterIdentification$run() prints expected evaluation feedback usi
 
 piTask <- createPiTask()
 piResults <- piTask$run()
-test_that("plotResults() returns expected plot after running a parameter estimation task", {
+test_that("plotResults() generates expected plot after parameter estimation", {
   vdiffr::expect_doppelganger("after_estimation", piTask$plotResults()[[1]])
 })
 
-test_that("plotResults() returns expected plot whith parameter input", {
+test_that("plotResults() generates expected plot with parameter input", {
   vdiffr::expect_doppelganger("custom_parameter", piTask$plotResults(1.2)[[1]])
 })
 
-
 # Test HJBK Algorithm
-
-test_that("ParameterIdentification$run() fails using HJKB algorithm with one parameter", {
+test_that("ParameterIdentification$run() fails with HJKB algorithm and one parameter", {
   piTask <- createPiTask()
   piTask$configuration$algorithm <- "HJKB"
   expect_error(piTask$run())
 })
 
-
 # Test DEoptim Algorithm
-
-test_that("ParameterIdentification$run() runs without error using HJKB algorithm", {
+test_that("ParameterIdentification$run() runs successfully using DEoptim algorithm", {
   piTask <- createPiTask()
   piTask$configuration$algorithm <- "DEoptim"
   piTask$configuration$printEvaluationFeedback <- FALSE

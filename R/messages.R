@@ -8,8 +8,17 @@ messages$errorNotAFunction <- function() {
   "The assigned value must be a function with arguments 'xVals' and 'yVals'!"
 }
 
-messages$simulationNotSuccessful <- function(values) {
-  paste0("Simulation was not successful for parameter values: ", paste0(values, collapse = ", "))
+messages$logSimulationError <- function(values, errorCondition) {
+  message("Simulation failed for parameter values: ", toString(values))
+  message("Error: ", errorCondition$message)
+}
+
+messages$simulationError <- function(values) {
+  paste0("Returning infinite cost structure due to simulation failure.")
+}
+
+messages$initialSimulationError <- function() {
+  "Stopping optimization: Initial simulation failed."
 }
 
 messages$profilesNotSupplied <- function() {

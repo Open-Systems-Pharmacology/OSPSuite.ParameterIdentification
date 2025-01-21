@@ -10,6 +10,11 @@ test_that("PIOutputMapping object is correctly created", {
   expect_equal(outputMapping$transformResultsFunction, NULL)
 })
 
+test_that("PIOutputMapping instance prints without errors", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  expect_no_error(print(outputMapping))
+})
+
 test_that("Read-only fields cannot be set", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   expect_error(outputMapping$observedDataSets <- list(), "is readonly")

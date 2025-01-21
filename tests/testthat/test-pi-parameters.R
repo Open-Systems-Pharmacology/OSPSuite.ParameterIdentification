@@ -13,6 +13,11 @@ test_that("PIParameters object is correctly created", {
   expect_equal(piParam$unit, testParam$unit)
 })
 
+test_that("PIOutputMapping instance prints without errors", {
+  piParam <- PIParameters$new(testParam)
+  expect_no_error(print(piParam))
+})
+
 test_that("Start, min, and max values are set correctly", {
   piParam <- PIParameters$new(testParam)
   newStartValue <- refVal * 2
@@ -62,7 +67,6 @@ test_that("Unit can be changed correctly", {
     "not supported by the dimension"
   )
 })
-
 
 # Testing PIParameters with a List of Parameters --------------------------
 
