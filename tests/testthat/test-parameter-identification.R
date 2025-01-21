@@ -209,14 +209,46 @@ test_that("ParameterIdentification$run() runs successfully using DEoptim algorit
   expect_no_error(piTask$run())
 })
 
+# gridSearch
 
-# test_that("Grid search produces no error with default parameters", {
-#   expect_no_error(gridSearchResults <- piTask$gridSearch())
-# })
-# gridSearchResults <- piTask$gridSearch(totalEvaluations = 10)
-# test_that("Grid search produced correct results", {
-#   expect_snapshot_value(gridSearchResults, style = "serialize")
-# })
+test_that("ParameterIdentification$gridSearch() works without error for single parameter", {
+  piTask <- createPiTask()
+  expect_no_error(gridSearchResults <- piTask$gridSearch())
+})
+
+test_that("ParameterIdentification$gridSearch() works with multiple parameters and default settings", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  expect_no_error(gridSearchResults <- piTask$gridSearch())
+  expect_snapshot(gridSearchResults[1:10, ])
+})
+
+test_that("ParameterIdentification$gridSearch() works with custom settings", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  expect_no_error(piTask$gridSearch(margin = 1, totalEvaluations = 10))
+  expect_no_error(piTask$gridSearch(logScaleFlag = TRUE, totalEvaluations = 10))
+})
+
+test_that("ParameterIdentification$gridSearch() sets new start values with correct message", {
+  piParameterLipo_250mg$startValue <- 0
+  piParameterCl_250mg$startValue <- 0
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  startValueMessage <- capture_output(
+    piTask$gridSearch(setStartValue = TRUE, totalEvaluations = 10)
+  )
+  expect_snapshot(startValueMessage)
+})
 
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))

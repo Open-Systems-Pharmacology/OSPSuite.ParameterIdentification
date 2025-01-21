@@ -17,3 +17,31 @@
     LTAuMDk1OCwgb2JqZWN0aXZlIGZ1bmN0aW9uIDc3Ni42CmZuZXZhbCAxNTogcGFyYW1ldGVy
     cyAtMC4wOTgyLCBvYmplY3RpdmUgZnVuY3Rpb24gNzc5LjY=
 
+# ParameterIdentification$gridSearch() works with multiple parameters and default settings
+
+    Code
+      gridSearchResults[1:10, ]
+    Output
+      # A tibble: 10 x 3
+         `Aciclovir|Lipophilicity` Neighborhoods|Kidney_pls_Kidney_ur|Aciclovi~1   ofv
+                             <dbl>                                         <dbl> <dbl>
+       1                   -0.97                                          0.0941 4324.
+       2                   -0.810                                         0.0941 3735.
+       3                   -0.650                                         0.0941 3169.
+       4                   -0.490                                         0.0941 2640.
+       5                   -0.330                                         0.0941 2159.
+       6                   -0.170                                         0.0941 1735.
+       7                   -0.0097                                        0.0941 1375.
+       8                   -0.97                                          1.65   1713.
+       9                   -0.810                                         1.65   1519.
+      10                   -0.650                                         1.65   1311.
+      # i abbreviated name:
+      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
+
+# ParameterIdentification$gridSearch() sets new start values with correct message
+
+    Code
+      startValueMessage
+    Output
+      [1] "Grid search completed. \n Starting point for the next optimization updated to parameter values:  \n -0.0097 9.412"
+
