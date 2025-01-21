@@ -747,17 +747,14 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @param par Numeric vector of parameter values, one for each parameter.
     #' Defaults to current parameter values if `NULL`, invalid or mismatched.
-    #' @param lower Numeric vector of lower bounds for parameters. Defaults to
-    #' 0.9 * `par`.
-    #' @param upper Numeric vector of upper bounds for parameters. Defaults to
-    #' 1.1 * `par`.
+    #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10% below
+    #' `par` and `upper` is 10% above `par`. Default is `0.1`.
     #' @param totalEvaluations Integer specifying the total number of grid
     #' points across each parameter profile. Default is 20.
     #'
     #' @return A list of tibbles, one per parameter, with columns for parameter
     #' values and OFVs (`ofv`).
-    calculateOFVProfiles = function(par = NULL, lower = NULL, upper = NULL,
-                                    totalEvaluations = NULL) {
+    calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
@@ -766,15 +763,8 @@ ParameterIdentification <- R6::R6Class(
       if (is.null(par) || length(par) != nrOfParameters || !is.numeric(par)) {
         par <- sapply(private$.piParameters, function(x) x$currValue)
       }
-      lower <- lower %||% 0.9 * par
-      upper <- upper %||% 1.1 * par
-
-      # Calculate grid size
-      gridSize <- if (is.null(totalEvaluations)) {
-        21
-      } else {
-        floor(totalEvaluations / nrOfParameters)
-      }
+      lower <- ifelse(par < 0, (1 + boundFactor) * par, (1 - boundFactor) * par)
+      upper <- ifelse(par < 0, (1 - boundFactor) * par, (1 + boundFactor) * par)
 
       # Create default grid with constant values for each parameter
       parameterNames <- sapply(
