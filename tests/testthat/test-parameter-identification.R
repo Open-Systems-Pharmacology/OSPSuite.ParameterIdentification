@@ -250,6 +250,18 @@ test_that("ParameterIdentification$gridSearch() sets new start values with corre
   expect_snapshot(startValueMessage)
 })
 
+test_that("ParameterIdentification$calculateOFVProfiles() works as expected", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  ofvProfiles <- piTask$calculateOFVProfiles()
+  expect_equal(length(ofvProfiles), length(piTask$parameters))
+  expect_snapshot(ofvProfiles[[1]][1:10, ])
+  expect_snapshot(ofvProfiles[[2]][1:10, ])
+})
+
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
 # sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))

@@ -45,3 +45,43 @@
     Output
       [1] "Grid search completed. \n Starting point for the next optimization updated to parameter values:  \n -0.0097 9.412"
 
+# ParameterIdentification$calculateOFVProfiles() works as expected
+
+    Code
+      ofvProfiles[[1]][1:10, ]
+    Output
+      # A tibble: 10 x 2
+         `Aciclovir|Lipophilicity`   ofv
+                             <dbl> <dbl>
+       1                   -0.0873  766.
+       2                   -0.0883  767.
+       3                   -0.0892  769.
+       4                   -0.0902  770.
+       5                   -0.0912  771.
+       6                   -0.0922  772.
+       7                   -0.0931  773.
+       8                   -0.0941  775.
+       9                   -0.0951  776.
+      10                   -0.0960  777.
+
+---
+
+    Code
+      ofvProfiles[[2]][1:10, ]
+    Output
+      # A tibble: 10 x 2
+         Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSsp~1   ofv
+                                                                           <dbl> <dbl>
+       1                                                                   0.847  812.
+       2                                                                   0.857  809.
+       3                                                                   0.866  805.
+       4                                                                   0.875  801.
+       5                                                                   0.885  798.
+       6                                                                   0.894  794.
+       7                                                                   0.904  791.
+       8                                                                   0.913  788.
+       9                                                                   0.922  785.
+      10                                                                   0.932  781.
+      # i abbreviated name:
+      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
+
