@@ -752,7 +752,7 @@ ParameterIdentification <- R6::R6Class(
     #' @param upper Numeric vector of upper bounds for parameters. Defaults to
     #' 1.1 * `par`.
     #' @param totalEvaluations Integer specifying the total number of grid
-    #' points across all profiles. Defaults to 21.
+    #' points across each parameter profile. Default is 20.
     #'
     #' @return A list of tibbles, one per parameter, with columns for parameter
     #' values and OFVs (`ofv`).
@@ -780,7 +780,8 @@ ParameterIdentification <- R6::R6Class(
       parameterNames <- sapply(
         private$.piParameters, function(x) x$parameters[[1]]$path
       )
-      defaultGrid <- matrix(par, nrow = gridSize, ncol = nrOfParameters, byrow = TRUE)
+      defaultGrid <- matrix(par, nrow = totalEvaluations, ncol = nrOfParameters,
+                            byrow = TRUE)
       colnames(defaultGrid) <- parameterNames
       defaultGrid <- tibble::as_tibble(defaultGrid)
 
@@ -790,13 +791,13 @@ ParameterIdentification <- R6::R6Class(
         parameterName <- parameterNames[idx]
 
         # Generate and update grid for the current parameter
-        grid <- seq(lower[[idx]], upper[[idx]], length.out = gridSize)
+        grid <- seq(lower[[idx]], upper[[idx]], length.out = totalEvaluations)
         currentGrid <- defaultGrid
         currentGrid[[parameterName]] <- grid
 
         # Calculate OFV for each grid row
-        ofvValues <- numeric(gridSize)
-        for (gridIdx in seq_len(gridSize)) {
+        ofvValues <- numeric(totalEvaluations)
+        for (gridIdx in seq_len(totalEvaluations)) {
           row <- as.numeric(currentGrid[gridIdx, ])
           ofvValues[gridIdx] <- private$.objectiveFunction(row)$modelCost
         }
