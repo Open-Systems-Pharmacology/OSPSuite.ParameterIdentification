@@ -37,6 +37,7 @@ observed data to simulation outputs.}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
 \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
 \item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
+\item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
 \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
 }
 }
@@ -161,6 +162,44 @@ values to the best grid point. Default is \code{FALSE}.}
 \subsection{Returns}{
 A tibble with parameter values and their corresponding OFV.
 Calculate Objective Function Value (OFV) Profiles
+
+Generates OFV profiles by varying each parameter independently while
+holding others constant.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ParameterIdentification-calculateOFVProfiles"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-calculateOFVProfiles}{}}}
+\subsection{Method \code{calculateOFVProfiles()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$calculateOFVProfiles(
+  par = NULL,
+  lower = NULL,
+  upper = NULL,
+  totalEvaluations = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{par}}{Numeric vector of parameter values, one for each parameter.
+Defaults to current parameter values if \code{NULL}, invalid or mismatched.}
+
+\item{\code{lower}}{Numeric vector of lower bounds for parameters. Defaults to
+0.9 * \code{par}.}
+
+\item{\code{upper}}{Numeric vector of upper bounds for parameters. Defaults to
+1.1 * \code{par}.}
+
+\item{\code{totalEvaluations}}{Integer specifying the total number of grid
+points across all profiles. Defaults to 21.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of tibbles, one per parameter, with columns for parameter
+values and OFVs (\code{ofv}).
 }
 }
 \if{html}{\out{<hr>}}
