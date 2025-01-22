@@ -9,7 +9,7 @@ simulation results against observed data."><meta name="robots" content="noindex"
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.1.9005</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.1.9006</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -91,6 +91,8 @@ observed data to simulation outputs.</p></dd>
 <ul><li><p><a href="#method-ParameterIdentification-new"><code>ParameterIdentification$new()</code></a></p></li>
 <li><p><a href="#method-ParameterIdentification-run"><code>ParameterIdentification$run()</code></a></p></li>
 <li><p><a href="#method-ParameterIdentification-plotResults"><code>ParameterIdentification$plotResults()</code></a></p></li>
+<li><p><a href="#method-ParameterIdentification-gridSearch"><code>ParameterIdentification$gridSearch()</code></a></p></li>
+<li><p><a href="#method-ParameterIdentification-calculateOFVProfiles"><code>ParameterIdentification$calculateOFVProfiles()</code></a></p></li>
 <li><p><a href="#method-ParameterIdentification-print"><code>ParameterIdentification$print()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-ParameterIdentification-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
@@ -169,13 +171,105 @@ to visualize the estimation results.</p><div class="section">
 </div>
 <div class="section">
 <h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
-<p>A list of <code>ggplot2</code> plots, one for each <code>PIOutputMapping</code>.</p>
+<p>A list of <code>ggplot2</code> plots, one for each <code>PIOutputMapping</code>.
+Calculate Objective Function Values (OFV) on an n-Dimensional Grid</p>
+<p>Generates a grid of parameter combinations, computes the OFV for each,
+and optionally sets the best result as the starting point for subsequent
+optimizations.</p>
+</div>
+
+</div><p></p><hr><a id="method-ParameterIdentification-gridSearch"></a><div class="section">
+<h3 id="method-gridsearch-">Method <code>gridSearch()</code><a class="anchor" aria-label="anchor" href="#method-gridsearch-"></a></h3>
+
+<div class="section">
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">gridSearch</span><span class="op">(</span></span>
+<span>  lower <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  upper <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  logScaleFlag <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  totalEvaluations <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  setStartValue <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>lower</code></dt>
+<dd><p>Numeric vector of parameter lower bounds, defaulting to
+<code>PIParameter</code> minimum values.</p></dd>
+
+
+<dt><code>upper</code></dt>
+<dd><p>Numeric vector of parameter upper bounds, defaulting to
+<code>PIParameter</code> maximum values.</p></dd>
+
+
+<dt><code>logScaleFlag</code></dt>
+<dd><p>Logical scalar or vector; determines if grid points
+are spaced logarithmically. Default is <code>FALSE</code>.</p></dd>
+
+
+<dt><code>totalEvaluations</code></dt>
+<dd><p>Integer specifying the total grid points. Default
+is 50.</p></dd>
+
+
+<dt><code>setStartValue</code></dt>
+<dd><p>Logical. If <code>TRUE</code>, updates <code>PIParameter</code> starting
+values to the best grid point. Default is <code>FALSE</code>.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-2">Returns<a class="anchor" aria-label="anchor" href="#returns-2"></a></h4>
+<p>A tibble with parameter values and their corresponding OFV.
+Calculate Objective Function Value (OFV) Profiles</p>
+<p>Generates OFV profiles by varying each parameter independently while
+holding others constant.</p>
+</div>
+
+</div><p></p><hr><a id="method-ParameterIdentification-calculateOFVProfiles"></a><div class="section">
+<h3 id="method-calculateofvprofiles-">Method <code>calculateOFVProfiles()</code><a class="anchor" aria-label="anchor" href="#method-calculateofvprofiles-"></a></h3>
+
+<div class="section">
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">calculateOFVProfiles</span><span class="op">(</span></span>
+<span>  par <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  boundFactor <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  totalEvaluations <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>par</code></dt>
+<dd><p>Numeric vector of parameter values, one for each parameter.
+Defaults to current parameter values if <code>NULL</code>, invalid or mismatched.</p></dd>
+
+
+<dt><code>boundFactor</code></dt>
+<dd><p>Numeric value. A value of 0.1 means <code>lower</code> is 10% below
+<code>par</code> and <code>upper</code> is 10% above <code>par</code>. Default is <code>0.1</code>.</p></dd>
+
+
+<dt><code>totalEvaluations</code></dt>
+<dd><p>Integer specifying the total number of grid
+points across each parameter profile. Default is 20.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-3">Returns<a class="anchor" aria-label="anchor" href="#returns-3"></a></h4>
+<p>A list of tibbles, one per parameter, with columns for parameter
+values and OFVs (<code>ofv</code>).</p>
 </div>
 
 </div><p></p><hr><a id="method-ParameterIdentification-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Prints a summary of ParameterIdentification instance.</p><div class="section">
-<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
