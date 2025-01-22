@@ -136,6 +136,9 @@ piParameterLipo <- PIParameters$new(parameters = list(
   getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
   getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
 ))
+piParameterLipo_250mg <- PIParameters$new(parameters = list(
+  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg)
+))
 piParameterCl_250mg <- PIParameters$new(
   parameters = getParameter(
     path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",

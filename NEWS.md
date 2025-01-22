@@ -1,5 +1,11 @@
 # ospsuite.parameteridentification (development version)
 
+
+## Major changes
+
+- `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` are made available and refactored for robustness, clarity, and efficiency (#151).
+
+
 ## Minor improvements and fixes
 
 - `ParameterIdentification` will validate observed data availability in `PIOutputMapping` during initialization (#145).  
@@ -26,7 +32,7 @@
 
 - `PIConfiguration` now configures the objective function via `objectiveFunctionOptions`. Users can specify options directly, including `objectiveFunctionType`, `residualWeightingMethod`, `robustMethod`, `scaleVar`, and `linScaleCV` (#100, @rengelke).
 
-* `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` functions have been disabled until fixed (#91, #92).
+- `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` functions have been disabled until fixed (#91, #92).
 
 
 ## Major changes
