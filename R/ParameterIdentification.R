@@ -705,7 +705,10 @@ ParameterIdentification <- R6::R6Class(
       )
 
       for (idx in seq_along(private$.piParameters)) {
-        if (logScaleFlag[idx] && lower[idx] > 0 && upper[idx] > 0) {
+        if (logScaleFlag[idx]) {
+          if (lower[idx] <= 0 | upper[idx] <= 0) {
+            stop(messages$logScaleFlagError())
+          }
           # Logarithmic scaling
           parameterGrid[[idx]] <- exp(seq(
             log(lower[idx]),
@@ -713,14 +716,10 @@ ParameterIdentification <- R6::R6Class(
             length.out = gridSize
           ))
         } else {
-          if (logScaleFlag[idx]) {
-            # Warning when falling back to linear scaling
-            message(messages$logScaleFallbackWarning(
-              private$.piParameters[[idx]]$parameters[[1]]$path
-            ))
-          }
           # Linear scaling
-          parameterGrid[[idx]] <- seq(lower[idx], upper[idx], length.out = gridSize)
+          parameterGrid[[idx]] <- seq(
+            lower[idx], upper[idx], length.out = gridSize
+          )
         }
       }
 

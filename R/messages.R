@@ -37,11 +37,8 @@ messages$gridSearchParameterValueSet <- function(bestValues) {
   )
 }
 
-messages$logScaleFallbackWarning <- function(parameterName) {
-  paste(
-    "Logarithmic scaling requested for parameter", parameterName, "\n",
-    "Bounds are non-positive. Falling back to linear scaling."
-  )
+messages$logScaleFlagError <- function() {
+  "Logarithmic scaling is not available for non-positive parameter values."
 }
 
 messages$runningOptimizationAlgorithm <- function(name) {
