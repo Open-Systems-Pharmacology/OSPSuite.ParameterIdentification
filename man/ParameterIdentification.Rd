@@ -130,7 +130,6 @@ optimizations.
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$gridSearch(
   lower = NULL,
   upper = NULL,
-  margin = 0,
   logScaleFlag = FALSE,
   totalEvaluations = 50,
   setStartValue = FALSE
@@ -141,12 +140,10 @@ optimizations.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
-\code{PIParameter} minimum values plus margin.}
+\code{PIParameter} minimum values.}
 
 \item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
-\code{PIParameter} maximum values minus margin.}
-
-\item{\code{margin}}{Numeric offset applied to parameter bounds. Default is 0.}
+\code{PIParameter} maximum values.}
 
 \item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
 are spaced logarithmically. Default is \code{FALSE}.}
@@ -174,9 +171,8 @@ holding others constant.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$calculateOFVProfiles(
   par = NULL,
-  lower = NULL,
-  upper = NULL,
-  totalEvaluations = NULL
+  boundFactor = 0.1,
+  totalEvaluations = 20
 )}\if{html}{\out{</div>}}
 }
 
@@ -186,14 +182,11 @@ holding others constant.
 \item{\code{par}}{Numeric vector of parameter values, one for each parameter.
 Defaults to current parameter values if \code{NULL}, invalid or mismatched.}
 
-\item{\code{lower}}{Numeric vector of lower bounds for parameters. Defaults to
-0.9 * \code{par}.}
-
-\item{\code{upper}}{Numeric vector of upper bounds for parameters. Defaults to
-1.1 * \code{par}.}
+\item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\% below
+\code{par} and \code{upper} is 10\% above \code{par}. Default is \code{0.1}.}
 
 \item{\code{totalEvaluations}}{Integer specifying the total number of grid
-points across all profiles. Defaults to 21.}
+points across each parameter profile. Default is 20.}
 }
 \if{html}{\out{</div>}}
 }
