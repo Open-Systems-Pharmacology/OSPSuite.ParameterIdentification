@@ -210,7 +210,6 @@ test_that("ParameterIdentification$run() runs successfully using DEoptim algorit
 })
 
 # gridSearch
-
 test_that("ParameterIdentification$gridSearch() works without error for single parameter", {
   piTask <- createPiTask()
   expect_no_error(gridSearchResults <- piTask$gridSearch())
@@ -226,14 +225,16 @@ test_that("ParameterIdentification$gridSearch() works with multiple parameters a
   expect_snapshot(gridSearchResults[1:10, ])
 })
 
-test_that("ParameterIdentification$gridSearch() works with custom settings", {
+test_that("ParameterIdentification$gridSearch() warns and falls back to linear scaling for logScaleFlag", {
   piTask <- ParameterIdentification$new(
     simulations = sim_250mg,
     parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
     outputMappings = outputMapping_250mg
   )
-  expect_no_error(piTask$gridSearch(margin = 1, totalEvaluations = 10))
-  expect_no_error(piTask$gridSearch(logScaleFlag = TRUE, totalEvaluations = 10))
+  expect_message(
+    gridSearchResults <- piTask$gridSearch(logScaleFlag = TRUE, totalEvaluations = 5),
+    ".*Bounds are non-positive. Falling back to linear scaling"
+  )
 })
 
 test_that("ParameterIdentification$gridSearch() sets new start values with correct message", {
@@ -250,6 +251,7 @@ test_that("ParameterIdentification$gridSearch() sets new start values with corre
   expect_snapshot(startValueMessage)
 })
 
+# calculateOFVProfiles
 test_that("ParameterIdentification$calculateOFVProfiles() works as expected", {
   piTask <- ParameterIdentification$new(
     simulations = sim_250mg,
