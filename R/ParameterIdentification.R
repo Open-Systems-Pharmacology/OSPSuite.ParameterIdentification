@@ -705,17 +705,22 @@ ParameterIdentification <- R6::R6Class(
       )
 
       for (idx in seq_along(private$.piParameters)) {
-        if (logScaleFlag[idx]) {
+        if (logScaleFlag[idx] && lower[idx] > 0 && upper[idx] > 0) {
+          # Logarithmic scaling
           parameterGrid[[idx]] <- exp(seq(
-            ospsuite.utils::logSafe(lower[idx]),
-            ospsuite.utils::logSafe(upper[idx]),
+            log(lower[idx]),
+            log(upper[idx]),
             length.out = gridSize
           ))
         } else {
-          parameterGrid[[idx]] <- seq(
-            lower[idx], upper[idx],
-            length.out = gridSize
-          )
+          if (logScaleFlag[idx]) {
+            # Warning when falling back to linear scaling
+            message(messages$logScaleFallbackWarning(
+              private$.piParameters[[idx]]$parameters[[1]]$path
+            ))
+          }
+          # Linear scaling
+          parameterGrid[[idx]] <- seq(lower[idx], upper[idx], length.out = gridSize)
         }
       }
 
@@ -780,8 +785,10 @@ ParameterIdentification <- R6::R6Class(
       parameterNames <- sapply(
         private$.piParameters, function(x) x$parameters[[1]]$path
       )
-      defaultGrid <- matrix(par, nrow = totalEvaluations, ncol = nrOfParameters,
-                            byrow = TRUE)
+      defaultGrid <- matrix(par,
+        nrow = totalEvaluations, ncol = nrOfParameters,
+        byrow = TRUE
+      )
       colnames(defaultGrid) <- parameterNames
       defaultGrid <- tibble::as_tibble(defaultGrid)
 
