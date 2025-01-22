@@ -229,7 +229,10 @@ ParameterIdentification <- R6::R6Class(
 
       # Check for simulation failure
       if (anyNA(obsVsPredList)) {
-        if (private$.fnEvaluations == 1) {
+        isGridSearch <- any(vapply(sys.calls(), function(call) {
+          grepl("gridSearch|calculateOFVProfiles", as.character(call)[1])
+        }, logical(1)))
+        if (private$.fnEvaluations == 1 && !isGridSearch) {
           stop(messages$initialSimulationError())
         } else {
           message(messages$simulationError())
