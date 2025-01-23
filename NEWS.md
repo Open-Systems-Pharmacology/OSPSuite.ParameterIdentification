@@ -11,6 +11,7 @@
 - `ParameterIdentification` will validate observed data availability in `PIOutputMapping` during initialization (#145).  
 - Cache Simulation ID in `PIOutputMapping`(#146).
 - `ParameterIdentification` now differentiates between simulation failures during the first iteration (stopping optimization) and subsequent iterations (returning infinite cost structure) (#148).
+- Simulation failure in `gridSearch`and `calculateOFVProfile` won't break evaluation and return `Inf` for specific parameters (#153). 
 
 # ospsuite.parameteridentification 2.0.1
 
