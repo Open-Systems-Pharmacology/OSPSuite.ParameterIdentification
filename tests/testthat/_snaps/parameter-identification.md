@@ -45,6 +45,13 @@
     Output
       [1] "Grid search completed. \n Starting point for the next optimization updated to parameter values:  \n -0.0097 9.412"
 
+# ParameterIdentification$gridSearch() returns `Inf` upon simulation failure
+
+    Code
+      gridSearchResults$ofv
+    Output
+      [1]      Inf      Inf 413.1742 417.4718
+
 # ParameterIdentification$calculateOFVProfiles() works as expected
 
     Code
@@ -84,4 +91,11 @@
       10                                                                   0.936  780.
       # i abbreviated name:
       #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
+
+# ParameterIdentification$calculateOFVProfiles() return `Inf` upon simulation failure
+
+    Code
+      ofvProfiles[[2]]$ofv
+    Output
+      [1]      Inf 3566.243 3153.906
 

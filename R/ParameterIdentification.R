@@ -721,7 +721,8 @@ ParameterIdentification <- R6::R6Class(
         } else {
           # Linear scaling
           parameterGrid[[idx]] <- seq(
-            lower[idx], upper[idx], length.out = gridSize
+            lower[idx], upper[idx],
+            length.out = gridSize
           )
         }
       }
