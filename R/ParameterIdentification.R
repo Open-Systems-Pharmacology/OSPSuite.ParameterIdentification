@@ -654,165 +654,180 @@ ParameterIdentification <- R6::R6Class(
       return(multiPlot)
     },
 
-    ## Commented out until https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/92 is fixed
-    # #' @description
-    # #' Calculates the values of the objective function on an n-dimensional grid, where n is the number
-    # #' of parameters, and optionally saves the best result as the starting point for next optimization runs.
-    # #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters
-    # #' optimized in this parameter identification task. By default, uses the minimal values
-    # #' defined in the `PIParameter` objects.
-    # #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters
-    # #' optimized in this parameter identification task. By default, uses the maximal values
-    # #' defined in the `PIParameter` objects.
-    # #' @param logScaleFlag A single logical value or a vector of logical values indicating
-    # #' if grid should be evenly spaced on a linear or a logarithmic scale. Defaults to `FALSE`.
-    # #' @param totalEvaluations An integer number. The grid will have as many points so that the
-    # #' total number of grid points does not exceed `totalEvaluations`. Defaults to `50`.
-    # #' @param margin Can be set to a non-zero positive value so that the edges of the grid will be away
-    # #' from the exact parameter bounds.
-    # #' @param setStartingPoint (logical) If `TRUE`, the best result will be saved as the starting point for
-    # #' the next optimization runs. Defaults to `FALSE`.
-    # #' @return A tibble with one column for each parameter and one column for the objective function value.
-    # #' The tibble will have at most `totalEvaluations` rows.
-    # gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE, totalEvaluations = 50, margin = 0, setStartingPoint = FALSE) {
-    #   # If the batches have not been initialized yet (i.e., no run has been
-    #   # performed), this must be done prior to plotting
-    #   private$.batchInitialization()
-    #
-    #   nrOfParameters <- length(private$.piParameters)
-    #   # logScaleFlag can be specified as a single value (common for all parameters)
-    #   # or as a vector of values (one for each parameter)
-    #   if (length(logScaleFlag) == 1) {
-    #     logScaleFlag <- rep(logScaleFlag, length.out = nrOfParameters)
-    #   }
-    #   # This will catch the cases where logScaleFlag is a vector longer than 1,
-    #   # but does not match the number of parameters
-    #   ospsuite.utils::isSameLength(logScaleFlag, private$.piParameters)
-    #
-    #   # if lower and upper are not supplied, we reuse parameter bounds
-    #   # By default, margin = 0, but we can use a non-zero value
-    #   # so that the grid does not start exactly at the parameter bound
-    #   if (missing(lower)) {
-    #     lower <- vector(mode = "list", length = nrOfParameters)
-    #     for (idx in seq_along(private$.piParameters)) {
-    #       lower[[idx]] <- private$.piParameters[[idx]]$minValue + margin
-    #     }
-    #   }
-    #   if (missing(upper)) {
-    #     upper <- vector(mode = "list", length = nrOfParameters)
-    #     for (idx in seq_along(private$.piParameters)) {
-    #       upper[[idx]] <- private$.piParameters[[idx]]$maxValue - margin
-    #     }
-    #   }
-    #   ospsuite.utils::isSameLength(lower, private$.piParameters)
-    #   ospsuite.utils::isSameLength(upper, private$.piParameters)
-    #
-    #   gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
-    #   gridList <- vector(mode = "list", length = nrOfParameters)
-    #   for (idx in seq_along(private$.piParameters)) {
-    #     if (logScaleFlag[[idx]]) {
-    #       grid <- exp(seq(from = log(lower[[idx]]), to = log(upper[[idx]]), length.out = gridSize))
-    #     } else {
-    #       grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
-    #     }
-    #     gridList[[idx]] <- grid
-    #     # creating unique column names for the grid
-    #     names(gridList)[[idx]] <- paste0("par", idx, ": ", private$.piParameters[[idx]]$parameters[[1]]$path)
-    #   }
-    #
-    #   OFVGrid <- expand.grid(gridList)
-    #   # all columns from the OFVGrid are passed in the same order to the objective function
-    #   OFVGrid[["ofv"]] <- purrr::pmap_dbl(OFVGrid, function(...) {
-    #     private$.targetFunction(c(...))$model
-    #   })
-    #
-    #   if (!is.null(private$.savedSimulationState)) {
-    #     .restoreSimulationState(private$.simulations, private$.savedSimulationState)
-    #   }
-    #
-    #   if (setStartingPoint) {
-    #     bestPoint <- OFVGrid[which.min(OFVGrid[["ofv"]]), ]
-    #     for (idx in seq_along(private$.piParameters)) {
-    #       private$.piParameters[[idx]]$startValue <- bestPoint[[idx]]
-    #     }
-    #     message(messages$gridSearchParameterValueSet())
-    #   }
-    #
-    #   return(tibble::as_tibble(OFVGrid))
-    # },
+    #' Calculate Objective Function Values (OFV) on an n-Dimensional Grid
+    #'
+    #' Generates a grid of parameter combinations, computes the OFV for each,
+    #' and optionally sets the best result as the starting point for subsequent
+    #' optimizations.
+    #'
+    #' @param lower Numeric vector of parameter lower bounds, defaulting to
+    #' `PIParameter` minimum values.
+    #' @param upper Numeric vector of parameter upper bounds, defaulting to
+    #' `PIParameter` maximum values.
+    #' @param logScaleFlag Logical scalar or vector; determines if grid points
+    #' are spaced logarithmically. Default is `FALSE`.
+    #' @param totalEvaluations Integer specifying the total grid points. Default
+    #' is 50.
+    #' @param setStartValue Logical. If `TRUE`, updates `PIParameter` starting
+    #' values to the best grid point. Default is `FALSE`.
+    #'
+    #' @return A tibble with parameter values and their corresponding OFV.
+    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
+                          totalEvaluations = 50, setStartValue = FALSE) {
+      ospsuite.utils::validateIsNumeric(lower, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(upper, nullAllowed = TRUE)
+      ospsuite.utils::validateIsLogical(logScaleFlag)
+      ospsuite.utils::validateIsNumeric(totalEvaluations)
+      ospsuite.utils::validateIsLogical(setStartValue)
 
-    # #' @description
-    # #' Calculates the values of the objective function on all orthogonal lines
-    # #' passing through a given point in the parameter space.
-    # #' @param par A vector of parameter values, with the same length as the number of parameters.
-    # #' If not supplied, the current parameter values are used.
-    # #' @param lower A vector of lower bounds for parameters, with the same length as the number of parameters.
-    # #' By default, uses 0.9 of the current parameter value.
-    # #' @param upper A vector of upper bounds for parameters, with the same length as the number of parameters.
-    # #' By default, uses 1.1 of the current parameter value.
-    # #' @param totalEvaluations An integer number. The combined profiles will not contain more than `totalEvaluations`
-    # #' points. If not supplied, 21 points per parameter are plotted to cover a uniform grid from 0.9 to 1.1.
-    # #' @return A list of tibbles, one tibble per parameter, with one column for parameter values
-    # #' and one column for the matching objective function values.
-    # calculateOFVProfiles = function(par = NULL, lower = NULL, upper = NULL, totalEvaluations = NULL) {
-    #   # If the batches have not been initialized yet (i.e., no run has been
-    #   # performed), this must be done prior to plotting
-    #   private$.batchInitialization()
-    #
-    #   nrOfParameters <- length(private$.piParameters)
-    #
-    #   # if par is not supplied, we use the current parameter values
-    #   if (missing(par)) {
-    #     par <- unlist(lapply(private$.piParameters, function(x) {
-    #       x$currValue
-    #     }), use.names = FALSE)
-    #   }
-    #
-    #   # if lower and upper are not supplied, we calculate them as 0.9 and 1.1
-    #   # of the current parameter values
-    #   if (missing(lower)) {
-    #     lower <- 0.9 * par
-    #   }
-    #   if (missing(upper)) {
-    #     upper <- 1.1 * par
-    #   }
-    #
-    #   # calculate the grid for each parameter separately
-    #   if (missing(totalEvaluations)) {
-    #     gridSize <- 21
-    #     # creates a grid with values at 0.9, 0.91, 0.92 .. 1.0 .. 1.09, 1.1
-    #     # of the current parameter values
-    #   } else {
-    #     gridSize <- floor(totalEvaluations / nrOfParameters)
-    #   }
-    #   gridList <- vector(mode = "list", length = nrOfParameters)
-    #   for (idx in seq_along(private$.piParameters)) {
-    #     gridList[[idx]] <- rep(par[[idx]], gridSize)
-    #     names(gridList)[[idx]] <- private$.piParameters[[idx]]$parameters[[1]]$path
-    #   }
-    #   defaultGrid <- tibble::as_tibble(gridList)
-    #
-    #   profileList <- vector(mode = "list", length = nrOfParameters)
-    #   for (idx in seq_along(private$.piParameters)) {
-    #     # the names of the parameters are extracted from the first available path
-    #     parameterName <- private$.piParameters[[idx]]$parameters[[1]]$path
-    #     grid <- seq(from = lower[[idx]], to = upper[[idx]], length.out = gridSize)
-    #     currentGrid <- defaultGrid
-    #     currentGrid[[parameterName]] <- grid
-    #     # creates a tibble with the column name from the `parameterName` variable
-    #     profileList[[idx]] <- tibble::tibble(!!parameterName := grid)
-    #     profileList[[idx]][["ofv"]] <- purrr::pmap_dbl(currentGrid, function(...) {
-    #       private$.objectiveFunction(c(...))$modelCost
-    #     })
-    #     names(profileList)[[idx]] <- parameterName
-    #   }
-    #
-    #   if (!is.null(private$.savedSimulationState)) {
-    #     .restoreSimulationState(private$.simulations, private$.savedSimulationState)
-    #   }
-    #
-    #   return(profileList)
-    # },
+      private$.batchInitialization()
+
+      nrOfParameters <- length(private$.piParameters)
+
+      # Expand and validate logScaleFlag
+      if (length(logScaleFlag) == 1) {
+        logScaleFlag <- rep(logScaleFlag, length.out = nrOfParameters)
+      }
+      ospsuite.utils::validateIsOfLength(logScaleFlag, nrOfParameters)
+
+      # Initialize bounds for parameters
+      if (is.null(lower)) {
+        lower <- sapply(private$.piParameters, function(x) x$minValue)
+      }
+      if (is.null(upper)) {
+        upper <- sapply(private$.piParameters, function(x) x$maxValue)
+      }
+      ospsuite.utils::validateIsOfLength(lower, nrOfParameters)
+      ospsuite.utils::validateIsOfLength(upper, nrOfParameters)
+
+      # Create parameter grid
+      gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
+      parameterGrid <- vector("list", length(private$.piParameters))
+      names(parameterGrid) <- sapply(
+        private$.piParameters, function(x) x$parameters[[1]]$path
+      )
+
+      for (idx in seq_along(private$.piParameters)) {
+        if (logScaleFlag[idx]) {
+          if (lower[idx] <= 0 | upper[idx] <= 0) {
+            stop(messages$logScaleFlagError())
+          }
+          # Logarithmic scaling
+          parameterGrid[[idx]] <- exp(seq(
+            log(lower[idx]),
+            log(upper[idx]),
+            length.out = gridSize
+          ))
+        } else {
+          # Linear scaling
+          parameterGrid[[idx]] <- seq(
+            lower[idx], upper[idx], length.out = gridSize
+          )
+        }
+      }
+
+      ofvGrid <- expand.grid(parameterGrid)
+
+      # Calculate OFV
+      ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
+        private$.objectiveFunction(as.numeric(ofvGrid[i, ]))$modelCost
+      }, numeric(1))
+
+      # Restore simulation state if applicable
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(
+          private$.simulations, private$.savedSimulationState
+        )
+      }
+
+      # Set starting point for next round of optimization
+      if (setStartValue) {
+        bestPoint <- ofvGrid[which.min(ofvGrid[["ofv"]]), ]
+        bestValues <- bestPoint[setdiff(names(bestPoint), "ofv")]
+        for (idx in seq_along(private$.piParameters)) {
+          private$.piParameters[[idx]]$startValue <- bestValues[[idx]]
+        }
+        message(messages$gridSearchParameterValueSet(bestValues))
+      }
+
+      return(tibble::as_tibble(ofvGrid))
+    },
+
+    #' Calculate Objective Function Value (OFV) Profiles
+    #'
+    #' Generates OFV profiles by varying each parameter independently while
+    #' holding others constant.
+    #'
+    #' @param par Numeric vector of parameter values, one for each parameter.
+    #' Defaults to current parameter values if `NULL`, invalid or mismatched.
+    #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10% below
+    #' `par` and `upper` is 10% above `par`. Default is `0.1`.
+    #' @param totalEvaluations Integer specifying the total number of grid
+    #' points across each parameter profile. Default is 20.
+    #'
+    #' @return A list of tibbles, one per parameter, with columns for parameter
+    #' values and OFVs (`ofv`).
+    calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
+      ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(boundFactor)
+      ospsuite.utils::validateIsInteger(totalEvaluations)
+
+      private$.batchInitialization()
+
+      nrOfParameters <- length(private$.piParameters)
+
+      # Set parameter values and bounds
+      if (is.null(par) || length(par) != nrOfParameters || !is.numeric(par)) {
+        par <- sapply(private$.piParameters, function(x) x$currValue)
+      }
+      lower <- ifelse(par < 0, (1 + boundFactor) * par, (1 - boundFactor) * par)
+      upper <- ifelse(par < 0, (1 - boundFactor) * par, (1 + boundFactor) * par)
+
+      # Create default grid with constant values for each parameter
+      parameterNames <- sapply(
+        private$.piParameters, function(x) x$parameters[[1]]$path
+      )
+      defaultGrid <- matrix(par,
+        nrow = totalEvaluations, ncol = nrOfParameters,
+        byrow = TRUE
+      )
+      colnames(defaultGrid) <- parameterNames
+      defaultGrid <- tibble::as_tibble(defaultGrid)
+
+      # Calculate ORF profile with parameter-specific grid
+      profileList <- vector(mode = "list", length = nrOfParameters)
+      for (idx in seq_along(private$.piParameters)) {
+        parameterName <- parameterNames[idx]
+
+        # Generate and update grid for the current parameter
+        grid <- seq(lower[[idx]], upper[[idx]], length.out = totalEvaluations)
+        currentGrid <- defaultGrid
+        currentGrid[[parameterName]] <- grid
+
+        # Calculate OFV for each grid row
+        ofvValues <- numeric(totalEvaluations)
+        for (gridIdx in seq_len(totalEvaluations)) {
+          row <- as.numeric(currentGrid[gridIdx, ])
+          ofvValues[gridIdx] <- private$.objectiveFunction(row)$modelCost
+        }
+
+        profileList[[idx]] <- tibble::tibble(
+          !!parameterName := grid,
+          ofv = ofvValues
+        )
+      }
+
+      names(profileList) <- parameterNames
+
+      # Restore simulation state if applicable
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(
+          private$.simulations, private$.savedSimulationState
+        )
+      }
+
+      return(profileList)
+    },
 
     #' @description Prints a summary of ParameterIdentification instance.
     print = function() {
