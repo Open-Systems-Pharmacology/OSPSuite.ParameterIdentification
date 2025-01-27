@@ -282,7 +282,7 @@ test_that("ParameterIdentification$calculateOFVProfiles() works as expected", {
   expect_snapshot(ofvProfiles[[2]][1:10, ])
 })
 
-test_that("ParameterIdentification$calculateOFVProfiles() return `Inf` upon simulation failure", {
+test_that("ParameterIdentification$calculateOFVProfiles() returns `Inf` upon simulation failure", {
   piTask <- ParameterIdentification$new(
     simulations = sim_250mg,
     parameters = list(piParameterLipo_250mg, piParameterCl_250mg),

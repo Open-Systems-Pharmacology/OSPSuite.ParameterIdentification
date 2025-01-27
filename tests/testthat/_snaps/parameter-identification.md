@@ -92,7 +92,7 @@
       # i abbreviated name:
       #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
 
-# ParameterIdentification$calculateOFVProfiles() return `Inf` upon simulation failure
+# ParameterIdentification$calculateOFVProfiles() returns `Inf` upon simulation failure
 
     Code
       ofvProfiles[[2]]$ofv
