@@ -72,6 +72,9 @@ ParameterIdentification <- R6::R6Class(
     .savedSimulationState = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
+    # Flag to indicate if objective function is being called from grid search
+    .gridSearchFlag = FALSE,
+
 
     # Batch Initialization for Simulations
     #
@@ -229,7 +232,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Check for simulation failure
       if (anyNA(obsVsPredList)) {
-        if (private$.fnEvaluations == 1) {
+        if (private$.fnEvaluations == 1 && !private$.gridSearchFlag) {
           stop(messages$initialSimulationError())
         } else {
           message(messages$simulationError())
@@ -577,14 +580,16 @@ ParameterIdentification <- R6::R6Class(
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       private$.savedSimulationState <- .storeSimulationState(private$.simulations)
-
       # Every time the user starts an optimization run, new batches should be
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
       private$.batchInitialization()
-      # Run optimization algorithm
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
+      # Reset gridSearhcFlag
+      private$.gridSearchFlag <- FALSE
+
+      # Run optimization algorithm
       results <- private$.runAlgorithm()
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, private$.savedSimulationState)
@@ -677,6 +682,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(totalEvaluations)
       ospsuite.utils::validateIsLogical(setStartValue)
 
+      private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
@@ -718,7 +724,8 @@ ParameterIdentification <- R6::R6Class(
         } else {
           # Linear scaling
           parameterGrid[[idx]] <- seq(
-            lower[idx], upper[idx], length.out = gridSize
+            lower[idx], upper[idx],
+            length.out = gridSize
           )
         }
       }
@@ -769,6 +776,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
+      private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)

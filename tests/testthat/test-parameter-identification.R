@@ -255,6 +255,20 @@ test_that("ParameterIdentification$gridSearch() sets new start values with corre
   expect_snapshot(startValueMessage)
 })
 
+test_that("ParameterIdentification$gridSearch() returns `Inf` upon simulation failure", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  suppressMessages(suppressWarnings(
+    expect_warning(
+      gridSearchResults <- piTask$gridSearch(lower = c(0, -0.5), totalEvaluations = 5)
+    )
+  ))
+  expect_snapshot(gridSearchResults$ofv)
+})
+
 # calculateOFVProfiles
 test_that("ParameterIdentification$calculateOFVProfiles() works as expected", {
   piTask <- ParameterIdentification$new(
@@ -267,6 +281,22 @@ test_that("ParameterIdentification$calculateOFVProfiles() works as expected", {
   expect_snapshot(ofvProfiles[[1]][1:10, ])
   expect_snapshot(ofvProfiles[[2]][1:10, ])
 })
+
+test_that("ParameterIdentification$calculateOFVProfiles() returns `Inf` upon simulation failure", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+
+  suppressMessages(suppressWarnings(
+    expect_warning(
+      ofvProfiles <- piTask$calculateOFVProfiles(par = c(0, -0.25), totalEvaluations = 3)
+    )
+  ))
+  expect_snapshot(ofvProfiles[[2]]$ofv)
+})
+
 
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
