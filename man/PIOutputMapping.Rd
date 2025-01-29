@@ -22,6 +22,8 @@ with simulation outcomes.}
 
 \item{\code{quantity}}{Simulation quantities to be aligned with observed data values.}
 
+\item{\code{simId}}{Identifier of the simulation associated with the mapped quantity.}
+
 \item{\code{scaling}}{Specifies scaling for output mapping: linear (default) or logarithmic.}
 
 \item{\code{transformResultsFunction}}{A function to preprocess simulated results

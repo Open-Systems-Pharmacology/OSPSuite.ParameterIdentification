@@ -105,7 +105,6 @@
   ))
 }
 
-
 #' Restore simulation output state
 #'
 #' @inheritParams .storeSimulationState

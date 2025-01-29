@@ -67,3 +67,14 @@ messages$errorObservedDataNotFound <- function(caller, quantityPath, simulationP
     caller, quantityPath, simulationPath
   )
 }
+
+messages$errorNoParentContainer <- function(type) {
+  paste0(type, " is not a parent container of entity.")
+}
+
+messages$errorUnitConversion <- function(quantityName, observedDataName) {
+  paste0(
+    "Unit conversion failed for quantity '", quantityName,
+    "' and observed data '", observedDataName, "'."
+  )
+}
