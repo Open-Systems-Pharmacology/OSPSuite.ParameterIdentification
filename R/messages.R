@@ -8,8 +8,17 @@ messages$errorNotAFunction <- function() {
   "The assigned value must be a function with arguments 'xVals' and 'yVals'!"
 }
 
-messages$simulationNotSuccessful <- function(values) {
-  paste0("Simulation was not successful for parameter values: ", paste0(values, collapse = ", "))
+messages$logSimulationError <- function(values, errorCondition) {
+  message("Simulation failed for parameter values: ", toString(values))
+  message("Error: ", errorCondition$message)
+}
+
+messages$simulationError <- function(values) {
+  paste0("Returning infinite cost structure due to simulation failure.")
+}
+
+messages$initialSimulationError <- function() {
+  "Stopping optimization: Initial simulation failed."
 }
 
 messages$profilesNotSupplied <- function() {
@@ -20,8 +29,16 @@ messages$plotGridParameterCount <- function(count) {
   paste0("The plotGrid() function requires a data frame with 3 columns, but ", count, " columns were supplied")
 }
 
-messages$gridSearchParameterValueSet <- function() {
-  "The best parameter value has been set as the starting point."
+messages$gridSearchParameterValueSet <- function(bestValues) {
+  cat(
+    "Grid search completed.", "\n",
+    "Starting point for the next optimization updated to parameter values: ", "\n",
+    paste(signif(bestValues, 4), collapse = " ")
+  )
+}
+
+messages$logScaleFlagError <- function() {
+  "Logarithmic scaling is not available for non-positive parameter values."
 }
 
 messages$runningOptimizationAlgorithm <- function(name) {

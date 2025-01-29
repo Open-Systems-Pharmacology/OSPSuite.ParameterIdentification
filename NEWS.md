@@ -1,10 +1,18 @@
 # ospsuite.parameteridentification (development version)
 
+
+## Major changes
+
+- `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` are made available and refactored for robustness, clarity, and efficiency (#151).
+
+
 ## Minor improvements and fixes
 
 - `ParameterIdentification` will validate observed data availability in `PIOutputMapping` during initialization (#145).  
 - Cache Simulation ID in `PIOutputMapping`(#146).
 - `PIOutputMapping` will attempt to retrieve the molecular weight for unit conversion when adding observed data (#147).  
+- `ParameterIdentification` now differentiates between simulation failures during the first iteration (stopping optimization) and subsequent iterations (returning infinite cost structure) (#148).
+- Simulation failure in `gridSearch`and `calculateOFVProfile` won't break evaluation and return `Inf` for specific parameters (#153). 
 
 
 # ospsuite.parameteridentification 2.0.1
@@ -27,7 +35,7 @@
 
 - `PIConfiguration` now configures the objective function via `objectiveFunctionOptions`. Users can specify options directly, including `objectiveFunctionType`, `residualWeightingMethod`, `robustMethod`, `scaleVar`, and `linScaleCV` (#100, @rengelke).
 
-* `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` functions have been disabled until fixed (#91, #92).
+- `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` functions have been disabled until fixed (#91, #92).
 
 
 ## Major changes
