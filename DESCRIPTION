@@ -29,7 +29,7 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.1),
-    ospsuite (>= 12.1.0)
+    ospsuite (>= 12.1.0.9008)
 Imports:
     ggplot2,
     ggtext,

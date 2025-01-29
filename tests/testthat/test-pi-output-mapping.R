@@ -73,7 +73,7 @@ test_that("PIOutputMapping errors when mol weight is missing and can't be retrie
   observedData[[1]]$molWeight <- NA_real_
 
   mockthat::with_mock(
-    `.getMolWeightFor` = function(quantity) stop(),
+    `ospsuite::getMolWeightFor` = function(quantity) stop(),
     {
       expect_error(
         outputMapping$addObservedDataSets(

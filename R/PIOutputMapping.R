@@ -120,7 +120,9 @@ PIOutputMapping <- R6::R6Class(
         if (inherits(result, "try-error")) {
           result <- try(
             {
-              data[[idx]]$molWeight <- .getMolWeightFor(private$.quantity) * 1e9
+              data[[idx]]$molWeight <- ospsuite::getMolWeightFor(
+                private$.quantity, unit = "g/mol"
+              )
               tryConvert()
             },
             silent = TRUE
