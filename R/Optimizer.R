@@ -53,7 +53,7 @@ Optimizer <- R6::R6Class(
     # Differential Evolution optimization using DEoptim::DEoptim
     .runDEoptim = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
       DEoptim::DEoptim(
-        fn = function(p) fn(p),
+        fn = fn,
         lower = lower,
         upper = upper,
         control = controlOptim
