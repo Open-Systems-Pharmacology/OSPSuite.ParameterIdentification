@@ -13,7 +13,7 @@
 - `PIOutputMapping` will attempt to retrieve the molecular weight for unit conversion when adding observed data (#147).  
 - `ParameterIdentification` now differentiates between simulation failures during the first iteration (stopping optimization) and subsequent iterations (returning infinite cost structure) (#148).
 - Simulation failure in `gridSearch`and `calculateOFVProfile` won't break evaluation and return `Inf` for specific parameters (#153). 
-
+- Robust Hessian epsilon calculation in `ParameterIdentification` (#160).
 
 # ospsuite.parameteridentification 2.0.1
 
