@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.1.9008</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.1.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,6 +59,7 @@
 <li>
 <code>ParameterIdentification</code> now differentiates between simulation failures during the first iteration (stopping optimization) and subsequent iterations (returning infinite cost structure) (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/148" class="external-link">#148</a>).</li>
 <li>Simulation failure in <code>gridSearch</code>and <code>calculateOFVProfile</code> won’t break evaluation and return <code>Inf</code> for specific parameters (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/153" class="external-link">#153</a>).</li>
+<li>Robust Hessian epsilon calculation in <code>ParameterIdentification</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/160" class="external-link">#160</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">
