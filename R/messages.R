@@ -78,3 +78,19 @@ messages$errorUnitConversion <- function(quantityName, observedDataName) {
     "' and observed data '", observedDataName, "'."
   )
 }
+
+messages$fixedParamError <- function(error) {
+  if (error == "fixed") {
+    "All parameters are fixed! Optimization requires at least one free parameter."
+  } else if (error == "length") {
+    "`fixedParams$idx` and `fixedParams$values` must have the same length."
+  }
+}
+
+messages$objectiveFnOutputError <- function(field) {
+  paste0("Objective function must return a list containing '", field, "'.")
+}
+
+messages$unknownAlgorithmError <- function(algorithm) {
+  paste("Unknown optimization algorithm:", algorithm)
+}
