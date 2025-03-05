@@ -94,6 +94,17 @@ PIConfiguration <- R6::R6Class(
       } else {
         private$.algorithmOptions <- value
       }
+    },
+
+    #' @field estimateCI Boolean. If `TRUE`, will estimate confidence intervals
+    #' after optimization algorithm completion.
+    estimateCI = function(value) {
+      if (missing(value)) {
+        private$.estimateCI
+      } else {
+        ospsuite.utils::validateIsLogical(value)
+        private$.estimateCI <- value
+      }
     }
   ),
   private = list(
@@ -103,7 +114,10 @@ PIConfiguration <- R6::R6Class(
     .simulationRunOptions = NULL,
     .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
-    .algorithmOptions = NULL
+    .algorithmOptions = NULL,
+    .ciMethod = NULL,
+    .ciOptions = NULL,
+    .estimateCI = NULL
   ),
   public = list(
     #' @description Initialize a new instance of the class.
@@ -113,7 +127,10 @@ PIConfiguration <- R6::R6Class(
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
+      private$.ciOptions <- CIOptions
       private$.algorithm <- "BOBYQA"
+      private$.ciMethod <- "hessian"
+      private$.estimateCI <- FALSE
     },
 
     #' @description Prints a summary of the PIConfiguration.
