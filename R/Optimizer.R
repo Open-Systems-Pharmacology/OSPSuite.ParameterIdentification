@@ -18,6 +18,15 @@ Optimizer <- R6::R6Class(
         ospsuite.utils::validateEnumValue(value, Algorithms)
         private$.algorithm <- value
       }
+    },
+    #' @field modelCostField Name of the list field containing the model cost value.
+    modelCostField = function(value) {
+      if (missing(value)) {
+        private$.modelCostField
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        private$.modelCostField <- value
+      }
     }
   ),
   private = list(

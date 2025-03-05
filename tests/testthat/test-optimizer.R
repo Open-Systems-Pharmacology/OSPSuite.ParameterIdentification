@@ -44,6 +44,13 @@ test_that("Optimizer fails when `fn` is not a function", {
   )
 })
 
+test_that("Optimizer can set and modify `modelCostField`", {
+  optimizer <- Optimizer$new("BOBYQA", modelCostField = "result")
+  expect_equal(optimizer$modelCostField, "result")
+  optimizer$modelCostField <- "cost"
+  expect_equal(optimizer$modelCostField, "cost")
+})
+
 test_that("Optimizer fails when objective function output lacks modelCost", {
   fnObjectiveWrong <- function(p) {
     ySim <- fnSimulate(p)
