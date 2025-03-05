@@ -32,7 +32,11 @@ Optimizer <- R6::R6Class(
     .runHJKB = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
       dfoptim::hjkb(
         par = par,
-        fn = fn,
+        fn = if (!is.null(fixedParams)) {
+          function(p) fn(private$.updateFixedParams(p, fixedParams))
+        } else {
+          fn
+        },
         lower = lower,
         upper = upper,
         control = controlOptim
@@ -43,7 +47,11 @@ Optimizer <- R6::R6Class(
     .runBOBYQA = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
       nloptr::bobyqa(
         x0 = par,
-        fn = fn,
+        fn = if (!is.null(fixedParams)) {
+          function(p) fn(private$.updateFixedParams(p, fixedParams))
+        } else {
+          fn
+        },
         lower = lower,
         upper = upper,
         control = controlOptim
@@ -53,7 +61,11 @@ Optimizer <- R6::R6Class(
     # Differential Evolution optimization using DEoptim::DEoptim
     .runDEoptim = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
       DEoptim::DEoptim(
-        fn = fn,
+        fn = if (!is.null(fixedParams)) {
+          function(p) fn(private$.updateFixedParams(p, fixedParams))
+        } else {
+          fn
+        },
         lower = lower,
         upper = upper,
         control = controlOptim
@@ -85,9 +97,7 @@ Optimizer <- R6::R6Class(
       }
 
       wrappedFn <- function(p) {
-        p <- private$.updateFixedParams(p, fixedParams)
         result <- fn(p)
-
         if (is.list(result)) {
           if (!private$.modelCostField %in% names(result)) {
             stop(messages$objectiveFnOutputError(private$.modelCostField))
@@ -169,12 +179,14 @@ Optimizer <- R6::R6Class(
     #' @return A list containing the optimization results.
     run = function(par, fn, lower, upper, controlOptim = NULL, fixedParams = NULL) {
       ospsuite.utils::validateIsNumeric(par)
-      ospsuite.utils::validateIsOfType(fn, "function", FALSE)
       ospsuite.utils::validateIsOfType(fixedParams, "list", TRUE)
+      if (!inherits(fn, "preprocessedFn")) {
+        ospsuite.utils::validateIsOfType(fn, "function", FALSE)
+      }
 
       controlOptim <- controlOptim %||% AlgorithmDefaults[[private$.algorithm]]
 
-      fn <- private$.preprocessFn(fn, fixedParams)
+      fn <- private$.preprocessFn(fn)
 
       optimizeMethods <- list(
         "HJKB" = private$.runHJKB,
