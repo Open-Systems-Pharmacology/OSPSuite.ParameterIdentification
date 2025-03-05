@@ -176,7 +176,7 @@ Optimizer <- R6::R6Class(
     #' that stores the model cost.
     initialize = function(algorithm, controlOptim = NULL, modelCostField = NULL) {
       ospsuite.utils::validateEnumValue(algorithm, Algorithms)
-      ospsuite.utils::validateEnumValue(ciMethod, CIMethods)
+      # ospsuite.utils::validateEnumValue(ciMethod, CIMethods)
       ospsuite.utils::validateIsCharacter(modelCostField, TRUE)
 
       private$.algorithm <- algorithm
