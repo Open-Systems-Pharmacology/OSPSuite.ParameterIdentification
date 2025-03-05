@@ -25,6 +25,12 @@ parTest <- c(4.8, 0.3, 0.48)
 lowerTest <- c(0, 0, 0)
 upperTest <- c(10, 10, 1)
 
+# Expected output fields
+expectedFields <- c(
+  "par", "value", "convergence", "iterations",
+  "fnEvaluations", "algorithm", "elapsed"
+)
+
 
 test_that("Optimizer can be created and algorithm can be changed", {
   expect_silent(optimizer <- Optimizer$new("HJKB"))
@@ -72,25 +78,42 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
   optResult <- optimizer$run(
     par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
   )
-  expect_equal(optResult$par, c(5.5105, 0.3841, 0.6838), tolerance = 1e-4)
+  expect_setequal(names(optResult), expectedFields)
+  expect_equal(optResult$par, c(5.5106, 0.3841, 0.6838), tolerance = 1e-4)
+  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
+  expect_equal(optResult$iterations, 123)
+  expect_equal(optResult$algorithm, "BOBYQA")
+  expect_true(optResult$convergence)
 })
 
-test_that("Optimizer returns correct parameters for HJKB", {
+test_that("Optimizer output has correct structure and values for HJKB", {
   optimizer <- Optimizer$new("HJKB")
   optResult <- optimizer$run(
     par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
   )
+  expect_setequal(names(optResult), expectedFields)
   expect_equal(optResult$par, c(5.5105, 0.3841, 0.6838), tolerance = 1e-4)
+  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
+  expect_equal(optResult$iterations, 19)
+  expect_true(optResult$fnEvaluations <= 1e3)
+  expect_equal(optResult$algorithm, "HJKB")
+  expect_true(optResult$convergence)
 })
 
-test_that("Optimizer returns correct parameters for DEoptim", {
+test_that("Optimizer output has correct structure and values for DEoptim", {
   optimizer <- Optimizer$new("DEoptim")
   tmp <- capture.output(
     optResult <- optimizer$run(
       par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
     )
   )
-  expect_equal(optResult$par, c(5.5105, 0.3841, 0.6838), tolerance = 1e-4)
+  expect_setequal(names(optResult), expectedFields)
+  expect_equal(optResult$par, c(5.5106, 0.3841, 0.6838), tolerance = 1e-4)
+  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
+  expect_equal(optResult$iterations, 200)
+  expect_equal(optResult$fnEvaluations, 6030)
+  expect_equal(optResult$algorithm, "DEoptim")
+  expect_true(optResult$convergence)
 })
 
 test_that("Optimizer works when objective function returns numeric cost", {
