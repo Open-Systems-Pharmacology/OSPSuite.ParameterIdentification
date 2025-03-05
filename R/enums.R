@@ -58,6 +58,14 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
+#' @internal
+#' @noRd
+AlgorithmDefaults <- list(
+  hjkb = AlgorithmOptions_HJKB,
+  bobyqa = AlgorithmOptions_BOBYQA,
+  deoptim = AlgorithmOptions_DEoptim
+)
+
 #' Objective Function Options for Model Fit Assessment
 #'
 #' Default settings for objective function options in model fit analysis,
