@@ -152,11 +152,16 @@ Optimizer <- R6::R6Class(
       } else if (private$.algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
-        relChange <- abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
-
+        relChange <- try({
+          abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
+        }, silent = TRUE)
+        baseResult$convergence <- if (inherits(relChange, "try-error")) {
+          FALSE
+        } else {
+          all(relChange < 1e-5)
+        }
         baseResult$par <- unname(optimResult$optim$bestmem)
         baseResult$value <- optimResult$optim$bestval
-        baseResult$convergence <- all(relChange < 1e-5)
         baseResult$iterations <- optimResult$optim$iter
         baseResult$fnEvaluations <- optimResult$optim$nfeval
       }
