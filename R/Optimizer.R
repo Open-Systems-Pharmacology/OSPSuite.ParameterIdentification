@@ -169,10 +169,13 @@ Optimizer <- R6::R6Class(
     #' @param algorithm The optimization algorithm to use ("HJKB", "BOBYQA", "DEoptim").
     #' @param modelCostField Optional field name in the objective function result
     #' that stores the model cost.
-    initialize = function(algorithm, modelCostField = NULL) {
-      algorithm <- match.arg(algorithm, c("HJKB", "BOBYQA", "DEoptim"))
+    initialize = function(algorithm, controlOptim = NULL, modelCostField = NULL) {
+      ospsuite.utils::validateEnumValue(algorithm, Algorithms)
+      ospsuite.utils::validateEnumValue(ciMethod, CIMethods)
+      ospsuite.utils::validateIsCharacter(modelCostField, TRUE)
 
       private$.algorithm <- algorithm
+      private$.controlOptim <- controlOptim %||% AlgorithmDefaults[[algorithm]]
       private$.modelCostField <- modelCostField %||% "modelCost"
     },
 
@@ -190,30 +193,36 @@ Optimizer <- R6::R6Class(
     #' If `fixedParams` is provided, optimization proceeds while keeping the
     #' specified parameters constant.
     #' @return A list containing the optimization results.
-    run = function(par, fn, lower, upper, controlOptim = NULL, fixedParams = NULL) {
+    run = function(par, fn, lower, upper, fixedParams = NULL) {
       ospsuite.utils::validateIsNumeric(par)
+      ospsuite.utils::validateIsNumeric(lower)
+      ospsuite.utils::validateIsNumeric(upper)
       ospsuite.utils::validateIsOfType(fixedParams, "list", TRUE)
+      ospsuite.utils::validateIsIncluded(
+        names(fixedParams), c("idx", "values"),
+        TRUE
+      )
       if (!inherits(fn, "preprocessedFn")) {
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
       }
 
-      controlOptim <- controlOptim %||% AlgorithmDefaults[[private$.algorithm]]
-
       fn <- private$.preprocessFn(fn)
 
-      optimizeMethods <- list(
+      optimizeFn <- switch(private$.algorithm,
         "HJKB" = private$.runHJKB,
         "BOBYQA" = private$.runBOBYQA,
-        "DEoptim" = private$.runDEoptim
-      )
-
-      optimizeFn <- optimizeMethods[[private$.algorithm]] %||%
+        "DEoptim" = private$.runDEoptim,
         stop(messages$unknownAlgorithmError(private$.algorithm))
+      )
 
       startTime <- proc.time()
       rawResult <- optimizeFn(
-        par, fn, lower, upper,
-        control = controlOptim, fixedParams
+        par         = par,
+        fn          = fn,
+        lower       = lower,
+        upper       = upper,
+        control     = private$.controlOptim,
+        fixedParams = fixedParams
       )
       elapsedTime <- proc.time() - startTime
 
