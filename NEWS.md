@@ -4,7 +4,7 @@
 ## Major changes
 
 - `ParameterIdentification$gridSearch()` and`ParameterIdentification$calculateOFVProfiles()` are made available and refactored for robustness, clarity, and efficiency (#151).
-- New `Optimizer` class for improved stability and extensibility (#161).
+- New `Optimizer` class for improved stability and extensibility - no changes to user workflow (#161).
 
 
 ## Minor improvements and fixes
