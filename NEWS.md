@@ -1,5 +1,10 @@
 # ospsuite.parameteridentification (development version)
 
+## Major changes
+
+- Extend `Optimizer` class with confidence interval calculation (not yet integrated, #167).
+
+# ospsuite.parameteridentification 2.0.2
 
 ## Major changes
 

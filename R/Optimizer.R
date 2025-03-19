@@ -457,10 +457,10 @@ Optimizer <- R6::R6Class(
       fn <- private$.preprocessFn(fn)
 
       optimizeFn <- switch(private$.algorithm,
-                           "HJKB" = private$.runHJKB,
-                           "BOBYQA" = private$.runBOBYQA,
-                           "DEoptim" = private$.runDEoptim,
-                           stop(messages$optimizationAlgorithm(private$.algorithm, TRUE))
+        "HJKB" = private$.runHJKB,
+        "BOBYQA" = private$.runBOBYQA,
+        "DEoptim" = private$.runDEoptim,
+        stop(messages$optimizationAlgorithm(private$.algorithm, TRUE))
       )
 
       if (private$.verbose) {
@@ -512,10 +512,10 @@ Optimizer <- R6::R6Class(
       private$.verbose <- FALSE
 
       estimateCIFn <- switch(private$.ciMethod,
-                             "hessian" = private$.estimateHessianCI,
-                             "PL" = private$.estimateCIProfileLikelihood,
-                             "bootstrap" = private$.estimateBootstrapCI,
-                             stop(messages$ciMethod(private$.ciMethod, TRUE))
+        "hessian" = private$.estimateHessianCI,
+        "PL" = private$.estimateCIProfileLikelihood,
+        "bootstrap" = private$.estimateBootstrapCI,
+        stop(messages$ciMethod(private$.ciMethod, TRUE))
       )
 
       allowedArgs <- names(formals(estimateCIFn))
