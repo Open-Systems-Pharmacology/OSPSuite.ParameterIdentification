@@ -1,5 +1,12 @@
 # ParameterIdentification
 
+# Function that allows to replace paths that will differ on the different machines by a fixed value to
+# be used in snapshots
+transformId <- function(x) {
+  isPath <- grepl("ospsuite/extdata/Aciclovir.pkml", x)
+  ifelse(isPath, "<SimPath>", x)
+}
+
 test_that("ParameterIdentification is created successfully", {
   expect_silent(piTask <- ParameterIdentification$new(
     simulations = testSimulations(),
@@ -19,7 +26,7 @@ test_that("ParameterIdentification read-only fields cannot be modified", {
 
 test_that("ParameterIdentification instance prints without errors", {
   piTask <- createPiTask()
-  expect_snapshot(print(piTask))
+  expect_snapshot(print(piTask), transform = transformId)
 })
 
 test_that("ParameterIdentification errors on missing simulation IDs", {
