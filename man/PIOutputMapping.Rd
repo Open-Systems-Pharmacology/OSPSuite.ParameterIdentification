@@ -9,9 +9,6 @@ Establishes connections between simulated quantities and corresponding
 observed data sets. Utilized within \code{ParameterIdentification} instances to align
 and compare simulation outputs with empirical data.
 }
-\section{Super class}{
-\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIOutputMapping}
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

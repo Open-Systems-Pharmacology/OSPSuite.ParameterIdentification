@@ -175,5 +175,5 @@ test_that("Optimizer fails when idx is larger than parameter length", {
 
 test_that("It can print default optimizer", {
   optimizer <- Optimizer$new("BOBYQA")
-  expect_snapshot(optimizer$print())
+  expect_snapshot(print(optimizer))
 })

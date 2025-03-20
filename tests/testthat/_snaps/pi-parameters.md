@@ -5,9 +5,9 @@
     Message
       <PIParameters>
         * Number of parameters: 1
-        * Value: 1.764e-05
-        * Start value: 1.764e-05
-        * Min value: 1.764e-06
-        * Max value: 0.0001764
+        * Value: 0.0006841
+        * Start value: 0.0006841
+        * Min value: 6.841e-05
+        * Max value: 0.006841
         * Unit: dm/min
 
