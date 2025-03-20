@@ -7,7 +7,6 @@
 #' @format NULL
 PIConfiguration <- R6::R6Class(
   "PIConfiguration",
-  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     # #' @field simulateSteadyState Boolean representing whether the simulation

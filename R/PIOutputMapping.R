@@ -8,7 +8,6 @@
 #' @format NULL
 PIOutputMapping <- R6::R6Class(
   "PIOutputMapping",
-  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     #' @field observedDataSets A named list containing `DataSet` objects for comparison
@@ -121,7 +120,8 @@ PIOutputMapping <- R6::R6Class(
           result <- try(
             {
               data[[idx]]$molWeight <- ospsuite::getMolWeightFor(
-                private$.quantity, unit = "g/mol"
+                private$.quantity,
+                unit = "g/mol"
               )
               tryConvert()
             },
@@ -198,12 +198,14 @@ PIOutputMapping <- R6::R6Class(
     #' @description Prints a summary of the PIOutputMapping.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
-      ospsuite.utils::ospPrintItems(list(
-        "Output path" = private$.quantity$path,
-        "Observed data labels" = names(private$.observedDataSets),
-        "Scaling" = private$.scaling
-      ),
-      print_empty = TRUE)
+      ospsuite.utils::ospPrintItems(
+        list(
+          "Output path" = private$.quantity$path,
+          "Observed data labels" = names(private$.observedDataSets),
+          "Scaling" = private$.scaling
+        ),
+        print_empty = TRUE
+      )
     }
   )
 )

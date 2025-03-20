@@ -6,7 +6,6 @@
 #' @format NULL
 PIParameters <- R6::R6Class(
   "PIParameters",
-  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     #' @field parameters A list of parameter objects.

@@ -6,7 +6,6 @@
 #' @noRd
 Optimizer <- R6::R6Class(
   "Optimizer",
-  inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
     #' @field algorithm Optimization algorithm to be used.
@@ -152,9 +151,12 @@ Optimizer <- R6::R6Class(
       } else if (private$.algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
-        relChange <- try({
-          abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
-        }, silent = TRUE)
+        relChange <- try(
+          {
+            abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
+          },
+          silent = TRUE
+        )
         baseResult$convergence <- if (inherits(relChange, "try-error")) {
           FALSE
         } else {

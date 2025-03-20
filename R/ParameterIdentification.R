@@ -7,7 +7,6 @@
 #' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
-  inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
     #' @field simulations A named list of simulation objects, keyed by the IDs

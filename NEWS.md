@@ -8,6 +8,7 @@
 ## Minor improvements and bug fixes
 
 - Improved print outputs for all classes
+- All classes do not interit from `ospsuite.utils::Printable` any more.
 
 # ospsuite.parameteridentification 2.0.2
 

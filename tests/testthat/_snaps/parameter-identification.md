@@ -1,3 +1,14 @@
+# ParameterIdentification instance prints without errors
+
+    Code
+      print(piTask)
+    Message
+      <ParameterIdentification>
+        * Number of parameters: 1
+      Simulations:
+        *
+        C:/Users/pavel.balazki/AppData/Local/R/win-library/4.4/ospsuite/extdata/Aciclovir.pkml
+
 # ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm
 
     WAoAAAACAAQEAgACAwAAAAAQAAAAAQAEAAkAAAMvZm5ldmFsIDE6IHBhcmFtZXRlcnMgLTAu
