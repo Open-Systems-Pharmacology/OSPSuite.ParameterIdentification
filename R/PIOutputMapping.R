@@ -197,11 +197,13 @@ PIOutputMapping <- R6::R6Class(
 
     #' @description Prints a summary of the PIOutputMapping.
     print = function() {
-      private$printClass()
-      private$printLine("Output path", private$.quantity$path)
-      private$printLine("Observed data labels", names(private$.observedDataSets))
-      private$printLine("Scaling", private$.scaling)
-      invisible(self)
+      ospsuite.utils::ospPrintClass(self)
+      ospsuite.utils::ospPrintItems(list(
+        "Output path" = private$.quantity$path,
+        "Observed data labels" = names(private$.observedDataSets),
+        "Scaling" = private$.scaling
+      ),
+      print_empty = TRUE)
     }
   )
 )

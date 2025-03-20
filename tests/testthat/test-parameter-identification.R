@@ -19,7 +19,7 @@ test_that("ParameterIdentification read-only fields cannot be modified", {
 
 test_that("ParameterIdentification instance prints without errors", {
   piTask <- createPiTask()
-  expect_no_error(print(piTask))
+  expect_snapshot(print(piTask))
 })
 
 test_that("ParameterIdentification errors on missing simulation IDs", {
