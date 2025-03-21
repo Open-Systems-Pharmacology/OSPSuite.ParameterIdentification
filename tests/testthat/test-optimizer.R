@@ -172,3 +172,8 @@ test_that("Optimizer fails when idx is larger than parameter length", {
     "All parameters are fixed! Optimization requires at least one free parameter"
   )
 })
+
+test_that("It can print default optimizer", {
+  optimizer <- Optimizer$new("BOBYQA")
+  expect_snapshot(print(optimizer))
+})

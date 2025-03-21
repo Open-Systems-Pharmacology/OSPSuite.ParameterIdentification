@@ -13,9 +13,9 @@ test_that("PIParameters object is correctly created", {
   expect_equal(piParam$unit, testParam$unit)
 })
 
-test_that("PIOutputMapping instance prints without errors", {
+test_that("It can print PIOutputMapping", {
   piParam <- PIParameters$new(testParam)
-  expect_no_error(print(piParam))
+  expect_snapshot(print(piParam))
 })
 
 test_that("Start, min, and max values are set correctly", {

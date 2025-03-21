@@ -7,7 +7,6 @@
 #' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
-  inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
     #' @field simulations A named list of simulation objects, keyed by the IDs
@@ -834,15 +833,15 @@ ParameterIdentification <- R6::R6Class(
 
     #' @description Prints a summary of ParameterIdentification instance.
     print = function() {
-      private$printClass()
-      private$printLine("Simulations", unlist(lapply(private$.simulations, function(x) {
+      ospsuite.utils::ospPrintClass(self)
+      ospsuite.utils::ospPrintItems(list(
+        "Number of parameters" = length(private$.piParameters)
+      ))
+      ospsuite.utils::ospPrintItems(unlist(lapply(private$.simulations, function(x) {
         x$sourceFile
-      }), use.names = FALSE))
-      private$printLine("Number of parameters", length(private$.piParameters))
+      }), use.names = FALSE), title = "Simulations")
       # private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       # private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
-      private$printLine("Print feedback after each function evaluation", private$.configuration$printEvaluationFeedback)
-      invisible(self)
     }
   )
 )

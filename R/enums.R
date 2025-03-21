@@ -58,7 +58,6 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
-#' @internal
 #' @noRd
 AlgorithmDefaults <- list(
   hjkb = AlgorithmOptions_HJKB,

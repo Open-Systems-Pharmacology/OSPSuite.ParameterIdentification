@@ -6,7 +6,6 @@
 #' @format NULL
 PIParameters <- R6::R6Class(
   "PIParameters",
-  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     #' @field parameters A list of parameter objects.
@@ -128,15 +127,15 @@ PIParameters <- R6::R6Class(
 
     #' @description Prints a summary of the PIParameters.
     print = function() {
-      private$printClass()
-      private$printLine("Number of parameters", length(self$parameters))
-      private$printLine("Value", self$currValue)
-      private$printLine("Start value", self$startValue)
-      private$printLine("Min value", self$minValue)
-      private$printLine("Max value", self$maxValue)
-      private$printLine("Unit", self$unit)
-
-      invisible(self)
+      ospsuite.utils::ospPrintClass(self)
+      ospsuite.utils::ospPrintItems(list(
+        "Number of parameters" = length(self$parameters),
+        "Value" = format(self$currValue, digits = 4),
+        "Start value" = format(self$startValue, digits = 4),
+        "Min value" = format(self$minValue, digits = 4),
+        "Max value" = format(self$maxValue, digits = 4),
+        "Unit" = self$unit
+      ))
     }
   )
 )

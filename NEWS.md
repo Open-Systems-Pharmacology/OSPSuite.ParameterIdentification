@@ -1,5 +1,15 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- ´{ospsuite.parameteridentification}` now requires `{ospsuite.utils}` version \>= 1.7.0.
+- ´{ospsuite.parameteridentification}` now requires `{ospsuite}` version \>= 12.2.0.
+
+## Minor improvements and bug fixes
+
+- Improved print outputs for all classes
+- All classes do not interit from `ospsuite.utils::Printable` any more.
+
 # ospsuite.parameteridentification 2.0.2
 
 
