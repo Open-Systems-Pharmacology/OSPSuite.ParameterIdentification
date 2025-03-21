@@ -40,6 +40,8 @@ reference:
   - residualWeightingOptions
   - robustMethodOptions
   - ScalingOptions
+  - CIMethods
+  - CIOptions
 - title: Internal functions
   contents:
   - calculateCostMetrics
