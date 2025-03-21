@@ -3,8 +3,10 @@
 # Function that allows to replace paths that will differ on the different machines by a fixed value to
 # be used in snapshots
 transformId <- function(x) {
-  isPath <- grepl("ospsuite/extdata/Aciclovir.pkml", x)
-  ifelse(isPath, "<SimPath>", x)
+  # For whatever reason, simulation file path is passed as a character array with first entry being '*'
+  # and the second entry the action simulation file path
+  isPath <- any(grepl("ospsuite/extdata/Aciclovir.pkml", x, fixed = TRUE))
+  ifelse(isPath, "<SimPath>", paste(x, collapse = ''))
 }
 
 test_that("ParameterIdentification is created successfully", {

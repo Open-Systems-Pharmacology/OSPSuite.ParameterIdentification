@@ -6,7 +6,6 @@
       <ParameterIdentification>
         * Number of parameters: 1
       Simulations:
-        *
       <SimPath>
 
 # ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm
