@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.1.9010</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,13 +45,26 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="ospsuiteparameteridentification-development-version">ospsuite.parameteridentification (development version)<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-development-version"></a></h2>
 <div class="section level3">
-<h3 id="major-changes-development-version">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-development-version"></a></h3>
+<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<ul><li>´{ospsuite.parameteridentification}<code>now requires</code>{ospsuite.utils}` version &gt;= 1.7.0.</li>
+<li>´{ospsuite.parameteridentification}<code>now requires</code>{ospsuite}` version &gt;= 12.2.0.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
+<ul><li>Improved print outputs for all classes</li>
+<li>All classes do not interit from <code><a href="https://www.open-systems-pharmacology.org/OSPSuite.RUtils/reference/Printable.html" class="external-link">ospsuite.utils::Printable</a></code> any more.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.0.2" id="ospsuiteparameteridentification-202">ospsuite.parameteridentification 2.0.2<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-202"></a></h2>
+<div class="section level3">
+<h3 id="major-changes-2-0-2">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-2-0-2"></a></h3>
 <ul><li>
 <code>ParameterIdentification$gridSearch()</code> and<code>ParameterIdentification$calculateOFVProfiles()</code> are made available and refactored for robustness, clarity, and efficiency (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/151" class="external-link">#151</a>).</li>
 <li>New <code>Optimizer</code> class for improved stability and extensibility - no changes to user workflow (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/161" class="external-link">#161</a>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="minor-improvements-and-fixes-development-version">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-development-version"></a></h3>
+<h3 id="minor-improvements-and-fixes-2-0-2">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-2-0-2"></a></h3>
 <ul><li>
 <code>ParameterIdentification</code> will validate observed data availability in <code>PIOutputMapping</code> during initialization (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/145" class="external-link">#145</a>).<br></li>
 <li>Cache Simulation ID in <code>PIOutputMapping</code>(<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/146" class="external-link">#146</a>).</li>
