@@ -12,9 +12,6 @@ Executes Parameter Identification
 Executes optimization to find the best parameter values by comparing
 simulation results against observed data.
 }
-\section{Super class}{
-\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{ParameterIdentification}
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

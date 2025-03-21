@@ -7,7 +7,6 @@
 #' @format NULL
 PIConfiguration <- R6::R6Class(
   "PIConfiguration",
-  inherit = ospsuite.utils::Printable,
   cloneable = TRUE,
   active = list(
     # #' @field simulateSteadyState Boolean representing whether the simulation
@@ -135,27 +134,16 @@ PIConfiguration <- R6::R6Class(
 
     #' @description Prints a summary of the PIConfiguration.
     print = function() {
-      private$printClass()
+      ospsuite.utils::ospPrintClass(self)
+      ospsuite.utils::ospPrintItems(list(
+        "Optimization algorithm" = private$.algorithm,
+        "Objective function type" = private$.objectiveFunctionOptions$objectiveFunctionType,
+        "Residual weighting method" = private$.objectiveFunctionOptions$residualWeightingMethod,
+        "Robust residual calculation method" = private$.objectiveFunctionOptions$robustMethod,
+        "Print feedback after each function evaluation" = private$.printEvaluationFeedback
+      ))
       #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
       #      private$printLine("Steady-state time [min]", private$.steadyStateTime)
-      private$printLine(
-        "Print feedback after each function evaluation",
-        private$.printEvaluationFeedback
-      )
-      private$printLine(
-        "Objective function type",
-        private$.objectiveFunctionOptions$objectiveFunctionType
-      )
-      private$printLine(
-        "Residual weighting method",
-        private$.objectiveFunctionOptions$residualWeightingMethod
-      )
-      private$printLine(
-        "Robust residual calculation method",
-        private$.objectiveFunctionOptions$robustMethod
-      )
-      private$printLine("Optimization algorithm", private$.algorithm)
-      invisible(self)
     }
   )
 )

@@ -346,3 +346,8 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
   ciResult$details$bootstrapResults <- NA
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
+
+test_that("It can print default optimizer", {
+  optimizer <- Optimizer$new("BOBYQA")
+  expect_snapshot(print(optimizer))
+})

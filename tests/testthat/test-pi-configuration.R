@@ -5,7 +5,7 @@ test_that("PIConfiguration object is correctly created", {
 
 test_that("PIConfiguration instance prints without errors", {
   piConfiguration <- PIConfiguration$new()
-  expect_no_error(print(piConfiguration))
+  expect_snapshot(print(piConfiguration))
 })
 
 test_that("Initialization sets default values correctly", {

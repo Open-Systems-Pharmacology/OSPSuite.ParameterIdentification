@@ -8,9 +8,6 @@
 Encapsulates configurations such as optimization algorithm choice,
 and evaluation settings for parameter identification.
 }
-\section{Super class}{
-\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIConfiguration}
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

@@ -7,9 +7,6 @@
 \description{
 A parameter to be optimized in a parameter identification routine
 }
-\section{Super class}{
-\code{\link[ospsuite.utils:Printable]{ospsuite.utils::Printable}} -> \code{PIParameters}
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

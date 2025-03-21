@@ -6,7 +6,6 @@
 #' @noRd
 Optimizer <- R6::R6Class(
   "Optimizer",
-  inherit = ospsuite.utils::Printable,
   cloneable = FALSE,
   active = list(
     #' @field algorithm Optimization algorithm to be used.

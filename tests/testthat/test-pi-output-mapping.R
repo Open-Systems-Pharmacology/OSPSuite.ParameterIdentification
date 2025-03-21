@@ -12,7 +12,7 @@ test_that("PIOutputMapping object is correctly created", {
 
 test_that("PIOutputMapping instance prints without errors", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  expect_no_error(print(outputMapping))
+  expect_snapshot(print(outputMapping))
 })
 
 test_that("PIOutputMapping read-only fields cannot be set", {

@@ -1,7 +1,7 @@
 Package: ospsuite.parameteridentification
 Type: Package
 Title: Open Systems Pharmacology Parameter Identification package
-Version: 2.0.2
+Version: 2.0.2.9003
 Authors@R: 
     c(person(given = "Open-Systems-Pharmacology Community",
              role = "cph"),
@@ -29,13 +29,13 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.1),
-    ospsuite (>= 12.1.0.9008)
+    ospsuite (>= 12.2.0)
 Imports:
     ggplot2,
     ggtext,
     tibble,
     purrr,
-    ospsuite.utils,
+    ospsuite.utils (>= 1.7.0),
     R6,
     dfoptim,
     nloptr,
