@@ -5,16 +5,14 @@
 - ´{ospsuite.parameteridentification}` now requires `{ospsuite.utils}` version \>= 1.7.0.
 - ´{ospsuite.parameteridentification}` now requires `{ospsuite}` version \>= 12.2.0.
 
+## Major changes
+
+- Extend `Optimizer` class with confidence interval calculation (not yet integrated, #167). No visible change for the user.
+
 ## Minor improvements and bug fixes
 
 - Improved print outputs for all classes
 - All classes do not interit from `ospsuite.utils::Printable` any more.
-
-# ospsuite.parameteridentification 2.0.2
-
-## Major changes
-
-- Extend `Optimizer` class with confidence interval calculation (not yet integrated, #167).
 
 # ospsuite.parameteridentification 2.0.2
 

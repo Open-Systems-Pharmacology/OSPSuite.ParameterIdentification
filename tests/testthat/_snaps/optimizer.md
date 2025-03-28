@@ -1,25 +1,3 @@
-# It can print default optimizer
-
-    Code
-      print(optimizer)
-    Output
-      <Optimizer>
-        Public:
-          algorithm: active binding
-          initialize: function (algorithm, controlOptim = NULL, modelCostField = NULL) 
-          modelCostField: active binding
-          run: function (par, fn, lower, upper, fixedParams = NULL) 
-        Private:
-          .algorithm: BOBYQA
-          .controlOptim: NULL
-          .formatOptimizationOutput: function (optimResult) 
-          .modelCostField: modelCost
-          .preprocessFn: function (fn, fixedParams) 
-          .runBOBYQA: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
-          .runDEoptim: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
-          .runHJKB: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
-          .updateFixedParams: function (par, fixedParams) 
-
 # Optimizer estimates confidence intervals using Hessian
 
     list(se = c(0.0272454770065792, 0.0736788397613054, 0.33611528505631
@@ -55,4 +33,36 @@
         -0.628340292433886, -0.0644012867104282, 1, -0.134966842176002, 
         -0.628340292433886, -0.134966842176002, 1), dim = c(3L, 3L
         ))))
+
+# It can print default optimizer
+
+    Code
+      print(optimizer)
+    Output
+      <Optimizer>
+        Public:
+          algorithm: active binding
+          ciMethod: active binding
+          estimateCI: function (par, fn, lower, upper, optimizer = NULL) 
+          initialize: function (algorithm, ciMethod = "hessian", controlOptim = NULL, 
+          modelCostField: active binding
+          run: function (par, fn, lower, upper, fixedParams = NULL) 
+        Private:
+          .algorithm: BOBYQA
+          .ciMethod: hessian
+          .computeProfileCI: function (par, fn, optimizer, p, direction, controlCI) 
+          .controlCI: list
+          .controlOptim: NULL
+          .estimateBootstrapCI: function (par, fn, lower, upper, controlCI, optimizer = NULL) 
+          .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer) 
+          .estimateHessianCI: function (par, fn, controlCI) 
+          .formatOptimizationOutput: function (optimResult) 
+          .initializeCIResult: function () 
+          .modelCostField: modelCost
+          .preprocessFn: function (fn, fixedParams) 
+          .runBOBYQA: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
+          .runDEoptim: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
+          .runHJKB: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
+          .updateFixedParams: function (par, fixedParams) 
+          .verbose: TRUE
 
