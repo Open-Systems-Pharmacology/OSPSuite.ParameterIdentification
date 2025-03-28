@@ -8,7 +8,9 @@ Optimizer <- R6::R6Class(
   "Optimizer",
   cloneable = FALSE,
   active = list(
-    #' @field algorithm Optimization algorithm to be used.
+    #' @field algorithm A string specifying the optimization algorithm to use. See
+    #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
+    #' algorithms.
     algorithm = function(value) {
       if (missing(value)) {
         private$.algorithm
@@ -18,7 +20,9 @@ Optimizer <- R6::R6Class(
         private$.algorithm <- value
       }
     },
-    #' @field ciMethod Confidence interval estimation method to be used.
+    #' @field ciMethod Confidence interval estimation method to be used. See
+    #' [`ospsuite.parameteridentification::CIMethods`] for a list of supported
+    #' methods.
     ciMethod = function(value) {
       if (missing(value)) {
         private$.ciMethod
