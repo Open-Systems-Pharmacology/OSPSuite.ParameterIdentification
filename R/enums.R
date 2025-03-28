@@ -65,6 +65,91 @@ AlgorithmDefaults <- list(
   deoptim = AlgorithmOptions_DEoptim
 )
 
+#' Confidence Interval Estimation Methods
+#'
+#' Confidence interval estimation methods supported in the `ParameterIdentification`
+#' class. These methods are configured via the `PIConfiguration` class.
+#'
+#' @export
+#' @name CIMethods
+#' @details Supported methods:
+#' - **`hessian`** - Hessian-based approximation using the Fisher Information Matrix.
+#' - **`PL`** – Profile likelihood estimation, iterating over each parameter.
+#' - **`bootstrap`** – Bootstrap resampling to estimate parameter uncertainty.
+#'
+#' These methods can be specified and configured within the `PIConfiguration`
+#' class to customize confidence interval estimation.
+CIMethods <- ospsuite.utils::enum(c(
+  "hessian",
+  "PL",
+  "bootstrap"
+))
+
+#' Confidence Interval Estimation Options
+#'
+#' Default options for various confidence interval estimation methods used within
+#' the package. These methods are configured via the `PIConfiguration` class.
+#'
+#' @format A list containing default settings for confidence interval estimation
+#' methods.
+#'
+#' @section CIOptions_Hessian:
+#' Default options for the **`hessian`** method.
+#'
+#' - **`epsilon`**: Numerical step size for numerical differentiation. Default
+#' is `NULL`, which applies an adaptive step size.
+#' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
+#' (95% confidence intervals).
+#'
+#' @section CIOptions_PL:
+#' Default options for the **`PL`** (Profile Likelihood) method.
+#'
+#' - **`epsilon`**: Numerical step size for profile likelihood adjustments.
+#' Default is `NULL`, which applies an adaptive step size.
+#' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
+#' (95% confidence intervals).
+#' - **`maxIter`**: Maximum number of iterations for likelihood profiling.
+#' Default is `100`.
+#'
+#' @section CIOptions_Bootstrap:
+#' Default options for the **`bootstrap`** method.
+#'
+#' - **`nSamples`**: Number of bootstrap resampling iterations. Default is `1000`.
+#' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
+#' (95% confidence intervals).
+#' - **`seed`**: Random seed for reproducibility. Default is `NULL`.
+#'
+#' @name CIOptions
+#' @rdname CIOptions
+#' @export
+CIOptions_Hessian <- ospsuite.utils::enum(list(
+  epsilon = NULL,
+  confLevel = 0.95
+))
+
+#' @rdname CIOptions
+#' @export
+CIOptions_PL <- ospsuite.utils::enum(list(
+  epsilon = NULL, # vector or scalar / length not validated
+  confLevel = 0.95,
+  maxIter = 1000
+))
+
+#' @rdname CIOptions
+#' @export
+CIOptions_Bootstrap <- ospsuite.utils::enum(list(
+  nBootstrap = 100,
+  confLevel = 0.95,
+  seed = NULL
+))
+
+#' @noRd
+CIDefaults <- list(
+  hessian = CIOptions_Hessian,
+  PL = CIOptions_PL,
+  bootstrap = CIOptions_Bootstrap
+)
+
 #' Objective Function Options for Model Fit Assessment
 #'
 #' Default settings for objective function options in model fit analysis,
@@ -93,6 +178,12 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   scaleVar = FALSE,
   linScaleCV = 0.2,
   logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
+))
+
+#' @export
+CIOptions <- ospsuite.utils::enum(list(
+  method = "hessian",
+  epsilon = NULL
 ))
 
 #' Objective Function Specifications

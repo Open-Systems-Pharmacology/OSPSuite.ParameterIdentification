@@ -91,6 +91,38 @@ messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
 }
 
-messages$unknownAlgorithmError <- function(algorithm) {
-  paste("Unknown optimization algorithm:", algorithm)
+
+messages$optimizationAlgorithm <- function(algorithm, error = FALSE) {
+  if (error) {
+    paste("Unknown optimization algorithm:", algorithm)
+  } else {
+    paste0("Starting optimization using '", algorithm, "' algorithm.")
+  }
+}
+
+messages$ciMethod <- function(method, error = FALSE) {
+  if (error) {
+    paste("Unknown CI estimation method:", method)
+  } else {
+    paste0("Starting confidence interval estimation using '", method, "' method.")
+  }
+}
+
+messages$ciEstimationError <- function(step, errorMessage) {
+  paste0("Error during CI estimation step '", step, "': ", errorMessage)
+}
+
+messages$statusProfileLikelihood <- function(index, value) {
+  paste0("Profiling CI for parameter ", index, ": ", value)
+}
+
+messages$plMaxiterWarning <- function(index) {
+  paste0(
+    "maxIter reached for parameter ", index,
+    " without meeting cost threshold. Setting CI to Inf."
+  )
+}
+
+messages$statusBootstrap <- function(index, nTotal) {
+  paste0("Running bootstrap replicate ", index, " of ", nTotal, ".")
 }
