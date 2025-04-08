@@ -115,8 +115,19 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
     simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
   }
 
+  # Calculate raw residuals
+  rawResiduals <- simulatedYValApprox - observedYVal
+
+  # Scaling residuals by the number of observations if requested
+  scaleFactor <- if (scaleVar) 1 / length(observedYVal) else 1
+  normalizedResiduals <- rawResiduals * scaleFactor
+
+  # Compute user-defined weights if available
+  userWeights <- observedData$weights
+  userWeights[is.na(userWeights)] <- 1
+
   # Determining the method for residual weighting
-  observedYErr <-
+  errorWeights <-
     switch(residualWeightingMethod,
       "none" = 1,
       "error" = {
@@ -136,14 +147,6 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
       }
     )
 
-  # Scaling residuals by the number of observations if requested
-  scaleFactor <- if (scaleVar) 1 / length(observedYVal) else 1
-
-  # Calculating and organizing residuals
-  rawResiduals <- simulatedYValApprox - observedYVal
-  weightedResiduals <- rawResiduals / observedYErr
-  normalizedResiduals <- weightedResiduals * scaleFactor
-
   # Calculate robust weights based on the specified robust method
   robustWeights <- switch(robustMethod,
     "huber" = .calculateHuberWeights(normalizedResiduals),
@@ -151,39 +154,41 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
     rep(1, length(normalizedResiduals))
   )
 
-  # Apply robust weights to the residuals
-  robustWeightedResiduals <- normalizedResiduals * robustWeights
+  # Weight and organizing residuals
+  totalWeights <- errorWeights * userWeights * robustWeights
+  weightedResiduals <- normalizedResiduals * totalWeights
 
   residualsData <- data.frame(
+    index = NA_real_,
     x = observedXVal,
     yObserved = observedYVal,
     ySimulated = simulatedYValApprox,
-    weight = (1 / observedYErr) * robustWeights,
-    residuals = rawResiduals,
-    weightedResiduals = weightedResiduals,
-    normalizedResiduals = normalizedResiduals,
-    robustWeightedResiduals = robustWeightedResiduals
+    scaleFactor = scaleFactor,
+    errorWeights = round(errorWeights, 2),
+    robustWeights = round(robustWeights, 2),
+    userWeights = userWeights,
+    totalWeights = round(totalWeights, 2),
+    rawResiduals = rawResiduals,
+    weightedResiduals = weightedResiduals
   )
 
   # Compiling cost variables based on residuals
   costVariables <- data.frame(
-    scaleFactor = scaleFactor,
+    # scaleFactor = scaleFactor,
     nObservations = length(rawResiduals),
     M3Contribution = censoredContribution,
-    SSR = sum(rawResiduals^2),
-    weightedSSR = sum(weightedResiduals^2),
-    normalizedSSR = sum(normalizedResiduals^2),
-    robustSSR = sum(robustWeightedResiduals^2)
+    rawSSR = sum(rawResiduals^2),
+    weightedSSR = sum(weightedResiduals^2)
   )
 
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(log(pmax(0, dnorm(
-    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$weight
+    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$totalWeights
   ))))
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
-    modelCost = costVariables$robustSSR + censoredContribution,
+    modelCost = costVariables$weightedSSR + censoredContribution,
     minLogProbability = logProbability,
     costVariables = costVariables,
     residualDetails = residualsData
@@ -437,27 +442,32 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Summarize Cost Lists
 #'
-#' This function takes two lists, each being the output of the `calculateCostMetrics` function,
-#' and summarizes them. It aggregates model costs and min log probabilities, and combines
-#' cost and residual details by row-binding.
+#' This function takes two lists, each being the output of the `calculateCostMetrics`
+#' function, and summarizes them. It aggregates model costs and min log probabilities,
+#' and combines cost and residual details by row-binding.
 #'
-#' @param list1 The first list, containing the output of the `calculateCostMetrics` function,
-#'   which includes `modelCost`, `minLogProbability`, `costDetails`, and `residualDetails`.
-#' @param list2 The second list, containing the output of the `calculateCostMetrics` function,
-#'   which includes `modelCost`, `minLogProbability`, `costDetails`, and `residualDetails`.
+#' @param list1 The first list, containing the output of the `calculateCostMetrics`
+#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
+#' and `residualDetails`.
+#' @param list2 The second list, containing the output of the `calculateCostMetrics`
+#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
+#' and `residualDetails`.
 #'
-#' @return Returns a list that includes the sum of `modelCosts`, the sum of `minLogProbabilities`,
-#'   a row-bound combination of `costDetails`, and a row-bound combination of `residualDetails`.
-#'
+#' @return Returns a list that includes the sum of `modelCosts`, the sum of
+#' `minLogProbabilities`, a row-bound combination of `costVariables`, and a
+#' row-bound combination of `residualDetails`.
 #'
 #' @keywords internal
 .summarizeCostLists <- function(list1, list2) {
-  list1$modelCost <- list1$modelCost + list2$modelCost
-  list1$minLogProbability <- list1$minLogProbability + list2$minLogProbability
-  list1$costDetails <- rbind(list1$costDetails, list2$costDetails)
-  list1$residualDetails <- rbind(list1$residualDetails, list2$residualDetails)
+  mergedList <- list(
+    modelCost = list1$modelCost + list2$modelCost,
+    minLogProbability = list1$minLogProbability + list2$minLogProbability,
+    costVariables = list1$costVariables + list2$costVariables,
+    residualDetails = rbind(list1$residualDetails, list2$residualDetails)
+  )
+  class(mergedList) <- class(list1)
 
-  return(list1)
+  return(mergedList)
 }
 
 #' Calculate Huber Weights for Residuals
