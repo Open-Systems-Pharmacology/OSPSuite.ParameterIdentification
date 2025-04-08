@@ -29,6 +29,15 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field dataWeights A named list of y-value weights.
+    dataWeights = function(value) {
+      if (missing(value)) {
+        private$.dataWeights
+      } else {
+        stop(messages$errorPropertyReadOnly("dataWeights", optionalMessage = "Use $setDataWeights() to change the value."))
+      }
+    },
+
     #' @field quantity Simulation quantities to be aligned with observed data values.
     quantity = function(value) {
       if (missing(value)) {
@@ -79,6 +88,7 @@ PIOutputMapping <- R6::R6Class(
     .observedDataSets = NULL,
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
+    .dataWeights = NULL,
     .scaling = NULL
   ),
   public = list(
@@ -102,6 +112,10 @@ PIOutputMapping <- R6::R6Class(
     addObservedDataSets = function(data) {
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
+
+      if (!is.null(private$.dataWeights)) {
+        warning(messages$warningDataWeightsPresent())
+      }
 
       for (idx in seq_along(data)) {
         # Verify if the data's dimension can match the quantity's dimension
@@ -195,6 +209,51 @@ PIOutputMapping <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Assigns weights to observed data sets for residual weighting
+    #' during parameter identification.
+    #'
+    #' @param weights A named list of numeric values or numeric vectors. The names
+    #' must match the labels of the observed datasets.
+    #'
+    #' Each element in the list can be:
+    #' - a scalar, which will be broadcast to all y-values of the corresponding
+    #' dataset,
+    #' - or a numeric vector matching the number of y-values for that dataset.
+    #'
+    #' To apply both dataset-level and point-level weights, multiply them beforehand
+    #' and provide the combined result as a single numeric vector per dataset.
+    setDataWeights = function(weights) {
+      # Return early if no datasets are present
+      if (length(private$.observedDataSets) == 0) {
+        stop(messages$errorNoObservedDataSets())
+      }
+
+      ospsuite.utils::validateIsOfType(weights, "list")
+      lapply(weights, ospsuite.utils::validateIsNumeric, FALSE)
+
+      labels <- names(weights)
+      if (is.null(labels) || any(!labels %in% names(private$.observedDataSets))) {
+        stop(messages$errorWeightsNames())
+      }
+
+      for (label in labels) {
+        yLength <- length(private$.observedDataSets[[label]]$yValues)
+        weightsVec <- weights[[label]]
+
+        if (length(weightsVec) == 1) {
+          weightsVec <- rep(weightsVec, yLength)
+        }
+
+        if (length(weightsVec) != yLength) {
+          stop(messages$errorWeightsLengthMismatch(label, yLength, length(weightsVec)))
+        }
+
+        private$.dataWeights[[label]] <- weightsVec
+      }
+
+      invisible(self)
+    },
+
     #' @description Prints a summary of the PIOutputMapping.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
@@ -202,6 +261,7 @@ PIOutputMapping <- R6::R6Class(
         list(
           "Output path" = private$.quantity$path,
           "Observed data labels" = names(private$.observedDataSets),
+          "Data weight labels" = names(private$.dataWeights),
           "Scaling" = private$.scaling
         ),
         print_empty = TRUE

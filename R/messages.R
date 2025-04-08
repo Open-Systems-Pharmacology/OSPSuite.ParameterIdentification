@@ -4,6 +4,25 @@ messages$errorDimensionsNotEqual <- function() {
   "All quantities must have the same dimension, but they do not!"
 }
 
+messages$errorNoObservedDataSets <- function() {
+  "Cannot assign weights: no observed data sets defined."
+}
+
+messages$errorWeightsNames <- function() {
+  "All weights must be a named list with names matching observed data set names."
+}
+
+messages$errorWeightsLengthMismatch <- function(label, expected, actual) {
+  sprintf(
+    "Weights for '%s' must have length %d matching y-values, but got %d.",
+    label, expected, actual
+  )
+}
+
+messages$warningDataWeightsPresent <- function() {
+  "Data weights have already been set. Check if they are still valid after adding new datasets."
+}
+
 messages$errorNotAFunction <- function() {
   "The assigned value must be a function with arguments 'xVals' and 'yVals'!"
 }
