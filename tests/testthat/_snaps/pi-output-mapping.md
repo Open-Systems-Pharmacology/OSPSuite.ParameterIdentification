@@ -7,5 +7,6 @@
         * Output path: Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral
         Venous Blood)
         * Observed data labels: NULL
+        * Data weight labels: NULL
         * Scaling: lin
 
