@@ -6,7 +6,7 @@ transformId <- function(x) {
   # For whatever reason, simulation file path is passed as a character array with first entry being '*'
   # and the second entry the action simulation file path
   isPath <- any(grepl("ospsuite/extdata/Aciclovir.pkml", x, fixed = TRUE))
-  ifelse(isPath, "<SimPath>", paste(x, collapse = ''))
+  ifelse(isPath, "<SimPath>", paste(x, collapse = ""))
 }
 
 test_that("ParameterIdentification is created successfully", {
@@ -217,6 +217,60 @@ test_that("ParameterIdentification$run() runs successfully using DEoptim algorit
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
   expect_no_error(piTask$run())
+})
+
+# User weights
+yLen1 <- length(testObservedDataMultiple()[[1]]$yValues)
+yLen2 <- length(testObservedDataMultiple()[[2]]$yValues)
+
+test_that("ParameterIdentification works with one dataset and one scalar weight", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedDataMultiple()[[1]])
+  outputMapping$setDataWeights(list(dataSet1 = 2))
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = lowIterPiConfiguration()
+  )
+
+  result <- piTask$run()
+  expect_equal(result$value, 3112.516, tolerance = 3)
+})
+
+test_that("ParameterIdentification works with two datasets and one weight", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedDataMultiple())
+  outputMapping$setDataWeights(list(dataSet2 = rep(2, yLen2)))
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = lowIterPiConfiguration()
+  )
+
+  result <- piTask$run()
+  expect_equal(result$value, 163.346, tolerance = 3)
+})
+
+test_that("ParameterIdentification works with multiple datasets and individual weights", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedDataMultiple())
+  outputMapping$setDataWeights(
+    list(dataSet1 = rep(2, yLen1), dataSet2 = rep(1.5, yLen2))
+  )
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = lowIterPiConfiguration()
+  )
+
+  result <- piTask$run()
+  expect_equal(result$value, 227.5477, tolerance = 3)
 })
 
 # gridSearch
