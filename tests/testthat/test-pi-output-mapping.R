@@ -27,18 +27,12 @@ test_that("PIOutputMapping read-only fields cannot be set", {
 test_that("PIOutputMapping adds and removes observed data sets correctly", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   observedData <- testObservedData()
+  label <- observedData[[1]]$name
 
-  expect_no_error(
-    outputMapping$addObservedDataSets(
-      observedData$`AciclovirLaskinData.Laskin 1982.Group A`
-    )
-  )
-  expect_equal(
-    outputMapping$observedDataSets[["AciclovirLaskinData.Laskin 1982.Group A"]],
-    observedData$`AciclovirLaskinData.Laskin 1982.Group A`
-  )
+  expect_no_error(outputMapping$addObservedDataSets(observedData[[1]]))
+  expect_equal(outputMapping$observedDataSets[[label]], observedData[[1]])
 
-  expect_no_error(outputMapping$removeObservedDataSet(names(observedData)))
+  expect_no_error(outputMapping$removeObservedDataSet(label))
   expect_equal(length(outputMapping$observedDataSets), 0)
 })
 
