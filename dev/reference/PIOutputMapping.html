@@ -11,7 +11,7 @@ and compare simulation outputs with empirical data."><meta name="robots" content
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9005</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9006</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,6 +65,10 @@ with simulation outcomes.</p></dd>
 <dd><p>A named list of factors and offsets.</p></dd>
 
 
+<dt><code>dataWeights</code></dt>
+<dd><p>A named list of y-value weights.</p></dd>
+
+
 <dt><code>quantity</code></dt>
 <dd><p>Simulation quantities to be aligned with observed data values.</p></dd>
 
@@ -96,6 +100,7 @@ numeric vectors 'xVals' and 'yVals', and returns a named list with keys
 <li><p><a href="#method-PIOutputMapping-addObservedDataSets"><code>PIOutputMapping$addObservedDataSets()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-removeObservedDataSet"><code>PIOutputMapping$removeObservedDataSet()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataTransformations"><code>PIOutputMapping$setDataTransformations()</code></a></p></li>
+<li><p><a href="#method-PIOutputMapping-setDataWeights"><code>PIOutputMapping$setDataWeights()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-print"><code>PIOutputMapping$print()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-clone"><code>PIOutputMapping$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-PIOutputMapping-new"></a><div class="section">
@@ -197,10 +202,33 @@ Absence of labels applies transformations globally.</p></dd>
 </dl><p></p></div>
 </div>
 
+</div><p></p><hr><a id="method-PIOutputMapping-setDataWeights"></a><div class="section">
+<h3 id="method-setdataweights-">Method <code>setDataWeights()</code><a class="anchor" aria-label="anchor" href="#method-setdataweights-"></a></h3>
+<p>Assigns weights to observed data sets for residual weighting
+during parameter identification.</p><div class="section">
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">setDataWeights</span><span class="op">(</span><span class="va">weights</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>weights</code></dt>
+<dd><p>A named list of numeric values or numeric vectors. The names
+must match the labels of the observed datasets.</p>
+<p>Each element in the list can be:</p><ul><li><p>a scalar, which will be broadcast to all y-values of the corresponding
+dataset,</p></li>
+<li><p>or a numeric vector matching the number of y-values for that dataset.</p></li>
+</ul><p>To apply both dataset-level and point-level weights, multiply them beforehand
+and provide the combined result as a single numeric vector per dataset.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
 </div><p></p><hr><a id="method-PIOutputMapping-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Prints a summary of the PIOutputMapping.</p><div class="section">
-<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -208,12 +236,12 @@ Absence of labels applies transformations globally.</p></dd>
 </div><p></p><hr><a id="method-PIOutputMapping-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
