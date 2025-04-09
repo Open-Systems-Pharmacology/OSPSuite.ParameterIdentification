@@ -108,13 +108,20 @@ PIOutputMapping <- R6::R6Class(
     #' @details Replaces any existing data set with the same label.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #' quantity dimensions.
+    #' @param weights A named list of numeric values or numeric vectors. The names
+    #' must match the names of the observed datasets.
+    #'
     #' @export
-    addObservedDataSets = function(data) {
+    addObservedDataSets = function(data, weights = NULL) {
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
 
       if (!is.null(private$.dataWeights)) {
-        warning(messages$warningDataWeightsPresent())
+        existingLabels <- names(private$.dataWeights)
+        newLabels <- sapply(data, `[[`, "name")
+        if (any(!newLabels %in% existingLabels)) {
+          warning(messages$warningDataWeightsPresent())
+        }
       }
 
       for (idx in seq_along(data)) {
@@ -151,6 +158,13 @@ PIOutputMapping <- R6::R6Class(
 
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
+
+      # Handle optional weights
+      if (!is.null(weights)) {
+        self$setDataWeights(weights)
+      }
+
+      return(invisible(self))
     },
 
     #' @description Removes specified observed data series.
@@ -213,7 +227,7 @@ PIOutputMapping <- R6::R6Class(
     #' during parameter identification.
     #'
     #' @param weights A named list of numeric values or numeric vectors. The names
-    #' must match the labels of the observed datasets.
+    #' must match the names of the observed datasets.
     #'
     #' Each element in the list can be:
     #' - a scalar, which will be broadcast to all y-values of the corresponding

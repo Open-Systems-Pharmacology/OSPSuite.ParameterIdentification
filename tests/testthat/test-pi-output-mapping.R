@@ -240,6 +240,18 @@ test_that("PIOutputMapping warns if data weights exist and new datasets are adde
   )
 })
 
+test_that("PIOutputMapping can set weight vectors correctly through `addObservedDataSets`", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  label <- testObservedData()[[1]]$name
+  weights <- list(c(rep(2, 5), rep(1.5, 6)))
+  names(weights) <- label
+
+  expect_no_error(
+    outputMapping$addObservedDataSets(testObservedData(), weights = weights)
+  )
+  expect_equal(outputMapping$dataWeights[[label]], weights[[1]])
+})
+
 test_that("PIOutputMapping adds data without molecular weight and retrieves it", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   observedData <- testObservedData()
