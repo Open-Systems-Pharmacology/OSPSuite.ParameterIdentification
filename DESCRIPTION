@@ -31,16 +31,16 @@ Depends:
     R (>= 4.1),
     ospsuite (>= 12.2.0)
 Imports:
+    DEoptim,
+    dfoptim,
     ggplot2,
     ggtext,
-    tibble,
-    purrr,
-    ospsuite.utils (>= 1.7.0),
-    R6,
-    dfoptim,
     nloptr,
-    DEoptim,
-    numDeriv
+    numDeriv,
+    ospsuite.utils (>= 1.7.0),
+    purrr,
+    R6,
+    tibble
 Suggests:
     devtools,
     knitr,

@@ -35,6 +35,27 @@ getTestObservedData <- function() {
 
 testObservedData <- getTestObservedData()
 
+getTestObservedDataMultiple <- function() {
+  .observedDataMultiple <- NULL
+  function() {
+    if (is.null(.observedDataMultiple)) {
+      dataSet1 <- testObservedData()[[1]]
+      dataSet1$name <- "dataSet1"
+
+      dataSet2 <- DataSet$new(name = "dataSet2")
+      dataSet2$setValues(
+        xValues = dataSet1$xValues[-length(dataSet1$xValues)],
+        yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)]
+      )
+
+      .observedDataMultiple <- list(dataSet1 = dataSet1, dataSet2 = dataSet2)
+    }
+    return(.observedDataMultiple)
+  }
+}
+
+testObservedDataMultiple <- getTestObservedDataMultiple()
+
 # Parameters function factory
 getTestParameters <- function() {
   .parameters <- NULL
@@ -88,6 +109,22 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
 
 testOutputMapping <- getTestOutputMapping()
 testOutputMappingWithoutObsData <- getTestOutputMapping(includeObservedData = FALSE)
+
+# Low iteration PIConfiguration for BOBYQA
+getLowIterPiConfiguration <- function(iter = 2) {
+  .configuration <- NULL
+  function() {
+    if (is.null(.configuration)) {
+      options <- AlgorithmOptions_BOBYQA
+      options$maxeval <- iter
+      .configuration <- PIConfiguration$new()
+      .configuration$algorithmOptions <- options
+    }
+    return(.configuration)
+  }
+}
+
+lowIterPiConfiguration <- getLowIterPiConfiguration()
 
 # Function to create a ParameterIdentification task
 createPiTask <- function() {

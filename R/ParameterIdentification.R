@@ -220,7 +220,7 @@ ParameterIdentification <- R6::R6Class(
       # Increment function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
-      # Evaluate simulation and handle errors
+      # Run simulation and catch errors
       obsVsPredList <- tryCatch(
         private$.evaluate(currVals),
         error = function(cond) {
@@ -229,7 +229,7 @@ ParameterIdentification <- R6::R6Class(
         }
       )
 
-      # Check for simulation failure
+      # Handle simulation failure
       if (anyNA(obsVsPredList)) {
         if (private$.fnEvaluations == 1 && !private$.gridSearchFlag) {
           stop(messages$initialSimulationError())
@@ -239,15 +239,14 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
-      # Calculate error for each output mapping separately
+      # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(private$.outputMappings))
       for (idx in seq_along(private$.outputMappings)) {
-        # Calling unit converter to unify the units within the DataCombined
+        # Convert units to base units for unified comparison
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
-        # For least squares objective function, values below LLOQ will be set to
-        # LLOQ/2 for simulation data and therefore always equal to the observed values
+        # Apply LLOQ handling for LSQ
         if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
-          # replacing values below LLOQ with LLOQ / 2
+          # replace values < LLOQ with LLOQ/2 in simulated data
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
             obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
@@ -255,18 +254,29 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Transform to log if required.
+        # Apply log transformation if requested
         if (private$.outputMappings[[idx]]$scaling == "log") {
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
-        # Calculate model costs
+        # Assign weights from PIOutputMapping
+        obsVsPredDf$weights <- NA_real_
+        if (!is.null(private$.outputMappings[[idx]]$dataWeights)) {
+          weights <- private$.outputMappings[[idx]]$dataWeights
+          for (dataset in names(weights)) {
+            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[dataset]]
+          }
+        }
+
+        # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
         costControl$scaling <- private$.outputMappings[[idx]]$scaling
         ospsuite.utils::validateIsOption(
           options = costControl,
           validOptions = ObjectiveFunctionSpecs
         )
+
+        # Compute cost for current output mapping
         costSummary <- calculateCostMetrics(
           df = obsVsPredDf,
           objectiveFunctionType = costControl$objectiveFunctionType,
@@ -280,16 +290,18 @@ ParameterIdentification <- R6::R6Class(
 
         costSummaryList[[idx]] <- costSummary
       }
-      # Summed up over all output mappings
+
+      # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
 
-      # Print current error if requested
+      #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
         cat(paste0(
           "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
           ", objective function ", signif(runningCost$modelCost, 4), "\n"
         ))
       }
+
       return(runningCost)
     },
 

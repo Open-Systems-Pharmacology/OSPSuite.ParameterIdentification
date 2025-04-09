@@ -17,6 +17,8 @@ with simulation outcomes.}
 
 \item{\code{dataTransformations}}{A named list of factors and offsets.}
 
+\item{\code{dataWeights}}{A named list of y-value weights.}
+
 \item{\code{quantity}}{Simulation quantities to be aligned with observed data values.}
 
 \item{\code{simId}}{Identifier of the simulation associated with the mapped quantity.}
@@ -37,6 +39,7 @@ numeric vectors 'xVals' and 'yVals', and returns a named list with keys
 \item \href{#method-PIOutputMapping-addObservedDataSets}{\code{PIOutputMapping$addObservedDataSets()}}
 \item \href{#method-PIOutputMapping-removeObservedDataSet}{\code{PIOutputMapping$removeObservedDataSet()}}
 \item \href{#method-PIOutputMapping-setDataTransformations}{\code{PIOutputMapping$setDataTransformations()}}
+\item \href{#method-PIOutputMapping-setDataWeights}{\code{PIOutputMapping$setDataWeights()}}
 \item \href{#method-PIOutputMapping-print}{\code{PIOutputMapping$print()}}
 \item \href{#method-PIOutputMapping-clone}{\code{PIOutputMapping$clone()}}
 }
@@ -128,6 +131,35 @@ Absence of labels applies transformations globally.}
 \item{\code{xFactors}}{Numeric list/value for X-scaling factors.}
 
 \item{\code{yFactors}}{Numeric list/value for Y-scaling factors.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PIOutputMapping-setDataWeights"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataWeights}{}}}
+\subsection{Method \code{setDataWeights()}}{
+Assigns weights to observed data sets for residual weighting
+during parameter identification.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setDataWeights(weights)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{weights}}{A named list of numeric values or numeric vectors. The names
+must match the labels of the observed datasets.
+
+Each element in the list can be:
+\itemize{
+\item a scalar, which will be broadcast to all y-values of the corresponding
+dataset,
+\item or a numeric vector matching the number of y-values for that dataset.
+}
+
+To apply both dataset-level and point-level weights, multiply them beforehand
+and provide the combined result as a single numeric vector per dataset.}
 }
 \if{html}{\out{</div>}}
 }

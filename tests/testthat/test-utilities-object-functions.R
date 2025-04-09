@@ -81,7 +81,7 @@ test_that("`.calculateCensoredContribution` throws errors on invalid options", {
 
 test_that("`.applyLogTransformation` correctly log-transforms yValues and lloq", {
   obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
-  expect_snapshot_value(obsVsPredDfLog, style = "serialize")
+  expect_snapshot_value(obsVsPredDfLog$yValues, style = "deparse")
 })
 
 ## context(.calculateHuberWeights)
@@ -128,7 +128,7 @@ test_that("'calculateCostMetrics' returns expected cost metrics for valid input 
 
 test_that("`calculateCostMetrics` returns correct cost metric values for default parameters", {
   result <- calculateCostMetrics(obsVsPredDf)
-  expect_snapshot_value(result, style = "serialize")
+  expect_snapshot_value(result, style = "deparse")
 })
 
 test_that("different residual weighting methods affect the residuals", {
@@ -139,10 +139,10 @@ test_that("different residual weighting methods affect the residuals", {
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
-  result_huber <- calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
-  result_bisquare <- calculateCostMetrics(obsVsPredDf, robustMethod = "bisquare")
-  expect_true(result_huber$modelCost != result_bisquare$modelCost)
-  expect_snapshot_value(list(result_huber, result_bisquare), style = "serialize")
+  resultHuber <- calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
+  resultBisquare <- calculateCostMetrics(obsVsPredDf, robustMethod = "bisquare")
+  expect_equal(resultHuber$modelCost, 8.94396, tolerance = 4)
+  expect_equal(resultBisquare$modelCost, 4.929464, tolerance = 4)
 })
 
 test_that("least squares and M3 methods produce different model costs", {

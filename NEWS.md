@@ -4,6 +4,7 @@
 
 - ´{ospsuite.parameteridentification}` now requires `{ospsuite.utils}` version \>= 1.7.0.
 - ´{ospsuite.parameteridentification}` now requires `{ospsuite}` version \>= 12.2.0.
+- `PIOutputMapping$setDataWeights` allows setting of data set and data point weights for observed data for weighted residuals calculation (\#178).
 
 ## Major changes
 
