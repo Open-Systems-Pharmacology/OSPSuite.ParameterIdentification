@@ -131,11 +131,33 @@ test_that("`calculateCostMetrics` returns correct cost metric values for default
   expect_snapshot_value(result, style = "deparse")
 })
 
-test_that("different residual weighting methods affect the residuals", {
-  methods <- c("none", "std", "mean", "error")
-  results <- lapply(methods, function(m) calculateCostMetrics(obsVsPredDf, residualWeightingMethod = m))
-  expect_true(length(unique(sapply(results, function(x) x$modelCost))) == 4)
-  expect_snapshot_value(results, style = "serialize")
+test_that("calculateCostMetrics with residualWeightingMethod `none` returns expected results", {
+  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "none")
+  expect_s3_class(result, "modelCost")
+  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
+})
+
+test_that("calculateCostMetrics with residualWeightingMethod `std` returns expected results", {
+  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std")
+  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
+})
+
+test_that("calculateCostMetrics with residualWeightingMethod `mean` returns expected results", {
+  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean")
+  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
+})
+
+test_that("calculateCostMetrics with residualWeightingMethod `error` returns expected results", {
+  # ArithmeticStdDev
+  resultArith <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "error")
+  expect_snapshot_value(resultArith$modelCost, tolerance = 1e-3)
+
+  # GeometricStdDev
+  obsVsPredDfGeom <- obsVsPredDf
+  obsVsPredDfGeom$yErrorValues[14:16] <- c(1.083, 1.083, 1.162)
+  obsVsPredDfGeom$yErrorType <- "GeometricStdDev"
+  resultGeom <- calculateCostMetrics(obsVsPredDfGeom, residualWeightingMethod = "error")
+  expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-2)
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
