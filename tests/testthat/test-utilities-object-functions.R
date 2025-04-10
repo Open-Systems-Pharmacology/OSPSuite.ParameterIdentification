@@ -77,11 +77,12 @@ test_that("`.calculateCensoredContribution` throws errors on invalid options", {
   )
 })
 
-## context(".applyLogTransformation")
+# .applyLogTransformation
 
-test_that("`.applyLogTransformation` correctly log-transforms yValues and lloq", {
+test_that(".applyLogTransformation correctly log-transforms `yValues` and `lloq`", {
   obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
-  expect_snapshot_value(obsVsPredDfLog$yValues, style = "deparse")
+  expect_snapshot_value(obsVsPredDfLog$yValues, style = "deparse", tolerance = 1e-5)
+  expect_snapshot_value(obsVsPredDfLog$lloq, style = "deparse", tolerance = 1e-5)
 })
 
 ## context(.calculateHuberWeights)

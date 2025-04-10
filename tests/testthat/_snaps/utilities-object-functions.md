@@ -1,4 +1,4 @@
-# `.applyLogTransformation` correctly log-transforms yValues and lloq
+# .applyLogTransformation correctly log-transforms `yValues` and `lloq`
 
     c(-46.0517018598809, 3.57700696819377, 2.93470564516249, 2.62663228242601, 
     2.47546422676115, 2.34644014139247, 2.2462037226952, 1.96514419807483, 
@@ -7,7 +7,13 @@
     2.26671106685522, 2.15067524343028, 1.75905454027926, 1.17887578765776, 
     0.656714883039828, -0.315084902499181, -2.14264858908876)
 
-# `calculateCostMetrics` returns correct cost metric values for default parameters
+---
+
+    c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 
+    NA, NA, NA, NA, NA, -0.693147180559945, -0.693147180559945, -0.693147180559945
+    )
+
+# calculateCostMetrics returns correct cost metric values for default parameters
 
     structure(list(modelCost = 677.390283322667, minLogProbability = 348.803465526585, 
         costVariables = structure(list(nObservations = 11L, M3Contribution = 0, 
