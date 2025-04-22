@@ -74,7 +74,6 @@ ParameterIdentification <- R6::R6Class(
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
 
-
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -288,6 +287,7 @@ ParameterIdentification <- R6::R6Class(
           scaling = costControl$scaling
         )
 
+        costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
       }
 
@@ -520,7 +520,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
-      # Reset gridSearhcFlag
+      # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
 
       # Run optimization algorithm
