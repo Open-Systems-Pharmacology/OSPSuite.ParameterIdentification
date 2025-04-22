@@ -204,7 +204,8 @@ test_that("Optimizer fails when idx and values length mismatch", {
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
         fixedParams = fixedPar
       ),
-      messages$fixedParamError(error = "length")
+      messages$fixedParamError(error = "length"),
+      fixed = TRUE
     )
   )
 })
