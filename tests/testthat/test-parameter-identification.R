@@ -176,12 +176,8 @@ test_that("ParameterIdentification$run() errors on invalid objective function op
 test_that("ParameterIdentification$run() runs successfully using default BOBYQA algorithm", {
   piTask <- createPiTask()
   expect_no_error(piResults <- piTask$run())
-  resultFields <- c("par", "value", "nrOfFnEvaluations", "hessian", "sigma", "lwr", "upr", "cv")
-  resultValues <- piResults[names(piResults) %in% resultFields]
-  resultValues <- unlist(resultValues)
-  referenceValues <- c(1.3189, 156.2574, 22, 730.5977, 0.0523, 1.2163, 1.4214, 3.9671)
-  names(referenceValues) <- resultFields
-  expect_equal(!!resultValues, referenceValues, tolerance = 1e-03)
+  piResults$elapsed <- 0
+  expect_snapshot_value(piResults, style = "deparse", tolerance = 1e-03)
 })
 
 test_that("ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm", {

@@ -8,24 +8,20 @@
       Simulations:
       <SimPath>
 
+# ParameterIdentification$run() runs successfully using default BOBYQA algorithm
+
+    list(par = 1.31885961110325, value = 156.257356828486, convergence = TRUE, 
+        iterations = 20L, fnEvaluations = 20L, algorithm = "BOBYQA", 
+        elapsed = 0)
+
 # ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm
 
-    WAoAAAACAAQEAgACAwAAAAAQAAAAAQAEAAkAAAMvZm5ldmFsIDE6IHBhcmFtZXRlcnMgLTAu
+    WAoAAAACAAQFAAACAwAAAAAQAAAAAQAEAAkAAAEHZm5ldmFsIDE6IHBhcmFtZXRlcnMgLTAu
     MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDI6IHBhcmFtZXRlcnMgLTAu
     MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDM6IHBhcmFtZXRlcnMgLTAu
     MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDQ6IHBhcmFtZXRlcnMgNC45
     LCBvYmplY3RpdmUgZnVuY3Rpb24gODY5LjQKZm5ldmFsIDU6IHBhcmFtZXRlcnMgLTUuMSwg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDU2NTIKZm5ldmFsIDY6IHBhcmFtZXRlcnMgLTAuMDk3LCBv
-    YmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDc6IHBhcmFtZXRlcnMgLTAuMDk3LCBv
-    YmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDg6IHBhcmFtZXRlcnMgLTAuMDg3Mywg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDc2Ni4zCmZuZXZhbCA5OiBwYXJhbWV0ZXJzIC0wLjEwNywg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDc5MC4xCmZuZXZhbCAxMDogcGFyYW1ldGVycyAtMC4wOTIy
-    LCBvYmplY3RpdmUgZnVuY3Rpb24gNzcyLjIKZm5ldmFsIDExOiBwYXJhbWV0ZXJzIC0wLjEw
-    Miwgb2JqZWN0aXZlIGZ1bmN0aW9uIDc4NC4xCmZuZXZhbCAxMjogcGFyYW1ldGVycyAtMC4w
-    OTQ2LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc1LjIKZm5ldmFsIDEzOiBwYXJhbWV0ZXJzIC0w
-    LjA5OTQsIG9iamVjdGl2ZSBmdW5jdGlvbiA3ODEuMQpmbmV2YWwgMTQ6IHBhcmFtZXRlcnMg
-    LTAuMDk1OCwgb2JqZWN0aXZlIGZ1bmN0aW9uIDc3Ni42CmZuZXZhbCAxNTogcGFyYW1ldGVy
-    cyAtMC4wOTgyLCBvYmplY3RpdmUgZnVuY3Rpb24gNzc5LjY=
+    b2JqZWN0aXZlIGZ1bmN0aW9uIDU2NTI=
 
 # ParameterIdentification$gridSearch() works with multiple parameters and default settings
 
