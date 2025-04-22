@@ -60,9 +60,9 @@ AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
 
 #' @noRd
 AlgorithmDefaults <- list(
-  hjkb = AlgorithmOptions_HJKB,
-  bobyqa = AlgorithmOptions_BOBYQA,
-  deoptim = AlgorithmOptions_DEoptim
+  HJKB = AlgorithmOptions_HJKB,
+  BOBYQA = AlgorithmOptions_BOBYQA,
+  DEoptim = AlgorithmOptions_DEoptim
 )
 
 #' Confidence Interval Estimation Methods
