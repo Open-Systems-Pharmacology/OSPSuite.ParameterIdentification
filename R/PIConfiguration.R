@@ -129,6 +129,17 @@ PIConfiguration <- R6::R6Class(
         ospsuite.utils::validateIsLogical(value)
         private$.estimateCI <- value
       }
+    },
+
+    #' @field modelCostField Field name in cost object used as the optimization
+    #' target. Defaults to `modelCost`.
+    modelCostField = function(value) {
+      if (missing(value)) {
+        private$.modelCostField
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        private$.modelCostField <- value
+      }
     }
   ),
   private = list(
@@ -139,6 +150,7 @@ PIConfiguration <- R6::R6Class(
     .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL,
+    .modelCostField = NULL,
     .ciMethod = NULL,
     .ciOptions = NULL,
     .estimateCI = NULL
@@ -153,6 +165,7 @@ PIConfiguration <- R6::R6Class(
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
       private$.algorithm <- "BOBYQA"
       private$.ciMethod <- "hessian"
+      private$.modelCostField <- "modelCost"
       private$.estimateCI <- FALSE
     },
 
