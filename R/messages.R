@@ -102,7 +102,7 @@ messages$fixedParamError <- function(error) {
   if (error == "fixed") {
     "All parameters are fixed! Optimization requires at least one free parameter."
   } else if (error == "length") {
-    "`fixedParams$idx` and `fixedParams$values` must have the same length."
+    "`fixedParams\\$idx` and `fixedParams\\$values` must have the same length."
   }
 }
 
