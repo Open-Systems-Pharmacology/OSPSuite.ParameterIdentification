@@ -4,10 +4,6 @@
 \name{ParameterIdentification}
 \alias{ParameterIdentification}
 \title{ParameterIdentification}
-\value{
-A new \code{ParameterIdentification} object.
-Executes Parameter Identification
-}
 \description{
 Executes optimization to find the best parameter values by comparing
 simulation results against observed data.
@@ -73,6 +69,10 @@ Uses default if omitted. For details on creating a \code{PIConfiguration} object
 see \code{\link{PIConfiguration}}.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{ParameterIdentification} object.
+Executes Parameter Identification
 }
 }
 \if{html}{\out{<hr>}}

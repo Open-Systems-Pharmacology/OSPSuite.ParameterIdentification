@@ -56,11 +56,9 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field objectiveFunctionOptions Configures model fit evaluation settings,
-    #' influencing error and fit metrics. For option details and impact on cost metrics,
-    #' see [`ospsuite.parameteridentification::ObjectiveFunctionSpecs`] and
-    #' [`ospsuite.parameteridentification::calculateCostMetrics`]. Defaults found in
-    #' [`ospsuite.parameteridentification::ObjectiveFunctionOptions`].
+    #' @field objectiveFunctionOptions Settings for model fit evaluation,
+    #' affecting error metrics and cost calculation. See [`ObjectiveFunctionSpecs`]
+    #' and [`calculateCostMetrics`] for details. Defaults in [`ObjectiveFunctionOptions`].
     objectiveFunctionOptions = function(value) {
       if (missing(value)) {
         private$.objectiveFunctionOptions
@@ -69,7 +67,7 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithm A string specifying the optimization algorithm to use. See
+    #' @field algorithm Optimization algorithm name. See
     #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
     #' algorithms. Defaults to `BOBYQA`.
     algorithm = function(value) {

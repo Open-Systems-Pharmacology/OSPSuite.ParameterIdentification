@@ -7,12 +7,10 @@
 #' @export
 #' @name Algorithms
 #' @details Supported algorithms include:
-#' \describe{
-#'   \item{\code{"HJKB"}}{Hooke-Jeeves algorithm from the \pkg{dfoptim} package.}
-#'   \item{\code{"BOBYQA"}}{BOBYQA algorithm from the \pkg{nloptr} package.}
-#'   \item{\code{"DEoptim"}}{Differential evolution algorithm from the \pkg{DEoptim}
-#'   package, suitable for stochastic global optimization.}
-#' }
+#' - **`HJKB`** – Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
+#' - **`BOBYQA`** – BOBYQA algorithm from the \pkg{nloptr} package.
+#' - **`DEoptim`** – Differential evolution algorithm from the \pkg{DEoptim}
+#' package, suitable for stochastic global optimization.
 #'
 #' These algorithms can be specified and configured within the `PIConfiguration`
 #' class to tailor the parameter identification process to specific needs.
@@ -28,15 +26,15 @@ Algorithms <- ospsuite.utils::enum(c(
 #' These algorithms are configured via the `PIConfiguration` class.
 #'
 #' @section AlgorithmOptions_HJKB:
-#' Default options for the HJKB algorithm. See [dfoptim::hjkb()] for more details
+#' Default options for the `HJKB` algorithm. See [dfoptim::hjkb()] for more details
 #' on the options.
 #'
 #' @section AlgorithmOptions_BOBYQA:
-#' Default options for the BOBYQA algorithm. See [nloptr::nl.opts()] for more
+#' Default options for the `BOBYQA` algorithm. See [nloptr::nl.opts()] for more
 #' details on the options.
 #'
 #' @section AlgorithmOptions_DEoptim:
-#' Default options for the DEoptim algorithm. See [DEoptim::DEoptim.control()]
+#' Default options for the `DEoptim` algorithm. See [DEoptim::DEoptim.control()]
 #' for more details on the options.
 #'
 #' @name AlgorithmOptions
@@ -161,14 +159,17 @@ CIDefaults <- list(
 #' @export
 #' @name ObjectiveFunctionOptions
 #' @details Settings include:
-#' \describe{
-#'   \item{\code{objectiveFunctionType}}{"lsq" for least squares; influences error calculation.}
-#'   \item{\code{residualWeightingMethod}}{"none" by default; specifies method for residual weighting.}
-#'   \item{\code{robustMethod}}{"none" for standard analysis; selects method for robust outlier handling.}
-#'   \item{\code{scaleVar}}{FALSE by default; determines if scaling is applied to residuals.}
-#'   \item{\code{linScaleCV}}{0.2; coefficient of variation for linear scaling.}
-#'   \item{\code{logScaleSD}}{NULL; standard deviation for log scaling.}
-#' }
+#' - **`objectiveFunctionType`** – Type of objective function used. Default is
+#' `lsq` (least squares), influencing error calculation.
+#' - **`residualWeightingMethod`** – Method for residual weighting. Default is
+#' `none`.
+#' - **`robustMethod`** – Method for robust outlier handling. Default is `none`
+#' (standard analysis).
+#' - **`scaleVar`** – Whether residual scaling is applied. Default is `FALSE`.
+#' - **`linScaleCV`** – Coefficient of variation for linear scaling. Default is
+#' `0.2`.
+#' - **`logScaleSD`** – Standard deviation for log scaling. Default is `NULL`.
+#'
 #' These options are configurable in `PIConfiguration`, directly influencing the
 #' `calculateCostMetrics` functionality for detailed model fit assessment.
 ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
@@ -195,14 +196,19 @@ CIOptions <- ospsuite.utils::enum(list(
 #' @export
 #' @name ObjectiveFunctionSpecs
 #' @details Includes:
-#' \itemize{
-#'   \item \code{objectiveFunctionType}: Types of error calculations ("lsq" for least squares, "m3" for method 3).
-#'   \item \code{residualWeightingMethod}: Methods for weighting residuals ("none", "std", "mean", "error").
-#'   \item \code{robustMethod}: Approaches for robust outlier handling ("none", "huber", "bisquare").
-#'   \item \code{scaleVar}: Boolean for variance scaling (TRUE, FALSE).
-#'   \item \code{linScaleCV}: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.
-#'   \item \code{logScaleSD}: Standard deviation for log scale, with numeric range 1e-9 to Inf.
-#' }
+#' - **`objectiveFunctionType`** – Type of error calculation. Allowed values:
+#' `lsq` (least squares), `m3"` (M3 method).
+#' - **`residualWeightingMethod`** – Method for weighting residuals. Allowed values:
+#' `none`, `std`, `mean`, `error`.
+#' - **`robustMethod`** – Approach for robust outlier handling. Allowed values:
+#' `none`, `huber`, `bisquare`.
+#' - **`scaleVar`** – Boolean for variance scaling. Allowed values: `TRUE`, `FALSE`.
+#' - **`scaling`** – Scaling type. Allowed values: `lin` (linear), `log` (logarithmic).
+#' - **`linScaleCV`** – Coefficient of variation for linear scaling. Numeric
+#' range: `1e-9` to `1`.
+#' - **`logScaleSD`** – Standard deviation for log scaling. Numeric range: `1e-9`
+#' to `Inf`.
+#'
 #' These options directly influence the optimization process by defining how
 #' discrepancies between simulated and observed data are quantified and managed.
 ObjectiveFunctionSpecs <- list(
@@ -231,12 +237,10 @@ ObjectiveFunctionSpecs <- list(
 #'
 #' @export
 #' @name ScalingOptions
-#' @details Available scaling options are:
-#' \describe{
-#'   \item{\code{"lin"}}{Linear scaling, used by default.}
-#'   \item{\code{"log"}}{Logarithmic scaling, for when data spans several orders
-#'   of magnitude.}
-#' }
+#' @details Available scaling options:
+#' - **`lin`** – Linear scaling (default).
+#' - **`log`** – Logarithmic scaling, used when data spans several orders of
+#' magnitude.
 ScalingOptions <- ospsuite.utils::enum(c(
   "lin",
   "log"
@@ -250,15 +254,13 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' @export
 #' @name residualWeightingOptions
 #' @details The methods include:
-#' \describe{
-#'   \item{\code{"none"}}{No weighting applied, treating all residuals equally.}
-#'   \item{\code{"error"}}{Weights based on error estimates for the dependent
-#'   variable in observed data.}
-#'   \item{\code{"std"}}{Weights equal to the reciprocal of the standard deviation
-#'   of the observed data.}
-#'   \item{\code{"mean"}}{Weights based on the reciprocal of the mean of the absolute
-#'   values of the observed data, useful for relative error scaling.}
-#' }
+#' - **`none`** – No weighting applied, treating all residuals equally.
+#' - **`error`** – Weights based on error estimates for the dependent variable
+#' in observed data.
+#' - **`std`** – Weights equal to the reciprocal of the standard deviation of
+#' the observed data.
+#' - **`mean`** – Weights based on the reciprocal of the mean of the absolute
+#' values of the observed data, useful for relative error scaling.
 residualWeightingOptions <- ospsuite.utils::enum(c(
   "none",
   "error",
@@ -274,11 +276,9 @@ residualWeightingOptions <- ospsuite.utils::enum(c(
 #' @export
 #' @name robustMethodOptions
 #' @details The available methods are:
-#' \describe{
-#'   \item{\code{"none"}}{No robust weighting applied.}
-#'   \item{\code{"huber"}}{Huber weighting for moderate outliers.}
-#'   \item{\code{"bisquare"}}{Bisquare (Tukey's biweight) weighting for severe outliers.}
-#' }
+#' - **`none`** – No robust weighting applied.
+#' - **`huber`** – Huber weighting for moderate outliers.
+#' - **`bisquare`** – Bisquare (Tukey's biweight) weighting for severe outliers.
 robustMethodOptions <- ospsuite.utils::enum(c(
   "none",
   "huber",

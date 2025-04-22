@@ -16,9 +16,10 @@ calculateCostMetrics(
 \arguments{
 \item{df}{A dataframe containing the combined data for simulation and
 observation. Supports dataframes created from a \code{DataCombined} object via
-\code{DataCombined$toDataFrame()}. The dataframe must include columns for
-"dataType", "xValues", "yValues", and optionally "yErrorValues" if the
-\code{residualWeightingMethod} is set to "error".}
+\code{DataCombined$toDataFrame()}. Must include columns for \code{dataType}, \code{xValues},
+\code{yValues}, and optionally \code{yErrorValues} and \code{yErrorType} if
+\code{residualWeightingMethod = "error"}. The error type must be one of
+\code{ArithmeticStdDev}, \code{GeometricStdDev}.}
 
 \item{objectiveFunctionType}{A string indicating the objective function type for
 calculating model cost. Options include "lsq" (least squares, default) and "m3"

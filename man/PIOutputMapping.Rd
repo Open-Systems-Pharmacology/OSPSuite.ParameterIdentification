@@ -70,7 +70,7 @@ Adds or updates observed data using \code{DataSet} objects.
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-addObservedDataSets}{}}}
 \subsection{Method \code{addObservedDataSets()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedDataSets(data)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$addObservedDataSets(data, weights = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -78,6 +78,9 @@ Adds or updates observed data using \code{DataSet} objects.
 \describe{
 \item{\code{data}}{A \code{DataSet} object or a list thereof, matching the simulation
 quantity dimensions.}
+
+\item{\code{weights}}{A named list of numeric values or numeric vectors. The names
+must match the names of the observed datasets.}
 }
 \if{html}{\out{</div>}}
 }
@@ -149,7 +152,7 @@ during parameter identification.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{weights}}{A named list of numeric values or numeric vectors. The names
-must match the labels of the observed datasets.
+must match the names of the observed datasets.
 
 Each element in the list can be:
 \itemize{
