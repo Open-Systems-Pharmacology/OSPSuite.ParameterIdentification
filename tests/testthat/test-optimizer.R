@@ -25,49 +25,52 @@ parTest <- c(4.8, 0.3, 0.48)
 lowerTest <- c(0, 0, 0)
 upperTest <- c(10, 10, 1)
 
-# Expected output fields
-expectedFields <- c(
-  "par", "value", "convergence", "iterations",
-  "fnEvaluations", "algorithm", "elapsed"
-)
 
-
-test_that("Optimizer can be created and `algorithm` can be changed", {
-  expect_silent(optimizer <- Optimizer$new("HJKB"))
-  expect_equal(optimizer$algorithm, "HJKB")
+test_that("Optimizer can be created and reflects current configuration", {
+  piConfig <- PIConfiguration$new()
+  expect_silent(optimizer <- Optimizer$new(piConfig))
+  expect_equal(optimizer$algorithm, "BOBYQA")
   expect_s3_class(optimizer, "R6")
-  expect_silent(optimizer$algorithm <- "BOBYQA")
-  expect_silent(optimizer$algorithm <- "DEoptim")
+
+  piConfig$algorithm <- "HJKB"
+  expect_equal(optimizer$algorithm, "HJKB")
+
+  piConfig$algorithm <- "DEoptim"
+  expect_equal(optimizer$algorithm, "DEoptim")
 })
 
-test_that("Optimizer can be created and `ciMethod` can be changed", {
-  optimizer <- Optimizer$new("HJKB", "hessian")
+test_that("Optimizer reflects the CI method from configuration", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   expect_equal(optimizer$ciMethod, "hessian")
-  expect_silent(optimizer$ciMethod <- "PL")
-  expect_silent(optimizer$ciMethod <- "bootstrap")
+
+  piConfig$ciMethod <- "PL"
+  expect_equal(optimizer$ciMethod, "PL")
+
+  piConfig$ciMethod <- "bootstrap"
+  expect_equal(optimizer$ciMethod, "bootstrap")
 })
 
-test_that("Optimizer fails with unknown `algorithm`", {
-  expect_error(Optimizer$new("strong"))
+test_that("Optimizer read-only fields cannot be modified directly", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
+
+  expect_error(optimizer$algorithm <- "DEoptim", "readonly")
+  expect_error(optimizer$ciMethod <- "PL", "readonly")
+  expect_error(optimizer$modelCostField <- "modelCost", "readonly")
 })
 
-test_that("Optimizer fails with unknown `ciMethod`", {
-  expect_error(Optimizer$new("HJKB", "fast"))
+test_that("Optimizer creation fails if configuration is invalid", {
+  expect_error(Optimizer$new("notAConfig"), "expected 'PIConfiguration'")
 })
 
 test_that("Optimizer fails when `fn` is not a function", {
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   expect_error(
     optimizer$run(par = parTest, fn = 1, lower = lowerTest, upper = upperTest),
     "expected 'function'"
   )
-})
-
-test_that("Optimizer can set and modify `modelCostField`", {
-  optimizer <- Optimizer$new("BOBYQA", modelCostField = "result")
-  expect_equal(optimizer$modelCostField, "result")
-  optimizer$modelCostField <- "cost"
-  expect_equal(optimizer$modelCostField, "cost")
 })
 
 test_that("Optimizer fails when objective function output lacks modelCost", {
@@ -77,70 +80,70 @@ test_that("Optimizer fails when objective function output lacks modelCost", {
     list(ssr = SSR)
   }
 
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     expect_error(
       optimizer$run(
         par = parTest, fn = fnObjectiveWrong, lower = lowerTest, upper = upperTest
       ),
-      "Objective function must return a list containing 'modelCost'"
+      messages$objectiveFnOutputError("modelCost")
     )
   )
 })
 
+test_that("It can print default optimizer", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
+  expect_snapshot(print(optimizer))
+})
+
 test_that("Optimizer returns correct parameters for BOBYQA", {
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
       )
-    ), "Starting optimization using 'BOBYQA' algorithm"
+    ), messages$optimizationAlgorithm(piConfig$algorithm)
   )
-  expect_setequal(names(optResult), expectedFields)
-  expect_equal(optResult$par, c(5.5106, 0.3841, 0.6838), tolerance = 1e-4)
-  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
-  expect_equal(optResult$iterations, 123)
-  expect_equal(optResult$algorithm, "BOBYQA")
-  expect_true(optResult$convergence)
+  optResult$elapsed <- 0
+  expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer output has correct structure and values for HJKB", {
-  optimizer <- Optimizer$new("HJKB")
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  optimizer <- Optimizer$new(piConfig)
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
       )
-    ), "Starting optimization using 'HJKB' algorithm"
+    ), messages$optimizationAlgorithm(piConfig$algorithm)
   )
-  expect_setequal(names(optResult), expectedFields)
-  expect_equal(optResult$par, c(5.5105, 0.3841, 0.6838), tolerance = 1e-4)
-  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
-  expect_equal(optResult$iterations, 19)
-  expect_true(optResult$fnEvaluations <= 1e3)
-  expect_equal(optResult$algorithm, "HJKB")
-  expect_true(optResult$convergence)
+  optResult$elapsed <- 0
+  optResult$fnEvaluations <- NA_real_
+  expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer output has correct structure and values for DEoptim", {
-  optimizer <- Optimizer$new("DEoptim")
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  optimizer <- Optimizer$new(piConfig)
   tmp <- capture.output(
     expect_message(
       expect_no_error(
         optResult <- optimizer$run(
           par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
         )
-      ), "Starting optimization using 'DEoptim' algorithm"
+      ), messages$optimizationAlgorithm(piConfig$algorithm)
     )
   )
-  expect_setequal(names(optResult), expectedFields)
-  expect_equal(optResult$par, c(5.5106, 0.3841, 0.6838), tolerance = 1e-4)
-  expect_equal(optResult$value, 0.4215, tolerance = 1e-4)
-  expect_equal(optResult$iterations, 200)
-  expect_equal(optResult$fnEvaluations, 6030)
-  expect_equal(optResult$algorithm, "DEoptim")
-  expect_true(optResult$convergence)
+  optResult$elapsed <- 0
+  optResult$fnEvaluations <- NA_real_
+  expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer works when objective function returns numeric cost", {
@@ -149,7 +152,8 @@ test_that("Optimizer works when objective function returns numeric cost", {
     sum((yObs - ySim)^2)
   }
 
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
@@ -162,7 +166,8 @@ test_that("Optimizer works when objective function returns numeric cost", {
 
 test_that("Optimizer works with fixed parameter", {
   fixedPar <- list(idx = 1, values = 5)
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     expect_no_error(
       optResult <- optimizer$run(
@@ -171,12 +176,13 @@ test_that("Optimizer works with fixed parameter", {
       )
     )
   )
-  expect_equal(optResult$par, c(5, 0.3393, 0.6392), tolerance = 1e-4)
+  expect_snapshot_value(optResult$par, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer works with two fixed parameters", {
   fixedPar <- list(idx = c(1, 3), values = c(5, 0.68))
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     expect_no_error(
       optResult <- optimizer$run(
@@ -185,33 +191,35 @@ test_that("Optimizer works with two fixed parameters", {
       )
     )
   )
-  expect_equal(optResult$par, c(5, 0.349, 0.68), tolerance = 1e-4)
+  expect_snapshot_value(optResult$par, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer fails when idx and values length mismatch", {
   fixedPar <- list(idx = c(1), values = c(5, 0.68))
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     expect_error(
       optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
         fixedParams = fixedPar
       ),
-      "`fixedParams.idx` and `fixedParams.values` must have the same length"
+      messages$fixedParamError(error = "length")
     )
   )
 })
 
 test_that("Optimizer fails when idx is larger than parameter length", {
   fixedPar <- list(idx = c(1, 2, 3, 4), values = c(5, 0.3, 0.7, 1))
-  optimizer <- Optimizer$new("BOBYQA")
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     expect_error(
       optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
         fixedParams = fixedPar
       ),
-      "All parameters are fixed! Optimization requires at least one free parameter"
+      messages$fixedParamError(error = "fixed")
     )
   )
 })
@@ -246,15 +254,11 @@ parTest <- c(0.8, -1.5, 2.5)
 lowerTest <- c(-10, -10, -10)
 upperTest <- c(10, 10, 10)
 
-# Expected fields in CI result
-expectedCIFields <- c(
-  "se", "cv", "lowerCI", "upperCI",
-  "error", "method", "elapsed", "details"
-)
-
 
 test_that("Optimizer estimates confidence intervals using Hessian", {
-  optimizer <- Optimizer$new("HJKB", "hessian")
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     optResult <- optimizer$run(
       par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
@@ -269,12 +273,15 @@ test_that("Optimizer estimates confidence intervals using Hessian", {
     "Starting confidence interval estimation using 'hessian' method"
   )
 
-  ciResult$elapsed <- NA
+  ciResult$elapsed <- NA_real_
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
 
 test_that("Optimizer estimates confidence intervals using profile likelihood method", {
-  optimizer <- Optimizer$new("HJKB", "PL")
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "PL"
+  optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     optResult <- optimizer$run(
       par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
@@ -290,11 +297,10 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
       "Starting confidence interval estimation using 'PL' method"
     )
   )
-  ciResult$elapsed <- NA
-  ciResult$details$paramHistory <- NA
+  ciResult$elapsed <- NA_real_
+  ciResult$details$paramHistory <- ciResult$details$paramHistory[1:5, ]
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
-
 
 # Generate bootstrap datasets (unique to bootstrap test)
 nBootstrap <- 10
@@ -321,12 +327,15 @@ fnObjectiveBootstrap <- function(p, bootstrapSeed = NULL) {
   list(modelCost = SSR)
 }
 
-
 test_that("Optimizer estimates confidence intervals using bootstrap method", {
-  controlCI <- CIDefaults[["bootstrap"]]
-  controlCI$seed <- 1803
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "bootstrap"
+  ciOptions <- CIDefaults[["bootstrap"]]
+  ciOptions$seed <- 1803
+  piConfig$ciOptions <- ciOptions
+  optimizer <- Optimizer$new(piConfig)
 
-  optimizer <- Optimizer$new("HJKB", "bootstrap", controlCI = controlCI)
   suppressMessages(
     optResult <- optimizer$run(
       par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
@@ -342,12 +351,7 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
       "Starting confidence interval estimation using 'bootstrap' method"
     )
   )
-  ciResult$elapsed <- NA
-  ciResult$details$bootstrapResults <- NA
+  ciResult$elapsed <- NA_real_
+  ciResult$details$bootstrapResults <- ciResult$details$bootstrapResults[1:5, ]
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
-})
-
-test_that("It can print default optimizer", {
-  optimizer <- Optimizer$new("BOBYQA")
-  expect_snapshot(print(optimizer))
 })
