@@ -239,6 +239,7 @@
 
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
   if (length(idx) > 0) {
+    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
     sd <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
     weights[idx] <- 1 / sd
   }
