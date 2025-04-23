@@ -54,7 +54,12 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 
 #' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
+AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
+  modifyList(
+    DEoptim::DEoptim.control(),
+    list(trace = FALSE)
+  )
+)
 
 #' @noRd
 AlgorithmDefaults <- list(
