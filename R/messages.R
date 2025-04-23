@@ -1,3 +1,22 @@
+#' Format Parameter Values for Display
+#'
+#' @description Formats numeric values using scientific notation for small or large values,
+#' and fixed-point format otherwise.
+#'
+#' @param par Numeric vector of parameter values.
+#' @return Character vector of formatted values.
+#'
+#' @keywords internal
+#' @noRd
+.formatValues <- function(par) {
+  sapply(par, function(x) {
+    if (abs(x) < 0.01 || abs(x) > 1e4) {
+      formatC(x, format = "e", digits = 2)
+    } else {
+      formatC(x, format = "f", digits = 3)
+    }
+  })
+}
 messages <- ospsuite.utils::messages
 
 messages$errorDimensionsNotEqual <- function() {
