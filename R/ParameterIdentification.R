@@ -428,10 +428,6 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      message(
-        messages$runningOptimizationAlgorithm(private$.configuration$algorithm)
-      )
-
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       optimResult <- optimizer$run(

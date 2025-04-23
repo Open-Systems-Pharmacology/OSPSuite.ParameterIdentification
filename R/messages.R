@@ -17,6 +17,11 @@
     }
   })
 }
+
+#' @title Internal Message Templates
+#'
+#' @keywords internal
+#' @noRd
 messages <- ospsuite.utils::messages
 
 messages$errorDimensionsNotEqual <- function() {
@@ -79,6 +84,29 @@ messages$logScaleFlagError <- function() {
   "Logarithmic scaling is not available for non-positive parameter values."
 }
 
+messages$optimizationAlgorithm <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown optimization algorithm: ", name)
+  } else {
+    paste0(
+      "Starting optimization using '", name, "' with initial value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
+messages$ciMethod <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown CI estimation method: ", name)
+  } else {
+    paste0(
+      "Starting confidence interval estimation using '", name,
+      "' for parameter value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
 messages$evaluationFeedback <- function(fneval, par, objValue) {
   paste0(
     "fneval: ", fneval,
@@ -132,23 +160,6 @@ messages$fixedParamError <- function(error) {
 
 messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
-}
-
-
-messages$optimizationAlgorithm <- function(algorithm, error = FALSE) {
-  if (error) {
-    paste("Unknown optimization algorithm:", algorithm)
-  } else {
-    paste0("Starting optimization using '", algorithm, "' algorithm.")
-  }
-}
-
-messages$ciMethod <- function(method, error = FALSE) {
-  if (error) {
-    paste("Unknown CI estimation method:", method)
-  } else {
-    paste0("Starting confidence interval estimation using '", method, "' method.")
-  }
 }
 
 messages$ciEstimationError <- function(step, errorMessage) {
