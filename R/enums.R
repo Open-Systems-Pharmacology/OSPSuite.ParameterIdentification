@@ -169,8 +169,8 @@ CIDefaults <- list(
 #'   \item{\code{linScaleCV}}{0.2; coefficient of variation for linear scaling.}
 #'   \item{\code{logScaleSD}}{NULL; standard deviation for log scaling.}
 #' }
-#' These options are configurable in `PIConfiguration`, directly influencing the
-#' `calculateCostMetrics` functionality for detailed model fit assessment.
+#' These options are configurable in `PIConfiguration`, directly influencing
+#' the internal cost calculation used during parameter estimation.
 ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   objectiveFunctionType = "lsq",
   residualWeightingMethod = "none",
