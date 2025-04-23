@@ -296,10 +296,11 @@ ParameterIdentification <- R6::R6Class(
 
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
-        cat(paste0(
-          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", objective function ", signif(runningCost$modelCost, 4), "\n"
-        ))
+        cat(
+          messages$evaluationFeedback(
+            private$.fnEvaluations, currVals, runningCost$modelCost
+          )
+        )
       }
 
       return(runningCost)

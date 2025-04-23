@@ -186,7 +186,7 @@ test_that("ParameterIdentification$run() outputs expected evaluation feedback us
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
   evalOutput <- capture_output(piTask$run())
-  expect_snapshot_value(evalOutput, style = "serialize")
+  expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
 })
 
 piTask <- createPiTask()

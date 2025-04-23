@@ -79,8 +79,13 @@ messages$logScaleFlagError <- function() {
   "Logarithmic scaling is not available for non-positive parameter values."
 }
 
-messages$runningOptimizationAlgorithm <- function(name) {
-  paste0("Running optimization algorithm: ", name)
+messages$evaluationFeedback <- function(fneval, par, objValue) {
+  paste0(
+    "fneval: ", fneval,
+    " | parameters: ", paste(.formatValues(par), collapse = ", "),
+    " | objective: ", .formatValues(objValue),
+    sep = ""
+  )
 }
 
 messages$hessianEstimation <- function() {

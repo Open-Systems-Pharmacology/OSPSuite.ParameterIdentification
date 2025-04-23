@@ -16,12 +16,7 @@
 
 # ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm
 
-    WAoAAAACAAQFAAACAwAAAAAQAAAAAQAEAAkAAAEHZm5ldmFsIDE6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDI6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDM6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDQ6IHBhcmFtZXRlcnMgNC45
-    LCBvYmplY3RpdmUgZnVuY3Rpb24gODY5LjQKZm5ldmFsIDU6IHBhcmFtZXRlcnMgLTUuMSwg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDU2NTI=
+    "fneval: 1 | parameters: -0.097 | objective: 778.129fneval: 2 | parameters: -0.097 | objective: 778.129fneval: 3 | parameters: -0.097 | objective: 778.129fneval: 4 | parameters: 4.903 | objective: 869.379fneval: 5 | parameters: -5.097 | objective: 5652.395"
 
 # ParameterIdentification$gridSearch() works with multiple parameters and default settings
 
