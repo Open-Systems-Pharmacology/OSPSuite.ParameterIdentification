@@ -43,8 +43,8 @@ method name). If \code{NULL}, CI method's default settings are applied.}
 \item{\code{estimateCI}}{Logical. If \code{TRUE}, confidence intervals are estimated
 after optimization.}
 
-\item{\code{modelCostField}}{Field name in cost object used as the optimization
-target. Defaults to \code{modelCost}.}
+\item{\code{modelCostField}}{Read-only field name in the cost object used as the
+optimization target. Currently, only \code{modelCost} is supported.}
 }
 \if{html}{\out{</div>}}
 }

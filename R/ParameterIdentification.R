@@ -298,7 +298,8 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$printEvaluationFeedback) {
         cat(
           messages$evaluationFeedback(
-            private$.fnEvaluations, currVals, runningCost$modelCost
+            private$.fnEvaluations, currVals,
+            runningCost[[private$.configuration$modelCostField]]
           )
         )
       }
@@ -707,7 +708,8 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate OFV
       ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
-        private$.objectiveFunction(as.numeric(ofvGrid[i, ]))$modelCost
+        ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+        ofv[[private$.configuration$modelCostField]]
       }, numeric(1))
 
       # Restore simulation state if applicable
@@ -786,7 +788,8 @@ ParameterIdentification <- R6::R6Class(
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
           row <- as.numeric(currentGrid[gridIdx, ])
-          ofvValues[gridIdx] <- private$.objectiveFunction(row)$modelCost
+          ofv <- private$.objectiveFunction(row)
+          ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 
         profileList[[idx]] <- tibble::tibble(

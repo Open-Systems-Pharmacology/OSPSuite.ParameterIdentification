@@ -129,16 +129,16 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field modelCostField Field name in cost object used as the optimization
-    #' target. Defaults to `modelCost`.
+    #' @field modelCostField Read-only field name in the cost object used as the
+    #' optimization target. Currently, only `modelCost` is supported.
     modelCostField = function(value) {
       if (missing(value)) {
         private$.modelCostField
       } else {
-        ospsuite.utils::validateIsCharacter(value)
-        private$.modelCostField <- value
+        stop(messages$errorPropertyReadOnly("modelCostField"))
       }
     }
+
   ),
   private = list(
     .simulateSteadyState = NULL,

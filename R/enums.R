@@ -289,3 +289,19 @@ robustMethodOptions <- ospsuite.utils::enum(c(
   "huber",
   "bisquare"
 ))
+
+#' Model Cost Fields for Optimization
+#'
+#' Available cost fields that can be used as optimization targets
+#' in parameter estimation.
+#'
+#' @name ModelCostFields
+#' @details The available field is:
+#' - **`modelCost`** – Accesses the RSS-based model cost value (currently the
+#' only supported option).
+#'
+#' @keywords internal
+#' @noRd
+ModelCostFields <- ospsuite.utils::enum(c(
+  "modelCost"
+))
