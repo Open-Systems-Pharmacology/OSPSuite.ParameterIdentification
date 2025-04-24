@@ -1,16 +1,15 @@
-#' @name calculateCostMetrics
 #' @title Calculate Cost Metrics for Model Evaluation
 #'
 #' @description
-#' This function calculates various cost metrics to evaluate the fit of a model
-#' by comparing simulated data against observed data. It supports different
-#' methods for weighting residuals.
+#' Internal utility to calculate residual-based cost metrics for model fit assessment.
+#' Used within parameter estimation routines.
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #' observation. Supports dataframes created from a `DataCombined` object via
-#' `DataCombined$toDataFrame()`. The dataframe must include columns for
-#' "dataType", "xValues", "yValues", and optionally "yErrorValues" if the
-#' `residualWeightingMethod` is set to "error".
+#' `DataCombined$toDataFrame()`. Must include columns for `dataType`, `xValues`,
+#' `yValues`, and optionally `yErrorValues` and `yErrorType` if
+#' `residualWeightingMethod = "error"`. The error type must be one of
+#' `ArithmeticStdDev`, `GeometricStdDev`.
 #' @param objectiveFunctionType A string indicating the objective function type for
 #' calculating model cost. Options include "lsq" (least squares, default) and "m3"
 #' for handling censored data.
@@ -42,13 +41,15 @@
 #' df <- DataCombined$toDataFrame()
 #'
 #' # Calculate cost metrics
-#' costMetrics <- calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
+#' costMetrics <- .calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
 #'
 #' # View model cost
 #' print(costMetrics$modelCost)
 #' }
-#' @export
-calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
+#'
+#' @keywords internal
+#' @noRd
+.calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
                                  robustMethod = "none", scaleVar = FALSE, ...) {
   additionalArgs <- list(...)
 
@@ -65,14 +66,17 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
   # Ensure methods are recognized
   ospsuite.utils::validateEnumValue(residualWeightingMethod, residualWeightingOptions)
   if (residualWeightingMethod == "error") {
-    ospsuite.utils::validateIsIncluded(c("yErrorValues", "yErrorUnit"), colnames(df))
+    ospsuite.utils::validateIsIncluded(
+      c("yErrorValues", "yErrorUnit", "yErrorType"), colnames(df)
+    )
   }
   ospsuite.utils::validateEnumValue(robustMethod, robustMethodOptions)
 
   # Handle infinite values
   df$xValues[df$xValues == Inf | df$xValues == -Inf] <- NA
   df$yValues[df$yValues == Inf | df$yValues == -Inf] <- NA
-  idx <- is.na(df$xValues) & is.na(df$yValues)
+  df$xValues[df$xValues < 0] <- NA
+  idx <- is.na(df$xValues) | is.na(df$yValues)
   df <- df[!idx, ]
 
 
@@ -130,19 +134,20 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
   errorWeights <-
     switch(residualWeightingMethod,
       "none" = 1,
-      "error" = {
-        observedData[["yErrorValues"]] |>
-          (\(x) replace(x, is.na(x), 1))()
-      },
+      "error" = .computeErrorWeights(
+        yValues = observedData[["yValues"]],
+        yErrorValues = observedData[["yErrorValues"]],
+        yErrorType = observedData[["yErrorType"]]
+      ),
       "std" = {
         if (length(unique(observedYVal)) == 1) {
-          observedYErr <- sqrt(.Machine$double.eps)
+          sqrt(.Machine$double.eps)
         } else {
-          observedYErr <- sd(observedYVal)
+          sd(observedYVal, na.rm = TRUE)
         }
       },
       "mean" = {
-        meanVal <- mean(abs(observedYVal))
+        meanVal <- mean(abs(observedYVal), na.rm = TRUE)
         if (meanVal == 0) 1 else meanVal
       }
     )
@@ -202,6 +207,44 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
     class(modelCost) <- "modelCost"
     return(modelCost)
   }
+}
+
+#' Compute error-based residual weights
+#'
+#' @param yValues Vector of y-values, required for conversion
+#' @param yErrorValues Vector of y-value errors
+#' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
+#' `GeometricStdDev`)
+#' @param defaultWeight Fallback weight value when inputs are missing or invalid
+#' @return Numeric vector of residual weights computed as 1 / StdDev
+#'
+#' @keywords internal
+#' @noRd
+.computeErrorWeights <- function(yValues, yErrorValues, yErrorType,
+                                 defaultWeight = 1) {
+  ospsuite.utils::validateIsNumeric(yValues)
+  ospsuite.utils::validateIsNumeric(yErrorValues)
+  ospsuite.utils::validateIsCharacter(yErrorType)
+  ospsuite.utils::isSameLength(yValues, yErrorValues)
+  ospsuite.utils::isSameLength(yValues, yErrorType)
+
+  n <- numeric(length(yValues))
+
+  weights <- rep(defaultWeight, length(yValues))
+
+  idx <- which(yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0)
+  if (length(idx) > 0) {
+    weights[idx] <- 1 / yErrorValues[idx]
+  }
+
+  idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
+  if (length(idx) > 0) {
+    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
+    sd <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
+    weights[idx] <- 1 / sd
+  }
+
+  return(weights)
 }
 
 #' Plot Model Cost Residuals
@@ -277,13 +320,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' Constructs Model Cost Summary for Error Handling
 #'
 #' Creates a model cost summary compatible with the structure returned by
-#' `calculateCostMetrics`, filled with either infinite values (for simulation
+#' `.calculateCostMetrics`, filled with either infinite values (for simulation
 #' failures) or zeros (for objective function failures).
 #'
 #' @param infinite Logical flag indicating if the structure should contain
 #' infinite values (TRUE) or zeros (FALSE).
 #' @return A model cost summary structured identically to the output of
-#' `calculateCostMetrics`, with fields for model cost, minimum log probability,
+#' `.calculateCostMetrics`, with fields for model cost, minimum log probability,
 #' statistical measures, and detailed residuals, tailored for failure scenarios
 #' or initial setup.
 #' @keywords internal
@@ -442,14 +485,14 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Summarize Cost Lists
 #'
-#' This function takes two lists, each being the output of the `calculateCostMetrics`
+#' This function takes two lists, each being the output of the `.calculateCostMetrics`
 #' function, and summarizes them. It aggregates model costs and min log probabilities,
 #' and combines cost and residual details by row-binding.
 #'
-#' @param list1 The first list, containing the output of the `calculateCostMetrics`
+#' @param list1 The first list, containing the output of the `.calculateCostMetrics`
 #' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
 #' and `residualDetails`.
-#' @param list2 The second list, containing the output of the `calculateCostMetrics`
+#' @param list2 The second list, containing the output of the `.calculateCostMetrics`
 #' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
 #' and `residualDetails`.
 #'
