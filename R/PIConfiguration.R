@@ -172,6 +172,7 @@ PIConfiguration <- R6::R6Class(
       ospsuite.utils::ospPrintClass(self)
       ospsuite.utils::ospPrintItems(list(
         "Optimization algorithm" = private$.algorithm,
+        "Confidence interval method" = private$.ciMethod,
         "Objective function type" = private$.objectiveFunctionOptions$objectiveFunctionType,
         "Residual weighting method" = private$.objectiveFunctionOptions$residualWeightingMethod,
         "Robust residual calculation method" = private$.objectiveFunctionOptions$robustMethod,
