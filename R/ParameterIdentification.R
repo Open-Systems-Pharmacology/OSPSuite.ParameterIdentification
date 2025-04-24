@@ -537,6 +537,48 @@ ParameterIdentification <- R6::R6Class(
       return(results)
     },
 
+    #' Estimates Confidence Intervals
+    #'
+    #' @description Computes confidence intervals for the optimized parameters
+    #' using the method specified in `PIConfiguration`.
+    #'
+    #' @return A list with confidence interval results, including bounds, standard
+    #' errors, and coefficient of variation.
+    estimateCI = function() {
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      # Initialize batches
+      private$.batchInitialization()
+
+      # bootstrap not supported yet
+      if (private$.configuration$ciMethod == "bootstrap") {
+        stop("`bootstrap`method is not supported yet.")
+      }
+
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      optimizer <- Optimizer$new(configuration = private$.configuration)
+
+      ciResult <- optimizer$estimateCI(
+        par = currValues,
+        fn = function(p) private$.objectiveFunction(p),
+        lower = lower,
+        upper = upper
+      )
+
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      }
+
+      # Trigger .NET gc
+      ospsuite::clearMemory()
+
+      return(ciResult)
+    },
+
     #' Plots Parameter Estimation Results
     #'
     #' @description Generates plots for each output mapping based on the current

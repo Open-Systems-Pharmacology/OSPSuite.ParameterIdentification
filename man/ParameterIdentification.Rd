@@ -28,6 +28,7 @@ observed data to simulation outputs.}
 \itemize{
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
+\item \href{#method-ParameterIdentification-estimateCI}{\code{ParameterIdentification$estimateCI()}}
 \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
 \item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
 \item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
@@ -88,6 +89,22 @@ Upon completion, access optimal parameter values through \code{PIParameters$curr
 \subsection{Returns}{
 Results from the parameter identification algorithm, varying by
 algorithm choice.
+Estimates Confidence Intervals
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
+\subsection{Method \code{estimateCI()}}{
+Computes confidence intervals for the optimized parameters
+using the method specified in \code{PIConfiguration}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A list with confidence interval results, including bounds, standard
+errors, and coefficient of variation.
 Plots Parameter Estimation Results
 }
 }
