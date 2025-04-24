@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9006</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,10 +143,13 @@ deviation, mitigating the impact of outliers.</li>
 significant differences in observation magnitudes, scaling residuals by
 the mean to ensure equal contribution across data points.</li>
 <li>
-<strong><code>error</code></strong>: Ideal when individual data
-points come with their variance estimates, allowing for weighting by the
-inverse of these variances, which can provide a more tailored fit given
-the know error.</li>
+<strong><code>error</code></strong>: Requires both
+<code>yErrorValues</code> and <code>yErrorType</code> to be provided in
+the observed data <code>DataSet</code>. Ideal when individual data
+points come with variance estimates, allowing for weighting by the
+inverse of these variances. The <code>yErrorType</code> must be a
+supported OSP Suite error type: <code>ArithmeticStdDev</code> or
+<code>GeometricStdDev</code>.</li>
 </ul>
 <p>To apply residual weighting, set the
 <code>residualWeightingMethod</code> attribute in

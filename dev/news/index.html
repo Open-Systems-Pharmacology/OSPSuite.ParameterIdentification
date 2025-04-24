@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9006</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
-<ul><li>Improved print outputs for all classes</li>
+<ul><li>Supports <code>ArithmeticStdDev</code> and <code>GeometricStdDev</code> error types passed in the observed <code>DataSet</code> as <code>yErrorType</code>. This has an effect when <code>residualWeightingMethod = "error"</code> is set via <code>PIConfiguration$objectiveFunctionOptions</code>.</li>
+<li>Improved print outputs for all classes</li>
 <li>All classes do not interit from <code><a href="https://www.open-systems-pharmacology.org/OSPSuite.RUtils/reference/Printable.html" class="external-link">ospsuite.utils::Printable</a></code> any more.</li>
 </ul></div>
 </div>
@@ -106,7 +107,7 @@
 <div class="section level3">
 <h3 id="major-changes-2-0-0">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-2-0-0"></a></h3>
 <ul><li>
-<p>New <code><a href="../reference/calculateCostMetrics.html">calculateCostMetrics()</a></code> function in <code>ParameterIdentification</code> enhances model evaluation with integrated configuration via <code>PIConfiguration</code>. Settings and defaults are specified in <code>ObjectiveFunctionOptions</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/64" class="external-link">#64</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/65" class="external-link">#65</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p>
+<p>New <code>calculateCostMetrics()</code> function in <code>ParameterIdentification</code> enhances model evaluation with integrated configuration via <code>PIConfiguration</code>. Settings and defaults are specified in <code>ObjectiveFunctionOptions</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/64" class="external-link">#64</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/65" class="external-link">#65</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p>
 <ul><li>
 <code>objectiveFunctionType</code>: <code>lsq</code> for least squares or <code>m3</code> for censored data maximum likelihood estimation.</li>
 <li>
@@ -130,7 +131,7 @@
 <div class="section level3">
 <h3 id="minor-improvements-and-fixes-2-0-0">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-2-0-0"></a></h3>
 <ul><li><p>Enhanced error handling now ensures <code>ParameterIdentification</code> tasks validate the existence of simulation objects referenced by <code>PIParameters</code> and <code>OutputMapping</code> to prevent runtime errors due to missing dependencies (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/117" class="external-link">#117</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/120" class="external-link">#120</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
-<li><p>Enhanced <code><a href="../reference/calculateCostMetrics.html">calculateCostMetrics()</a></code> output in <code>ParameterIdentification</code> offers a more detailed results summary for model evaluation. The summary now includes <code>modelCost</code>, <code>minLogProbability</code>, and a <code>costVariables</code> dataframe with <code>scaleFactor</code>, <code>nObservations</code>, <code>M3Contribution</code>, <code>SSR</code> (sum of squared residuals), <code>weightedSSR</code>, <code>normalizedSSR</code>, and <code>robustSSR</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
+<li><p>Enhanced <code>calculateCostMetrics()</code> output in <code>ParameterIdentification</code> offers a more detailed results summary for model evaluation. The summary now includes <code>modelCost</code>, <code>minLogProbability</code>, and a <code>costVariables</code> dataframe with <code>scaleFactor</code>, <code>nObservations</code>, <code>M3Contribution</code>, <code>SSR</code> (sum of squared residuals), <code>weightedSSR</code>, <code>normalizedSSR</code>, and <code>robustSSR</code> (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
 <li><p>README file conversion to .rmd format and subsequent updates (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/86" class="external-link">#86</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/93" class="external-link">#93</a>, <a href="https://github.com/FelixMil" class="external-link">@FelixMil</a>).</p></li>
 <li><p>Improved error handling in <code>ParameterIdentification</code> for cases of simulation failure, ensuring consistent and informative error cost structure in output (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/66" class="external-link">#66</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/70" class="external-link">#70</a>, <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/svavil" class="external-link">@svavil</a>, <a href="https://github.com/PaveBal" class="external-link">@PaveBal</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>
 <li><p><code>validateIsOption()</code> ensures user-specified options adhere to defined constraints, enhancing the robustness of user inputs (<a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/issues/100" class="external-link">#100</a>, <a href="https://github.com/rengelke" class="external-link">@rengelke</a>).</p></li>

@@ -9,7 +9,7 @@ and evaluation settings for parameter identification."><meta name="robots" conte
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9006</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,9 +66,8 @@ runs. If <code>NULL</code>, default options are used.</p></dd>
 <dt><code>objectiveFunctionOptions</code></dt>
 <dd><p>Configures model fit evaluation settings,
 influencing error and fit metrics. For option details and impact on cost metrics,
-see <code><a href="ObjectiveFunctionSpecs.html">ObjectiveFunctionSpecs</a></code> and
-<code><a href="calculateCostMetrics.html">calculateCostMetrics</a></code>. Defaults found in
-<code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>.</p></dd>
+see <code><a href="ObjectiveFunctionSpecs.html">ObjectiveFunctionSpecs</a></code>. Defaults
+found in <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>.</p></dd>
 
 
 <dt><code>algorithm</code></dt>
@@ -83,6 +82,11 @@ settings. Refer to <code><a href="AlgorithmOptions.html">AlgorithmOptions</a></c
 for default settings per algorithm (e.g., <code>AlgorithmOptions_XYZ</code> where <code>XYZ</code>
 denotes the algorithm name). If <code>NULL</code>, the algorithm's default settings
 are applied.</p></dd>
+
+
+<dt><code>estimateCI</code></dt>
+<dd><p>Boolean. If <code>TRUE</code>, will estimate confidence intervals
+after optimization algorithm completion.</p></dd>
 
 
 </dl><p></p></div>

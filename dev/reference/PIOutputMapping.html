@@ -11,7 +11,7 @@ and compare simulation outputs with empirical data."><meta name="robots" content
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9006</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -129,7 +129,7 @@ Adds or updates observed data using <code>DataSet</code> objects.</p>
 
 <div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">data</span>, weights <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -137,6 +137,11 @@ Adds or updates observed data using <code>DataSet</code> objects.</p>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>A <code>DataSet</code> object or a list thereof, matching the simulation
 quantity dimensions.</p></dd>
+
+
+<dt><code>weights</code></dt>
+<dd><p>A named list of numeric values or numeric vectors. The names
+must match the names of the observed datasets.</p></dd>
 
 
 </dl><p></p></div>
@@ -214,7 +219,7 @@ during parameter identification.</p><div class="section">
 <h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>weights</code></dt>
 <dd><p>A named list of numeric values or numeric vectors. The names
-must match the labels of the observed datasets.</p>
+must match the names of the observed datasets.</p>
 <p>Each element in the list can be:</p><ul><li><p>a scalar, which will be broadcast to all y-values of the corresponding
 dataset,</p></li>
 <li><p>or a numeric vector matching the number of y-values for that dataset.</p></li>
