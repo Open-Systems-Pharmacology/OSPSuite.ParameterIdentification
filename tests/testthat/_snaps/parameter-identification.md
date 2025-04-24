@@ -18,6 +18,13 @@
 
     "fneval: 1 | parameters: -0.097 | objective: 778.129fneval: 2 | parameters: -0.097 | objective: 778.129fneval: 3 | parameters: -0.097 | objective: 778.129fneval: 4 | parameters: 4.903 | objective: 869.379fneval: 5 | parameters: -5.097 | objective: 5652.395"
 
+# ParameterIdentification$estimateCI() works as expected using Hessian
+
+    list(se = 0.0523209776366797, cv = 3.96713776024367, lowerCI = 1.21631237929943, 
+        upperCI = 1.42140684290706, error = NULL, method = NULL, 
+        elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
+        1L)), corMat = structure(1, dim = c(1L, 1L))))
+
 # ParameterIdentification$gridSearch() works with multiple parameters and default settings
 
     Code
