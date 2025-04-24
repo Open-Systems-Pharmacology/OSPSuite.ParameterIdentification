@@ -44,7 +44,6 @@ reference:
   - CIOptions
 - title: Internal functions
   contents:
-  - calculateCostMetrics
   - plot.modelCost
 - title: Miscelaneous
   contents:

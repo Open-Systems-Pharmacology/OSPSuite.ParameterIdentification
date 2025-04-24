@@ -12,6 +12,9 @@
 
 ## Minor improvements and bug fixes
 
+- Supports `ArithmeticStdDev` and `GeometricStdDev` error types passed in the 
+observed `DataSet` as `yErrorType`. This has an effect when `residualWeightingMethod = "error"`
+is set via `PIConfiguration$objectiveFunctionOptions`.
 - Improved print outputs for all classes
 - All classes do not interit from `ospsuite.utils::Printable` any more.
 

@@ -1,10 +1,8 @@
-#' @name calculateCostMetrics
 #' @title Calculate Cost Metrics for Model Evaluation
 #'
 #' @description
-#' This function calculates various cost metrics to evaluate the fit of a model
-#' by comparing simulated data against observed data. It supports different
-#' methods for weighting residuals.
+#' Internal utility to calculate residual-based cost metrics for model fit assessment.
+#' Used within parameter estimation routines.
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #' observation. Supports dataframes created from a `DataCombined` object via
@@ -43,13 +41,15 @@
 #' df <- DataCombined$toDataFrame()
 #'
 #' # Calculate cost metrics
-#' costMetrics <- calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
+#' costMetrics <- .calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
 #'
 #' # View model cost
 #' print(costMetrics$modelCost)
 #' }
-#' @export
-calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
+#'
+#' @keywords internal
+#' @noRd
+.calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
                                  robustMethod = "none", scaleVar = FALSE, ...) {
   additionalArgs <- list(...)
 
@@ -239,6 +239,7 @@ calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeig
 
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
   if (length(idx) > 0) {
+    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
     sd <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
     weights[idx] <- 1 / sd
   }
@@ -319,13 +320,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' Constructs Model Cost Summary for Error Handling
 #'
 #' Creates a model cost summary compatible with the structure returned by
-#' `calculateCostMetrics`, filled with either infinite values (for simulation
+#' `.calculateCostMetrics`, filled with either infinite values (for simulation
 #' failures) or zeros (for objective function failures).
 #'
 #' @param infinite Logical flag indicating if the structure should contain
 #' infinite values (TRUE) or zeros (FALSE).
 #' @return A model cost summary structured identically to the output of
-#' `calculateCostMetrics`, with fields for model cost, minimum log probability,
+#' `.calculateCostMetrics`, with fields for model cost, minimum log probability,
 #' statistical measures, and detailed residuals, tailored for failure scenarios
 #' or initial setup.
 #' @keywords internal
@@ -484,14 +485,14 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Summarize Cost Lists
 #'
-#' This function takes two lists, each being the output of the `calculateCostMetrics`
+#' This function takes two lists, each being the output of the `.calculateCostMetrics`
 #' function, and summarizes them. It aggregates model costs and min log probabilities,
 #' and combines cost and residual details by row-binding.
 #'
-#' @param list1 The first list, containing the output of the `calculateCostMetrics`
+#' @param list1 The first list, containing the output of the `.calculateCostMetrics`
 #' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
 #' and `residualDetails`.
-#' @param list2 The second list, containing the output of the `calculateCostMetrics`
+#' @param list2 The second list, containing the output of the `.calculateCostMetrics`
 #' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
 #' and `residualDetails`.
 #'
