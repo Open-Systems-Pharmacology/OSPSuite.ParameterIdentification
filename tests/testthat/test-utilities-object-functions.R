@@ -123,56 +123,56 @@ test_that(".calculateBisquareWeights returns empty vector for empty residuals", 
 # calculateCostMetrics
 
 test_that("calculateCostMetrics returns expected cost metrics for valid input data and default parameters", {
-  result <- calculateCostMetrics(obsVsPredDf)
+  result <- .calculateCostMetrics(obsVsPredDf)
   expect_s3_class(result, "modelCost")
   expect_true(all(c("modelCost", "minLogProbability", "costVariables", "residualDetails") %in% names(result)))
 })
 
 test_that("calculateCostMetrics returns correct cost metric values for default parameters", {
-  result <- calculateCostMetrics(obsVsPredDf)
+  result <- .calculateCostMetrics(obsVsPredDf)
   expect_snapshot_value(result, style = "deparse")
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `none` returns expected results", {
-  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "none")
+  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "none")
   expect_s3_class(result, "modelCost")
   expect_snapshot_value(result$modelCost, tolerance = 1e-3)
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `std` returns expected results", {
-  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std")
+  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std")
   expect_snapshot_value(result$modelCost, tolerance = 1e-3)
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `mean` returns expected results", {
-  result <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean")
+  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean")
   expect_snapshot_value(result$modelCost, tolerance = 1e-3)
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `error` returns expected results", {
   # ArithmeticStdDev
-  resultArith <- calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "error")
+  resultArith <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "error")
   expect_snapshot_value(resultArith$modelCost, tolerance = 1e-3)
 
   # GeometricStdDev
   obsVsPredDfGeom <- obsVsPredDf
   obsVsPredDfGeom$yErrorValues[14:16] <- c(1.083, 1.083, 1.162)
   obsVsPredDfGeom$yErrorType <- "GeometricStdDev"
-  resultGeom <- calculateCostMetrics(obsVsPredDfGeom, residualWeightingMethod = "error")
+  resultGeom <- .calculateCostMetrics(obsVsPredDfGeom, residualWeightingMethod = "error")
   expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-2)
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
-  resultHuber <- calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
-  resultBisquare <- calculateCostMetrics(obsVsPredDf, robustMethod = "bisquare")
+  resultHuber <- .calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
+  resultBisquare <- .calculateCostMetrics(obsVsPredDf, robustMethod = "bisquare")
   expect_equal(resultHuber$modelCost, 8.94396, tolerance = 1e-4)
   expect_equal(resultBisquare$modelCost, 4.929464, tolerance = 1e-4)
 })
 
 test_that("least squares and M3 methods produce different model costs", {
   obsVsPredDf$lloq <- 2.5
-  result_lsq <- calculateCostMetrics(obsVsPredDf, objectiveFunctionType = "lsq")
-  result_m3 <- calculateCostMetrics(obsVsPredDf,
+  result_lsq <- .calculateCostMetrics(obsVsPredDf, objectiveFunctionType = "lsq")
+  result_m3 <- .calculateCostMetrics(obsVsPredDf,
     objectiveFunctionType = "m3",
     scaling = "lin", linScaleCV = 0.2
   )
@@ -180,8 +180,8 @@ test_that("least squares and M3 methods produce different model costs", {
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
-  result_scaled <- calculateCostMetrics(obsVsPredDf, scaleVar = TRUE)
-  result_unscaled <- calculateCostMetrics(obsVsPredDf, scaleVar = FALSE)
+  result_scaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = TRUE)
+  result_unscaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = FALSE)
   expect_true(result_scaled$modelCost != result_unscaled$modelCost)
 })
 
@@ -189,5 +189,5 @@ test_that("calculateCostMetrics handles infinite values in xValues and yValues c
   obsVsPredDfInf <- obsVsPredDf
   obsVsPredDfInf$xValues[1] <- Inf
   obsVsPredDfInf$yValues[1] <- -Inf
-  expect_silent(calculateCostMetrics(obsVsPredDfInf))
+  expect_silent(.calculateCostMetrics(obsVsPredDfInf))
 })

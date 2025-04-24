@@ -12,13 +12,13 @@ infinite values (TRUE) or zeros (FALSE).}
 }
 \value{
 A model cost summary structured identically to the output of
-\code{calculateCostMetrics}, with fields for model cost, minimum log probability,
+\code{.calculateCostMetrics}, with fields for model cost, minimum log probability,
 statistical measures, and detailed residuals, tailored for failure scenarios
 or initial setup.
 }
 \description{
 Creates a model cost summary compatible with the structure returned by
-\code{calculateCostMetrics}, filled with either infinite values (for simulation
+\code{.calculateCostMetrics}, filled with either infinite values (for simulation
 failures) or zeros (for objective function failures).
 }
 \keyword{internal}

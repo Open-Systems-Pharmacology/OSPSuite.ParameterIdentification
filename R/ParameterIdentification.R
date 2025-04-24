@@ -211,7 +211,7 @@ ParameterIdentification <- R6::R6Class(
     #
     # Calculates and aggregates the model cost across all output
     # mappings for parameter estimation. Adjusts the evaluations counter, processes
-    # each output mapping's cost via `calculateCostMetrics`, and aggregates the
+    # each output mapping's cost via `.calculateCostMetrics`, and aggregates the
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
@@ -276,7 +276,7 @@ ParameterIdentification <- R6::R6Class(
         )
 
         # Compute cost for current output mapping
-        costSummary <- calculateCostMetrics(
+        costSummary <- .calculateCostMetrics(
           df = obsVsPredDf,
           objectiveFunctionType = costControl$objectiveFunctionType,
           residualWeightingMethod = costControl$residualWeightingMethod,
