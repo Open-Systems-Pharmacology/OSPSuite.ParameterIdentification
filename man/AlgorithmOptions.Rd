@@ -27,19 +27,19 @@ These algorithms are configured via the \code{PIConfiguration} class.
 }
 \section{AlgorithmOptions_HJKB}{
 
-Default options for the HJKB algorithm. See \code{\link[dfoptim:hookejeeves]{dfoptim::hjkb()}} for more details
+Default options for the \code{HJKB} algorithm. See \code{\link[dfoptim:hookejeeves]{dfoptim::hjkb()}} for more details
 on the options.
 }
 
 \section{AlgorithmOptions_BOBYQA}{
 
-Default options for the BOBYQA algorithm. See \code{\link[nloptr:nl.opts]{nloptr::nl.opts()}} for more
+Default options for the \code{BOBYQA} algorithm. See \code{\link[nloptr:nl.opts]{nloptr::nl.opts()}} for more
 details on the options.
 }
 
 \section{AlgorithmOptions_DEoptim}{
 
-Default options for the DEoptim algorithm. See \code{\link[DEoptim:DEoptim.control]{DEoptim::DEoptim.control()}}
+Default options for the \code{DEoptim} algorithm. See \code{\link[DEoptim:DEoptim.control]{DEoptim::DEoptim.control()}}
 for more details on the options.
 }
 

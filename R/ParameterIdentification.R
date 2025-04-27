@@ -74,7 +74,6 @@ ParameterIdentification <- R6::R6Class(
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
 
-
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -288,6 +287,7 @@ ParameterIdentification <- R6::R6Class(
           scaling = costControl$scaling
         )
 
+        costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
       }
 
@@ -416,108 +416,31 @@ ParameterIdentification <- R6::R6Class(
 
     # Execute Optimization Algorithm
     #
-    # Executes the selected optimization algorithm, configured in `PIConfiguration`,
-    # on the current parameter set. It returns a comprehensive summary of the
-    # optimization results, including parameter estimates, function evaluations,
-    # and computation time.
+    # Runs the optimization algorithm defined in `PIConfiguration` using the
+    # `Optimizer`. Uses current parameter bounds and start values, and evaluates
+    # the objective function accordingly.
     #
     # @return Optimization results with parameter estimates, elapsed time, and
     # additional metrics.
     .runAlgorithm = function() {
-      startValues <- unlist(lapply(self$parameters, function(x) {
-        x$startValue
-      }), use.names = FALSE)
-      lower <- unlist(lapply(self$parameters, function(x) {
-        x$minValue
-      }), use.names = FALSE)
-      upper <- unlist(lapply(self$parameters, function(x) {
-        x$maxValue
-      }), use.names = FALSE)
+      startValues <- sapply(private$.piParameters, `[[`, "startValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      # Depending on the `algorithm` argument in the `PIConfiguration` object, the
-      # actual optimization call will use one of the underlying optimization routines
-      message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
+      message(
+        messages$runningOptimizationAlgorithm(private$.configuration$algorithm)
+      )
 
-      control <- private$.configuration$algorithmOptions
-      if (private$.configuration$algorithm == "HJKB") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_HJKB
-        }
-        time <- system.time({
-          results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, control = control, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "BOBYQA") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_BOBYQA
-        }
-        time <- system.time({
-          results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, control = control, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "DEoptim") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_DEoptim
-        }
-        # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
-        time <- system.time({
-          results <- DEoptim::DEoptim(fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, lower = lower, upper = upper, control = control)
-          results$par <- results$optim$bestmem
-          results$value <- results$optim$bestval
-        })
-      }
-      # at this point, we assume that `private$.configuration$algorithm` contains
-      # one of the entries from `ospsuite.parameteridentification::Algorithms`,
-      # so one of the `if` conditions above would execute
+      optimizer <- Optimizer$new(configuration = private$.configuration)
 
-      results$elapsed <- time[[3]]
-      results$algorithm <- private$.configuration$algorithm
-      # Add the number of function evaluations (excluding hessian calculation) to the results output
-      results$nrOfFnEvaluations <- private$.fnEvaluations
+      optimResult <- optimizer$run(
+        par = startValues,
+        fn = function(p) private$.objectiveFunction(p),
+        lower = lower,
+        upper = upper
+      )
 
-      # Calculate sigma if it has not been calculated previously
-      if (is.null(results$sigma)) {
-        # For the objective function that represents the deviation = -2 * log(L),
-        # results$hessian / 2 is the observed information matrix
-        # https://stats.stackexchange.com/questions/27033/
-        results$sigma <- tryCatch(
-          {
-            # Calculate hessian if the selected algorithm does not calculate it by default
-            if (is.null(results$hessian)) {
-              message(messages$hessianEstimation())
-              # The hessian estimation is based on the parameter values
-              hessianEpsilon <- pmax(1e-8, pmin(1e-4, 0.1 * abs(results$par)))
-              results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.objectiveFunction(p)$modelCost
-              }, x = results$par, method.args = list(eps = hessianEpsilon))
-            }
-
-            fim <- solve(results$hessian / 2)
-            sqrt(diag(fim))
-          },
-          error = function(cond) {
-            message("Error calculating confidence intervals.")
-            message("Here's the original error message:")
-            message(cond$message)
-            # Choose a return value in case of error
-            NA_real_
-          }
-        )
-      }
-      # The 95% confidence intervals are defined by two sigma values away from the
-      # point estimate. The coefficient of variation (CV) is the ratio of standard
-      # deviation to the point estimate.
-      results$lwr <- results$par - qnorm(p = 1 - 0.05 / 2) * results$sigma
-      results$upr <- results$par + qnorm(p = 1 - 0.05 / 2) * results$sigma
-      results$cv <- results$sigma / abs(results$par) * 100
-      return(results)
+      return(optimResult)
     }
   ),
   public = list(
@@ -536,13 +459,15 @@ ParameterIdentification <- R6::R6Class(
     #' object maps a model output (represented by a `Quantity`) with a set of
     #' observed data given as `XYData` objects. For guidance on creating `PIOutputMapping`
     #' objects, see [`ospsuite.parameteridentification::PIOutputMapping`].
-    #' @returns A new `ParameterIdentification` object.
+    #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
-      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
+      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
+
       private$.configuration <- configuration %||% PIConfiguration$new()
+
       simulations <- ospsuite.utils::toList(simulations)
       parameters <- ospsuite.utils::toList(parameters)
       outputMappings <- ospsuite.utils::toList(outputMappings)
@@ -595,7 +520,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
-      # Reset gridSearhcFlag
+      # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
 
       # Run optimization algorithm

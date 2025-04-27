@@ -50,7 +50,7 @@
 #' @keywords internal
 #' @noRd
 .calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
-                                 robustMethod = "none", scaleVar = FALSE, ...) {
+                                  robustMethod = "none", scaleVar = FALSE, ...) {
   additionalArgs <- list(...)
 
   # Validate input dataframe structure

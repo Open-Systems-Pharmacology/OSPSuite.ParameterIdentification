@@ -56,10 +56,9 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field objectiveFunctionOptions Configures model fit evaluation settings,
-    #' influencing error and fit metrics. For option details and impact on cost metrics,
-    #' see [`ospsuite.parameteridentification::ObjectiveFunctionSpecs`]. Defaults
-    #' found in [`ospsuite.parameteridentification::ObjectiveFunctionOptions`].
+    #' @field objectiveFunctionOptions Settings for model fit evaluation,
+    #' affecting error metrics and cost calculation. See [`ObjectiveFunctionSpecs`]
+    #' and [`calculateCostMetrics`] for details. Defaults in [`ObjectiveFunctionOptions`].
     objectiveFunctionOptions = function(value) {
       if (missing(value)) {
         private$.objectiveFunctionOptions
@@ -68,7 +67,7 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithm A string specifying the optimization algorithm to use. See
+    #' @field algorithm Optimization algorithm name. See
     #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
     #' algorithms. Defaults to `BOBYQA`.
     algorithm = function(value) {
@@ -81,11 +80,24 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field algorithmOptions A list of named parameters for algorithm-specific
-    #' settings. Refer to [`ospsuite.parameteridentification::AlgorithmOptions`]
+    #' @field ciMethod Confidence interval estimation method. See
+    #' [`ospsuite.parameteridentification::CIMethods`] for available options.
+    #' Defaults to `hessian`.
+    ciMethod = function(value) {
+      if (missing(value)) {
+        private$.ciMethod
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, CIMethods)
+        private$.ciMethod <- value
+      }
+    },
+
+    #' @field algorithmOptions Named list of settings specific to the selected
+    #' algorithm.. Refer to [`ospsuite.parameteridentification::AlgorithmOptions`]
     #' for default settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
-    #' denotes the algorithm name). If `NULL`, the algorithm's default settings
-    #' are applied.
+    #' denotes the algorithm name). If `NULL`, algorithm's default settings are
+    #' applied.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -94,14 +106,37 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field estimateCI Boolean. If `TRUE`, will estimate confidence intervals
-    #' after optimization algorithm completion.
+    #' @field ciOptions Named list of settings for the selected CI method.
+    #' Refer to [`ospsuite.parameteridentification::CIOptions`] for default
+    #' settings per method (e.g., `CIOptions_XYZ` where `XYZ` corresponds to the
+    #' method name). If `NULL`, CI method's default settings are applied.
+    ciOptions = function(value) {
+      if (missing(value)) {
+        private$.ciOptions
+      } else {
+        private$.ciOptions <- value
+      }
+    },
+
+    #' @field estimateCI Logical. If `TRUE`, confidence intervals are estimated
+    #' after optimization.
     estimateCI = function(value) {
       if (missing(value)) {
         private$.estimateCI
       } else {
         ospsuite.utils::validateIsLogical(value)
         private$.estimateCI <- value
+      }
+    },
+
+    #' @field modelCostField Field name in cost object used as the optimization
+    #' target. Defaults to `modelCost`.
+    modelCostField = function(value) {
+      if (missing(value)) {
+        private$.modelCostField
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        private$.modelCostField <- value
       }
     }
   ),
@@ -113,6 +148,7 @@ PIConfiguration <- R6::R6Class(
     .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL,
+    .modelCostField = NULL,
     .ciMethod = NULL,
     .ciOptions = NULL,
     .estimateCI = NULL
@@ -125,9 +161,9 @@ PIConfiguration <- R6::R6Class(
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
-      private$.ciOptions <- CIOptions
       private$.algorithm <- "BOBYQA"
       private$.ciMethod <- "hessian"
+      private$.modelCostField <- "modelCost"
       private$.estimateCI <- FALSE
     },
 
