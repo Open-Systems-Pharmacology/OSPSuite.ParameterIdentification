@@ -106,7 +106,9 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
       optResult <- optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
       )
-    ), messages$optimizationAlgorithm(piConfig$algorithm)
+    ),
+    messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
+    fixed = TRUE
   )
   optResult$elapsed <- 0
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
@@ -121,7 +123,9 @@ test_that("Optimizer output has correct structure and values for HJKB", {
       optResult <- optimizer$run(
         par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
       )
-    ), messages$optimizationAlgorithm(piConfig$algorithm)
+    ),
+    messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
+    fixed = TRUE
   )
   optResult$elapsed <- 0
   optResult$fnEvaluations <- NA_real_
@@ -138,7 +142,9 @@ test_that("Optimizer output has correct structure and values for DEoptim", {
         optResult <- optimizer$run(
           par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
         )
-      ), messages$optimizationAlgorithm(piConfig$algorithm)
+      ),
+      messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
+      fixed = TRUE
     )
   )
   optResult$elapsed <- 0
@@ -271,7 +277,8 @@ test_that("Optimizer estimates confidence intervals using Hessian", {
         par = optResult$par, fn = fnObjective, lower = lowerTest, upper = upperTest
       )
     ),
-    "Starting confidence interval estimation using 'hessian' method"
+    messages$ciMethod(piConfig$ciMethod, optResult$par),
+    fixed = TRUE
   )
 
   ciResult$elapsed <- NA_real_
@@ -295,7 +302,8 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
           par = optResult$par, fn = fnObjective, lower = lowerTest, upper = upperTest
         )
       ),
-      "Starting confidence interval estimation using 'PL' method"
+      messages$ciMethod(piConfig$ciMethod, optResult$par),
+      fixed = TRUE
     )
   )
   ciResult$elapsed <- NA_real_
@@ -349,7 +357,8 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
           par = optResult$par, fn = fnObjectiveBootstrap, lower = lowerTest, upper = upperTest
         )
       ),
-      "Starting confidence interval estimation using 'bootstrap' method"
+      messages$ciMethod(piConfig$ciMethod, optResult$par),
+      fixed = TRUE
     )
   )
   ciResult$elapsed <- NA_real_

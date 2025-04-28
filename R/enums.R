@@ -54,7 +54,12 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 
 #' @rdname AlgorithmOptions
 #' @export
-AlgorithmOptions_DEoptim <- ospsuite.utils::enum(DEoptim::DEoptim.control())
+AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
+  modifyList(
+    DEoptim::DEoptim.control(),
+    list(trace = FALSE)
+  )
+)
 
 #' @noRd
 AlgorithmDefaults <- list(
@@ -283,4 +288,20 @@ robustMethodOptions <- ospsuite.utils::enum(c(
   "none",
   "huber",
   "bisquare"
+))
+
+#' Model Cost Fields for Optimization
+#'
+#' Available cost fields that can be used as optimization targets
+#' in parameter estimation.
+#'
+#' @name ModelCostFields
+#' @details The available field is:
+#' - **`modelCost`** – Accesses the RSS-based model cost value (currently the
+#' only supported option).
+#'
+#' @keywords internal
+#' @noRd
+ModelCostFields <- ospsuite.utils::enum(c(
+  "modelCost"
 ))

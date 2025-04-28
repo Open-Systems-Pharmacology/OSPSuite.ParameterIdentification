@@ -224,6 +224,9 @@ Optimizer <- R6::R6Class(
         costNew <- 0.5 * optimResult$value # fn(optimResult$par)
         paramHistory[[i]] <- c(p, i, newPar[p], costNew)
 
+        # Trigger .NET gc
+        ospsuite::clearMemory()
+
         # Stop when cost threshold is crossed
         if (costNew > costThreshold) break
         ci <- newPar[p]
@@ -270,6 +273,9 @@ Optimizer <- R6::R6Class(
         )
 
         bootstrapResults[i, ] <- optimResult$par
+
+        # Trigger .NET gc
+        ospsuite::clearMemory()
       }
 
       bootstrapResults <- bootstrapResults[stats::complete.cases(bootstrapResults), ]
@@ -440,11 +446,11 @@ Optimizer <- R6::R6Class(
         "HJKB" = private$.runHJKB,
         "BOBYQA" = private$.runBOBYQA,
         "DEoptim" = private$.runDEoptim,
-        stop(messages$optimizationAlgorithm(algorithm, TRUE))
+        stop(messages$optimizationAlgorithm(algorithm, error = TRUE))
       )
 
       if (private$.verbose) {
-        message(messages$optimizationAlgorithm(algorithm, FALSE))
+        message(messages$optimizationAlgorithm(algorithm, par, FALSE))
       }
 
       startTime <- proc.time()
@@ -498,7 +504,7 @@ Optimizer <- R6::R6Class(
         "hessian" = private$.estimateHessianCI,
         "PL" = private$.estimateCIProfileLikelihood,
         "bootstrap" = private$.estimateBootstrapCI,
-        stop(messages$ciMethod(ciMethod, TRUE))
+        stop(messages$ciMethod(ciMethod, error = TRUE))
       )
 
       allowedArgs <- names(formals(estimateCIFn))
@@ -512,8 +518,9 @@ Optimizer <- R6::R6Class(
       )
       filteredArgs <- argsList[intersect(names(argsList), allowedArgs)]
 
+      message(messages$ciMethod(ciMethod, par, FALSE))
+
       startTime <- proc.time()
-      message(messages$ciMethod(ciMethod))
       rawResult <- do.call(estimateCIFn, filteredArgs)
       elapsedTime <- proc.time() - startTime
 

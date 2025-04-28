@@ -5,6 +5,7 @@
     Message
       <PIConfiguration>
         * Optimization algorithm: BOBYQA
+        * Confidence interval method: hessian
         * Objective function type: lsq
         * Residual weighting method: none
         * Robust residual calculation method: none

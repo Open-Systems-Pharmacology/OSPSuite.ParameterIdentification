@@ -186,7 +186,7 @@ test_that("ParameterIdentification$run() outputs expected evaluation feedback us
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
   evalOutput <- capture_output(piTask$run())
-  expect_snapshot_value(evalOutput, style = "serialize")
+  expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
 })
 
 piTask <- createPiTask()
@@ -213,6 +213,28 @@ test_that("ParameterIdentification$run() runs successfully using DEoptim algorit
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
   expect_no_error(piTask$run())
+})
+
+# Test Hessian CI method
+test_that("ParameterIdentification$estimateCI() works w/o optimization using Hessian", {
+  piTask <- createPiTask() # default BOBYQA, hessian
+
+  # estimate CI without prior optimization
+  expect_no_error(
+    ciResult <- piTask$estimateCI()
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() works as expected using Hessian", {
+  piTask <- createPiTask() # default BOBYQA, hessian
+  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+
+  piResult <- piTask$run()
+  expect_no_error(
+    ciResult <- piTask$estimateCI()
+  )
+  ciResult$elapsed <- 0
+  expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
 })
 
 # User weights

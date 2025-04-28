@@ -296,10 +296,12 @@ ParameterIdentification <- R6::R6Class(
 
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
-        cat(paste0(
-          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", objective function ", signif(runningCost$modelCost, 4), "\n"
-        ))
+        cat(
+          messages$evaluationFeedback(
+            private$.fnEvaluations, currVals,
+            runningCost[[private$.configuration$modelCostField]]
+          )
+        )
       }
 
       return(runningCost)
@@ -427,10 +429,6 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      message(
-        messages$runningOptimizationAlgorithm(private$.configuration$algorithm)
-      )
-
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       optimResult <- optimizer$run(
@@ -538,6 +536,48 @@ ParameterIdentification <- R6::R6Class(
       ospsuite::clearMemory()
 
       return(results)
+    },
+
+    #' Estimates Confidence Intervals
+    #'
+    #' @description Computes confidence intervals for the optimized parameters
+    #' using the method specified in `PIConfiguration`.
+    #'
+    #' @return A list with confidence interval results, including bounds, standard
+    #' errors, and coefficient of variation.
+    estimateCI = function() {
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      # Initialize batches
+      private$.batchInitialization()
+
+      # bootstrap not supported yet
+      if (private$.configuration$ciMethod == "bootstrap") {
+        stop("`bootstrap`method is not supported yet.")
+      }
+
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      optimizer <- Optimizer$new(configuration = private$.configuration)
+
+      ciResult <- optimizer$estimateCI(
+        par = currValues,
+        fn = function(p) private$.objectiveFunction(p),
+        lower = lower,
+        upper = upper
+      )
+
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      }
+
+      # Trigger .NET gc
+      ospsuite::clearMemory()
+
+      return(ciResult)
     },
 
     #' Plots Parameter Estimation Results
@@ -668,7 +708,8 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate OFV
       ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
-        private$.objectiveFunction(as.numeric(ofvGrid[i, ]))$modelCost
+        ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+        ofv[[private$.configuration$modelCostField]]
       }, numeric(1))
 
       # Restore simulation state if applicable
@@ -747,7 +788,8 @@ ParameterIdentification <- R6::R6Class(
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
           row <- as.numeric(currentGrid[gridIdx, ])
-          ofvValues[gridIdx] <- private$.objectiveFunction(row)$modelCost
+          ofv <- private$.objectiveFunction(row)
+          ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 
         profileList[[idx]] <- tibble::tibble(
