@@ -108,3 +108,127 @@
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
 
+#' Resample Mapping Weights for Bootstrap
+#'
+#' Resamples dataset weights for each output mapping based on the bootstrap seed.
+#' Applies different resampling strategies to individual and aggregated datasets.
+#'
+#' Individual and aggregated datasets are resampled separately:
+#' - Individual datasets are resampled as full datasets, controlled by adjusting
+#' dataset-level weights (`.resampleDataSetWeights`).
+#' - Aggregated datasets (mean ± error) are resampled by fitting a Gaussian Process
+#' Regression (GPR)
+#'   model to the mean and error, then generating synthetic data points, controlled
+#'   by adjusting point-level weights (`.resampleAggregatedWeights`).
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @param mappingWeights A list of dataset weight lists, one per output mapping.
+#' @param seed An integer seed used for bootstrap resampling.
+#' @return A list of resampled dataset weights, one per output mapping.
+#'
+#' @keyword internal
+#' @noRd
+.resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
+  if (length(mappingWeights) != length(outputMappings)) {
+    stop("weights do not align with outputMappings")
+  }
+
+  resampledMappingWeights <- vector("list", length(outputMappings))
+  names(resampledMappingWeights) <- names(outputMappings)
+
+  for (idx in seq_along(outputMappings)) {
+    mapping <- outputMappings[[idx]]
+    dataSetWeights <- mappingWeights[[idx]]
+
+    isAggregated <- vapply(mapping$observedDataSets, .isAggregated, logical(1))
+
+    if (
+      !ospsuite.utils::isSameLength(dataSetWeights, mapping$observedDataSets) ||
+      !ospsuite.utils::isIncluded(names(dataSetWeights), names(mapping$observedDataSets))
+    ) {
+      stop("dataset weights do not align with observed datasets in outputMappings")
+    }
+
+    # Generate resampled weights for individual and aggregated data sets
+    individualWeights <- dataSetWeights[!isAggregated]
+    aggregatedWeights <- dataSetWeights[isAggregated]
+
+    resampledDataSetWeights <- list()
+
+    if (length(individualWeights) > 0) {
+      sampledIndividualWeights <- .resampleDataSetWeights(individualWeights, seed)
+      individualNames <- names(sampledIndividualWeights)
+      resampledDataSetWeights[individualNames] <- sampledIndividualWeights
+    }
+
+    if (length(aggregatedWeights) > 0) {
+      stop("bootstrap with aggregated data not supported yet")
+      # Later:
+      # sampledAggregatedWeights <- .resampleAggregatedWeights(aggregatedWeights, seed)
+      # aggregatedNames <- names(sampledAggregatedWeights)
+      # resampledDataSetWeights[aggregatedNames] <- sampledAggregatedWeights
+    }
+
+    resampledMappingWeights[[idx]] <- resampledDataSetWeights
+  }
+
+  return(resampledMappingWeights)
+}
+
+#' Resample Weights for Individual Datasets
+#'
+#' Performs bootstrap resampling of individual datasets by adjusting their dataset-level
+#' weights. Each dataset's total weight is broken down into dataset-level and point-level
+#' components. The dataset-level weights are resampled with replacement and then
+#' recombined with the point-level weights to generate new weights.
+#'
+#' @param dataSetWeights A named list of numeric weight vectors (one per dataset).
+#' @param seed An integer seed used to control the resampling.
+#' @return A named list of resampled weight vectors, matching the structure of `dataSetWeights`.
+#'
+#' @keyword internal
+#' @noRd
+.resampleDataSetWeights <- function(dataSetWeights, seed) {
+  ospsuite.utils::validateIsNotEmpty(dataSetWeights)
+
+  weightsSummary <- vector("list", length(dataSetWeights))
+  names(weightsSummary) <- names(dataSetWeights)
+
+  # Decompose each dataset's weights into dataset-level and point-level components
+  for (dataSetName in names(dataSetWeights)) {
+    weightsVector <- dataSetWeights[[dataSetName]]
+    weightsVector[is.na(weightsVector)] <- 0
+
+    datasetWeight <- min(weightsVector[weightsVector >= 1], na.rm = TRUE)
+
+    pointWeights <- weightsVector / datasetWeight
+    pointWeights[!is.finite(pointWeights)] <- 0
+
+    weightsSummary[[dataSetName]] <- list(
+      datasetWeight = datasetWeight,
+      pointWeights = pointWeights
+    )
+  }
+
+  # Resample dataset-level weights, then recombine with point-level weights
+  weightsPool <- unlist(
+    mapply(rep, names(weightsSummary), lapply(weightsSummary, `[[`, "datasetWeight")),
+    use.names = FALSE
+  )
+
+  set.seed(seed)
+  resampledNames <- sample(weightsPool, size = length(weightsPool), replace = TRUE)
+  datasetCounts <- table(resampledNames)
+
+  resampledDataSetWeights <- vector("list", length(dataSetWeights))
+  names(resampledDataSetWeights) <- names(dataSetWeights)
+
+  for (dataSetName in names(weightsSummary)) {
+    nSelected <- as.integer(datasetCounts[dataSetName])
+    if (is.na(nSelected)) nSelected <- 0
+    resampledDataSetWeights[[dataSetName]] <-
+      weightsSummary[[dataSetName]]$pointWeights * nSelected
+  }
+
+  return(resampledDataSetWeights)
+}
