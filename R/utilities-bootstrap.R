@@ -73,3 +73,38 @@
   return(mappingWeights)
 }
 
+#' Apply DataSet Weights to Output Mappings
+#'
+#' Assigns dataset weights to each output mapping using the mapping-level
+#' weight structure. Assumes that weight structure matches the observed datasets.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @param mappingWeights A list of dataset weight lists, one per output mapping.
+#' @return The updated list of `PIOutputMapping` objects with applied weights.
+#'
+#' @keyword internal
+#' @noRd
+.applyMappingWeights <- function(outputMappings, mappingWeights) {
+  for (idx in seq_along(outputMappings)) {
+    outputMappings[[idx]]$setDataWeights(mappingWeights[[idx]])
+  }
+  return(outputMappings)
+}
+
+#' Resample and Apply Weights to Output Mappings
+#'
+#' Resamples dataset weights based on a bootstrap seed and applies the resampled
+#' weights to each output mapping.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @param mappingWeights A list of initial dataset weight lists, one per output mapping.
+#' @param seed An integer seed used for bootstrap resampling.
+#' @return The updated list of `PIOutputMapping` objects with resampled weights.
+#'
+#' @keyword internal
+#' @noRd
+.resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights, seed) {
+  resampledMappingWeights <- .resampleMappingWeights(outputMappings, mappingWeights, seed)
+  .applyMappingWeights(outputMappings, resampledMappingWeights)
+}
+
