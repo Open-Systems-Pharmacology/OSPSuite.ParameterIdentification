@@ -40,3 +40,36 @@
   }
 }
 
+#' Extract Initial Mapping Weights
+#'
+#' Extracts dataset weights from each output mapping. If weights are missing,
+#' they are initialized to 1 for each observed y-value. The result is a list
+#' of named lists, one per output mapping, containing weights for each dataset.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @return A named list of dataset weight lists, one per output mapping.
+#'
+#' @keyword internal
+#' @noRd
+.extractMappingWeights <- function(outputMappings) {
+  mappingWeights <- vector("list", length(outputMappings))
+  names(mappingWeights) <- names(outputMappings)
+
+  for (idx in seq_along(outputMappings)) {
+    mapping <- outputMappings[[idx]]
+    currentWeights <- mapping$dataWeights
+    observedDataSets <- mapping$observedDataSets
+
+    mappingWeights[[idx]] <- list()
+    for (dataSetName in names(observedDataSets)) {
+      mappingWeights[[idx]][[dataSetName]] <- if (!is.null(currentWeights[[dataSetName]])) {
+        currentWeights[[dataSetName]]
+      } else {
+        rep(1, length(observedDataSets[[dataSetName]]$yValues))
+      }
+    }
+  }
+
+  return(mappingWeights)
+}
+
