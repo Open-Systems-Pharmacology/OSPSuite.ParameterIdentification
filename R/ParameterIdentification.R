@@ -255,6 +255,22 @@ ParameterIdentification <- R6::R6Class(
       return(private$.outputMappings)
     },
 
+    # Restore Output Mapping State
+    #
+    # Resets `outputMappings` to their initial dataset weights and clears
+    # bootstrap-related state, including the active bootstrap seed and cached
+    # initial weights.
+    .restoreOutputMappingsState = function() {
+      if (!is.null(private$.initialMappingWeights)) {
+        private$.outputMappings <- .applyMappingWeights(
+          private$.outputMappings,
+          private$.initialMappingWeights
+        )
+      }
+      private$.initialMappingWeights <- NULL
+      private$.activeBootstrapSeed <- NULL
+    },
+
     # Aggregate Model Cost Calculation
     #
     # Calculates and aggregates the model cost across all output
@@ -627,6 +643,10 @@ ParameterIdentification <- R6::R6Class(
         lower = lower,
         upper = upper
       )
+
+      if (private$.configuration$ciMethod == "bootstrap") {
+        private$.restoreOutputMappingsState()
+      }
 
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)
