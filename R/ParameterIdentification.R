@@ -233,7 +233,7 @@ ParameterIdentification <- R6::R6Class(
     #   returns the unmodified output mappings.
     # @return A list of `PIOutputMapping` objects, possibly with resampled dataset
     #   weights.
-    .getOutputMappings <- function(bootstrapSeed = NULL) {
+    .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
       }
@@ -242,7 +242,8 @@ ParameterIdentification <- R6::R6Class(
         private$.initialMappingWeights <- .extractMappingWeights(private$.outputMappings)
       }
 
-      if (private$.activeBootstrapSeed != bootstrapSeed) {
+      if (is.null(private$.activeBootstrapSeed) ||
+        private$.activeBootstrapSeed != bootstrapSeed) {
         private$.activeBootstrapSeed <- bootstrapSeed
         private$.outputMappings <- .resampleAndApplyMappingWeights(
           private$.outputMappings,
@@ -385,7 +386,6 @@ ParameterIdentification <- R6::R6Class(
     # @param currVals Vector of parameter values for simulation.
     # @return List of `DataCombined` objects, one per output mapping.
     .evaluate = function(currVals, bootstrapSeed = NULL) {
-
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
       obsVsPredList <- vector("list", length(outputMappings))
