@@ -279,8 +279,7 @@ Optimizer <- R6::R6Class(
       }
 
       bootstrapResults <- bootstrapResults[
-        stats::complete.cases(bootstrapResults),
-        ,
+        stats::complete.cases(bootstrapResults), ,
         drop = FALSE
       ]
 

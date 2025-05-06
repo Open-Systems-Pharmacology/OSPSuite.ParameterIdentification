@@ -138,7 +138,6 @@ PIConfiguration <- R6::R6Class(
         stop(messages$errorPropertyReadOnly("modelCostField"))
       }
     }
-
   ),
   private = list(
     .simulateSteadyState = NULL,
