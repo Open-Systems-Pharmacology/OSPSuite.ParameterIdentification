@@ -102,18 +102,7 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
 })
 
 test_that("ParameterIdentification returns infinite value if simulation fails", {
-  PITester <- R6::R6Class(
-    inherit = ParameterIdentification,
-    cloneable = FALSE,
-    private = list(
-      .evaluate = function(currVals) {
-        private$.fnEvaluations <- private$.fnEvaluations + 2
-        stop("Simulated failure in evaluation")
-      }
-    )
-  )
-
-  testTask <- PITester$new(
+  testTask <- PISimFailureTester$new(
     simulations = testSimulations(),
     parameters = testParameters(),
     outputMappings = testOutputMapping()
