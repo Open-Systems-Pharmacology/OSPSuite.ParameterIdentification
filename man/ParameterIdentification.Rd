@@ -56,8 +56,8 @@ Initializes a \code{ParameterIdentification} instance.
 Parameters of the simulation object will be varied and the results simulated.
 For creating \code{Simulation} objects, see \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation}}.}
 
-\item{\code{parameters}}{An object or a list of objects of class \code{PIParameter}.
-These parameters will be varied. For creating \code{PIParameter} objects, refer to
+\item{\code{parameters}}{An object or a list of objects of class \code{PIParameters}.
+These parameters will be varied. For creating \code{PIParameters} objects, refer to
 \code{\link{PIParameters}}.}
 
 \item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each

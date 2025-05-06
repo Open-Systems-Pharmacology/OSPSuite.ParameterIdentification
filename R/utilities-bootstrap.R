@@ -6,7 +6,7 @@
 #' @param data A `DataSet` (typically `XYData`) object.
 #' @return Logical value indicating if the dataset is aggregated.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .isAggregated <- function(data) {
   !is.null(data$yErrorType)
@@ -21,7 +21,7 @@
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to classify.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .classifyObservedData <- function(outputMappings) {
   dataSets <- unlist(
@@ -49,7 +49,7 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A named list of dataset weight lists, one per output mapping.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .extractMappingWeights <- function(outputMappings) {
   mappingWeights <- vector("list", length(outputMappings))
@@ -82,7 +82,7 @@
 #' @param mappingWeights A list of dataset weight lists, one per output mapping.
 #' @return The updated list of `PIOutputMapping` objects with applied weights.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .applyMappingWeights <- function(outputMappings, mappingWeights) {
   for (idx in seq_along(outputMappings)) {
@@ -101,7 +101,7 @@
 #' @param seed An integer seed used for bootstrap resampling.
 #' @return The updated list of `PIOutputMapping` objects with resampled weights.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights, seed) {
   resampledMappingWeights <- .resampleMappingWeights(outputMappings, mappingWeights, seed)
@@ -126,7 +126,7 @@
 #' @param seed An integer seed used for bootstrap resampling.
 #' @return A list of resampled dataset weights, one per output mapping.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
   if (length(mappingWeights) != length(outputMappings)) {
@@ -188,7 +188,7 @@
 #' @param seed An integer seed used to control the resampling.
 #' @return A named list of resampled weight vectors, matching the structure of `dataSetWeights`.
 #'
-#' @keyword internal
+#' @keywords internal
 #' @noRd
 .resampleDataSetWeights <- function(dataSetWeights, seed) {
   ospsuite.utils::validateIsNotEmpty(dataSetWeights)
