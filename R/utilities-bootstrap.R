@@ -33,10 +33,10 @@
   nAggregated <- sum(isAggregated)
   nIndividual <- length(dataSets) - nAggregated
 
-  message(sprintf("PI detected %d individual and %d aggregated datasets.", nIndividual, nAggregated))
+  message(messages$statusObservedDataClassification(nIndividual, nAggregated))
 
   if (nIndividual < 3) {
-    warning("Fewer than 3 individual datasets detected — bootstrap CI may be unreliable.")
+    warning(messages$warningLowIndividualData())
   }
 }
 
@@ -130,7 +130,9 @@
 #' @noRd
 .resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
   if (length(mappingWeights) != length(outputMappings)) {
-    stop("weights do not align with outputMappings")
+    stop(messages$errorWeightGroupLengthMismatch(
+      length(outputMappings), length(mappingWeights)
+    ))
   }
 
   resampledMappingWeights <- vector("list", length(outputMappings))
@@ -144,9 +146,9 @@
 
     if (
       !ospsuite.utils::isSameLength(dataSetWeights, mapping$observedDataSets) ||
-      !ospsuite.utils::isIncluded(names(dataSetWeights), names(mapping$observedDataSets))
+        !ospsuite.utils::isIncluded(names(dataSetWeights), names(mapping$observedDataSets))
     ) {
-      stop("dataset weights do not align with observed datasets in outputMappings")
+      stop(messages$errorDataSetWeightsMismatch())
     }
 
     # Generate resampled weights for individual and aggregated data sets
