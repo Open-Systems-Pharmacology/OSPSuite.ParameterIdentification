@@ -238,10 +238,6 @@ ParameterIdentification <- R6::R6Class(
         return(private$.outputMappings)
       }
 
-      if (is.null(private$.activeBootstrapSeed)) {
-        .classifyObservedData(private$.outputMappings)
-      }
-
       if (is.null(private$.initialMappingWeights)) {
         private$.initialMappingWeights <- .extractMappingWeights(private$.outputMappings)
       }
@@ -611,6 +607,11 @@ ParameterIdentification <- R6::R6Class(
       currValues <- sapply(private$.piParameters, `[[`, "currValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      if (private$.configuration$ciMethod == "bootstrap" &&
+        is.null(private$.activeBootstrapSeed)) {
+        .classifyObservedData(private$.outputMappings)
+      }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
