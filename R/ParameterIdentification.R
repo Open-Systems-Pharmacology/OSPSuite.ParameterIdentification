@@ -288,6 +288,12 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
+      if (length(obsVsPredList) != length(outputMappings)) {
+        stop(messages$errorObsVsPredListLengthMismatch(
+          length(outputMappings), length(obsVsPredList)
+        ))
+      }
+
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
