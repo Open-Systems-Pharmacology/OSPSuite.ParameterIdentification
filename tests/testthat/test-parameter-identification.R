@@ -102,18 +102,7 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
 })
 
 test_that("ParameterIdentification returns infinite value if simulation fails", {
-  PITester <- R6::R6Class(
-    inherit = ParameterIdentification,
-    cloneable = FALSE,
-    private = list(
-      .evaluate = function(currVals) {
-        private$.fnEvaluations <- private$.fnEvaluations + 2
-        stop("Simulated failure in evaluation")
-      }
-    )
-  )
-
-  testTask <- PITester$new(
+  testTask <- PISimFailureTester$new(
     simulations = testSimulations(),
     parameters = testParameters(),
     outputMappings = testOutputMapping()
@@ -235,6 +224,85 @@ test_that("ParameterIdentification$estimateCI() works as expected using Hessian"
   )
   ciResult$elapsed <- 0
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
+})
+
+# Test bootstrap CI method
+test_that("ParameterIdentification$estimateCI() works as expected using bootstrap", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+  outputMapping$setDataWeights(weights)
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  expect_no_error({
+    expect_message(
+      expect_message(
+        expect_message(
+          ciResult <- piTask$estimateCI(),
+          messages$ciMethod("bootstrap", piTask$parameters[[1]]$currValue),
+          fixed = TRUE
+        ),
+        messages$statusObservedDataClassification(
+          length(syntheticObservedData()), 0
+        )
+      ),
+      messages$statusBootstrap(1, bootstrapPiConfiguration()$ciOptions$nBootstrap)
+    )
+  })
+
+  ciResult$elapsed <- 0
+  expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
+
+  # test initial OutputMapping weights are restored
+  expect_equal(
+    lapply(piTask$outputMappings, `[[`, "dataWeights"),
+    list(weights)
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+
+  bootstrapPiConfiguration <- getBootstrapPiConfiguration(1, 1)
+
+  piTaskResample <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(temp <- piTaskResample$estimateCI())
+  expect_snapshot_value(
+    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly
+          when weights are predefined", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+  outputMapping$setDataWeights(weights)
+
+  bootstrapPiConfiguration <- getBootstrapPiConfiguration(1, 1)
+
+  piTaskResample <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(temp <- piTaskResample$estimateCI())
+  expect_snapshot_value(
+    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+  )
 })
 
 # User weights

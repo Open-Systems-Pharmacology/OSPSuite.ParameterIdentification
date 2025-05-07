@@ -278,7 +278,10 @@ Optimizer <- R6::R6Class(
         ospsuite::clearMemory()
       }
 
-      bootstrapResults <- bootstrapResults[stats::complete.cases(bootstrapResults), ]
+      bootstrapResults <- bootstrapResults[
+        stats::complete.cases(bootstrapResults), ,
+        drop = FALSE
+      ]
 
       # Compute standard errors and CIs
       lowerLevel <- (1 - controlCI$confLevel) / 2
@@ -324,8 +327,8 @@ Optimizer <- R6::R6Class(
         if (is.list(result)) {
           if (!private$.configuration$modelCostField %in% names(result)) {
             stop(messages$objectiveFnOutputError(
-              private$.configuration$modelCostField)
-            )
+              private$.configuration$modelCostField
+            ))
           }
           return(purrr::pluck(result, private$.configuration$modelCostField))
         }

@@ -73,6 +73,10 @@ ParameterIdentification <- R6::R6Class(
     .fnEvaluations = 0,
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
+    # Most recently used bootstrap seed to detect when resampling is needed
+    .activeBootstrapSeed = NULL,
+    # Cached initial dataset weights for all output mappings (used for resampling)
+    .initialMappingWeights = NULL,
 
     # Batch Initialization for Simulations
     #
@@ -207,6 +211,66 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # Retrieve Output Mappings with Optional Bootstrap Resampling
+    #
+    # Returns the current list of output mappings used during objective function
+    # evaluation. If no bootstrap seed is provided, the original mappings are returned.
+    # If a `bootstrapSeed` is provided and differs from the previously active seed,
+    # dataset weights are resampled accordingly.
+    #
+    # Strategy rationale:
+    # Bootstrap behavior is implemented by updating only the dataset weights.
+    #
+    # This method follows a lazy initialization strategy:
+    # - Classification of observed data as "individual" or "aggregated" is done
+    #   once before the first bootstrap call via `.classifyObservedData()`.
+    # - Initial mapping-level dataset weights are extracted once and cached via
+    #   `.extractMappingWeights()`.
+    # - On each new bootstrap seed, weights are resampled and applied using
+    #   `.resampleAndApplyMappingWeights()`, modifying the internal `.outputMappings`.
+    #
+    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
+    #   returns the unmodified output mappings.
+    # @return A list of `PIOutputMapping` objects, possibly with resampled dataset
+    #   weights.
+    .getOutputMappings = function(bootstrapSeed = NULL) {
+      if (is.null(bootstrapSeed)) {
+        return(private$.outputMappings)
+      }
+
+      if (is.null(private$.initialMappingWeights)) {
+        private$.initialMappingWeights <- .extractMappingWeights(private$.outputMappings)
+      }
+
+      if (is.null(private$.activeBootstrapSeed) ||
+        private$.activeBootstrapSeed != bootstrapSeed) {
+        private$.activeBootstrapSeed <- bootstrapSeed
+        private$.outputMappings <- .resampleAndApplyMappingWeights(
+          private$.outputMappings,
+          private$.initialMappingWeights,
+          bootstrapSeed
+        )
+      }
+
+      return(private$.outputMappings)
+    },
+
+    # Restore Output Mapping State
+    #
+    # Resets `outputMappings` to their initial dataset weights and clears
+    # bootstrap-related state, including the active bootstrap seed and cached
+    # initial weights.
+    .restoreOutputMappingsState = function() {
+      if (!is.null(private$.initialMappingWeights)) {
+        private$.outputMappings <- .applyMappingWeights(
+          private$.outputMappings,
+          private$.initialMappingWeights
+        )
+      }
+      private$.initialMappingWeights <- NULL
+      private$.activeBootstrapSeed <- NULL
+    },
+
     # Aggregate Model Cost Calculation
     #
     # Calculates and aggregates the model cost across all output
@@ -215,13 +279,15 @@ ParameterIdentification <- R6::R6Class(
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
-    .objectiveFunction = function(currVals) {
+    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
       # Increment function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+
       # Run simulation and catch errors
       obsVsPredList <- tryCatch(
-        private$.evaluate(currVals),
+        private$.evaluate(currVals, bootstrapSeed = bootstrapSeed),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
@@ -238,9 +304,15 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
+      if (length(obsVsPredList) != length(outputMappings)) {
+        stop(messages$errorObsVsPredListLengthMismatch(
+          length(outputMappings), length(obsVsPredList)
+        ))
+      }
+
       # Evaluate cost per output mapping
-      costSummaryList <- vector("list", length(private$.outputMappings))
-      for (idx in seq_along(private$.outputMappings)) {
+      costSummaryList <- vector("list", length(outputMappings))
+      for (idx in seq_along(outputMappings)) {
         # Convert units to base units for unified comparison
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
         # Apply LLOQ handling for LSQ
@@ -254,14 +326,14 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Apply log transformation if requested
-        if (private$.outputMappings[[idx]]$scaling == "log") {
+        if (outputMappings[[idx]]$scaling == "log") {
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
         # Assign weights from PIOutputMapping
         obsVsPredDf$weights <- NA_real_
-        if (!is.null(private$.outputMappings[[idx]]$dataWeights)) {
-          weights <- private$.outputMappings[[idx]]$dataWeights
+        if (!is.null(outputMappings[[idx]]$dataWeights)) {
+          weights <- outputMappings[[idx]]$dataWeights
           for (dataset in names(weights)) {
             obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[dataset]]
           }
@@ -269,7 +341,7 @@ ParameterIdentification <- R6::R6Class(
 
         # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
-        costControl$scaling <- private$.outputMappings[[idx]]$scaling
+        costControl$scaling <- outputMappings[[idx]]$scaling
         ospsuite.utils::validateIsOption(
           options = costControl,
           validOptions = ObjectiveFunctionSpecs
@@ -335,8 +407,10 @@ ParameterIdentification <- R6::R6Class(
     #
     # @param currVals Vector of parameter values for simulation.
     # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals) {
-      obsVsPredList <- vector("list", length(private$.outputMappings))
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+
+      obsVsPredList <- vector("list", length(outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -383,9 +457,9 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
-      for (idx in seq_along(private$.outputMappings)) {
+      for (idx in seq_along(outputMappings)) {
         obsVsPred <- ospsuite::DataCombined$new()
-        currOutputMapping <- private$.outputMappings[[idx]]
+        currOutputMapping <- outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
         # Find the simulation batch that corresponds to the simulation
@@ -404,11 +478,11 @@ ParameterIdentification <- R6::R6Class(
         obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
         # apply data transformations stored in corresponding outputMapping
         obsVsPred$setDataTransformations(
-          forNames = names(private$.outputMappings[[idx]]$observedDataSets),
-          xOffsets = private$.outputMappings[[idx]]$dataTransformations$xOffsets,
-          xScaleFactors = private$.outputMappings[[idx]]$dataTransformations$xFactors,
-          yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
-          yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
+          forNames = names(outputMappings[[idx]]$observedDataSets),
+          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
         )
         obsVsPredList[[idx]] <- obsVsPred
       }
@@ -433,7 +507,7 @@ ParameterIdentification <- R6::R6Class(
 
       optimResult <- optimizer$run(
         par = startValues,
-        fn = function(p) private$.objectiveFunction(p),
+        fn = function(p, ...) private$.objectiveFunction(p, ...),
         lower = lower,
         upper = upper
       )
@@ -447,8 +521,8 @@ ParameterIdentification <- R6::R6Class(
     #' @param simulations An object or a list of objects of class `Simulation`.
     #' Parameters of the simulation object will be varied and the results simulated.
     #' For creating `Simulation` objects, see [`ospsuite::loadSimulation`].
-    #' @param parameters An object or a list of objects of class `PIParameter`.
-    #' These parameters will be varied. For creating `PIParameter` objects, refer to
+    #' @param parameters An object or a list of objects of class `PIParameters`.
+    #' These parameters will be varied. For creating `PIParameters` objects, refer to
     #' [`ospsuite.parameteridentification::PIParameters`].
     #' @param configuration (Optional) `PIConfiguration` for additional settings.
     #' Uses default if omitted. For details on creating a `PIConfiguration` object,
@@ -552,23 +626,27 @@ ParameterIdentification <- R6::R6Class(
       # Initialize batches
       private$.batchInitialization()
 
-      # bootstrap not supported yet
-      if (private$.configuration$ciMethod == "bootstrap") {
-        stop("`bootstrap`method is not supported yet.")
-      }
-
       currValues <- sapply(private$.piParameters, `[[`, "currValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      if (private$.configuration$ciMethod == "bootstrap" &&
+        is.null(private$.activeBootstrapSeed)) {
+        .classifyObservedData(private$.outputMappings)
+      }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       ciResult <- optimizer$estimateCI(
         par = currValues,
-        fn = function(p) private$.objectiveFunction(p),
+        fn = function(p, ...) private$.objectiveFunction(p, ...),
         lower = lower,
         upper = upper
       )
+
+      if (private$.configuration$ciMethod == "bootstrap") {
+        private$.restoreOutputMappingsState()
+      }
 
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)

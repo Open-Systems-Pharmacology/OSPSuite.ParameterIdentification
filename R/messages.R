@@ -36,10 +36,28 @@ messages$errorWeightsNames <- function() {
   "All weights must be a named list with names matching observed data set names."
 }
 
-messages$errorWeightsLengthMismatch <- function(label, expected, actual) {
+messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",
     label, expected, actual
+  )
+}
+
+messages$errorWeightGroupLengthMismatch <- function(expected, actual) {
+  sprintf(
+    "Weight groups must have length %d to match number of output mappings, but got %d.",
+    expected, actual
+  )
+}
+
+messages$errorDataSetWeightsMismatch <- function() {
+  "Dataset weights do not align with observed datasets in output mapping."
+}
+
+messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
+  sprintf(
+    "Number of combined data entries must be %d to match output mappings, but got %d.",
+    expected, actual
   )
 }
 
@@ -174,6 +192,21 @@ messages$plMaxiterWarning <- function(index) {
   paste0(
     "maxIter reached for parameter ", index,
     " without meeting cost threshold. Setting CI to Inf."
+  )
+}
+
+messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
+  sprintf(
+    "PI detected %d individual and %d aggregated datasets.",
+    nIndividual,
+    nAggregated
+  )
+}
+
+messages$warningLowIndividualData <- function(n = 3) {
+  sprintf(
+    "Less than %d individual datasets detected — bootstrap CI may be unreliable.",
+    n
   )
 }
 
