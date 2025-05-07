@@ -102,18 +102,7 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
 })
 
 test_that("ParameterIdentification returns infinite value if simulation fails", {
-  PITester <- R6::R6Class(
-    inherit = ParameterIdentification,
-    cloneable = FALSE,
-    private = list(
-      .evaluate = function(currVals) {
-        private$.fnEvaluations <- private$.fnEvaluations + 2
-        stop("Simulated failure in evaluation")
-      }
-    )
-  )
-
-  testTask <- PITester$new(
+  testTask <- PISimFailureTester$new(
     simulations = testSimulations(),
     parameters = testParameters(),
     outputMappings = testOutputMapping()
@@ -176,12 +165,8 @@ test_that("ParameterIdentification$run() errors on invalid objective function op
 test_that("ParameterIdentification$run() runs successfully using default BOBYQA algorithm", {
   piTask <- createPiTask()
   expect_no_error(piResults <- piTask$run())
-  resultFields <- c("par", "value", "nrOfFnEvaluations", "hessian", "sigma", "lwr", "upr", "cv")
-  resultValues <- piResults[names(piResults) %in% resultFields]
-  resultValues <- unlist(resultValues)
-  referenceValues <- c(1.3189, 156.2574, 22, 730.5977, 0.0523, 1.2163, 1.4214, 3.9671)
-  names(referenceValues) <- resultFields
-  expect_equal(!!resultValues, referenceValues, tolerance = 1e-03)
+  piResults$elapsed <- 0
+  expect_snapshot_value(piResults, style = "deparse", tolerance = 1e-03)
 })
 
 test_that("ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm", {
@@ -190,7 +175,7 @@ test_that("ParameterIdentification$run() outputs expected evaluation feedback us
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
   evalOutput <- capture_output(piTask$run())
-  expect_snapshot_value(evalOutput, style = "serialize")
+  expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
 })
 
 piTask <- createPiTask()
@@ -217,6 +202,107 @@ test_that("ParameterIdentification$run() runs successfully using DEoptim algorit
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
   expect_no_error(piTask$run())
+})
+
+# Test Hessian CI method
+test_that("ParameterIdentification$estimateCI() works w/o optimization using Hessian", {
+  piTask <- createPiTask() # default BOBYQA, hessian
+
+  # estimate CI without prior optimization
+  expect_no_error(
+    ciResult <- piTask$estimateCI()
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() works as expected using Hessian", {
+  piTask <- createPiTask() # default BOBYQA, hessian
+  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+
+  piResult <- piTask$run()
+  expect_no_error(
+    ciResult <- piTask$estimateCI()
+  )
+  ciResult$elapsed <- 0
+  expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
+})
+
+# Test bootstrap CI method
+test_that("ParameterIdentification$estimateCI() works as expected using bootstrap", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+  outputMapping$setDataWeights(weights)
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  expect_no_error({
+    expect_message(
+      expect_message(
+        expect_message(
+          ciResult <- piTask$estimateCI(),
+          messages$ciMethod("bootstrap", piTask$parameters[[1]]$currValue),
+          fixed = TRUE
+        ),
+        messages$statusObservedDataClassification(
+          length(syntheticObservedData()), 0
+        )
+      ),
+      messages$statusBootstrap(1, bootstrapPiConfiguration()$ciOptions$nBootstrap)
+    )
+  })
+
+  ciResult$elapsed <- 0
+  expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
+
+  # test initial OutputMapping weights are restored
+  expect_equal(
+    lapply(piTask$outputMappings, `[[`, "dataWeights"),
+    list(weights)
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+
+  bootstrapPiConfiguration <- getBootstrapPiConfiguration(1, 1)
+
+  piTaskResample <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(temp <- piTaskResample$estimateCI())
+  expect_snapshot_value(
+    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly
+          when weights are predefined", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(syntheticObservedData())
+  outputMapping$setDataWeights(weights)
+
+  bootstrapPiConfiguration <- getBootstrapPiConfiguration(1, 1)
+
+  piTaskResample <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(temp <- piTaskResample$estimateCI())
+  expect_snapshot_value(
+    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+  )
 })
 
 # User weights

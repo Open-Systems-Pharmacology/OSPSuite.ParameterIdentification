@@ -1,3 +1,27 @@
+#' Format Parameter Values for Display
+#'
+#' @description Formats numeric values using scientific notation for small or large values,
+#' and fixed-point format otherwise.
+#'
+#' @param par Numeric vector of parameter values.
+#' @return Character vector of formatted values.
+#'
+#' @keywords internal
+#' @noRd
+.formatValues <- function(par) {
+  sapply(par, function(x) {
+    if (abs(x) < 0.01 || abs(x) > 1e4) {
+      formatC(x, format = "e", digits = 2)
+    } else {
+      formatC(x, format = "f", digits = 3)
+    }
+  })
+}
+
+#' @title Internal Message Templates
+#'
+#' @keywords internal
+#' @noRd
 messages <- ospsuite.utils::messages
 
 messages$errorDimensionsNotEqual <- function() {
@@ -12,10 +36,28 @@ messages$errorWeightsNames <- function() {
   "All weights must be a named list with names matching observed data set names."
 }
 
-messages$errorWeightsLengthMismatch <- function(label, expected, actual) {
+messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",
     label, expected, actual
+  )
+}
+
+messages$errorWeightGroupLengthMismatch <- function(expected, actual) {
+  sprintf(
+    "Weight groups must have length %d to match number of output mappings, but got %d.",
+    expected, actual
+  )
+}
+
+messages$errorDataSetWeightsMismatch <- function() {
+  "Dataset weights do not align with observed datasets in output mapping."
+}
+
+messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
+  sprintf(
+    "Number of combined data entries must be %d to match output mappings, but got %d.",
+    expected, actual
   )
 }
 
@@ -60,8 +102,36 @@ messages$logScaleFlagError <- function() {
   "Logarithmic scaling is not available for non-positive parameter values."
 }
 
-messages$runningOptimizationAlgorithm <- function(name) {
-  paste0("Running optimization algorithm: ", name)
+messages$optimizationAlgorithm <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown optimization algorithm: ", name)
+  } else {
+    paste0(
+      "Starting optimization using '", name, "' with initial value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
+messages$ciMethod <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown CI estimation method: ", name)
+  } else {
+    paste0(
+      "Starting confidence interval estimation using '", name,
+      "' for parameter value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
+messages$evaluationFeedback <- function(fneval, par, objValue) {
+  paste0(
+    "fneval: ", fneval,
+    " | parameters: ", paste(.formatValues(par), collapse = ", "),
+    " | objective: ", .formatValues(objValue),
+    sep = ""
+  )
 }
 
 messages$hessianEstimation <- function() {
@@ -110,23 +180,6 @@ messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
 }
 
-
-messages$optimizationAlgorithm <- function(algorithm, error = FALSE) {
-  if (error) {
-    paste("Unknown optimization algorithm:", algorithm)
-  } else {
-    paste0("Starting optimization using '", algorithm, "' algorithm.")
-  }
-}
-
-messages$ciMethod <- function(method, error = FALSE) {
-  if (error) {
-    paste("Unknown CI estimation method:", method)
-  } else {
-    paste0("Starting confidence interval estimation using '", method, "' method.")
-  }
-}
-
 messages$ciEstimationError <- function(step, errorMessage) {
   paste0("Error during CI estimation step '", step, "': ", errorMessage)
 }
@@ -139,6 +192,21 @@ messages$plMaxiterWarning <- function(index) {
   paste0(
     "maxIter reached for parameter ", index,
     " without meeting cost threshold. Setting CI to Inf."
+  )
+}
+
+messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
+  sprintf(
+    "PI detected %d individual and %d aggregated datasets.",
+    nIndividual,
+    nAggregated
+  )
+}
+
+messages$warningLowIndividualData <- function(n = 3) {
+  sprintf(
+    "Less than %d individual datasets detected — bootstrap CI may be unreliable.",
+    n
   )
 }
 

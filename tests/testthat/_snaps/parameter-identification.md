@@ -8,24 +8,48 @@
       Simulations:
       <SimPath>
 
+# ParameterIdentification$run() runs successfully using default BOBYQA algorithm
+
+    list(par = 1.31885961110325, value = 156.257356828486, convergence = TRUE, 
+        iterations = 20L, fnEvaluations = 20L, algorithm = "BOBYQA", 
+        elapsed = 0)
+
 # ParameterIdentification$run() outputs expected evaluation feedback using BOBYQA algorithm
 
-    WAoAAAACAAQEAgACAwAAAAAQAAAAAQAEAAkAAAMvZm5ldmFsIDE6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDI6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDM6IHBhcmFtZXRlcnMgLTAu
-    MDk3LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDQ6IHBhcmFtZXRlcnMgNC45
-    LCBvYmplY3RpdmUgZnVuY3Rpb24gODY5LjQKZm5ldmFsIDU6IHBhcmFtZXRlcnMgLTUuMSwg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDU2NTIKZm5ldmFsIDY6IHBhcmFtZXRlcnMgLTAuMDk3LCBv
-    YmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDc6IHBhcmFtZXRlcnMgLTAuMDk3LCBv
-    YmplY3RpdmUgZnVuY3Rpb24gNzc4LjEKZm5ldmFsIDg6IHBhcmFtZXRlcnMgLTAuMDg3Mywg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDc2Ni4zCmZuZXZhbCA5OiBwYXJhbWV0ZXJzIC0wLjEwNywg
-    b2JqZWN0aXZlIGZ1bmN0aW9uIDc5MC4xCmZuZXZhbCAxMDogcGFyYW1ldGVycyAtMC4wOTIy
-    LCBvYmplY3RpdmUgZnVuY3Rpb24gNzcyLjIKZm5ldmFsIDExOiBwYXJhbWV0ZXJzIC0wLjEw
-    Miwgb2JqZWN0aXZlIGZ1bmN0aW9uIDc4NC4xCmZuZXZhbCAxMjogcGFyYW1ldGVycyAtMC4w
-    OTQ2LCBvYmplY3RpdmUgZnVuY3Rpb24gNzc1LjIKZm5ldmFsIDEzOiBwYXJhbWV0ZXJzIC0w
-    LjA5OTQsIG9iamVjdGl2ZSBmdW5jdGlvbiA3ODEuMQpmbmV2YWwgMTQ6IHBhcmFtZXRlcnMg
-    LTAuMDk1OCwgb2JqZWN0aXZlIGZ1bmN0aW9uIDc3Ni42CmZuZXZhbCAxNTogcGFyYW1ldGVy
-    cyAtMC4wOTgyLCBvYmplY3RpdmUgZnVuY3Rpb24gNzc5LjY=
+    "fneval: 1 | parameters: -0.097 | objective: 778.129fneval: 2 | parameters: -0.097 | objective: 778.129fneval: 3 | parameters: -0.097 | objective: 778.129fneval: 4 | parameters: 4.903 | objective: 869.379fneval: 5 | parameters: -5.097 | objective: 5652.395"
+
+# ParameterIdentification$estimateCI() works as expected using Hessian
+
+    list(se = 0.0523209776366797, cv = 3.96713776024367, lowerCI = 1.21631237929943, 
+        upperCI = 1.42140684290706, error = NULL, method = NULL, 
+        elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
+        1L)), corMat = structure(1, dim = c(1L, 1L))))
+
+# ParameterIdentification$estimateCI() works as expected using bootstrap
+
+    list(se = 0, cv = 0, lowerCI = 1.31885961110325, upperCI = 1.31885961110325, 
+        error = NULL, method = NULL, elapsed = 0, details = list(
+            bootstrapResults = structure(c(1.31885961110325, 1.31885961110325, 
+            1.31885961110325), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
+            1L))))
+
+# ParameterIdentification$estimateCI() applies bootstrap resampling correctly
+
+    list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(3, 
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+
+# ParameterIdentification$estimateCI() applies bootstrap resampling correctly          when weights are predefined
+
+    list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(5, 
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
+    1, 1, 2, 2, 1, 1, 1, 1, 1, 0.5))
 
 # ParameterIdentification$gridSearch() works with multiple parameters and default settings
 

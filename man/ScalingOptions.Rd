@@ -15,11 +15,11 @@ Scaling options applicable to output mappings, impacting how simulation
 results are compared to observed data.
 }
 \details{
-Available scaling options are:
-\describe{
-\item{\code{"lin"}}{Linear scaling, used by default.}
-\item{\code{"log"}}{Logarithmic scaling, for when data spans several orders
-of magnitude.}
+Available scaling options:
+\itemize{
+\item \strong{\code{lin}} – Linear scaling (default).
+\item \strong{\code{log}} – Logarithmic scaling, used when data spans several orders of
+magnitude.
 }
 }
 \keyword{datasets}

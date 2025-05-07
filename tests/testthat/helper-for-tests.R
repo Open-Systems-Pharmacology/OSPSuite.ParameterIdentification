@@ -35,6 +35,28 @@ getTestObservedData <- function() {
 
 testObservedData <- getTestObservedData()
 
+# Observed data function factory - synthetic individual data
+getSyntheticObservedData <- function() {
+  .syntheticObservedData <- NULL
+  function() {
+    if (is.null(.syntheticObservedData)) {
+      filePath <- testthat::test_path("../data/AciclovirDataIndividuals.xlsx")
+      dataConfig <- createImporterConfigurationForFile(filePath)
+      dataConfig$sheets <- "Aciclovir.Synthetic"
+      dataConfig$namingPattern <- "{Source}.{Sheet}.{Subject Id}"
+      dataConfig$errorColumn <- NULL
+      .syntheticObservedData <<- loadDataSetsFromExcel(
+        xlsFilePath = filePath,
+        importerConfigurationOrPath = dataConfig
+      )
+    }
+    return(.syntheticObservedData)
+  }
+}
+
+syntheticObservedData <- getSyntheticObservedData()
+
+# Observed data function factory - multiple data sets
 getTestObservedDataMultiple <- function() {
   .observedDataMultiple <- NULL
   function() {
@@ -126,6 +148,28 @@ getLowIterPiConfiguration <- function(iter = 2) {
 
 lowIterPiConfiguration <- getLowIterPiConfiguration()
 
+# Configuration for bootstrap CI estimation
+getBootstrapPiConfiguration <- function(iter = 2, nBootstrap = 3) {
+  .bsConfiguration <- NULL
+  function() {
+    if (is.null(.bsConfiguration)) {
+      options <- AlgorithmOptions_BOBYQA
+      options$maxeval <- iter
+      ciOptions <- CIOptions_Bootstrap
+      ciOptions$seed <- 2203
+      ciOptions$nBootstrap <- nBootstrap
+
+      .bsConfiguration <- PIConfiguration$new()
+      .bsConfiguration$ciMethod <- "bootstrap"
+      .bsConfiguration$algorithmOptions <- options
+      .bsConfiguration$ciOptions <- ciOptions
+    }
+    return(.bsConfiguration)
+  }
+}
+
+bootstrapPiConfiguration <- getBootstrapPiConfiguration()
+
 # Function to create a ParameterIdentification task
 createPiTask <- function() {
   ParameterIdentification$new(
@@ -213,6 +257,33 @@ refVal <- testParam$value
 
 piConfiguration <- PIConfiguration$new()
 
+# Other variables - weights for bootstrap CI method
+weights <- rep(list(rep(2, 11)), 4) |>
+  c(list(c(0, 1, 1, 2, 2, 1, 1, 1, 1, 1, 0.5))) |>
+  setNames(names(syntheticObservedData()))
+
+# Test classes
+PISimFailureTester <- R6::R6Class(
+  inherit = ParameterIdentification,
+  cloneable = FALSE,
+  private = list(
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      private$.fnEvaluations <- private$.fnEvaluations + 2
+      stop("Simulated failure in evaluation")
+    }
+  )
+)
+
+PIResampleTester <- R6::R6Class(
+  inherit = ParameterIdentification,
+  cloneable = FALSE,
+  private = list(
+    # outputMappings are not restored and sampled weights stay accessible
+    .restoreOutputMappingsState = function() {
+      return(NULL)
+    }
+  )
+)
 
 # Helper functions
 getTestDataFilePath <- function(fileName) {

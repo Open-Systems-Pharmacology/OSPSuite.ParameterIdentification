@@ -147,7 +147,7 @@ test_that("PIOutputMapping cannot set weights when lengths do not match y-values
   yLen <- length(outputMapping$observedDataSets[[1]]$yValues)
   expect_error(
     outputMapping$setDataWeights(weights),
-    messages$errorWeightsLengthMismatch(label, yLen, length(weights[[1]]))
+    messages$errorWeightsVectorLengthMismatch(label, yLen, length(weights[[1]]))
   )
 })
 
@@ -217,7 +217,7 @@ test_that("PIOutputMapping fails with wrong weight length for one of multiple da
 
   expect_error(
     outputMapping$setDataWeights(weights),
-    messages$errorWeightsLengthMismatch("dataSet2", 3, 4)
+    messages$errorWeightsVectorLengthMismatch("dataSet2", 3, 4)
   )
 })
 

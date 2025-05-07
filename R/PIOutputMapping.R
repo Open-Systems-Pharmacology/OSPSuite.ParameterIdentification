@@ -259,7 +259,9 @@ PIOutputMapping <- R6::R6Class(
         }
 
         if (length(weightsVec) != yLength) {
-          stop(messages$errorWeightsLengthMismatch(label, yLength, length(weightsVec)))
+          stop(messages$errorWeightsVectorLengthMismatch(
+            label, yLength, length(weightsVec)
+          ))
         }
 
         private$.dataWeights[[label]] <- weightsVec
