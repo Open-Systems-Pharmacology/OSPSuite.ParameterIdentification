@@ -67,8 +67,10 @@ getTestObservedDataMultiple <- function() {
       dataSet2 <- DataSet$new(name = "dataSet2")
       dataSet2$setValues(
         xValues = dataSet1$xValues[-length(dataSet1$xValues)],
-        yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)]
+        yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)],
+        yErrorValues = dataSet1$yErrorValues[-length(dataSet1$yErrorValues)]
       )
+      dataSet2$yErrorType <- dataSet1$yErrorType
 
       .observedDataMultiple <- list(dataSet1 = dataSet1, dataSet2 = dataSet2)
     }
