@@ -59,9 +59,17 @@ syntheticObservedData <- getSyntheticObservedData()
 # Observed data function factory - multiple data sets
 getTestObservedDataMultiple <- function() {
   .observedDataMultiple <- NULL
+  dataSet1 <- dataSet2 <- NULL
   function() {
     if (is.null(.observedDataMultiple)) {
-      dataSet1 <- testObservedData()[[1]]
+      filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
+      dataConfig <- createImporterConfigurationForFile(filePath)
+      dataConfig$sheets <- "Laskin 1982.Group A"
+      dataConfig$namingPattern <- "{Source}.{Sheet}"
+      dataSet1 <- loadDataSetsFromExcel(
+        xlsFilePath = filePath,
+        importerConfigurationOrPath = dataConfig
+      )[[1]]
       dataSet1$name <- "dataSet1"
 
       dataSet2 <- DataSet$new(name = "dataSet2")
@@ -254,10 +262,6 @@ testQuantity <- ospsuite::getQuantity(
   path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = testSimulation()
 )
-testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
-refVal <- testParam$value
-
-piConfiguration <- PIConfiguration$new()
 
 # Other variables - weights for bootstrap CI method
 weights <- rep(list(rep(2, 11)), 4) |>
