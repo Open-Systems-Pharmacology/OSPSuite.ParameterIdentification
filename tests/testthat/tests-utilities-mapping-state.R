@@ -1,4 +1,3 @@
-
 createModifiedMappingState <- function(outputMappingState) {
   newWeights <- lapply(outputMappingState$dataSetWeights, function(dsWeights) {
     lapply(dsWeights, function(w) w * 2)
