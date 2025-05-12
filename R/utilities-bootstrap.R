@@ -24,12 +24,12 @@
 #' @keywords internal
 #' @noRd
 .classifyObservedData <- function(outputMappings) {
-  dataSets <- unlist(
+  observedDataSets <- unlist(
     lapply(outputMappings, function(mapping) mapping$observedDataSets),
     recursive = FALSE
   )
 
-  isAggregated <- vapply(dataSets, .isAggregated, logical(1))
+  isAggregated <- vapply(observedDataSets, .isAggregated, logical(1))
   nAggregated <- sum(isAggregated)
   nIndividual <- length(dataSets) - nAggregated
 
@@ -40,54 +40,12 @@
   }
 }
 
-#' Extract Initial Mapping Weights
 #'
-#' Extracts dataset weights from each output mapping. If weights are missing,
-#' they are initialized to 1 for each observed y-value. The result is a list
-#' of named lists, one per output mapping, containing weights for each dataset.
-#'
-#' @param outputMappings A list of `PIOutputMapping` objects.
-#' @return A named list of dataset weight lists, one per output mapping.
 #'
 #' @keywords internal
 #' @noRd
-.extractMappingWeights <- function(outputMappings) {
-  mappingWeights <- vector("list", length(outputMappings))
-  names(mappingWeights) <- names(outputMappings)
 
-  for (idx in seq_along(outputMappings)) {
-    mapping <- outputMappings[[idx]]
-    currentWeights <- mapping$dataWeights
-    observedDataSets <- mapping$observedDataSets
 
-    mappingWeights[[idx]] <- list()
-    for (dataSetName in names(observedDataSets)) {
-      mappingWeights[[idx]][[dataSetName]] <- if (!is.null(currentWeights[[dataSetName]])) {
-        currentWeights[[dataSetName]]
-      } else {
-        rep(1, length(observedDataSets[[dataSetName]]$yValues))
-      }
-    }
-  }
-
-  return(mappingWeights)
-}
-
-#' Apply DataSet Weights to Output Mappings
-#'
-#' Assigns dataset weights to each output mapping using the mapping-level
-#' weight structure. Assumes that weight structure matches the observed datasets.
-#'
-#' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of dataset weight lists, one per output mapping.
-#' @return The updated list of `PIOutputMapping` objects with applied weights.
-#'
-#' @keywords internal
-#' @noRd
-.applyMappingWeights <- function(outputMappings, mappingWeights) {
-  for (idx in seq_along(outputMappings)) {
-    outputMappings[[idx]]$setDataWeights(mappingWeights[[idx]])
-  }
   return(outputMappings)
 }
 
@@ -108,18 +66,8 @@
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
 
-#' Resample Mapping Weights for Bootstrap
 #'
-#' Resamples dataset weights for each output mapping based on the bootstrap seed.
-#' Applies different resampling strategies to individual and aggregated datasets.
 #'
-#' Individual and aggregated datasets are resampled separately:
-#' - Individual datasets are resampled as full datasets, controlled by adjusting
-#' dataset-level weights (`.resampleDataSetWeights`).
-#' - Aggregated datasets (mean ± error) are resampled by fitting a Gaussian Process
-#' Regression (GPR)
-#'   model to the mean and error, then generating synthetic data points, controlled
-#'   by adjusting point-level weights (`.resampleAggregatedWeights`).
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of dataset weight lists, one per output mapping.
@@ -129,14 +77,8 @@
 #' @keywords internal
 #' @noRd
 .resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
-  if (length(mappingWeights) != length(outputMappings)) {
-    stop(messages$errorWeightGroupLengthMismatch(
-      length(outputMappings), length(mappingWeights)
-    ))
-  }
 
   resampledMappingWeights <- vector("list", length(outputMappings))
-  names(resampledMappingWeights) <- names(outputMappings)
 
   for (idx in seq_along(outputMappings)) {
     mapping <- outputMappings[[idx]]

@@ -43,13 +43,6 @@ messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   )
 }
 
-messages$errorWeightGroupLengthMismatch <- function(expected, actual) {
-  sprintf(
-    "Weight groups must have length %d to match number of output mappings, but got %d.",
-    expected, actual
-  )
-}
-
 messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
