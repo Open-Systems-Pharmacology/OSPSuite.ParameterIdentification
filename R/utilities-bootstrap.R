@@ -176,3 +176,143 @@
 
   return(resampledDataSetWeights)
 }
+
+#' Fit GPR models for aggregated datasets
+#'
+#' Applies .fitGPRModel to each aggregated dataset in each output mapping.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @return A nested list of fitted GPR models (or NULL for non-aggregated datasets).
+#'
+#' @keywords internal
+#' @noRd
+.prepareGPRModels <- function(outputMappings) {
+  gprModels <- vector("list", length(outputMappings))
+
+  for (idx in seq_along(outputMappings)) {
+    mapping <- outputMappings[[idx]]
+    dataSets <- mapping$observedDataSets
+
+    dataSetModels <- vector("list", length(dataSets))
+    names(dataSetModels) <- names(dataSets)
+
+    for (dataSet in dataSets) {
+      if (.isAggregated(dataSet)) {
+        fit <- .fitGPRModel(
+          xValues = dataSet$xValues,
+          yValues = dataSet$yValues,
+          yErrorValues = dataSet$yErrorValues,
+          yErrorType = dataSet$yErrorType
+        )
+
+        if (is.null(fit)) {
+          stop(messages$errorGPRModelConvergence(dataSet$name))
+        }
+
+        message(messages$statusGPRModelFitted(dataSet$name))
+        dataSetModels[[dataSet$name]] <- fit
+      } else {
+        dataSetModels[[dataSet$name]] <- NULL
+      }
+    }
+
+    gprModels[[idx]] <- dataSetModels
+  }
+
+  return(gprModels)
+}
+
+#' Fit Gaussian Process Regression (GPR) Model to Aggregated Data
+#'
+#' Fits a GPR model to log-transformed y-values with error-based noise variance.
+#' Handles both arithmetic and geometric standard deviations. If model fitting
+#' fails due to extreme variance, progressively capped versions of the noise
+#' variance are attempted using quantile-based thresholds.
+#'
+#' @param xValues Numeric vector of x values (e.g., time).
+#' @param yValues Numeric vector of y values (means).
+#' @param yErrorValues Numeric vector of error values.
+#' @param yErrorType Character; either "GeometricStdDev" or "ArithmeticStdDev".
+#' @param kernelType Character; kernel type for GPR (default is "matern5_2").
+#' @param minProb Numeric between 0 and 1. Lowest quantile used for capping noise
+#' variance. Default is 0.5.
+#' @return A fitted `DiceKriging::km` object.
+#'
+#' @keywords internal
+#' @noRd
+.fitGPRModel <- function(xValues, yValues, yErrorValues, yErrorType,
+                         kernelType = "matern5_2", minProb = 0.5) {
+  ospsuite.utils::validateIsSameLength(xValues, yValues)
+  ospsuite.utils::validateIsSameLength(yValues, yErrorValues)
+
+  xValues[xValues < 0] <- 0
+
+  # Compute noise variance in log-space based on error type
+  noiseVar <- switch(yErrorType,
+    ArithmeticStdDev = {
+      # For arithmetic SD: Var[log(y)] ≈ (σ / y)^2 using the delta method
+      # Missing or non-finite relative errors are imputed using the mean relative error
+      relError <- yErrorValues / yValues
+      relError[!is.finite(relError)] <- NA
+      relError[is.na(relError)] <- mean(relError, na.rm = TRUE)
+      relError^2
+    },
+    GeometricStdDev = {
+      # For geometric SD: Var[log(y)] = log(GSD)^2 (log-normal assumption)
+      # Missing or non-finite GSDs are imputed using the geometric mean
+      gsd <- yErrorValues
+      gsd[!is.finite(gsd)] <- NA
+      gsd[is.na(gsd)] <- exp(mean(log(gsd[!is.na(gsd)]), na.rm = TRUE))
+      ospsuite.utils::logSafe(gsd)^2
+    },
+    stop("Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'.")
+  )
+
+  # DiceKriging::km may fail to converge with extreme noise values (e.g., at
+  # late timepoints). Progressively capped versions of the noise variance are
+  # generated using quantile-based thresholds.
+  quantiles <- seq(1, minProb, by = -0.05)
+  cappedVariants <- lapply(quantiles, function(q) {
+    cap <- quantile(noiseVar, probs = q, na.rm = TRUE)
+    pmin(noiseVar, cap)
+  })
+
+  logY <- ospsuite.utils::logSafe(yValues)
+
+  .safeKm <- purrr::safely(.fitKm)
+
+  # Fit with each capped noise variant
+  fits <- purrr::map(
+    cappedVariants,
+    ~ .safeKm(
+      xValues = xValues,
+      logY = logY,
+      noiseVar = .x,
+      kernelType = kernelType
+    )
+  )
+
+  fit <- purrr::detect(fits, ~ is.null(.x$error))
+
+  return(fit$result)
+}
+
+#' Fit GPR model (low-level)
+#'
+#' Wrapper around `DiceKriging::km()` for log-scale GPR fitting.
+#'
+#' @keywords internal
+#' @noRd
+.fitKm <- function(xValues, logY, noiseVar, kernelType) {
+  invisible(capture.output(
+    result <- DiceKriging::km(
+      formula = ~1,
+      design = data.frame(time = xValues),
+      response = data.frame(logY = logY),
+      noise.var = noiseVar,
+      covtype = kernelType,
+      nugget.estim = FALSE
+    )
+  ))
+  return(result)
+}
