@@ -227,7 +227,7 @@ test_that("ParameterIdentification$estimateCI() works as expected using Hessian"
 })
 
 # Test bootstrap CI method
-test_that("ParameterIdentification$estimateCI() works as expected using bootstrap", {
+test_that("ParameterIdentification$estimateCI() works with bootstrap and individual data", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   outputMapping$addObservedDataSets(syntheticObservedData())
   outputMapping$setDataWeights(weights)
@@ -239,33 +239,63 @@ test_that("ParameterIdentification$estimateCI() works as expected using bootstra
     configuration = bootstrapPiConfiguration()
   )
 
-  expect_no_error({
-    expect_message(
-      expect_message(
-        expect_message(
-          ciResult <- piTask$estimateCI(),
-          messages$ciMethod("bootstrap", piTask$parameters[[1]]$currValue),
-          fixed = TRUE
-        ),
-        messages$statusObservedDataClassification(
-          length(syntheticObservedData()), 0
-        )
-      ),
-      messages$statusBootstrap(1, bootstrapPiConfiguration()$ciOptions$nBootstrap)
-    )
-  })
+  suppressMessages(
+    expect_no_error(ciResult <- piTask$estimateCI())
+  )
 
   ciResult$elapsed <- 0
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
 
-  # test initial OutputMapping weights are restored
+  # Test initial OutputMapping weights are restored
   expect_equal(
     lapply(piTask$outputMappings, `[[`, "dataWeights"),
     list(weights)
   )
 })
 
-test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly", {
+test_that("ParameterIdentification$estimateCI() works with bootstrap and aggregated data", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedData())
+  yValuesInitial <- outputMapping$observedDataSets[[1]]$yValues
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(
+    expect_no_error(ciResult <- piTask$estimateCI())
+  )
+
+  ciResult$elapsed <- 0
+  expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-3)
+
+  # Test initial OutputMapping yValues are restored
+  expect_equal(
+    outputMapping$observedDataSets[[1]]$yValues,
+    yValuesInitial
+  )
+})
+
+test_that("ParameterIdentification$estimateCI() outputs expected messages for mixed datasets", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedData()) # aggregated
+  outputMapping$addObservedDataSets(syntheticObservedData()) # individual
+
+  piTask <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  expect_snapshot(temp <- piTask$estimateCI())
+})
+
+
+test_that("bootstrap resampling applies to individual data", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   outputMapping$addObservedDataSets(syntheticObservedData())
 
@@ -280,12 +310,12 @@ test_that("ParameterIdentification$estimateCI() applies bootstrap resampling cor
 
   suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
-    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+    piTaskResample$outputMappings[[1]]$dataWeights,
+    style = "deparse", tolerance = 0
   )
 })
 
-test_that("ParameterIdentification$estimateCI() applies bootstrap resampling correctly
-          when weights are predefined", {
+test_that("bootstrap resampling applies to individual data with initial weights", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   outputMapping$addObservedDataSets(syntheticObservedData())
   outputMapping$setDataWeights(weights)
@@ -301,9 +331,42 @@ test_that("ParameterIdentification$estimateCI() applies bootstrap resampling cor
 
   suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
-    piTaskResample$outputMappings[[1]]$dataWeights, style = "deparse", tolerance = 0
+    piTaskResample$outputMappings[[1]]$dataWeights,
+    style = "deparse", tolerance = 0
   )
 })
+
+
+
+test_that("bootstrap resampling applies to mixed data (individual and aggregated)", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$addObservedDataSets(testObservedData())
+  outputMapping$addObservedDataSets(syntheticObservedData())
+  outputMapping$setDataWeights(
+    list("AciclovirLaskinData.Laskin 1982.Group A" = 20)
+  )
+
+  bootstrapPiConfiguration <- getBootstrapPiConfiguration(1, 2)
+
+  piTaskResample <- PIResampleTester$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+
+  suppressMessages(temp <- piTaskResample$estimateCI())
+  expect_snapshot_value(
+    piTaskResample$outputMappings[[1]]$dataWeights,
+    style = "deparse", tolerance = 0
+  )
+  expect_snapshot_value(
+    lapply(piTaskResample$outputMappings[[1]]$observedDataSets, "[[", "yValues"),
+    style = "deparse", tolerance = 1e-6
+  )
+})
+
+# [1] 2.32364869 2.17070829 1.98201019 1.73368812 1.48564823 1.31016907 0.90686513 0.45182853 0.24973249 0.10231231 0.03233751
 
 # User weights
 yLen1 <- length(testObservedDataMultiple()[[1]]$yValues)

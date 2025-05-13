@@ -25,7 +25,7 @@
         elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
         1L)), corMat = structure(1, dim = c(1L, 1L))))
 
-# ParameterIdentification$estimateCI() works as expected using bootstrap
+# ParameterIdentification$estimateCI() works with bootstrap and individual data
 
     list(se = 0, cv = 0, lowerCI = 1.31885961110325, upperCI = 1.31885961110325, 
         error = NULL, method = NULL, elapsed = 0, details = list(
@@ -33,7 +33,28 @@
             1.31885961110325), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
             1L))))
 
-# ParameterIdentification$estimateCI() applies bootstrap resampling correctly
+# ParameterIdentification$estimateCI() works with bootstrap and aggregated data
+
+    list(se = 0, cv = 0, lowerCI = 1.31885961110325, upperCI = 1.31885961110325, 
+        error = NULL, method = NULL, elapsed = 0, details = list(
+            bootstrapResults = structure(c(1.31885961110325, 1.31885961110325, 
+            1.31885961110325), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
+            1L))))
+
+# ParameterIdentification$estimateCI() outputs expected messages for mixed datasets
+
+    Code
+      temp <- piTask$estimateCI()
+    Message
+      Classified observed data: 5 individual, 1 aggregated dataset(s).
+      GPR model fitted successfully for dataset 'AciclovirLaskinData.Laskin 1982.Group A'.
+      Starting confidence interval estimation using 'bootstrap' for parameter value(s):
+        1.319
+      Running bootstrap replicate 1 of 3.
+      Running bootstrap replicate 2 of 3.
+      Running bootstrap replicate 3 of 3.
+
+# bootstrap resampling applies to individual data
 
     list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(0, 
@@ -42,7 +63,7 @@
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(1, 
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
 
-# ParameterIdentification$estimateCI() applies bootstrap resampling correctly          when weights are predefined
+# bootstrap resampling applies to individual data with initial weights
 
     list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(5, 
@@ -50,6 +71,16 @@
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
     1, 1, 2, 2, 1, 1, 1, 1, 1, 0.5))
+
+# bootstrap resampling applies to mixed data (individual and aggregated)
+
+    list("AciclovirLaskinData.Laskin 1982.Group A" = c(22, 22, 22, 
+    22, 22, 22, 22, 22, 22, 22, 22), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 # ParameterIdentification$gridSearch() works with multiple parameters and default settings
 
