@@ -62,12 +62,18 @@
   ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetValues)
   ospsuite.utils::validateIsSameLength(outputMappings, gprModels)
 
+  # Resample and apply new dataset weights for all mappings.
+  # This adjusts the relative influence of datasets
   outputMappings <- .resampleAndApplyMappingWeights(
     outputMappings = outputMappings,
     mappingWeights = mappingState$dataSetWeights,
     seed = seed
   )
 
+  # Resample and apply synthetic y-values for aggregated datasets using GPR.
+  # This replaces mean values with simulated realizations that preserve temporal
+  # correlation, thereby reflecting realistic sampling uncertainty in time-series
+  # data.
   outputMappings <- .resampleAndApplyMappingValues(
     outputMappings = outputMappings,
     mappingValues = mappingState$dataSetValues,
@@ -271,7 +277,6 @@
 #' @keywords internal
 #' @noRd
 .resampleDataSetValues <- function(dataSetValues, gprModels, seed) {
-  browser()
   valueList <- vector("list", length(dataSetValues))
   names(valueList) <- names(dataSetValues)
 
@@ -311,13 +316,26 @@
 
 
 # GPR MODELING
+#
+# Aggregated datasets contain summary statistics (e.g., means and SD/GSD)
+# rather than individual-level measurements. During bootstrap CI estimation,
+# we must generate synthetic data to reflect sampling variability.
+#
+# However, we cannot resample directly from single aggregated points, since
+# they are temporally correlated (e.g., a concentration-time profile).
+#
+# To address this, we use Gaussian Process Regression (GPR) to simulate
+# smooth, realistic trajectories consistent with the observed mean trend
+# and uncertainty. This provides synthetic individual-level realizations
+# while preserving time correlations and measurement error structure.
 
 #' Fit GPR models for aggregated datasets
 #'
-#' Applies .fitGPRModel to each aggregated dataset in each output mapping.
+#' Applies `.fitGPRModel` to each aggregated dataset in each output mapping.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
-#' @return A nested list of fitted GPR models (or NULL for non-aggregated datasets).
+#' @return A nested list of fitted GPR models (or NULL for non-aggregated
+#' datasets).
 #'
 #' @keywords internal
 #' @noRd
@@ -359,7 +377,12 @@
 
 #' Fit Gaussian Process Regression (GPR) Model to Aggregated Data
 #'
-#' Fits a GPR model to log-transformed y-values with error-based noise variance.
+#' Aggregated datasets provide only summary statistics (mean and variability),
+#' without individual observations. Because measurements are time-correlated,
+#' simple pointwise sampling is inappropriate. This function fits a GPR model
+#' to log-transformed y-values and their uncertainty to enable the simulation of
+#' smooth, realistic trajectories during bootstrap resampling.
+#'
 #' Handles both arithmetic and geometric standard deviations. If model fitting
 #' fails due to extreme variance, progressively capped versions of the noise
 #' variance are attempted using quantile-based thresholds.
@@ -367,12 +390,11 @@
 #' @param xValues Numeric vector of x values (e.g., time).
 #' @param yValues Numeric vector of y values (means).
 #' @param yErrorValues Numeric vector of error values.
-#' @param yErrorType Character; either "GeometricStdDev" or "ArithmeticStdDev".
-#' @param kernelType Character; kernel type for GPR (default is "matern5_2").
+#' @param yErrorType Character; either `GeometricStdDev` or `ArithmeticStdDev`.
+#' @param kernelType Character; kernel type for GPR. Default is "matern5_2".
 #' @param minProb Numeric between 0 and 1. Lowest quantile used for capping noise
 #' variance. Default is 0.5.
 #' @return A fitted `DiceKriging::km` object.
-#'
 #' @keywords internal
 #' @noRd
 .fitGPRModel <- function(xValues, yValues, yErrorValues, yErrorType,

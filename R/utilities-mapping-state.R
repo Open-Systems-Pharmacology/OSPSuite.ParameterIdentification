@@ -24,7 +24,6 @@
 #' @param fn A function to apply to each output mapping.
 #' @return A list of results with the same length and (optional) names as
 #' `outputMappings`.
-#'
 #' @keywords internal
 #' @noRd
 .mapOverOutputMappings <- function(outputMappings, fn) {
@@ -46,7 +45,6 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A list of named dataset weight lists, one per output mapping. Each
 #' dataset weight list contains numeric vectors of y-value weights.
-#'
 #' @keywords internal
 #' @noRd
 .extractMappingWeights <- function(outputMappings) {
@@ -77,7 +75,6 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A list of named dataset value lists, one per output mapping. Each
 #' dataset value list contains x/y/yError values and yErrorType.
-#'
 #' @keywords internal
 #' @noRd
 .extractMappingValues <- function(outputMappings) {
@@ -102,7 +99,6 @@
 #' @param dataSet A `DataSet` object.
 #' @return A named list with elements `xValues`, `yValues`, `yErrorValues`, and
 #' `yErrorType`.
-#'
 #' @keywords internal
 #' @noRd
 .extractDataSetValues <- function(dataSet) {
@@ -125,7 +121,6 @@
 #' @param mappingState A named list with fields `dataSetWeights` and `dataSetValues`,
 #' typically created by `.extractOutputMappingState()`.
 #' @return The modified list of `PIOutputMapping` objects.
-#'
 #' @keywords internal
 #' @noRd
 .applyOutputMappingState <- function(outputMappings, mappingState) {
@@ -142,7 +137,6 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of dataset weight lists, one per output mapping.
 #' @return The updated list of `PIOutputMapping` objects with applied weights.
-#'
 #' @keywords internal
 #' @noRd
 .applyMappingWeights <- function(outputMappings, mappingWeights) {
@@ -158,7 +152,6 @@
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingValues A list of dataset value lists, one per output mapping.
-#'
 #' @return The updated list of output mappings.
 #' @keywords internal
 #' @noRd
@@ -184,7 +177,6 @@
 #' @param dataSet A `DataSet` object.
 #' @param values A list containing `xValues`, `yValues`, `yErrorValues`, and
 #' optionally `yErrorType`.
-#'
 #' @keywords internal
 #' @noRd
 .restoreDataSetValues <- function(dataSet, values) {
