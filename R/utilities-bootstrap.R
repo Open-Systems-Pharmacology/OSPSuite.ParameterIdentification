@@ -177,6 +177,99 @@
   return(resampledDataSetWeights)
 }
 
+#' Resample mapping-level dataset values using GPR
+#'
+#' Resamples dataset values for each output mapping. Aggregated datasets
+#' are simulated from GPR models; others are returned unchanged.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @param mappingValues A list of dataset value lists, one per output mapping.
+#' @param gprModelMappings A list of GPR model lists, one per output mapping.
+#' @param seed An integer seed for reproducible simulation.
+#' @return A list of resampled dataset value lists, one per output mapping.
+#' @keywords internal
+#' @noRd
+.resampleMappingValues <- function(outputMappings, mappingValues, gprModelMappings, seed) {
+  resampledMappingValues <- vector("list", length(outputMappings))
+
+  for (idx in seq_along(outputMappings)) {
+    mapping <- outputMappings[[idx]]
+    observedDataSets <- mapping$observedDataSets
+    dataSetValues <- mappingValues[[idx]]
+    gprModels <- gprModelMappings[[idx]]
+
+    observedDataSetsAggr <- observedDataSets[
+      vapply(observedDataSets, .isAggregated, logical(1))
+    ]
+
+    if (
+      !ospsuite.utils::isSameLength(dataSetValues, observedDataSets) ||
+        !ospsuite.utils::isSameLength(gprModels, observedDataSetsAggr) ||
+        !ospsuite.utils::isIncluded(names(observedDataSets), names(dataSetValues)) ||
+        !ospsuite.utils::isIncluded(names(gprModels), names(observedDataSets))
+    ) {
+      stop(messages$errorDataSetValuesMismatch())
+    }
+
+    #
+    resampledMappingValues[[idx]] <- .resampleDataSetValues(
+      dataSetValues, gprModels, seed
+    )
+  }
+
+  return(resampledMappingValues)
+}
+
+#' Resample dataset-level values using GPR
+#'
+#' Resamples synthetic y-values for each dataset using a fitted GPR model.
+#' Datasets without a GPR model are returned unchanged.
+#'
+#' @param dataSetValues A named list of dataset value structures.
+#' @param gprModels A named list of GPR models (or NULL for non-aggregated datasets).
+#' @param seed An integer seed for reproducibility.
+#' @return A named list of dataset value structures with updated y-values.
+#' @keywords internal
+#' @noRd
+.resampleDataSetValues <- function(dataSetValues, gprModels, seed) {
+  browser()
+  valueList <- vector("list", length(dataSetValues))
+  names(valueList) <- names(dataSetValues)
+
+  for (dataSetName in names(dataSetValues)) {
+    gprModel <- gprModels[[dataSetName]]
+
+    if (is.null(gprModel)) {
+      valueList[[dataSetName]] <- dataSetValues[[dataSetName]]
+      next
+    }
+
+    xValues <- dataSetValues[[dataSetName]]$xValues
+
+    # Simulate synthetic datasets in log-space
+    logPredictedValues <- DiceKriging::simulate(
+      object = gprModel,
+      nsim = 1,
+      seed = seed,
+      newdata = data.frame(time = xValues),
+      cond = TRUE,
+      nugget.sim = 1e-6
+    )
+
+    # Model was fit with log values - convert back to original scale
+    syntheticValues <- exp(as.numeric(logPredictedValues))
+
+    valueList[[dataSetName]] <- list(
+      xValues = xValues,
+      yValues = syntheticValues,
+      yErrorValues = dataSetValues[[dataSetName]]$yErrorValues,
+      yErrorType = dataSetValues[[dataSetName]]$yErrorType
+    )
+  }
+
+  return(valueList)
+}
+
 #' Fit GPR models for aggregated datasets
 #'
 #' Applies .fitGPRModel to each aggregated dataset in each output mapping.
