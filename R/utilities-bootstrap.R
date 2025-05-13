@@ -1,11 +1,12 @@
+# CLASSIFICATION
+
 #' Check if Observed Dataset is Aggregated
 #'
 #' Determines whether a dataset is aggregated based on the presence
 #' of a defined `yErrorType`.
 #'
-#' @param data A `DataSet` (typically `XYData`) object.
+#' @param data A `DataSet` object.
 #' @return Logical value indicating if the dataset is aggregated.
-#'
 #' @keywords internal
 #' @noRd
 .isAggregated <- function(data) {
@@ -20,7 +21,6 @@
 #' and warns if too few individual datasets are available for stable bootstrap CI.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to classify.
-#'
 #' @keywords internal
 #' @noRd
 .classifyObservedData <- function(outputMappings) {
@@ -31,7 +31,7 @@
 
   isAggregated <- vapply(observedDataSets, .isAggregated, logical(1))
   nAggregated <- sum(isAggregated)
-  nIndividual <- length(dataSets) - nAggregated
+  nIndividual <- length(observedDataSets) - nAggregated
 
   message(messages$statusObservedDataClassification(nIndividual, nAggregated))
 
@@ -40,25 +40,54 @@
   }
 }
 
+
+# RESAMPLING: APPLY COMBINED STATE
+
+#' Apply Resampled Dataset Weights and Values
 #'
+#' Applies both weights and values to each dataset, as stored in the
+#' original output mapping state. Aggregated datasets are resampled using
+#' GPR models.
 #'
+#' @param outputMappings List of `PIOutputMapping` objects.
+#' @param mappingState A named list with `dataSetWeights` and `dataSetValues`.
+#' @param gprModels List of GPR models, one per output mapping.
+#' @param seed Integer used to drive resampling.
+#' @return Updated outputMappings list.
 #' @keywords internal
 #' @noRd
+.resampleAndApplyMappingState <- function(outputMappings, mappingState, gprModels, seed) {
+  browser()
+  ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetWeights)
+  ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetValues)
+  ospsuite.utils::validateIsSameLength(outputMappings, gprModels)
 
+  outputMappings <- .resampleAndApplyMappingWeights(
+    outputMappings = outputMappings,
+    mappingWeights = mappingState$dataSetWeights,
+    seed = seed
+  )
+
+  outputMappings <- .resampleAndApplyMappingValues(
+    outputMappings = outputMappings,
+    mappingValues = mappingState$dataSetValues,
+    gprModels = gprModels,
+    seed = seed
+  )
 
   return(outputMappings)
 }
 
-#' Resample and Apply Weights to Output Mappings
+#' Resample and apply dataset weights
 #'
-#' Resamples dataset weights based on a bootstrap seed and applies the resampled
-#' weights to each output mapping.
+#' Resamples dataset weights based on a bootstrap seed and applies them to
+#' each output mapping.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of initial dataset weight lists, one per output mapping.
+#' @param mappingWeights A list of initial dataset weight lists, one per output
+#' mapping.
 #' @param seed An integer seed used for bootstrap resampling.
-#' @return The updated list of `PIOutputMapping` objects with resampled weights.
-#'
+#' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
 .resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights, seed) {
@@ -66,25 +95,45 @@
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
 
+#' Resample and apply dataset values
 #'
-#'
+#' Resamples dataset values (used for aggregated datasets) using GPR models
+#' and applies them to each output mapping.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of dataset weight lists, one per output mapping.
+#' @param mappingValues A list of original dataset values, one per output mapping.
+#' @param gprModels List of GPR models, one per output mapping.
 #' @param seed An integer seed used for bootstrap resampling.
-#' @return A list of resampled dataset weights, one per output mapping.
+#' @return Updated list of `PIOutputMapping` objects.
+#' @keywords internal
+#' @noRd
+.resampleAndApplyMappingValues <- function(outputMappings, mappingValues, gprModels, seed) {
+  resampledMappingValues <- .resampleMappingValues(outputMappings, mappingValues, gprModels, seed)
+  .applyMappingValues(outputMappings, resampledMappingValues)
+}
+
+
+# RESAMPLING: WEIGHTS
+
+#' Resample mapping-level dataset weights
 #'
+#' Resamples dataset weights for each output mapping using a shared bootstrap strategy.
+#' Ensures mapping weights align with observed datasets and applies point-level resampling.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @param mappingWeights A list of named dataset weight lists, one per output mapping.
+#' @param seed Integer used for bootstrap resampling.
+#' @return A list of resampled dataset weight lists, one per output mapping.
 #' @keywords internal
 #' @noRd
 .resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
+  ospsuite.utils::validateIsSameLength(mappingWeights, outputMappings)
 
   resampledMappingWeights <- vector("list", length(outputMappings))
 
   for (idx in seq_along(outputMappings)) {
     mapping <- outputMappings[[idx]]
     dataSetWeights <- mappingWeights[[idx]]
-
-    isAggregated <- vapply(mapping$observedDataSets, .isAggregated, logical(1))
 
     if (
       !ospsuite.utils::isSameLength(dataSetWeights, mapping$observedDataSets) ||
@@ -93,43 +142,22 @@
       stop(messages$errorDataSetWeightsMismatch())
     }
 
-    # Generate resampled weights for individual and aggregated data sets
-    individualWeights <- dataSetWeights[!isAggregated]
-    aggregatedWeights <- dataSetWeights[isAggregated]
-
-    resampledDataSetWeights <- list()
-
-    if (length(individualWeights) > 0) {
-      sampledIndividualWeights <- .resampleDataSetWeights(individualWeights, seed)
-      individualNames <- names(sampledIndividualWeights)
-      resampledDataSetWeights[individualNames] <- sampledIndividualWeights
-    }
-
-    if (length(aggregatedWeights) > 0) {
-      stop("bootstrap with aggregated data not supported yet")
-      # Later:
-      # sampledAggregatedWeights <- .resampleAggregatedWeights(aggregatedWeights, seed)
-      # aggregatedNames <- names(sampledAggregatedWeights)
-      # resampledDataSetWeights[aggregatedNames] <- sampledAggregatedWeights
-    }
-
-    resampledMappingWeights[[idx]] <- resampledDataSetWeights
+    # All datasets are resampled equally using a single strategy
+    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(dataSetWeights, seed)
   }
 
   return(resampledMappingWeights)
 }
 
-#' Resample Weights for Individual Datasets
+#' Resample dataset-level weights using bootstrap
 #'
-#' Performs bootstrap resampling of individual datasets by adjusting their dataset-level
-#' weights. Each dataset's total weight is broken down into dataset-level and point-level
-#' components. The dataset-level weights are resampled with replacement and then
-#' recombined with the point-level weights to generate new weights.
+#' Performs bootstrap resampling by adjusting dataset-level weights. Each dataset’s
+#' total weight is split into a dataset-level weight and normalized point-level weights.
+#' Sampling is performed with replacement, and point weights are scaled accordingly.
 #'
 #' @param dataSetWeights A named list of numeric weight vectors (one per dataset).
-#' @param seed An integer seed used to control the resampling.
-#' @return A named list of resampled weight vectors, matching the structure of `dataSetWeights`.
-#'
+#' @param seed Integer used to control the resampling.
+#' @return A named list of resampled weight vectors.
 #' @keywords internal
 #' @noRd
 .resampleDataSetWeights <- function(dataSetWeights, seed) {
@@ -145,6 +173,10 @@
 
     datasetWeight <- min(weightsVector[weightsVector >= 1], na.rm = TRUE)
 
+    if (!is.finite(datasetWeight) || datasetWeight <= 0) {
+      datasetWeight <- 1
+    }
+
     pointWeights <- weightsVector / datasetWeight
     pointWeights[!is.finite(pointWeights)] <- 0
 
@@ -156,7 +188,9 @@
 
   # Resample dataset-level weights, then recombine with point-level weights
   weightsPool <- unlist(
-    mapply(rep, names(weightsSummary), lapply(weightsSummary, `[[`, "datasetWeight")),
+    mapply(
+      rep, names(weightsSummary), lapply(weightsSummary, `[[`, "datasetWeight")
+    ),
     use.names = FALSE
   )
 
@@ -169,13 +203,18 @@
 
   for (dataSetName in names(weightsSummary)) {
     nSelected <- as.integer(datasetCounts[dataSetName])
-    if (is.na(nSelected)) nSelected <- 0
+    if (is.na(nSelected)) {
+      nSelected <- 0
+    }
     resampledDataSetWeights[[dataSetName]] <-
       weightsSummary[[dataSetName]]$pointWeights * nSelected
   }
 
   return(resampledDataSetWeights)
 }
+
+
+# RESAMPLING: VALUES
 
 #' Resample mapping-level dataset values using GPR
 #'
@@ -269,6 +308,9 @@
 
   return(valueList)
 }
+
+
+# GPR MODELING
 
 #' Fit GPR models for aggregated datasets
 #'
