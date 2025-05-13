@@ -57,7 +57,6 @@
 #' @keywords internal
 #' @noRd
 .resampleAndApplyMappingState <- function(outputMappings, mappingState, gprModels, seed) {
-  browser()
   ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetWeights)
   ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetValues)
   ospsuite.utils::validateIsSameLength(outputMappings, gprModels)
@@ -422,7 +421,7 @@
       gsd[is.na(gsd)] <- exp(mean(log(gsd[!is.na(gsd)]), na.rm = TRUE))
       ospsuite.utils::logSafe(gsd)^2
     },
-    stop("Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'.")
+    stop(messages$errorUnsupportedErrorType())
   )
 
   # DiceKriging::km may fail to converge with extreme noise values (e.g., at
