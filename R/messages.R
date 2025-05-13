@@ -190,7 +190,7 @@ messages$plMaxiterWarning <- function(index) {
 
 messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
   sprintf(
-    "PI detected %d individual and %d aggregated datasets.",
+    "Classified observed data: %d individual, %d aggregated dataset(s).",
     nIndividual,
     nAggregated
   )

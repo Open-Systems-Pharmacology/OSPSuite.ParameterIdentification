@@ -13,6 +13,20 @@
   !is.null(data$yErrorType)
 }
 
+#' Check if any aggregated dataset exists
+#'
+#' Returns TRUE if at least one dataset across all output mappings is aggregated.
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+.hasAggregatedData <- function(outputMappings) {
+  any(vapply(outputMappings, function(mapping) {
+    any(vapply(mapping$observedDataSets, .isAggregated, logical(1)))
+  }, logical(1)))
+}
+
 #' Classify Observed Datasets for Bootstrap
 #'
 #' Evaluates all observed datasets in the output mappings and classifies them
@@ -62,7 +76,7 @@
   ospsuite.utils::validateIsSameLength(outputMappings, gprModels)
 
   # Resample and apply new dataset weights for all mappings.
-  # This adjusts the relative influence of datasets
+  # This adjusts the relative influence of datasets.
   outputMappings <- .resampleAndApplyMappingWeights(
     outputMappings = outputMappings,
     mappingWeights = mappingState$dataSetWeights,
@@ -73,12 +87,14 @@
   # This replaces mean values with simulated realizations that preserve temporal
   # correlation, thereby reflecting realistic sampling uncertainty in time-series
   # data.
-  outputMappings <- .resampleAndApplyMappingValues(
-    outputMappings = outputMappings,
-    mappingValues = mappingState$dataSetValues,
-    gprModels = gprModels,
-    seed = seed
-  )
+  if (.hasAggregatedData(outputMappings)) {
+    outputMappings <- .resampleAndApplyMappingValues(
+      outputMappings = outputMappings,
+      mappingValues = mappingState$dataSetValues,
+      gprModels = gprModels,
+      seed = seed
+    )
+  }
 
   return(outputMappings)
 }
