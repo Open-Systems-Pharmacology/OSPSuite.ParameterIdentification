@@ -35,7 +35,7 @@
 
   message(messages$statusObservedDataClassification(nIndividual, nAggregated))
 
-  if (nIndividual < 3) {
+  if (nAggregated < 1 && nIndividual < 3) {
     warning(messages$warningLowIndividualData())
   }
 }
