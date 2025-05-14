@@ -33,6 +33,7 @@ Depends:
     ospsuite (>= 12.2.0)
 Imports:
     DEoptim,
+    DiceKriging,
     dfoptim,
     ggplot2,
     ggtext,

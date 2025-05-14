@@ -43,13 +43,6 @@ messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   )
 }
 
-messages$errorWeightGroupLengthMismatch <- function(expected, actual) {
-  sprintf(
-    "Weight groups must have length %d to match number of output mappings, but got %d.",
-    expected, actual
-  )
-}
-
 messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
@@ -129,7 +122,7 @@ messages$evaluationFeedback <- function(fneval, par, objValue) {
   paste0(
     "fneval: ", fneval,
     " | parameters: ", paste(.formatValues(par), collapse = ", "),
-    " | objective: ", .formatValues(objValue),
+    " | objective: ", .formatValues(objValue), "\n",
     sep = ""
   )
 }
@@ -197,7 +190,7 @@ messages$plMaxiterWarning <- function(index) {
 
 messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
   sprintf(
-    "PI detected %d individual and %d aggregated datasets.",
+    "Classified observed data: %d individual, %d aggregated dataset(s).",
     nIndividual,
     nAggregated
   )
@@ -210,6 +203,22 @@ messages$warningLowIndividualData <- function(n = 3) {
   )
 }
 
+messages$errorUnsupportedErrorType <- function() {
+  stop("Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'.")
+}
+
 messages$statusBootstrap <- function(index, nTotal) {
   paste0("Running bootstrap replicate ", index, " of ", nTotal, ".")
+}
+
+messages$errorGPRModelConvergence <- function(dataSetName) {
+  sprintf(
+    "GPR model failed to converge for dataset '%s'.", dataSetName
+  )
+}
+
+messages$statusGPRModelFitted <- function(dataSetName) {
+  sprintf(
+    "GPR model fitted successfully for dataset '%s'.", dataSetName
+  )
 }

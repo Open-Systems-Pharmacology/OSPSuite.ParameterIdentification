@@ -1,5 +1,10 @@
 # PIOutputMapping
 
+testQuantity <- ospsuite::getQuantity(
+  path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+  container = testSimulation()
+)
+
 test_that("PIOutputMapping object is correctly created", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   expect_s3_class(outputMapping, "PIOutputMapping")
@@ -11,7 +16,7 @@ test_that("PIOutputMapping object is correctly created", {
 })
 
 test_that("PIOutputMapping instance prints without errors", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   expect_snapshot(print(outputMapping))
 })
 

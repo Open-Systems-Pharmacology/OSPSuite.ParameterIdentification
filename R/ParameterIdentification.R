@@ -75,8 +75,10 @@ ParameterIdentification <- R6::R6Class(
     .gridSearchFlag = FALSE,
     # Most recently used bootstrap seed to detect when resampling is needed
     .activeBootstrapSeed = NULL,
-    # Cached initial dataset weights for all output mappings (used for resampling)
-    .initialMappingWeights = NULL,
+    # Cached original weights and values of all datasets before bootstrap
+    .initialOutputMappingState = NULL,
+    # Fitted GPR models for aggregated datasets, used during bootstrap resampling
+    .gprModels = NULL,
 
     # Batch Initialization for Simulations
     #
@@ -213,41 +215,48 @@ ParameterIdentification <- R6::R6Class(
 
     # Retrieve Output Mappings with Optional Bootstrap Resampling
     #
-    # Returns the current list of output mappings used during objective function
-    # evaluation. If no bootstrap seed is provided, the original mappings are returned.
-    # If a `bootstrapSeed` is provided and differs from the previously active seed,
-    # dataset weights are resampled accordingly.
+    # Returns the list of output mappings used during objective function evaluation.
+    # If no bootstrap seed is provided, the original mappings are returned.
+    # If a `bootstrapSeed` is provided and differs from the previously active
+    # seed, dataset weights and values are resampled accordingly.
     #
     # Strategy rationale:
-    # Bootstrap behavior is implemented by updating only the dataset weights.
+    # Bootstrap behavior is implemented by modifying dataset weights and, for
+    # aggregated data, replacing y-values with synthetic samples generated from
+    # GPR models.
     #
-    # This method follows a lazy initialization strategy:
-    # - Classification of observed data as "individual" or "aggregated" is done
-    #   once before the first bootstrap call via `.classifyObservedData()`.
-    # - Initial mapping-level dataset weights are extracted once and cached via
-    #   `.extractMappingWeights()`.
-    # - On each new bootstrap seed, weights are resampled and applied using
-    #   `.resampleAndApplyMappingWeights()`, modifying the internal `.outputMappings`.
+    # This method uses lazy initialization and avoids redundant recomputation:
+    # - The initial mapping state (weights and values) is extracted only once via
+    #   `.extractOutputMappingState()`.
+    # - GPR models are prepared for aggregated datasets only once via
+    #   `.prepareGPRModels()`.
+    # - On each new bootstrap seed, mappings are resampled using
+    #   `.resampleAndApplyMappingState()`, updating the internal `.outputMappings`.
     #
     # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
     #   returns the unmodified output mappings.
-    # @return A list of `PIOutputMapping` objects, possibly with resampled dataset
-    #   weights.
+    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
+    #   weights and values.
     .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
       }
 
-      if (is.null(private$.initialMappingWeights)) {
-        private$.initialMappingWeights <- .extractMappingWeights(private$.outputMappings)
+      # First-time bootstrap setup: cache initial state and fit GPR models
+      if (is.null(private$.initialOutputMappingState)) {
+        private$.initialOutputMappingState <- .extractOutputMappingState(
+          private$.outputMappings
+        )
       }
 
+      # Trigger resampling only if the seed has changed
       if (is.null(private$.activeBootstrapSeed) ||
         private$.activeBootstrapSeed != bootstrapSeed) {
         private$.activeBootstrapSeed <- bootstrapSeed
-        private$.outputMappings <- .resampleAndApplyMappingWeights(
+        private$.outputMappings <- .resampleAndApplyMappingState(
           private$.outputMappings,
-          private$.initialMappingWeights,
+          private$.initialOutputMappingState,
+          private$.gprModels,
           bootstrapSeed
         )
       }
@@ -257,18 +266,18 @@ ParameterIdentification <- R6::R6Class(
 
     # Restore Output Mapping State
     #
-    # Resets `outputMappings` to their initial dataset weights and clears
-    # bootstrap-related state, including the active bootstrap seed and cached
-    # initial weights.
+    # Restores `outputMappings` to their original state before bootstrap resampling,
+    # including both dataset weights and y-values. Clears bootstrap-related state.
     .restoreOutputMappingsState = function() {
-      if (!is.null(private$.initialMappingWeights)) {
-        private$.outputMappings <- .applyMappingWeights(
+      if (!is.null(private$.initialOutputMappingState)) {
+        private$.outputMappings <- .applyOutputMappingState(
           private$.outputMappings,
-          private$.initialMappingWeights
+          private$.initialOutputMappingState
         )
       }
-      private$.initialMappingWeights <- NULL
+      private$.initialOutputMappingState <- NULL
       private$.activeBootstrapSeed <- NULL
+      private$.gprModels <- NULL
     },
 
     # Aggregate Model Cost Calculation
@@ -626,6 +635,8 @@ ParameterIdentification <- R6::R6Class(
       # Initialize batches
       private$.batchInitialization()
 
+      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
+
       currValues <- sapply(private$.piParameters, `[[`, "currValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
@@ -633,6 +644,7 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$ciMethod == "bootstrap" &&
         is.null(private$.activeBootstrapSeed)) {
         .classifyObservedData(private$.outputMappings)
+        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
       }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
@@ -643,10 +655,6 @@ ParameterIdentification <- R6::R6Class(
         lower = lower,
         upper = upper
       )
-
-      if (private$.configuration$ciMethod == "bootstrap") {
-        private$.restoreOutputMappingsState()
-      }
 
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(private$.simulations, private$.savedSimulationState)
