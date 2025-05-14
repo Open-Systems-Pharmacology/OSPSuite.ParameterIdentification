@@ -21,7 +21,7 @@ test_that(".extractOutputMappingState works for single mapping with one dataset"
 })
 
 test_that(".extractOutputMappingState works for single mapping with multiple datasets", {
-  mapping <- PIOutputMapping$new(quantity = testQuantity)
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
   mapping$addObservedDataSets(testObservedDataMultiple())
   mappingState <- .extractOutputMappingState(list(mapping))
   expect_snapshot_value(capture.output(str(mappingState)), style = "deparse")
@@ -34,7 +34,7 @@ test_that(".extractOutputMappingState works for multiple mappings with single da
 })
 
 test_that(".applyOutputMappingState correctly updates mapping state [single/multiple]", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedDataMultiple())
   outputMappingMultiple <- list(outputMapping)
 
@@ -48,7 +48,7 @@ test_that(".applyOutputMappingState correctly updates mapping state [single/mult
 })
 
 test_that(".applyOutputMappingState restores original state after modification [single/multiple]", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedDataMultiple())
   outputMappingMultiple <- list(outputMapping)
 

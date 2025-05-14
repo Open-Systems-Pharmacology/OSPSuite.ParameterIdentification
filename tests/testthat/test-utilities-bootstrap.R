@@ -1,4 +1,5 @@
 test_that(".prepareGPRModels fits a GPR model for datasets with ArithmeticStdDev errors", {
+  testOutputMapping <- getTestOutputMapping()
   mapping <- testOutputMapping()
 
   expect_message(
@@ -32,7 +33,7 @@ test_that(".prepareGPRModels fits a GPR model for datasets with GeometricStdDev 
   mapping <- PIOutputMapping$new(
     quantity = getQuantity(
       "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-      container = testSimulations()$Aciclovir
+      container = testSimulation()
     )
   )
   mapping$addObservedDataSets(dataSet)

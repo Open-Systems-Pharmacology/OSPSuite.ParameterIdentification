@@ -122,7 +122,7 @@ messages$evaluationFeedback <- function(fneval, par, objValue) {
   paste0(
     "fneval: ", fneval,
     " | parameters: ", paste(.formatValues(par), collapse = ", "),
-    " | objective: ", .formatValues(objValue),
+    " | objective: ", .formatValues(objValue), "\n",
     sep = ""
   )
 }
