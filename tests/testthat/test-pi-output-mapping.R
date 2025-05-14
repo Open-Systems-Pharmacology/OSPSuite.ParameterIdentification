@@ -1,5 +1,10 @@
 # PIOutputMapping
 
+testQuantity <- ospsuite::getQuantity(
+  path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+  container = testSimulation()
+)
+
 test_that("PIOutputMapping object is correctly created", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   expect_s3_class(outputMapping, "PIOutputMapping")
@@ -11,7 +16,7 @@ test_that("PIOutputMapping object is correctly created", {
 })
 
 test_that("PIOutputMapping instance prints without errors", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   expect_snapshot(print(outputMapping))
 })
 
@@ -147,7 +152,7 @@ test_that("PIOutputMapping cannot set weights when lengths do not match y-values
   yLen <- length(outputMapping$observedDataSets[[1]]$yValues)
   expect_error(
     outputMapping$setDataWeights(weights),
-    messages$errorWeightsLengthMismatch(label, yLen, length(weights[[1]]))
+    messages$errorWeightsVectorLengthMismatch(label, yLen, length(weights[[1]]))
   )
 })
 
@@ -217,7 +222,7 @@ test_that("PIOutputMapping fails with wrong weight length for one of multiple da
 
   expect_error(
     outputMapping$setDataWeights(weights),
-    messages$errorWeightsLengthMismatch("dataSet2", 3, 4)
+    messages$errorWeightsVectorLengthMismatch("dataSet2", 3, 4)
   )
 })
 

@@ -9,6 +9,7 @@
 ## Major changes
 
 - Extend `Optimizer` class with confidence interval calculation (not yet integrated, #167). No visible change for the user.
+- `ParameterIdentification` now uses `Optimizer`class for optimization tasks (#186).
 
 ## Minor improvements and bug fixes
 

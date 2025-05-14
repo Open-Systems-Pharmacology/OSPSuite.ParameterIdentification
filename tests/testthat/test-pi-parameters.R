@@ -1,5 +1,6 @@
 # Testing PIParameters with a Single Parameter ----------------------------
 
+testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
 refVal <- testParam$value
 
 test_that("PIParameters object is correctly created", {

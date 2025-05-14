@@ -16,10 +16,10 @@ during parameter optimization.
 }
 \details{
 The available methods are:
-\describe{
-\item{\code{"none"}}{No robust weighting applied.}
-\item{\code{"huber"}}{Huber weighting for moderate outliers.}
-\item{\code{"bisquare"}}{Bisquare (Tukey's biweight) weighting for severe outliers.}
+\itemize{
+\item \strong{\code{none}} – No robust weighting applied.
+\item \strong{\code{huber}} – Huber weighting for moderate outliers.
+\item \strong{\code{bisquare}} – Bisquare (Tukey's biweight) weighting for severe outliers.
 }
 }
 \keyword{datasets}
