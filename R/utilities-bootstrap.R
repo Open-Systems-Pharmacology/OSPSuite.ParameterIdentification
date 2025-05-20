@@ -488,3 +488,44 @@
   ))
   return(result)
 }
+
+#' Stabilize bootstrap coefficient of variation by minimal symmetric trimming
+#'
+#' Dynamically trims extreme values from both ends of a sorted bootstrap distribution
+#' to reach the point where the coefficient of variation (CV) stabilizes.
+#'
+#' @param values Numeric vector of bootstrap estimates.
+#' @param maxTrimFraction Maximum fraction of values to trim from each tail.
+#' Default is 0.05.
+#'
+#' @return Trimmed numeric vector.
+#' @keywords internal
+#' @noRd
+.stabilizeBootstrapCV <- function(values, maxTrimFraction = 0.05) {
+  values <- values[is.finite(values)]
+  n <- length(values)
+  maxTrim <- floor(n * maxTrimFraction)
+
+
+  if (maxTrim < 1) {
+    return(values)
+  }
+
+  sorted <- sort(values)
+  cvs <- numeric(maxTrim + 1)
+
+  # Compute CV for increasing amounts of symmetric trimming
+  for (i in 0:maxTrim) {
+    trimmed <- sorted[(i + 1):(n - i)]
+    cvs[i + 1] <- sd(trimmed) / abs(mean(trimmed))
+  }
+
+  # Find point where CV stops decreasing sharply (plateau starts)
+  diffs <- diff(cvs)
+  relDiffs <- diffs / abs(cvs[-length(cvs)])
+  elbowIndex <- which.min(relDiffs) + 1
+
+  # Trim minimal values needed to reach CV stabilization plateau
+  trimCount <- elbowIndex - 1
+  sorted[(trimCount + 1):(n - trimCount)]
+}
