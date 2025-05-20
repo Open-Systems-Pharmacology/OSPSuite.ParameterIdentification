@@ -124,15 +124,18 @@ Optimizer <- R6::R6Class(
         # Compute standard errors and CIs
         if (!is.null(fim)) {
           result$details$hessian <- hess
-          result$se <- sqrt(diag(fim))
-          result$cv <- result$se / abs(par) * 100
-          result$lowerCI <- par - zScore * result$se
-          result$upperCI <- par + zScore * result$se
+          result$details$eigen <- eigen(
+            hess, symmetric = TRUE, only.values = TRUE
+          )$values
+          result$sd <- sqrt(diag(fim))
+          result$cv <- result$sd / abs(par)
+          result$lowerCI <- par - zScore * result$sd
+          result$upperCI <- par + zScore * result$sd
 
           # Compute correlation matrix
           corMat <- tryCatch(
             {
-              fim / (result$se %o% result$se)
+              fim / (result$sd %o% result$sd)
             },
             error = function(e) {
               result$error <- messages$ciEstimationError(
@@ -177,10 +180,12 @@ Optimizer <- R6::R6Class(
       }
 
       # Compute standard errors and CIs
+      names(result)[names(result) == "sd"] <- "se"
+      names(result)[names(result) == "cv"] <- "rse"
       result$lowerCI <- lowerCI
       result$upperCI <- upperCI
       result$se <- (upperCI - lowerCI) / (2 * zScore)
-      result$cv <- result$se / abs(par) * 100
+      result$rse <- result$se / abs(par)
       result$details$paramHistory <- as.data.frame(paramHistory)
 
       return(result)
@@ -288,8 +293,10 @@ Optimizer <- R6::R6Class(
       upperLevel <- (1 + controlCI$confLevel) / 2
       result$lowerCI <- apply(bootstrapResults, 2, quantile, probs = lowerLevel)
       result$upperCI <- apply(bootstrapResults, 2, quantile, probs = upperLevel)
-      result$se <- apply(bootstrapResults, 2, sd) / sqrt(nrow(bootstrapResults))
-      result$cv <- result$se / abs(par) * 100
+      result$sd <- apply(bootstrapResults, 2, function(x) {
+        sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
+      })
+      result$cv <- result$sd / abs(par)
 
       # Compute correlation matrix
       result$details$bootstrapResults <- bootstrapResults
@@ -393,12 +400,12 @@ Optimizer <- R6::R6Class(
     # Initialize confidence interval (CI) result list
     .initializeCIResult = function() {
       list(
-        se = NULL,
+        sd = NULL,
         cv = NULL,
         lowerCI = NULL,
         upperCI = NULL,
         error = NULL,
-        method = private$.ciMethod,
+        method = private$.configuration$ciMethod,
         elapsed = NULL,
         details = list()
       )
