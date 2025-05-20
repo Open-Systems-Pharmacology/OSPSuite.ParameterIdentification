@@ -398,7 +398,7 @@ Optimizer <- R6::R6Class(
         lowerCI = NULL,
         upperCI = NULL,
         error = NULL,
-        method = private$.ciMethod,
+        method = private$.configuration$ciMethod,
         elapsed = NULL,
         details = list()
       )
