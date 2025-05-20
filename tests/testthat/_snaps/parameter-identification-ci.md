@@ -1,22 +1,23 @@
 # estimateCI() works as expected using Hessian
 
-    list(se = 0.0523209776366797, cv = 3.96713776024367, lowerCI = 1.21631237929943, 
-        upperCI = 1.42140684290706, error = NULL, method = NULL, 
+    list(sd = 0.0523209776366797, cv = 0.0396713776024367, lowerCI = 1.21631237929943, 
+        upperCI = 1.42140684290706, error = NULL, method = "hessian", 
         elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
-        1L)), corMat = structure(1, dim = c(1L, 1L))))
+        1L)), eigen = 730.597690417481, corMat = structure(1, dim = c(1L, 
+        1L))))
 
 # estimateCI() works with bootstrap and individual data
 
-    list(se = 1.66666666666667, cv = 1718.21305841924, lowerCI = -0.097, 
-        upperCI = 4.653, error = NULL, method = NULL, elapsed = 0, 
+    list(sd = 2.88675134594813, cv = 29.7603231541044, lowerCI = -0.097, 
+        upperCI = 4.653, error = NULL, method = "bootstrap", elapsed = 0, 
         details = list(bootstrapResults = structure(c(4.903, -0.097, 
         -0.097), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
         1L))))
 
 # estimateCI() works with bootstrap and aggregated data
 
-    list(se = 1.66666666666667, cv = 1718.21305841924, lowerCI = 0.153, 
-        upperCI = 4.903, error = NULL, method = NULL, elapsed = 0, 
+    list(sd = 2.88675134594813, cv = 29.7603231541044, lowerCI = 0.153, 
+        upperCI = 4.903, error = NULL, method = "bootstrap", elapsed = 0, 
         details = list(bootstrapResults = structure(c(4.903, 4.903, 
         -0.097), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
         1L))))
