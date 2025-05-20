@@ -4,10 +4,6 @@
 \name{ParameterIdentification}
 \alias{ParameterIdentification}
 \title{ParameterIdentification}
-\value{
-A new \code{ParameterIdentification} object.
-Executes Parameter Identification
-}
 \description{
 Executes optimization to find the best parameter values by comparing
 simulation results against observed data.
@@ -32,6 +28,7 @@ observed data to simulation outputs.}
 \itemize{
 \item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
 \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
+\item \href{#method-ParameterIdentification-estimateCI}{\code{ParameterIdentification$estimateCI()}}
 \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
 \item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
 \item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
@@ -59,8 +56,8 @@ Initializes a \code{ParameterIdentification} instance.
 Parameters of the simulation object will be varied and the results simulated.
 For creating \code{Simulation} objects, see \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation}}.}
 
-\item{\code{parameters}}{An object or a list of objects of class \code{PIParameter}.
-These parameters will be varied. For creating \code{PIParameter} objects, refer to
+\item{\code{parameters}}{An object or a list of objects of class \code{PIParameters}.
+These parameters will be varied. For creating \code{PIParameters} objects, refer to
 \code{\link{PIParameters}}.}
 
 \item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each
@@ -73,6 +70,10 @@ Uses default if omitted. For details on creating a \code{PIConfiguration} object
 see \code{\link{PIConfiguration}}.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{ParameterIdentification} object.
+Executes Parameter Identification
 }
 }
 \if{html}{\out{<hr>}}
@@ -88,6 +89,22 @@ Upon completion, access optimal parameter values through \code{PIParameters$curr
 \subsection{Returns}{
 Results from the parameter identification algorithm, varying by
 algorithm choice.
+Estimates Confidence Intervals
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
+\subsection{Method \code{estimateCI()}}{
+Computes confidence intervals for the optimized parameters
+using the method specified in \code{PIConfiguration}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A list with confidence interval results, including bounds, standard
+errors, and coefficient of variation.
 Plots Parameter Estimation Results
 }
 }

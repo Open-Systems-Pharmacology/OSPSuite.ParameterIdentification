@@ -73,7 +73,12 @@ ParameterIdentification <- R6::R6Class(
     .fnEvaluations = 0,
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
-
+    # Most recently used bootstrap seed to detect when resampling is needed
+    .activeBootstrapSeed = NULL,
+    # Cached original weights and values of all datasets before bootstrap
+    .initialOutputMappingState = NULL,
+    # Fitted GPR models for aggregated datasets, used during bootstrap resampling
+    .gprModels = NULL,
 
     # Batch Initialization for Simulations
     #
@@ -208,6 +213,73 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # Retrieve Output Mappings with Optional Bootstrap Resampling
+    #
+    # Returns the list of output mappings used during objective function evaluation.
+    # If no bootstrap seed is provided, the original mappings are returned.
+    # If a `bootstrapSeed` is provided and differs from the previously active
+    # seed, dataset weights and values are resampled accordingly.
+    #
+    # Strategy rationale:
+    # Bootstrap behavior is implemented by modifying dataset weights and, for
+    # aggregated data, replacing y-values with synthetic samples generated from
+    # GPR models.
+    #
+    # This method uses lazy initialization and avoids redundant recomputation:
+    # - The initial mapping state (weights and values) is extracted only once via
+    #   `.extractOutputMappingState()`.
+    # - GPR models are prepared for aggregated datasets only once via
+    #   `.prepareGPRModels()`.
+    # - On each new bootstrap seed, mappings are resampled using
+    #   `.resampleAndApplyMappingState()`, updating the internal `.outputMappings`.
+    #
+    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
+    #   returns the unmodified output mappings.
+    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
+    #   weights and values.
+    .getOutputMappings = function(bootstrapSeed = NULL) {
+      if (is.null(bootstrapSeed)) {
+        return(private$.outputMappings)
+      }
+
+      # First-time bootstrap setup: cache initial state and fit GPR models
+      if (is.null(private$.initialOutputMappingState)) {
+        private$.initialOutputMappingState <- .extractOutputMappingState(
+          private$.outputMappings
+        )
+      }
+
+      # Trigger resampling only if the seed has changed
+      if (is.null(private$.activeBootstrapSeed) ||
+        private$.activeBootstrapSeed != bootstrapSeed) {
+        private$.activeBootstrapSeed <- bootstrapSeed
+        private$.outputMappings <- .resampleAndApplyMappingState(
+          private$.outputMappings,
+          private$.initialOutputMappingState,
+          private$.gprModels,
+          bootstrapSeed
+        )
+      }
+
+      return(private$.outputMappings)
+    },
+
+    # Restore Output Mapping State
+    #
+    # Restores `outputMappings` to their original state before bootstrap resampling,
+    # including both dataset weights and y-values. Clears bootstrap-related state.
+    .restoreOutputMappingsState = function() {
+      if (!is.null(private$.initialOutputMappingState)) {
+        private$.outputMappings <- .applyOutputMappingState(
+          private$.outputMappings,
+          private$.initialOutputMappingState
+        )
+      }
+      private$.initialOutputMappingState <- NULL
+      private$.activeBootstrapSeed <- NULL
+      private$.gprModels <- NULL
+    },
+
     # Aggregate Model Cost Calculation
     #
     # Calculates and aggregates the model cost across all output
@@ -216,13 +288,15 @@ ParameterIdentification <- R6::R6Class(
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
-    .objectiveFunction = function(currVals) {
+    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
       # Increment function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+
       # Run simulation and catch errors
       obsVsPredList <- tryCatch(
-        private$.evaluate(currVals),
+        private$.evaluate(currVals, bootstrapSeed = bootstrapSeed),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
@@ -239,9 +313,15 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
+      if (length(obsVsPredList) != length(outputMappings)) {
+        stop(messages$errorObsVsPredListLengthMismatch(
+          length(outputMappings), length(obsVsPredList)
+        ))
+      }
+
       # Evaluate cost per output mapping
-      costSummaryList <- vector("list", length(private$.outputMappings))
-      for (idx in seq_along(private$.outputMappings)) {
+      costSummaryList <- vector("list", length(outputMappings))
+      for (idx in seq_along(outputMappings)) {
         # Convert units to base units for unified comparison
         obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
         # Apply LLOQ handling for LSQ
@@ -255,14 +335,14 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Apply log transformation if requested
-        if (private$.outputMappings[[idx]]$scaling == "log") {
+        if (outputMappings[[idx]]$scaling == "log") {
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
         }
 
         # Assign weights from PIOutputMapping
         obsVsPredDf$weights <- NA_real_
-        if (!is.null(private$.outputMappings[[idx]]$dataWeights)) {
-          weights <- private$.outputMappings[[idx]]$dataWeights
+        if (!is.null(outputMappings[[idx]]$dataWeights)) {
+          weights <- outputMappings[[idx]]$dataWeights
           for (dataset in names(weights)) {
             obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[dataset]]
           }
@@ -270,7 +350,7 @@ ParameterIdentification <- R6::R6Class(
 
         # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
-        costControl$scaling <- private$.outputMappings[[idx]]$scaling
+        costControl$scaling <- outputMappings[[idx]]$scaling
         ospsuite.utils::validateIsOption(
           options = costControl,
           validOptions = ObjectiveFunctionSpecs
@@ -288,6 +368,7 @@ ParameterIdentification <- R6::R6Class(
           scaling = costControl$scaling
         )
 
+        costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
       }
 
@@ -296,10 +377,12 @@ ParameterIdentification <- R6::R6Class(
 
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
-        cat(paste0(
-          "fneval ", private$.fnEvaluations, ": parameters ", paste0(signif(currVals, 3), collapse = "; "),
-          ", objective function ", signif(runningCost$modelCost, 4), "\n"
-        ))
+        cat(
+          messages$evaluationFeedback(
+            private$.fnEvaluations, currVals,
+            runningCost[[private$.configuration$modelCostField]]
+          )
+        )
       }
 
       return(runningCost)
@@ -333,8 +416,10 @@ ParameterIdentification <- R6::R6Class(
     #
     # @param currVals Vector of parameter values for simulation.
     # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals) {
-      obsVsPredList <- vector("list", length(private$.outputMappings))
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+
+      obsVsPredList <- vector("list", length(outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
         # The order of the values corresponds to the order of PIParameters in
@@ -381,9 +466,9 @@ ParameterIdentification <- R6::R6Class(
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
 
-      for (idx in seq_along(private$.outputMappings)) {
+      for (idx in seq_along(outputMappings)) {
         obsVsPred <- ospsuite::DataCombined$new()
-        currOutputMapping <- private$.outputMappings[[idx]]
+        currOutputMapping <- outputMappings[[idx]]
         # Find the simulation that is the parent of the output quantity
         simId <- .getSimulationContainer(currOutputMapping$quantity)$id
         # Find the simulation batch that corresponds to the simulation
@@ -402,11 +487,11 @@ ParameterIdentification <- R6::R6Class(
         obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
         # apply data transformations stored in corresponding outputMapping
         obsVsPred$setDataTransformations(
-          forNames = names(private$.outputMappings[[idx]]$observedDataSets),
-          xOffsets = private$.outputMappings[[idx]]$dataTransformations$xOffsets,
-          xScaleFactors = private$.outputMappings[[idx]]$dataTransformations$xFactors,
-          yOffsets = private$.outputMappings[[idx]]$dataTransformations$yOffsets,
-          yScaleFactors = private$.outputMappings[[idx]]$dataTransformations$yFactors
+          forNames = names(outputMappings[[idx]]$observedDataSets),
+          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
         )
         obsVsPredList[[idx]] <- obsVsPred
       }
@@ -416,108 +501,27 @@ ParameterIdentification <- R6::R6Class(
 
     # Execute Optimization Algorithm
     #
-    # Executes the selected optimization algorithm, configured in `PIConfiguration`,
-    # on the current parameter set. It returns a comprehensive summary of the
-    # optimization results, including parameter estimates, function evaluations,
-    # and computation time.
+    # Runs the optimization algorithm defined in `PIConfiguration` using the
+    # `Optimizer`. Uses current parameter bounds and start values, and evaluates
+    # the objective function accordingly.
     #
     # @return Optimization results with parameter estimates, elapsed time, and
     # additional metrics.
     .runAlgorithm = function() {
-      startValues <- unlist(lapply(self$parameters, function(x) {
-        x$startValue
-      }), use.names = FALSE)
-      lower <- unlist(lapply(self$parameters, function(x) {
-        x$minValue
-      }), use.names = FALSE)
-      upper <- unlist(lapply(self$parameters, function(x) {
-        x$maxValue
-      }), use.names = FALSE)
+      startValues <- sapply(private$.piParameters, `[[`, "startValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      # Depending on the `algorithm` argument in the `PIConfiguration` object, the
-      # actual optimization call will use one of the underlying optimization routines
-      message(messages$runningOptimizationAlgorithm(private$.configuration$algorithm))
+      optimizer <- Optimizer$new(configuration = private$.configuration)
 
-      control <- private$.configuration$algorithmOptions
-      if (private$.configuration$algorithm == "HJKB") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_HJKB
-        }
-        time <- system.time({
-          results <- dfoptim::hjkb(par = startValues, fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, control = control, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "BOBYQA") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_BOBYQA
-        }
-        time <- system.time({
-          results <- nloptr::bobyqa(x0 = startValues, fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, control = control, lower = lower, upper = upper)
-        })
-      } else if (private$.configuration$algorithm == "DEoptim") {
-        # Default options
-        if (is.null(control)) {
-          control <- AlgorithmOptions_DEoptim
-        }
-        # passing control arguments by name into the DEoptim.control object, using DEoptim default values where needed
-        time <- system.time({
-          results <- DEoptim::DEoptim(fn = function(p) {
-            private$.objectiveFunction(p)$modelCost
-          }, lower = lower, upper = upper, control = control)
-          results$par <- results$optim$bestmem
-          results$value <- results$optim$bestval
-        })
-      }
-      # at this point, we assume that `private$.configuration$algorithm` contains
-      # one of the entries from `ospsuite.parameteridentification::Algorithms`,
-      # so one of the `if` conditions above would execute
+      optimResult <- optimizer$run(
+        par = startValues,
+        fn = function(p, ...) private$.objectiveFunction(p, ...),
+        lower = lower,
+        upper = upper
+      )
 
-      results$elapsed <- time[[3]]
-      results$algorithm <- private$.configuration$algorithm
-      # Add the number of function evaluations (excluding hessian calculation) to the results output
-      results$nrOfFnEvaluations <- private$.fnEvaluations
-
-      # Calculate sigma if it has not been calculated previously
-      if (is.null(results$sigma)) {
-        # For the objective function that represents the deviation = -2 * log(L),
-        # results$hessian / 2 is the observed information matrix
-        # https://stats.stackexchange.com/questions/27033/
-        results$sigma <- tryCatch(
-          {
-            # Calculate hessian if the selected algorithm does not calculate it by default
-            if (is.null(results$hessian)) {
-              message(messages$hessianEstimation())
-              # The hessian estimation is based on the parameter values
-              hessianEpsilon <- pmax(1e-8, pmin(1e-4, 0.1 * abs(results$par)))
-              results$hessian <- numDeriv::hessian(func = function(p) {
-                private$.objectiveFunction(p)$modelCost
-              }, x = results$par, method.args = list(eps = hessianEpsilon))
-            }
-
-            fim <- solve(results$hessian / 2)
-            sqrt(diag(fim))
-          },
-          error = function(cond) {
-            message("Error calculating confidence intervals.")
-            message("Here's the original error message:")
-            message(cond$message)
-            # Choose a return value in case of error
-            NA_real_
-          }
-        )
-      }
-      # The 95% confidence intervals are defined by two sigma values away from the
-      # point estimate. The coefficient of variation (CV) is the ratio of standard
-      # deviation to the point estimate.
-      results$lwr <- results$par - qnorm(p = 1 - 0.05 / 2) * results$sigma
-      results$upr <- results$par + qnorm(p = 1 - 0.05 / 2) * results$sigma
-      results$cv <- results$sigma / abs(results$par) * 100
-      return(results)
+      return(optimResult)
     }
   ),
   public = list(
@@ -526,8 +530,8 @@ ParameterIdentification <- R6::R6Class(
     #' @param simulations An object or a list of objects of class `Simulation`.
     #' Parameters of the simulation object will be varied and the results simulated.
     #' For creating `Simulation` objects, see [`ospsuite::loadSimulation`].
-    #' @param parameters An object or a list of objects of class `PIParameter`.
-    #' These parameters will be varied. For creating `PIParameter` objects, refer to
+    #' @param parameters An object or a list of objects of class `PIParameters`.
+    #' These parameters will be varied. For creating `PIParameters` objects, refer to
     #' [`ospsuite.parameteridentification::PIParameters`].
     #' @param configuration (Optional) `PIConfiguration` for additional settings.
     #' Uses default if omitted. For details on creating a `PIConfiguration` object,
@@ -536,13 +540,15 @@ ParameterIdentification <- R6::R6Class(
     #' object maps a model output (represented by a `Quantity`) with a set of
     #' observed data given as `XYData` objects. For guidance on creating `PIOutputMapping`
     #' objects, see [`ospsuite.parameteridentification::PIOutputMapping`].
-    #' @returns A new `ParameterIdentification` object.
+    #' @return A new `ParameterIdentification` object.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
-      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
+      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
+
       private$.configuration <- configuration %||% PIConfiguration$new()
+
       simulations <- ospsuite.utils::toList(simulations)
       parameters <- ospsuite.utils::toList(parameters)
       outputMappings <- ospsuite.utils::toList(outputMappings)
@@ -595,7 +601,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
-      # Reset gridSearhcFlag
+      # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
 
       # Run optimization algorithm
@@ -613,6 +619,51 @@ ParameterIdentification <- R6::R6Class(
       ospsuite::clearMemory()
 
       return(results)
+    },
+
+    #' Estimates Confidence Intervals
+    #'
+    #' @description Computes confidence intervals for the optimized parameters
+    #' using the method specified in `PIConfiguration`.
+    #'
+    #' @return A list with confidence interval results, including bounds, standard
+    #' errors, and coefficient of variation.
+    estimateCI = function() {
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      # Initialize batches
+      private$.batchInitialization()
+
+      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
+
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      if (private$.configuration$ciMethod == "bootstrap" &&
+        is.null(private$.activeBootstrapSeed)) {
+        .classifyObservedData(private$.outputMappings)
+        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
+      }
+
+      optimizer <- Optimizer$new(configuration = private$.configuration)
+
+      ciResult <- optimizer$estimateCI(
+        par = currValues,
+        fn = function(p, ...) private$.objectiveFunction(p, ...),
+        lower = lower,
+        upper = upper
+      )
+
+      if (!is.null(private$.savedSimulationState)) {
+        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      }
+
+      # Trigger .NET gc
+      ospsuite::clearMemory()
+
+      return(ciResult)
     },
 
     #' Plots Parameter Estimation Results
@@ -743,7 +794,8 @@ ParameterIdentification <- R6::R6Class(
 
       # Calculate OFV
       ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
-        private$.objectiveFunction(as.numeric(ofvGrid[i, ]))$modelCost
+        ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+        ofv[[private$.configuration$modelCostField]]
       }, numeric(1))
 
       # Restore simulation state if applicable
@@ -822,7 +874,8 @@ ParameterIdentification <- R6::R6Class(
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
           row <- as.numeric(currentGrid[gridIdx, ])
-          ofvValues[gridIdx] <- private$.objectiveFunction(row)$modelCost
+          ofv <- private$.objectiveFunction(row)
+          ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 
         profileList[[idx]] <- tibble::tibble(

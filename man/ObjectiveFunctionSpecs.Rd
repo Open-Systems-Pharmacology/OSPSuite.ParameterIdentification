@@ -18,13 +18,20 @@ for tailoring how model fit is assessed, configured within \code{PIConfiguration
 \details{
 Includes:
 \itemize{
-\item \code{objectiveFunctionType}: Types of error calculations ("lsq" for least squares, "m3" for method 3).
-\item \code{residualWeightingMethod}: Methods for weighting residuals ("none", "std", "mean", "error").
-\item \code{robustMethod}: Approaches for robust outlier handling ("none", "huber", "bisquare").
-\item \code{scaleVar}: Boolean for variance scaling (TRUE, FALSE).
-\item \code{linScaleCV}: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.
-\item \code{logScaleSD}: Standard deviation for log scale, with numeric range 1e-9 to Inf.
+\item \strong{\code{objectiveFunctionType}} – Type of error calculation. Allowed values:
+\code{lsq} (least squares), \verb{m3"} (M3 method).
+\item \strong{\code{residualWeightingMethod}} – Method for weighting residuals. Allowed values:
+\code{none}, \code{std}, \code{mean}, \code{error}.
+\item \strong{\code{robustMethod}} – Approach for robust outlier handling. Allowed values:
+\code{none}, \code{huber}, \code{bisquare}.
+\item \strong{\code{scaleVar}} – Boolean for variance scaling. Allowed values: \code{TRUE}, \code{FALSE}.
+\item \strong{\code{scaling}} – Scaling type. Allowed values: \code{lin} (linear), \code{log} (logarithmic).
+\item \strong{\code{linScaleCV}} – Coefficient of variation for linear scaling. Numeric
+range: \code{1e-9} to \code{1}.
+\item \strong{\code{logScaleSD}} – Standard deviation for log scaling. Numeric range: \code{1e-9}
+to \code{Inf}.
 }
+
 These options directly influence the optimization process by defining how
 discrepancies between simulated and observed data are quantified and managed.
 }
