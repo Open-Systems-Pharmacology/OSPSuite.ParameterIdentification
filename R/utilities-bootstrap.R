@@ -503,9 +503,15 @@
 #' @noRd
 .stabilizeBootstrapCV <- function(values, maxTrimFraction = 0.05) {
   values <- values[is.finite(values)]
-  sorted <- sort(values)
-  n <- length(sorted)
+  n <- length(values)
   maxTrim <- floor(n * maxTrimFraction)
+
+
+  if (maxTrim < 1) {
+    return(values)
+  }
+
+  sorted <- sort(values)
   cvs <- numeric(maxTrim + 1)
 
   # Compute CV for increasing amounts of symmetric trimming
