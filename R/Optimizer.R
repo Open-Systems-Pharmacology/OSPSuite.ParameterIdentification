@@ -109,40 +109,54 @@ Optimizer <- R6::R6Class(
         }
       )
 
+      # Currently assumes SSR objective; extend with MLE logic as needed
+      # For SSR-based objective: Cov(θ) = σ² * (H / 2)^(-1), with σ² = SSR / (n - p)
+      # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
+      cost <- fn(p = par, modelCostField = NULL)
+      ssr <- purrr::pluck(
+        cost, "costVariables", "weightedSSR",
+        .default = 1
+      )
+      nObs <- purrr::pluck(
+        cost, "costVariables", "nObservations",
+        .default = length(par) + 1
+      )
+      dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
+      sigma2 <- ssr / dof  # for MLE use: sigma2 = 1
+
       if (!is.null(hess)) {
-        # Invert Hessian to obtain FIM (covariance matrix)
-        fim <- tryCatch(
-          solve(hess / 2),
+        # Invert Hessian to obtain covariance matrix
+        covMat <- tryCatch(
+          {
+            sigma2 * solve(hess / 2)
+          },
           error = function(e) {
-            result$error <- messages$ciEstimationError(
-              "Fisher-Information Matrix calculation", e$message
-            )
+            if (is.null(result$error)) {
+              result$error <- messages$ciEstimationError(
+                "Covariance matrix calculation", e$message
+              )
+            }
             NULL
           }
         )
 
         # Compute standard errors and CIs
-        if (!is.null(fim)) {
+        if (!is.null(covMat)) {
           result$details$hessian <- hess
-          result$details$eigen <- eigen(
-            hess, symmetric = TRUE, only.values = TRUE
-          )$values
-          result$sd <- sqrt(diag(fim))
+          result$details$covMat <- covMat
+          result$details$eigen <- tryCatch(
+            eigen(hess, symmetric = TRUE, only.values = TRUE)$values,
+            error = function(e) NA_real_
+          )
+          result$sd <- sqrt(diag(covMat))
           result$cv <- result$sd / abs(par)
           result$lowerCI <- par - zScore * result$sd
           result$upperCI <- par + zScore * result$sd
 
           # Compute correlation matrix
           corMat <- tryCatch(
-            {
-              fim / (result$sd %o% result$sd)
-            },
-            error = function(e) {
-              result$error <- messages$ciEstimationError(
-                "Correlation matrix calculation", e$message
-              )
-              NULL
-            }
+            covMat / (result$sd %o% result$sd),
+            error = function(e) NA_real_
           )
           result$details$corMat <- corMat
         }
