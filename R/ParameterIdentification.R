@@ -336,7 +336,7 @@ ParameterIdentification <- R6::R6Class(
 
         # Apply log transformation if requested
         if (outputMappings[[idx]]$scaling == "log") {
-          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
+          obsVsPredDf <- .applyLogTransformation(obsVsPredDf, 10)
         }
 
         # Assign weights from PIOutputMapping

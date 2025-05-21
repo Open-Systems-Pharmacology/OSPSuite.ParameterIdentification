@@ -384,7 +384,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' \dontrun{
 #' transformedDf <- applyLogTransformation(df)
 #' }
-.applyLogTransformation <- function(df) {
+.applyLogTransformation <- function(df, base = exp(1)) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
     c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
@@ -399,11 +399,11 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
-    epsilon = UNITS_EPSILON, base = exp(1)
+    epsilon = UNITS_EPSILON, base = base
   )
   df$lloq <- ospsuite.utils::logSafe(
     df$lloq,
-    epsilon = UNITS_EPSILON, base = exp(1)
+    epsilon = UNITS_EPSILON, base = base
   )
 
   return(df)
