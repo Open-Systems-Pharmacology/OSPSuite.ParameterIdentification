@@ -322,28 +322,33 @@ Optimizer <- R6::R6Class(
       return(par)
     },
 
-    # Converts the objective function to handle fixed parameters and extract modelCost
+    # Converts the objective function to handle fixed parameters and extract
+    # modelCost with dynamic overrides
     .preprocessFn = function(fn, fixedParams) {
       # If fn is already preprocessed, return it to prevent infinite recursion
       if (inherits(fn, "preprocessedFn")) {
         return(fn)
       }
 
-      wrappedFn <- function(p, ...) {
+      wrappedFn <- function(p, ..., modelCostField) {
         result <- fn(p, ...)
-        if (is.list(result)) {
-          if (!private$.configuration$modelCostField %in% names(result)) {
-            stop(messages$objectiveFnOutputError(
-              private$.configuration$modelCostField
-            ))
-          }
-          return(purrr::pluck(result, private$.configuration$modelCostField))
+
+        if (missing(modelCostField)) {
+          modelCostField <- private$.configuration$modelCostField
         }
-        return(result)
+
+        if (is.null(modelCostField) || !is.list(result)) {
+          return(result)
+        }
+
+        if (!modelCostField %in% names(result)) {
+          stop(messages$objectiveFnOutputError(modelCostField))
+        }
+
+        return(purrr::pluck(result, modelCostField))
       }
 
       class(wrappedFn) <- "preprocessedFn"
-
       return(wrappedFn)
     },
 
