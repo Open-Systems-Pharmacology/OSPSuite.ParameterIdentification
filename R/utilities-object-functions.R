@@ -375,6 +375,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' which must contain `yDimension`, `yUnit`, `yValues`, and `lloq` columns.
 #'
 #' @param df A `tbl_df` representing the observed vs predicted data frame (`obsVsPredDf`).
+#' @param base A positive numeric value specifying the logarithm base. Defaults
+#' to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
 #' @keywords internal
@@ -386,6 +388,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' }
 .applyLogTransformation <- function(df, base = exp(1)) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
+  ospsuite.utils::validateIsNumeric(base)
   ospsuite.utils::validateIsIncluded(
     c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
   )
