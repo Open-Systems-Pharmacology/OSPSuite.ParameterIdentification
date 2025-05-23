@@ -1,9 +1,10 @@
 # estimateCI() works as expected using Hessian
 
-    list(sd = 0.0523209776366797, cv = 0.0396713776024367, lowerCI = 1.21631237929943, 
-        upperCI = 1.42140684290706, error = NULL, method = "hessian", 
+    list(sd = 0.206821692216866, cv = 0.156818580594682, lowerCI = 0.913496543136562, 
+        upperCI = 1.72422267906993, error = NULL, method = "hessian", 
         elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
-        1L)), eigen = 730.597690417481, corMat = structure(1, dim = c(1L, 
+        1L)), covMat = structure(0.042775212371448, dim = c(1L, 1L
+        )), eigen = 730.597690417481, corMat = structure(1, dim = c(1L, 
         1L))))
 
 # estimateCI() works with bootstrap and individual data
