@@ -634,6 +634,8 @@ ParameterIdentification <- R6::R6Class(
       private$.savedSimulationState <- .storeSimulationState(private$.simulations)
       # Initialize batches
       private$.batchInitialization()
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
 
       on.exit(private$.restoreOutputMappingsState(), add = TRUE)
 
