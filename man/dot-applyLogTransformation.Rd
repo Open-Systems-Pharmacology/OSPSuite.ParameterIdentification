@@ -4,10 +4,13 @@
 \alias{.applyLogTransformation}
 \title{Apply Log Transformation to Data Frame}
 \usage{
-.applyLogTransformation(df)
+.applyLogTransformation(df, base = exp(1))
 }
 \arguments{
 \item{df}{A \code{tbl_df} representing the observed vs predicted data frame (\code{obsVsPredDf}).}
+
+\item{base}{A positive numeric value specifying the logarithm base. Defaults
+to natural logarithm (\code{exp(1)}).}
 }
 \value{
 A transformed data frame with log-transformed \code{yValues} and \code{lloq}.

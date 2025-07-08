@@ -122,7 +122,7 @@ Optimizer <- R6::R6Class(
         .default = length(par) + 1
       )
       dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
-      sigma2 <- ssr / dof  # for MLE use: sigma2 = 1
+      sigma2 <- ssr / dof # for MLE use: sigma2 = 1
 
       if (!is.null(hess)) {
         # Invert Hessian to obtain covariance matrix
@@ -142,23 +142,34 @@ Optimizer <- R6::R6Class(
 
         # Compute standard errors and CIs
         if (!is.null(covMat)) {
-          result$details$hessian <- hess
-          result$details$covMat <- covMat
-          result$details$eigen <- tryCatch(
-            eigen(hess, symmetric = TRUE, only.values = TRUE)$values,
+          # Check if covariance matrix is positive definite
+          eigenValues <- tryCatch(
+            eigen(covMat, symmetric = TRUE, only.values = TRUE)$values,
             error = function(e) NA_real_
           )
-          result$sd <- sqrt(diag(covMat))
-          result$cv <- result$sd / abs(par)
-          result$lowerCI <- par - zScore * result$sd
-          result$upperCI <- par + zScore * result$sd
 
-          # Compute correlation matrix
-          corMat <- tryCatch(
-            covMat / (result$sd %o% result$sd),
-            error = function(e) NA_real_
-          )
-          result$details$corMat <- corMat
+          if (any(is.na(eigenValues)) || any(eigenValues <= 0)) {
+            result$error <- messages$ciEstimationError(
+              "Covariance matrix validity check",
+              "Covariance matrix is not positive definite."
+            )
+          } else {
+            result$details$hessian <- hess
+            result$details$covMat <- covMat
+            result$details$eigen <- eigenValues
+
+            result$sd <- sqrt(diag(covMat))
+            result$cv <- result$sd / abs(par)
+            result$lowerCI <- par - zScore * result$sd
+            result$upperCI <- par + zScore * result$sd
+
+            # Compute correlation matrix
+            corMat <- tryCatch(
+              covMat / (result$sd %o% result$sd),
+              error = function(e) NA_real_
+            )
+            result$details$corMat <- corMat
+          }
         }
       }
 

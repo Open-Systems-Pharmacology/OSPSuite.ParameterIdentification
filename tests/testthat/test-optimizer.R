@@ -253,6 +253,18 @@ fnObjective <- function(p) {
   SSR <- sum((yObs - ySim)^2)
   list(modelCost = SSR)
 }
+fnObjective <- function(p) {
+  ySim <- fnSimulate(p)
+  SSR <- sum((yObs - ySim)^2)
+
+  list(
+    modelCost = SSR,
+    costVariables = list(
+      weightedSSR = SSR,
+      nObservations = length(yObs)
+    )
+  )
+}
 
 # Initial parameter values
 parTest <- c(0.8, -1.5, 2.5)
