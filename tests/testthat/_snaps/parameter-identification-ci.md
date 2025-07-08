@@ -4,7 +4,7 @@
         upperCI = 1.72422267906993, error = NULL, method = "hessian", 
         elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
         1L)), covMat = structure(0.042775212371448, dim = c(1L, 1L
-        )), eigen = 730.597690417481, corMat = structure(1, dim = c(1L, 
+        )), eigen = 0.042775212371448, corMat = structure(1, dim = c(1L, 
         1L))))
 
 # estimateCI() works with bootstrap and individual data
