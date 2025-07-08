@@ -48,7 +48,8 @@ setParameterValuesByPath(
 
 # Get all `Dose` parameters for the MD simulation
 doseParams <- getAllParametersMatching(
-  "Applications|**|Dose", container = simulations$PO500MD
+  "Applications|**|Dose",
+  container = simulations$PO500MD
 )
 
 setParameterValues(
@@ -137,7 +138,8 @@ ciResult <- task$estimateCI()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    taskResults$par, c(14.024, 6.244, 1.3e-6), tolerance = 0.01
+    taskResults$par, c(14.024, 6.244, 1.3e-6),
+    tolerance = 0.01
   )
 })
 
@@ -200,7 +202,8 @@ setParameterValuesByPath(
 
 # Get all `Dose` parameters for the MD simulation
 doseParams <- getAllParametersMatching(
-  "Applications|**|Dose", container = simulations$PO500MD
+  "Applications|**|Dose",
+  container = simulations$PO500MD
 )
 
 setParameterValues(
@@ -289,7 +292,8 @@ ciResult <- task$estimateCI()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    taskResults$par, c(8.420, 5.373, 0.011), tolerance = 0.01
+    taskResults$par, c(8.420, 5.373, 0.011),
+    tolerance = 0.01
   )
 })
 

@@ -16,8 +16,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation)
-)
+  path = parameterPaths[[1]], container = simulation
+))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
@@ -94,8 +94,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation)
-)
+  path = parameterPaths[[1]], container = simulation
+))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
@@ -160,8 +160,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation)
-)
+  path = parameterPaths[[1]], container = simulation
+))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
@@ -225,8 +225,8 @@ piConfiguration$ciMethod <- "bootstrap"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation)
-)
+  path = parameterPaths[[1]], container = simulation
+))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10
@@ -295,8 +295,8 @@ piConfiguration$ciMethod <- "bootstrap"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation)
-)
+  path = parameterPaths[[1]], container = simulation
+))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
 parameters[[1]]$maxValue <- 10

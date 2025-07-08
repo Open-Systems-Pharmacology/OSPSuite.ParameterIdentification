@@ -506,7 +506,6 @@
   n <- length(values)
   maxTrim <- floor(n * maxTrimFraction)
 
-
   if (maxTrim < 1) {
     return(values)
   }

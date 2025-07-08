@@ -122,7 +122,7 @@ Optimizer <- R6::R6Class(
         .default = length(par) + 1
       )
       dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
-      sigma2 <- ssr / dof  # for MLE use: sigma2 = 1
+      sigma2 <- ssr / dof # for MLE use: sigma2 = 1
 
       if (!is.null(hess)) {
         # Invert Hessian to obtain covariance matrix
