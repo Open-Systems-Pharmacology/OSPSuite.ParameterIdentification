@@ -50,15 +50,14 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResults <- task$estimateCI()
+taskResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(taskResults$par, 1.319, tolerance = 0.01)
+  expect_equal(taskResult$finalParameters, 1.319, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(ciResults$sd, 0.207, tolerance = 0.01)
+  expect_equal(taskResult$sd, 0.207, tolerance = 0.01)
 })
 
 
@@ -128,15 +127,14 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResults <- task$estimateCI()
+taskResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(taskResults$par, 0.164, tolerance = 0.01)
+  expect_equal(taskResult$finalParameters, 0.164, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(ciResults$sd, 0.173, tolerance = 0.01)
+  expect_equal(taskResult$sd, 0.173, tolerance = 0.01)
 })
 
 
@@ -194,15 +192,14 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResults <- task$estimateCI()
+taskResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(taskResults$par, 0.153, tolerance = 0.01)
+  expect_equal(taskResult$finalParameters, 0.153, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(ciResults$sd, 0.149, tolerance = 0.01)
+  expect_equal(taskResult$sd, 0.149, tolerance = 0.01)
 })
 
 
@@ -259,15 +256,14 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResults <- task$estimateCI()
+taskResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(taskResults$par, 0.164, tolerance = 0.01)
+  expect_equal(taskResult$finalParameters, 0.164, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(ciResults$sd, 0.156, tolerance = 0.01)
+  expect_equal(taskResult$sd, 0.156, tolerance = 0.01)
 })
 
 
@@ -329,13 +325,12 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResults <- task$estimateCI()
+taskResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(taskResults$par, 0.164, tolerance = 0.01)
+  expect_equal(taskResult$finalParameters, 0.164, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(ciResults$sd, 0.160, tolerance = 0.01)
+  expect_equal(taskResult$sd, 0.160, tolerance = 0.01)
 })
