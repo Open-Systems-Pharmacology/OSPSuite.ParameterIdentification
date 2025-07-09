@@ -7,7 +7,7 @@
 tidy(x)
 }
 \arguments{
-\item{x}{A \code{piResults} object returned by \code{ParameterIdentification$run()}}
+\item{x}{A \code{piResult} object returned by \code{ParameterIdentification$run()}}
 }
 \value{
 A tibble with the following columns:
@@ -25,7 +25,7 @@ A tibble with the following columns:
 }
 }
 \description{
-Converts a \code{piResults} object into a tidy tabular format.
+Converts a \code{piResult} object into a tidy tabular format.
 Returns one row per parameter with associated metadata and estimation results,
 including confidence intervals and coefficient of variation.
 }

@@ -133,14 +133,14 @@ PIParameters <- R6::R6Class(
       n <- length(private$.parameters)
 
       parametersDf <- data.frame(
-        group      = rep(group %||% NA_integer_, n),
-        name       = sapply(private$.parameters, `[[`, "name"),
-        path       = sapply(private$.parameters, `[[`, "fullPath"),
-        unit       = rep(self$unit, n),
-        currValue  = rep(self$currValue, n),
+        group = rep(group %||% NA_integer_, n),
+        name = sapply(private$.parameters, `[[`, "name"),
+        path = sapply(private$.parameters, `[[`, "fullPath"),
+        unit = rep(self$unit, n),
+        currValue = rep(self$currValue, n),
         startValue = rep(self$startValue, n),
-        minValue   = rep(self$minValue, n),
-        maxValue   = rep(self$maxValue, n),
+        minValue = rep(self$minValue, n),
+        maxValue = rep(self$maxValue, n),
         stringsAsFactors = FALSE
       )
 
