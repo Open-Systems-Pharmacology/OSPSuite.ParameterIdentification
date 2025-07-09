@@ -131,6 +131,10 @@ messages$hessianEstimation <- function() {
   "Post-hoc estimation of Hessian matrix."
 }
 
+messages$statusAutoEstimateCI <- function() {
+  "Skipping confidence interval estimation (autoEstimateCI = FALSE)"
+}
+
 messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
   message <- capture.output(cat(
     "Mismatch or missing ID detected.\n",
