@@ -1,27 +1,32 @@
 # estimateCI() works as expected using Hessian
 
-    list(sd = 0.206821692216866, cv = 0.156818580594682, lowerCI = 0.913496543136562, 
-        upperCI = 1.72422267906993, error = NULL, method = "hessian", 
-        elapsed = 0, details = list(hessian = structure(730.597690417481, dim = c(1L, 
-        1L)), covMat = structure(0.042775212371448, dim = c(1L, 1L
-        )), eigen = 0.042775212371448, corMat = structure(1, dim = c(1L, 
-        1L))))
+    list(hessian = structure(730.597690417481, dim = c(1L, 1L)), 
+        covMat = structure(0.042775212371448, dim = c(1L, 1L)), eigen = 0.042775212371448, 
+        corMat = structure(1, dim = c(1L, 1L)))
+
+---
+
+    structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
+        unit = "Log Units", estimate = 1.31885961110325, sd = 0.206821692216866, 
+        cv = 0.156818580594682, lowerCI = 0.913496543136562, upperCI = 1.72422267906993, 
+        initialValue = -0.097), class = c("tbl_df", "tbl", "data.frame"
+    ), row.names = c(NA, -1L))
 
 # estimateCI() works with bootstrap and individual data
 
-    list(sd = 2.88675134594813, cv = 29.7603231541044, lowerCI = -0.097, 
-        upperCI = 4.653, error = NULL, method = "bootstrap", elapsed = 0, 
-        details = list(bootstrapResults = structure(c(4.903, -0.097, 
-        -0.097), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
-        1L))))
+    structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
+        unit = "Log Units", estimate = 1.32972212182594, sd = 0.0231671007533465, 
+        cv = 0.0174225128491763, lowerCI = 1.32094183157988, upperCI = 1.36033966318563, 
+        initialValue = -0.097), class = c("tbl_df", "tbl", "data.frame"
+    ), row.names = c(NA, -1L))
 
 # estimateCI() works with bootstrap and aggregated data
 
-    list(sd = 2.88675134594813, cv = 29.7603231541044, lowerCI = 0.153, 
-        upperCI = 4.903, error = NULL, method = "bootstrap", elapsed = 0, 
-        details = list(bootstrapResults = structure(c(4.903, 4.903, 
-        -0.097), dim = c(3L, 1L)), corMat = structure(1, dim = c(1L, 
-        1L))))
+    structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
+        unit = "Log Units", estimate = 1.31885961110325, sd = 0.494677293374105, 
+        cv = 0.375079568143193, lowerCI = 0.532091297008653, upperCI = 1.36338341060574, 
+        initialValue = -0.097), class = c("tbl_df", "tbl", "data.frame"
+    ), row.names = c(NA, -1L))
 
 # estimateCI() outputs expected messages for mixed datasets
 
@@ -31,7 +36,7 @@
       Classified observed data: 5 individual, 1 aggregated dataset(s).
       GPR model fitted successfully for dataset 'AciclovirLaskinData.Laskin 1982.Group A'.
       Starting confidence interval estimation using 'bootstrap' for parameter value(s):
-        -0.097
+        1.323
       Running bootstrap replicate 1 of 3.
       Running bootstrap replicate 2 of 3.
       Running bootstrap replicate 3 of 3.

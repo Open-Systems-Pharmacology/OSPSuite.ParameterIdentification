@@ -1,8 +1,9 @@
 # run() runs successfully using default BOBYQA algorithm
 
-    list(par = 1.31885961110325, value = 156.257356828486, convergence = TRUE, 
-        iterations = 20L, fnEvaluations = 20L, algorithm = "BOBYQA", 
-        elapsed = 0)
+    structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
+        unit = "Log Units", estimate = 1.31885961110325, sd = NA_real_, 
+        cv = NA_real_, lowerCI = NA_real_, upperCI = NA_real_, initialValue = -0.097), class = c("tbl_df", 
+    "tbl", "data.frame"), row.names = c(NA, -1L))
 
 # run() outputs expected evaluation feedback using BOBYQA algorithm
 
