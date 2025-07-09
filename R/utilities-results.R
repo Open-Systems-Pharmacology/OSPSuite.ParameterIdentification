@@ -97,3 +97,44 @@ print.piResult <- function(x) {
   invisible(x)
 }
 
+#' @title Tidy Output from Parameter Identification
+#'
+#' @description Converts a `piResults` object into a tidy tabular format.
+#' Returns one row per parameter with associated metadata and estimation results,
+#' including confidence intervals and coefficient of variation.
+#'
+#' @param x A `piResults` object returned by `ParameterIdentification$run()`
+#'
+#' @return A tibble with the following columns:
+#'
+#' - `group`: Parameter group identifier
+#' - `name`: Parameter name
+#' - `path`: Full parameter path
+#' - `unit`: Unit of the parameter
+#' - `estimate`: Estimated parameter value after optimization
+#' - `sd`: Standard deviation from CI estimation
+#' - `cv`: Coefficient of variation
+#' - `lowerCI`: Lower confidence bound
+#' - `upperCI`: Upper confidence bound
+#' - `initialValue`: Initial parameter value used for optimization
+#'
+#' @export
+tidy <- function(x) {
+  UseMethod("tidy")
+}
+
+#' @export
+tidy.piResult <- function(x) {
+  tibble::tibble(
+    group = x$parameters$group,
+    name = x$parameters$name,
+    path = x$parameters$path,
+    unit = x$parameters$unit,
+    estimate = x$finalParameters,
+    sd = x$sd,
+    cv = x$cv,
+    lowerCI = x$lowerCI,
+    upperCI = x$upperCI,
+    initialValue = x$parameters$startValue
+  )
+}
