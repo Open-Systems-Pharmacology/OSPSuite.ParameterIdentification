@@ -80,24 +80,57 @@ Executes Parameter Identification
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
 \subsection{Method \code{run()}}{
-Initiates parameter identification process.
-Upon completion, access optimal parameter values through \code{PIParameters$currValue}.
+Runs parameter identification using the configured optimization
+algorithm. Returns a structured \code{piResults}object containing estimated
+parameters, diagnostics, and (optionally) confidence intervals.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$run()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-Results from the parameter identification algorithm, varying by
-algorithm choice.
+A \code{piResults} object summarizing the estimation results. See
+below for details.
+
+The returned list includes (at minimum) the following fields:
+\itemize{
+\item \code{finalParameters}: Optimized parameter values
+\item \code{objectiveValue}: Final value of the objective function
+\item \code{convergence}: Logical flag indicating if the optimizer converged
+\item \code{iterations}: Number of optimization iterations
+\item \code{fnEvaluations}: Total number of function evaluations
+\item \code{initialParameters}: Parameter values at the start of optimization
+\item \code{algorithm}: Name of the optimization algorithm used
+\item \code{elapsed}: Elapsed time for the optimization run
+}
+
+If confidence intervals were estimated (i.e., if \code{autoEstimateCI = TRUE}
+in \code{PIConfiguration}):
+\itemize{
+\item \code{sd}: Standard deviation of the estimates
+\item \code{cv}: Coefficient of variation
+\item \code{lowerCI}, \code{upperCI}: Confidence interval bounds
+\item \code{ciMethod}: Method used for CI estimation (e.g., \code{"hessian"})
+\item \code{ciElapsed}: Elapsed time for CI estimation
+\item \code{ciError}: Error object, if CI estimation failed
+\item \code{ciDetails}: Diagnostic matrices such as Hessian, covariance, correlation
+}
+
+Additional fields:
+\itemize{
+\item \code{parameters}: A data frame of parameter metadata (name, path, unit,
+bounds, etc.)
+\item \code{configuration}: The \code{PIConfiguration} used for the run
 Estimates Confidence Intervals
+}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
 \subsection{Method \code{estimateCI()}}{
-Computes confidence intervals for the optimized parameters
-using the method specified in \code{PIConfiguration}.
+Manually computes confidence intervals for the optimized
+parameters using the method specified in \code{PIConfiguration}. This is
+intended for advanced use cases where \code{autoEstimateCI} was set to \code{FALSE}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
 }

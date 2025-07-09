@@ -135,6 +135,10 @@ messages$statusAutoEstimateCI <- function() {
   "Skipping confidence interval estimation (autoEstimateCI = FALSE)"
 }
 
+messages$errorMissingOptimizationResult <- function() {
+  "No optimization result found. Ensure the optimization was run before estimating confidence intervals."
+}
+
 messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
   message <- capture.output(cat(
     "Mismatch or missing ID detected.\n",

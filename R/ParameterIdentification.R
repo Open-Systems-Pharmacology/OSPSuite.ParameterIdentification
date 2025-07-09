@@ -588,11 +588,40 @@ ParameterIdentification <- R6::R6Class(
 
     #' Executes Parameter Identification
     #'
-    #' @description Initiates parameter identification process.
-    #' Upon completion, access optimal parameter values through `PIParameters$currValue`.
+    #' @description Runs parameter identification using the configured optimization
+    #' algorithm. Returns a structured `piResults`object containing estimated
+    #' parameters, diagnostics, and (optionally) confidence intervals.
     #'
-    #' @return Results from the parameter identification algorithm, varying by
-    #' algorithm choice.
+    #' @return A `piResults` object summarizing the estimation results. See
+    #' below for details.
+    #'
+    #' The returned list includes (at minimum) the following fields:
+    #'
+    #' - `finalParameters`: Optimized parameter values
+    #' - `objectiveValue`: Final value of the objective function
+    #' - `convergence`: Logical flag indicating if the optimizer converged
+    #' - `iterations`: Number of optimization iterations
+    #' - `fnEvaluations`: Total number of function evaluations
+    #' - `initialParameters`: Parameter values at the start of optimization
+    #' - `algorithm`: Name of the optimization algorithm used
+    #' - `elapsed`: Elapsed time for the optimization run
+    #'
+    #' If confidence intervals were estimated (i.e., if `autoEstimateCI = TRUE`
+    #' in `PIConfiguration`):
+    #'
+    #' - `sd`: Standard deviation of the estimates
+    #' - `cv`: Coefficient of variation
+    #' - `lowerCI`, `upperCI`: Confidence interval bounds
+    #' - `ciMethod`: Method used for CI estimation (e.g., `"hessian"`)
+    #' - `ciElapsed`: Elapsed time for CI estimation
+    #' - `ciError`: Error object, if CI estimation failed
+    #' - `ciDetails`: Diagnostic matrices such as Hessian, covariance, correlation
+    #'
+    #' Additional fields:
+    #'
+    #' - `parameters`: A data frame of parameter metadata (name, path, unit,
+    #' bounds, etc.)
+    #' - `configuration`: The `PIConfiguration` used for the run
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
@@ -644,8 +673,8 @@ ParameterIdentification <- R6::R6Class(
     #' parameters using the method specified in `PIConfiguration`. This is
     #' intended for advanced use cases where `autoEstimateCI` was set to `FALSE`.
     #'
-    #' @return A list with confidence interval results, including bounds, standard
-    #' errors, and coefficient of variation.
+    #' @return An `piResults` object. Structure is identical to the object
+    #' returned by the `run()` method.
     estimateCI = function() {
       # Stop if executed before optimization
       if (is.null(private$.lastOptimResult)) {
