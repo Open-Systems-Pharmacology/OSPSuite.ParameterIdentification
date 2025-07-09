@@ -55,3 +55,45 @@
   return(resultObj)
 }
 
+#' @title Print Parameter Identification Results
+#'
+#' @description Custom `print()` method for `piResult` objects. Displays a
+#' summary including algorithm, convergence status, objective value, estimated
+#' parameters and confidence intervals.
+#'
+#' @param x An S3 object of class `piResult`.
+#'
+#' @return The input `piResult` object, invisibly.
+#' @export
+print.piResult <- function(x) {
+  cat("Parameter Identification Result\n\n")
+
+  cat("Algorithm:", x$algorithm, "\n")
+  if (!is.null(x$ciMethod) && !is.na(x$ciMethod)) {
+    cat("CI Method:", x$ciMethod, "\n")
+  }
+  cat("Objective value:", format(x$objectiveValue, digits = 6), "\n")
+  cat("Convergence:", x$convergence, "\n")
+  cat("Iterations:", x$iterations, " | Function Evaluations:", x$fnEvaluations, "\n\n")
+
+  coefs <- data.frame(
+    Parameter = x$parameters$name,
+    Estimate = x$finalParameters,
+    SD = x$sd,
+    CV = x$cv,
+    Lower.CI = x$lowerCI,
+    Upper.CI = x$upperCI
+  )
+
+  print(coefs, digits = 4, row.names = FALSE, na.print = "NA")
+
+  cat("\n\n")
+  cat("Elapsed time (optimization):", format(x$elapsed, digits = 3), "s\n")
+  if (!is.null(x$ciElapsed) && !is.na(x$ciElapsed)) {
+    cat("Elapsed time (CI):          ", format(x$ciElapsed, digits = 3), "s\n")
+  }
+  cat("\n")
+
+  invisible(x)
+}
+
