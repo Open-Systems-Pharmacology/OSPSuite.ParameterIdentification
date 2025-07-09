@@ -17,21 +17,22 @@
 #' @keywords internal
 #' @noRd
 .createPIResult <- function(optimResult, ciResult = NULL, configuration, piParameters) {
-  ciResult <- ciResult %||% list(
-    sd = NA_real_, cv = NA_real_, lowerCI = NA_real_, upperCI = NA_real_,
-    method = NA_character_, elapsed = NA_real_, error = NULL, details = list()
-  )
+  ciResult <- ciResult %||% list()
 
   parameters <- do.call(rbind, lapply(seq_along(piParameters), function(i) {
     piParameters[[i]]$toDataFrame(group = paste0(i))
   }))
 
+  if (!is.finite(optimResult$value)) {
+    optimResult$convergence <- FALSE
+  }
+
   result <- list(
     finalParameters = optimResult$par,
-    sd = ciResult$sd,
-    cv = ciResult$cv,
-    lowerCI = ciResult$lowerCI,
-    upperCI = ciResult$upperCI,
+    sd = ciResult$sd %||% NA_real_,
+    cv = ciResult$cv %||% NA_real_,
+    lowerCI = ciResult$lowerCI %||% NA_real_,
+    upperCI = ciResult$upperCI %||% NA_real_,
     objectiveValue = optimResult$value,
     initialParameters = optimResult$startValues,
     convergence = optimResult$convergence,
@@ -39,10 +40,10 @@
     elapsed = optimResult$elapsed,
     iterations = optimResult$iterations,
     fnEvaluations = optimResult$fnEvaluations,
-    ciMethod = ciResult$method,
-    ciElapsed = ciResult$elapsed,
+    ciMethod = ciResult$method %||% configuration$ciMethod,
+    ciElapsed = ciResult$elapsed %||% NA_real_,
     ciError = ciResult$error,
-    ciDetails = ciResult$details,
+    ciDetails = ciResult$details %||% list(),
     parameters = parameters,
     configuration = configuration
   )
@@ -99,11 +100,11 @@ print.piResult <- function(x) {
 
 #' @title Tidy Output from Parameter Identification
 #'
-#' @description Converts a `piResults` object into a tidy tabular format.
+#' @description Converts a `piResult` object into a tidy tabular format.
 #' Returns one row per parameter with associated metadata and estimation results,
 #' including confidence intervals and coefficient of variation.
 #'
-#' @param x A `piResults` object returned by `ParameterIdentification$run()`
+#' @param x A `piResult` object returned by `ParameterIdentification$run()`
 #'
 #' @return A tibble with the following columns:
 #'
@@ -125,7 +126,7 @@ tidy <- function(x) {
 
 #' @export
 tidy.piResult <- function(x) {
-  tibble::tibble(
+  resultsDf <- tibble::tibble(
     group = x$parameters$group,
     name = x$parameters$name,
     path = x$parameters$path,
@@ -137,4 +138,6 @@ tidy.piResult <- function(x) {
     upperCI = x$upperCI,
     initialValue = x$parameters$startValue
   )
+
+  return(resultsDf)
 }
