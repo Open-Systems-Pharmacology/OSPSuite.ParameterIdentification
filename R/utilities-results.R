@@ -77,8 +77,10 @@ print.piResult <- function(x) {
   cat("Convergence:", x$convergence, "\n")
   cat("Iterations:", x$iterations, " | Function Evaluations:", x$fnEvaluations, "\n\n")
 
+  parameterNames <- dplyr::distinct(x$parameters, group, .keep_all = TRUE)$name
+
   coefs <- data.frame(
-    Parameter = x$parameters$name,
+    Parameter = parameterNames,
     Estimate = x$finalParameters,
     SD = x$sd,
     CV = x$cv,
@@ -126,6 +128,8 @@ tidy <- function(x) {
 
 #' @export
 tidy.piResult <- function(x) {
+  x$parameters <- dplyr::distinct(x$parameters, group, .keep_all = TRUE)
+
   resultsDf <- tibble::tibble(
     group = x$parameters$group,
     name = x$parameters$name,
