@@ -49,6 +49,8 @@ reference:
   contents:
   - getOSPSuitePISetting
   - ospsuitePIRSettingNames
+  - print.piResult
+  - tidy
 
 articles:
 - title: Parameter identification workflow
