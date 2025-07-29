@@ -70,7 +70,8 @@ test_that("Unit can be changed correctly", {
   )
   expect_error(
     piParam$unit <- "invalidUnit",
-    "not supported by the dimension"
+    messages$errorUnitNotSupported("invalidUnit", "Velocity"),
+    fixed = TRUE
   )
 })
 
@@ -146,6 +147,7 @@ test_that("Unit can be changed correctly", {
   )
   expect_error(
     piParam$unit <- "invalidUnit",
-    "not supported by the dimension"
+    messages$errorUnitNotSupported("invalidUnit", "Volume"),
+    fixed = TRUE
   )
 })
