@@ -15,14 +15,14 @@ test_that("run() errors on invalid objective function options", {
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
   expect_error(
     suppressMessages(piTask$run()),
-    regexp = "Value\\(s\\) 'invalidType' not included in allowed values: 'lsq, m3'"
+    "not included in allowed values"
   )
 
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
   expect_error(
     suppressMessages(piTask$run()),
-    regexp = "Value\\(s\\) out of the allowed range: \\[1e-09, 1\\]"
+    regexp = "out of the allowed range"
   )
 })
 

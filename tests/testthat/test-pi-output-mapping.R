@@ -121,7 +121,8 @@ test_that("PIOutputMapping cannot set weights with invalid input", {
   weights <- c(1, 2, 3)
   expect_error(
     outputMapping$setDataWeights(weights),
-    "argument 'weights' is of type 'numeric', but expected 'list'"
+    messages$errorWrongType("weights", "numeric", "list"),
+    fixed = TRUE
   )
 })
 
@@ -131,13 +132,15 @@ test_that("PIOutputMapping cannot set weights with invalid dataset label", {
 
   weights <- list(invalidLabel = c(1, 2))
   expect_error(
-    outputMapping$setDataWeights(weights), messages$errorWeightsNames()
+    outputMapping$setDataWeights(weights),
+    messages$errorWeightsNames()
   )
 
   weights <- list(c(1, 2), c(2, 3))
   names(weights) <- c(outputMapping$observedDataSets[[1]]$name, "invalidLabel")
   expect_error(
-    outputMapping$setDataWeights(weights), messages$errorWeightsNames()
+    outputMapping$setDataWeights(weights),
+    messages$errorWeightsNames()
   )
 })
 
