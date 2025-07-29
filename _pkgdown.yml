@@ -14,10 +14,10 @@ authors:
       style='max-width:33px'>Open Systems Pharmacology
   Pavel Balazki:
     href: https://github.com/PavelBal
-  Sergei Vavilov:
-    href: https://github.com/svavil
   Rudi Engelke:
     href: https://github.com/rengelke
+  Sergei Vavilov:
+    href: https://github.com/svavil
   Felix Mil:
     href: https://github.com/Felixmil
 
@@ -26,12 +26,14 @@ development:
 
 reference:
 - title: Parameter identification workflow
+  desc: Main classes for running parameter identification
   contents:
   - ParameterIdentification
   - PIConfiguration
   - PIOutputMapping
   - PIParameters
-- title: Supported options
+  - PIResult
+- title: Configuration options
   contents:
   - Algorithms
   - contains("AlgorithmOptions")
@@ -41,7 +43,7 @@ reference:
   - robustMethodOptions
   - ScalingOptions
   - CIMethods
-  - CIOptions
+  - contains("CIOptions")
 - title: Internal functions
   contents:
   - plot.modelCost
@@ -49,8 +51,6 @@ reference:
   contents:
   - getOSPSuitePISetting
   - ospsuitePIRSettingNames
-  - print.piResult
-  - tidy
 
 articles:
 - title: Parameter identification workflow
@@ -62,4 +62,3 @@ articles:
   contents:
   - error-calculation
   - optimization-algorithms
-
