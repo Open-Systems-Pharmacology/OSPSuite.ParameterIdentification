@@ -71,6 +71,8 @@ ParameterIdentification <- R6::R6Class(
     .savedSimulationState = NULL,
     # Last optimization result
     .lastOptimResult = NULL,
+    # Stores full cost summary from last objective function evaluation
+    .lastCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Flag to indicate if objective function is being called from grid search
@@ -376,6 +378,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      private$.lastCostSummary <- runningCost
 
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
@@ -630,6 +633,9 @@ ParameterIdentification <- R6::R6Class(
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
       private$.batchInitialization()
+      # Clear previous optimization results and diagnostics
+      private$.lastOptimResult <- NULL
+      private$.lastCostSummary <- NULL
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
@@ -659,6 +665,7 @@ ParameterIdentification <- R6::R6Class(
         resultsObj <- .createPIResult(
           optimResult = optimResult,
           ciResult = ciResult,
+          costDetails = private$.lastCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )
