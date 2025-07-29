@@ -210,3 +210,10 @@ messages$statusGPRModelFitted <- function(dataSetName) {
     "GPR model fitted successfully for dataset '%s'.", dataSetName
   )
 }
+
+messages$warnParameterMetadata <- function(message) {
+  paste0(
+    "Could not extract parameter metadata from piParameters: ",
+    message
+  )
+}

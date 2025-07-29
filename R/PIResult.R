@@ -84,7 +84,7 @@ PIResult <- R6::R6Class(
           }
         },
         error = function(e) {
-          warning("Failed to extract parameter metadata: ", e$message)
+          warning(messages$warnParameterMetadata(e$message))
           NULL
         }
       )
