@@ -68,15 +68,15 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResult <- task$run()
+piResult <- task$run()
 
 test_that("Estimated lipophilicity and kcat parameters equal expected values", {
-  expect_equal(taskResult$finalParameters, c(3.366, 0.119), tolerance = 0.01)
+  expect_equal(piResult$toList()$finalParameters, c(3.366, 0.119), tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviations equal expected values", {
-  expect_true(is.null(taskResult$ciError))
-  expect_equal(taskResult$sd, c(0.014, 0.113), tolerance = 0.01)
+  expect_true(is.null(piResult$ciError))
+  expect_equal(piResult$toList()$sd, c(0.014, 0.113), tolerance = 0.01)
 })
 
 
@@ -150,13 +150,13 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResult <- task$run()
+piResult <- task$run()
 
 test_that("Estimated lipophilicity and kcat parameters equal expected values", {
-  expect_equal(taskResult$finalParameters, c(3.326, 0.783), tolerance = 0.01)
+  expect_equal(piResult$toList()$finalParameters, c(3.326, 0.783), tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviations equal expected values", {
-  expect_true(is.null(taskResult$ciError))
-  expect_equal(taskResult$sd, c(0.074, 0.269), tolerance = 0.01)
+  expect_true(is.null(piResult$toList()$ciError))
+  expect_equal(piResult$toList()$sd, c(0.074, 0.269), tolerance = 0.01)
 })

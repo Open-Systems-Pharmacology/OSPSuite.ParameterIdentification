@@ -2,8 +2,8 @@
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
         unit = "Log Units", estimate = 1.31885961110325, sd = NA_real_, 
-        cv = NA_real_, lowerCI = NA_real_, upperCI = NA_real_, initialValue = -0.097), class = c("tbl_df", 
-    "tbl", "data.frame"), row.names = c(NA, -1L))
+        cv = NA_real_, lowerCI = NA_real_, upperCI = NA_real_, initialValue = -0.097), class = "data.frame", row.names = c(NA, 
+    -1L))
 
 # run() outputs expected evaluation feedback using BOBYQA algorithm
 

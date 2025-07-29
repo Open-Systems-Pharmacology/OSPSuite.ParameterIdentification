@@ -129,6 +129,8 @@ test_that("ParameterIdentification returns infinite value if simulation fails", 
     )
   )
 
+  piResult <- piResult$toList()
+
   expect_identical(piResult$objectiveValue, Inf)
   expect_false(piResult$convergence)
   expect_true(is.na(piResult$sd))

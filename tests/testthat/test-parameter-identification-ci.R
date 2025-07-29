@@ -28,8 +28,14 @@ test_that("estimateCI() works as expected using Hessian", {
     )
   )
 
-  expect_snapshot_value(piResult$ciDetails, style = "deparse", tolerance = 1e-3)
-  expect_snapshot_value(tidy(piResult), style = "deparse", tolerance = 1e-3)
+  expect_snapshot_value(
+    piResult$toList()$ciDetails,
+    style = "deparse", tolerance = 1e-3
+  )
+  expect_snapshot_value(
+    piResult$toDataFrame(),
+    style = "deparse", tolerance = 1e-3
+  )
 })
 
 
@@ -58,7 +64,10 @@ test_that("estimateCI() works with bootstrap and individual data", {
     expect_no_error(piResult <- piTask$estimateCI())
   )
 
-  expect_snapshot_value(tidy(piResult), style = "deparse", tolerance = 1e-3)
+  expect_snapshot_value(
+    piResult$toDataFrame(),
+    style = "deparse", tolerance = 1e-3
+  )
 
   # Test initial OutputMapping weights are restored
   expect_equal(
@@ -86,7 +95,10 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
     expect_no_error(piResult <- piTask$estimateCI())
   )
 
-  expect_snapshot_value(tidy(piResult), style = "deparse", tolerance = 1e-3)
+  expect_snapshot_value(
+    piResult$toDataFrame(),
+    style = "deparse", tolerance = 1e-3
+  )
 
   # Test initial OutputMapping yValues are restored
   expect_equal(

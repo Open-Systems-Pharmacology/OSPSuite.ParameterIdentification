@@ -41,8 +41,8 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
       fixed = TRUE
     )
   )
-  piResults$elapsed <- 0
-  expect_snapshot_value(tidy(piResults), style = "deparse", tolerance = 1e-03)
+  piResults$.__enclos_env__$private$.result$elapsed <- 0
+  expect_snapshot_value(piResults$toDataFrame(), style = "deparse", tolerance = 1e-03)
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
@@ -117,7 +117,7 @@ test_that("run() works with one dataset and scalar weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$objectiveValue, 3112.516, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 3112.516, tolerance = 1e-3)
 })
 
 test_that("run() works with two datasets and single vector weight", {
@@ -134,7 +134,7 @@ test_that("run() works with two datasets and single vector weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$objectiveValue, 163.346, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 163.346, tolerance = 1e-3)
 })
 
 test_that("run() works with two datasets and individual weights", {
@@ -153,5 +153,5 @@ test_that("run() works with two datasets and individual weights", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$objectiveValue, 227.5477, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 227.5477, tolerance = 1e-3)
 })
