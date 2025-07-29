@@ -4,6 +4,7 @@
 #' Provides a unified interface for different optimization algorithms and supports
 #' multiple methods for estimating parameter uncertainty.
 #'
+#' @keywords internal
 #' @noRd
 Optimizer <- R6::R6Class(
   "Optimizer",

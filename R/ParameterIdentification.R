@@ -526,6 +526,8 @@ ParameterIdentification <- R6::R6Class(
         upper = upper
       )
 
+      optimResult$startValues <- startValues
+
       return(optimResult)
     }
   ),
@@ -595,36 +597,7 @@ ParameterIdentification <- R6::R6Class(
     #' algorithm. Returns a structured `piResults`object containing estimated
     #' parameters, diagnostics, and (optionally) confidence intervals.
     #'
-    #' @return A `piResults` object summarizing the estimation results. See
-    #' below for details.
-    #'
-    #' The returned list includes (at minimum) the following fields:
-    #'
-    #' - `finalParameters`: Optimized parameter values
-    #' - `objectiveValue`: Final value of the objective function
-    #' - `convergence`: Logical flag indicating if the optimizer converged
-    #' - `iterations`: Number of optimization iterations
-    #' - `fnEvaluations`: Total number of function evaluations
-    #' - `initialParameters`: Parameter values at the start of optimization
-    #' - `algorithm`: Name of the optimization algorithm used
-    #' - `elapsed`: Elapsed time for the optimization run
-    #'
-    #' If confidence intervals were estimated (i.e., if `autoEstimateCI = TRUE`
-    #' in `PIConfiguration`):
-    #'
-    #' - `sd`: Standard deviation of the estimates
-    #' - `cv`: Coefficient of variation
-    #' - `lowerCI`, `upperCI`: Confidence interval bounds
-    #' - `ciMethod`: Method used for CI estimation (e.g., `"hessian"`)
-    #' - `ciElapsed`: Elapsed time for CI estimation
-    #' - `ciError`: Error object, if CI estimation failed
-    #' - `ciDetails`: Diagnostic matrices such as Hessian, covariance, correlation
-    #'
-    #' Additional fields:
-    #'
-    #' - `parameters`: A data frame of parameter metadata (name, path, unit,
-    #' bounds, etc.)
-    #' - `configuration`: The `PIConfiguration` used for the run
+    #' @return A [`PIResult`] object containing the optimization results.
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
@@ -659,10 +632,10 @@ ParameterIdentification <- R6::R6Class(
       # Estimate confidence intervals if configured
       ciResult <- NULL
       if (private$.configuration$autoEstimateCI) {
-        resultsObj <- self$estimateCI()
+        piResult <- self$estimateCI()
       } else {
         message(messages$statusAutoEstimateCI())
-        resultsObj <- .createPIResult(
+        piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = ciResult,
           costDetails = private$.lastCostSummary,
@@ -671,7 +644,7 @@ ParameterIdentification <- R6::R6Class(
         )
       }
 
-      return(resultsObj)
+      return(piResult)
     },
 
     #' Estimates Confidence Intervals
@@ -680,8 +653,8 @@ ParameterIdentification <- R6::R6Class(
     #' parameters using the method specified in `PIConfiguration`. This is
     #' intended for advanced use cases where `autoEstimateCI` was set to `FALSE`.
     #'
-    #' @return An `piResults` object. Structure is identical to the object
-    #' returned by the `run()` method.
+    #' @return The same [`PIResult`] object returned by the `run()` method,
+    #' updated to include confidence interval estimates.
     estimateCI = function() {
       # Stop if executed before optimization
       if (is.null(private$.lastOptimResult)) {
@@ -724,14 +697,15 @@ ParameterIdentification <- R6::R6Class(
       # Trigger .NET gc
       ospsuite::clearMemory()
 
-      resultsObj <- .createPIResult(
+      piResult <- PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
+        costDetails = private$.lastCostSummary,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
 
-      return(resultsObj)
+      return(piResult)
     },
 
     #' Plots Parameter Estimation Results

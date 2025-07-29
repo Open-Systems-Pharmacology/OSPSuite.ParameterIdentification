@@ -88,40 +88,8 @@ parameters, diagnostics, and (optionally) confidence intervals.
 }
 
 \subsection{Returns}{
-A \code{piResults} object summarizing the estimation results. See
-below for details.
-
-The returned list includes (at minimum) the following fields:
-\itemize{
-\item \code{finalParameters}: Optimized parameter values
-\item \code{objectiveValue}: Final value of the objective function
-\item \code{convergence}: Logical flag indicating if the optimizer converged
-\item \code{iterations}: Number of optimization iterations
-\item \code{fnEvaluations}: Total number of function evaluations
-\item \code{initialParameters}: Parameter values at the start of optimization
-\item \code{algorithm}: Name of the optimization algorithm used
-\item \code{elapsed}: Elapsed time for the optimization run
-}
-
-If confidence intervals were estimated (i.e., if \code{autoEstimateCI = TRUE}
-in \code{PIConfiguration}):
-\itemize{
-\item \code{sd}: Standard deviation of the estimates
-\item \code{cv}: Coefficient of variation
-\item \code{lowerCI}, \code{upperCI}: Confidence interval bounds
-\item \code{ciMethod}: Method used for CI estimation (e.g., \code{"hessian"})
-\item \code{ciElapsed}: Elapsed time for CI estimation
-\item \code{ciError}: Error object, if CI estimation failed
-\item \code{ciDetails}: Diagnostic matrices such as Hessian, covariance, correlation
-}
-
-Additional fields:
-\itemize{
-\item \code{parameters}: A data frame of parameter metadata (name, path, unit,
-bounds, etc.)
-\item \code{configuration}: The \code{PIConfiguration} used for the run
-Estimates Confidence Intervals
-}
+A \code{\link{PIResult}} object containing the optimization results.
+Estimate Confidence Intervals
 }
 }
 \if{html}{\out{<hr>}}
