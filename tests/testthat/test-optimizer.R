@@ -61,7 +61,11 @@ test_that("Optimizer read-only fields cannot be modified directly", {
 })
 
 test_that("Optimizer creation fails if configuration is invalid", {
-  expect_error(Optimizer$new("notAConfig"), "expected 'PIConfiguration'")
+  expect_error(
+    Optimizer$new("notAConfig"),
+    messages$errorWrongType("configuration", "character", "PIConfiguration"),
+    fixed = TRUE
+  )
 })
 
 test_that("Optimizer fails when `fn` is not a function", {
@@ -69,7 +73,8 @@ test_that("Optimizer fails when `fn` is not a function", {
   optimizer <- Optimizer$new(piConfig)
   expect_error(
     optimizer$run(par = parTest, fn = 1, lower = lowerTest, upper = upperTest),
-    "expected 'function'"
+    messages$errorWrongType("fn", "numeric", "function"),
+    fixed = TRUE
   )
 })
 

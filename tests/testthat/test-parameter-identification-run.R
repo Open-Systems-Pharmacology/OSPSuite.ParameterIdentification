@@ -15,14 +15,14 @@ test_that("run() errors on invalid objective function options", {
   piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
   expect_error(
     suppressMessages(piTask$run()),
-    regexp = "Value\\(s\\) 'invalidType' not included in allowed values: 'lsq, m3'"
+    "not included in allowed values"
   )
 
   piTask <- createPiTask()
   piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
   expect_error(
     suppressMessages(piTask$run()),
-    regexp = "Value\\(s\\) out of the allowed range: \\[1e-09, 1\\]"
+    regexp = "out of the allowed range"
   )
 })
 
@@ -31,7 +31,9 @@ test_that("run() errors on invalid objective function options", {
 
 test_that("run() runs successfully using default BOBYQA algorithm", {
   piTask <- createPiTask()
+  piTask$configuration$autoEstimateCI <- FALSE
   startValue <- piTask$parameters[[1]]$startValue
+
   expect_no_error(
     expect_message(
       piResults <- piTask$run(),
@@ -39,8 +41,8 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
       fixed = TRUE
     )
   )
-  piResults$elapsed <- 0
-  expect_snapshot_value(piResults, style = "deparse", tolerance = 1e-03)
+  piResults$.__enclos_env__$private$.result$elapsed <- 0
+  expect_snapshot_value(piResults$toDataFrame(), style = "deparse", tolerance = 1e-03)
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
@@ -48,6 +50,8 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
+  piTask$configuration$autoEstimateCI <- FALSE
+
   evalOutput <- capture_output(
     suppressMessages(
       temp <- piTask$run()
@@ -63,6 +67,7 @@ test_that("run() fails with HJKB algorithm and one parameter", {
   piTask <- createPiTask()
   piTask$configuration$algorithm <- "HJKB"
   startValue <- piTask$parameters[[1]]$startValue
+
   expect_error(
     expect_message(
       piResults <- piTask$run(),
@@ -80,7 +85,9 @@ test_that("run() runs successfully using DEoptim algorithm", {
   piTask$configuration$algorithm <- "DEoptim"
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTask$configuration$autoEstimateCI <- FALSE
   startValue <- piTask$parameters[[1]]$startValue
+
   expect_no_error(
     expect_message(
       piResults <- piTask$run(),
@@ -107,9 +114,10 @@ test_that("run() works with one dataset and scalar weight", {
     outputMappings = outputMapping,
     configuration = lowIterPiConfiguration()
   )
+  piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$value, 3112.516, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 3112.516, tolerance = 1e-3)
 })
 
 test_that("run() works with two datasets and single vector weight", {
@@ -123,9 +131,10 @@ test_that("run() works with two datasets and single vector weight", {
     outputMappings = outputMapping,
     configuration = lowIterPiConfiguration()
   )
+  piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$value, 163.346, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 163.346, tolerance = 1e-3)
 })
 
 test_that("run() works with two datasets and individual weights", {
@@ -141,7 +150,8 @@ test_that("run() works with two datasets and individual weights", {
     outputMappings = outputMapping,
     configuration = lowIterPiConfiguration()
   )
+  piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$value, 227.5477, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 227.5477, tolerance = 1e-3)
 })

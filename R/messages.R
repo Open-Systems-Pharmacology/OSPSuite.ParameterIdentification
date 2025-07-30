@@ -1,23 +1,3 @@
-#' Format Parameter Values for Display
-#'
-#' @description Formats numeric values using scientific notation for small or large values,
-#' and fixed-point format otherwise.
-#'
-#' @param par Numeric vector of parameter values.
-#' @return Character vector of formatted values.
-#'
-#' @keywords internal
-#' @noRd
-.formatValues <- function(par) {
-  sapply(par, function(x) {
-    if (abs(x) < 0.01 || abs(x) > 1e4) {
-      formatC(x, format = "e", digits = 2)
-    } else {
-      formatC(x, format = "f", digits = 3)
-    }
-  })
-}
-
 #' @title Internal Message Templates
 #'
 #' @keywords internal
@@ -131,6 +111,14 @@ messages$hessianEstimation <- function() {
   "Post-hoc estimation of Hessian matrix."
 }
 
+messages$statusAutoEstimateCI <- function() {
+  "Skipping confidence interval estimation (autoEstimateCI = FALSE)"
+}
+
+messages$errorMissingOptimizationResult <- function() {
+  "No optimization result found. Ensure the optimization was run before estimating confidence intervals."
+}
+
 messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
   message <- capture.output(cat(
     "Mismatch or missing ID detected.\n",
@@ -220,5 +208,12 @@ messages$errorGPRModelConvergence <- function(dataSetName) {
 messages$statusGPRModelFitted <- function(dataSetName) {
   sprintf(
     "GPR model fitted successfully for dataset '%s'.", dataSetName
+  )
+}
+
+messages$warnParameterMetadata <- function(message) {
+  paste0(
+    "Could not extract parameter metadata from piParameters: ",
+    message
   )
 }

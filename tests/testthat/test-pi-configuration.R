@@ -54,6 +54,14 @@ test_that("printEvaluationFeedback can be set and retrieved correctly", {
   expect_false(piConfiguration$printEvaluationFeedback)
 })
 
+test_that("autoEstimateCI can be set and retrieved correctly", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$autoEstimateCI <- FALSE
+  expect_false(piConfiguration$autoEstimateCI)
+  piConfiguration$autoEstimateCI <- TRUE
+  expect_true(piConfiguration$autoEstimateCI)
+})
+
 test_that("objectiveFunctionOptions can be set and retrieved correctly", {
   piConfiguration <- PIConfiguration$new()
   expect_silent(

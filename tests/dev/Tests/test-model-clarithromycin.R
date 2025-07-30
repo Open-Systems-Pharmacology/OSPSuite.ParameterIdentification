@@ -133,19 +133,18 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResult <- task$estimateCI()
+piResult <- task$run()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    taskResults$par, c(14.024, 6.244, 1.3e-6),
+    piResult$toList()$finalParameters, c(14.024, 6.244, 1.3e-6),
     tolerance = 0.01
   )
 })
 
 test_that("Hessian CI estimation returns expected error message", {
   expect_match(
-    ciResult$error,
+    piResult$toList()$ciError,
     "Error during CI estimation step 'Covariance matrix validity check'",
     fixed = TRUE
   )
@@ -287,16 +286,15 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
-taskResults <- task$run()
-ciResult <- task$estimateCI()
+piResult <- task$run()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    taskResults$par, c(8.420, 5.373, 0.011),
+    piResult$toList()$finalParameters, c(8.420, 5.373, 0.011),
     tolerance = 0.01
   )
 })
 
 test_that("Hessian-based standard deviations equal expected values", {
-  expect_equal(ciResult$sd, c(2.308, 0.893, 0.002), tolerance = 0.01)
+  expect_equal(piResult$toList()$sd, c(2.308, 0.893, 0.002), tolerance = 0.01)
 })

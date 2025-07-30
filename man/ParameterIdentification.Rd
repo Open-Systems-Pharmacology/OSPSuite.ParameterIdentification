@@ -80,24 +80,25 @@ Executes Parameter Identification
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
 \subsection{Method \code{run()}}{
-Initiates parameter identification process.
-Upon completion, access optimal parameter values through \code{PIParameters$currValue}.
+Runs parameter identification using the configured optimization
+algorithm. Returns a structured \code{piResults}object containing estimated
+parameters, diagnostics, and (optionally) confidence intervals.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$run()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-Results from the parameter identification algorithm, varying by
-algorithm choice.
-Estimates Confidence Intervals
+A \code{\link{PIResult}} object containing the optimization results.
+Estimate Confidence Intervals
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
 \subsection{Method \code{estimateCI()}}{
-Computes confidence intervals for the optimized parameters
-using the method specified in \code{PIConfiguration}.
+Manually computes confidence intervals for the optimized
+parameters using the method specified in \code{PIConfiguration}. This is
+intended for advanced use cases where \code{autoEstimateCI} was set to \code{FALSE}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
 }

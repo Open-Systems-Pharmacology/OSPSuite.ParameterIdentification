@@ -69,6 +69,10 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
+    # Last optimization result
+    .lastOptimResult = NULL,
+    # Stores full cost summary from last objective function evaluation
+    .lastCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Flag to indicate if objective function is being called from grid search
@@ -374,6 +378,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      private$.lastCostSummary <- runningCost
 
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
@@ -521,6 +526,8 @@ ParameterIdentification <- R6::R6Class(
         upper = upper
       )
 
+      optimResult$startValues <- startValues
+
       return(optimResult)
     }
   ),
@@ -586,11 +593,11 @@ ParameterIdentification <- R6::R6Class(
 
     #' Executes Parameter Identification
     #'
-    #' @description Initiates parameter identification process.
-    #' Upon completion, access optimal parameter values through `PIParameters$currValue`.
+    #' @description Runs parameter identification using the configured optimization
+    #' algorithm. Returns a structured `piResults`object containing estimated
+    #' parameters, diagnostics, and (optionally) confidence intervals.
     #'
-    #' @return Results from the parameter identification algorithm, varying by
-    #' algorithm choice.
+    #' @return A [`PIResult`] object containing the optimization results.
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
@@ -599,18 +606,22 @@ ParameterIdentification <- R6::R6Class(
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
       private$.batchInitialization()
+      # Clear previous optimization results and diagnostics
+      private$.lastOptimResult <- NULL
+      private$.lastCostSummary <- NULL
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
 
       # Run optimization algorithm
-      results <- private$.runAlgorithm()
+      optimResult <- private$.runAlgorithm()
+      private$.lastOptimResult <- optimResult
       # Reset simulation output intervals and output selections
       .restoreSimulationState(private$.simulations, private$.savedSimulationState)
 
       # Apply identified values to the parameter objects. Should be an option?
-      private$.applyFinalValues(values = results$par)
+      private$.applyFinalValues(values = optimResult$par)
       # Since the batches have been initialized already, this will not be
       # required before plotting current results
       private$.needBatchInitialization <- FALSE
@@ -618,17 +629,38 @@ ParameterIdentification <- R6::R6Class(
       # Trigger .NET gc
       ospsuite::clearMemory()
 
-      return(results)
+      # Estimate confidence intervals if configured
+      ciResult <- NULL
+      if (private$.configuration$autoEstimateCI) {
+        piResult <- self$estimateCI()
+      } else {
+        message(messages$statusAutoEstimateCI())
+        piResult <- PIResult$new(
+          optimResult = optimResult,
+          ciResult = ciResult,
+          costDetails = private$.lastCostSummary,
+          configuration = private$.configuration,
+          piParameters = private$.piParameters
+        )
+      }
+
+      return(piResult)
     },
 
     #' Estimates Confidence Intervals
     #'
-    #' @description Computes confidence intervals for the optimized parameters
-    #' using the method specified in `PIConfiguration`.
+    #' @description Manually computes confidence intervals for the optimized
+    #' parameters using the method specified in `PIConfiguration`. This is
+    #' intended for advanced use cases where `autoEstimateCI` was set to `FALSE`.
     #'
-    #' @return A list with confidence interval results, including bounds, standard
-    #' errors, and coefficient of variation.
+    #' @return The same [`PIResult`] object returned by the `run()` method,
+    #' updated to include confidence interval estimates.
     estimateCI = function() {
+      # Stop if executed before optimization
+      if (is.null(private$.lastOptimResult)) {
+        stop(messages$errorMissingOptimizationResult())
+      }
+
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       private$.savedSimulationState <- .storeSimulationState(private$.simulations)
@@ -665,7 +697,15 @@ ParameterIdentification <- R6::R6Class(
       # Trigger .NET gc
       ospsuite::clearMemory()
 
-      return(ciResult)
+      piResult <- PIResult$new(
+        optimResult = private$.lastOptimResult,
+        ciResult = ciResult,
+        costDetails = private$.lastCostSummary,
+        configuration = private$.configuration,
+        piParameters = private$.piParameters
+      )
+
+      return(piResult)
     },
 
     #' Plots Parameter Estimation Results

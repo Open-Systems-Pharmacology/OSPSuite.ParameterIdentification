@@ -40,8 +40,10 @@ Refer to \code{\link{CIOptions}} for default
 settings per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the
 method name). If \code{NULL}, CI method's default settings are applied.}
 
-\item{\code{estimateCI}}{Logical. If \code{TRUE}, confidence intervals are estimated
-after optimization.}
+\item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
+automatically estimated after optimization. If \code{FALSE}, the step is
+skipped and can be triggered manually by calling the \code{estimateCI()}
+method on the \code{ParameterIdentification} object.}
 
 \item{\code{modelCostField}}{Read-only field name in the cost object used as the
 optimization target. Currently, only \code{modelCost} is supported.}

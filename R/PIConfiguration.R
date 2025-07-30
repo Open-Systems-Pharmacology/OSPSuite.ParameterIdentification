@@ -118,14 +118,16 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field estimateCI Logical. If `TRUE`, confidence intervals are estimated
-    #' after optimization.
-    estimateCI = function(value) {
+    #' @field autoEstimateCI Logical. If `TRUE`, confidence intervals are
+    #' automatically estimated after optimization. If `FALSE`, the step is
+    #' skipped and can be triggered manually by calling the `estimateCI()`
+    #' method on the `ParameterIdentification` object.
+    autoEstimateCI = function(value) {
       if (missing(value)) {
-        private$.estimateCI
+        private$.autoEstimateCI
       } else {
         ospsuite.utils::validateIsLogical(value)
-        private$.estimateCI <- value
+        private$.autoEstimateCI <- value
       }
     },
 
@@ -150,7 +152,7 @@ PIConfiguration <- R6::R6Class(
     .modelCostField = NULL,
     .ciMethod = NULL,
     .ciOptions = NULL,
-    .estimateCI = NULL
+    .autoEstimateCI = NULL
   ),
   public = list(
     #' @description Initialize a new instance of the class.
@@ -163,7 +165,7 @@ PIConfiguration <- R6::R6Class(
       private$.algorithm <- "BOBYQA"
       private$.ciMethod <- "hessian"
       private$.modelCostField <- "modelCost"
-      private$.estimateCI <- FALSE
+      private$.autoEstimateCI <- TRUE
     },
 
     #' @description Prints a summary of the PIConfiguration.
