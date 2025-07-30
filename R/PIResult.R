@@ -159,7 +159,9 @@ PIResult <- R6::R6Class(
     #' @description Returns the full internal result list.
     #' @return A named list containing all result values.
     toList = function() {
-      private$.result
+      c(private$.result, list(
+        costDetails = private$.costDetails
+      ))
     },
     #' @description Prints a summary of PIResult
     print = function() {
