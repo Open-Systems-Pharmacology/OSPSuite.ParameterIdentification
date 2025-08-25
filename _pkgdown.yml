@@ -6,8 +6,8 @@ template:
 authors:
   esqLABS GmbH:
     href: https://esqlabs.com/
-    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png'
-      style='max-width:33px'>esqLABS
+    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/circles.png'
+      style='max-width:33px'>ESQlabs
   Open-Systems-Pharmacology Community:
     href: https://www.open-systems-pharmacology.org/
     html: <img src='https://open-systems-pharmacology.github.io/ospsuiteR/reference/figures/osp.png'
