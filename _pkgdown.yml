@@ -60,5 +60,6 @@ articles:
 - title: Details
   navbar: Details
   contents:
-  - error-calculation
   - optimization-algorithms
+  - confidence-intervals
+  - error-calculation
