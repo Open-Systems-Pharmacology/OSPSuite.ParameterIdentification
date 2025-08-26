@@ -31,6 +31,7 @@ in units specified by \code{PIParameters$unit}.}
 \itemize{
 \item \href{#method-PIParameters-new}{\code{PIParameters$new()}}
 \item \href{#method-PIParameters-setValue}{\code{PIParameters$setValue()}}
+\item \href{#method-PIParameters-toDataFrame}{\code{PIParameters$toDataFrame()}}
 \item \href{#method-PIParameters-print}{\code{PIParameters$print()}}
 \item \href{#method-PIParameters-clone}{\code{PIParameters$clone()}}
 }
@@ -74,6 +75,27 @@ Value is specified in units of \code{PIParameters$unit}.
 \item{\code{value}}{Numeric value to set.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PIParameters-toDataFrame"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-toDataFrame}{}}}
+\subsection{Method \code{toDataFrame()}}{
+Export parameter metadata and configuration to a data frame.
+Returns one row per internal model parameter wrapped by the \code{PIParameters} object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{PIParameters$toDataFrame(group = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{group}}{Optional character label identifying the optimization group.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A \code{data.frame} with one row per internal parameter.
 }
 }
 \if{html}{\out{<hr>}}

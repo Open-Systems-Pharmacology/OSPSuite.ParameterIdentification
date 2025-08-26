@@ -1,9 +1,12 @@
-# Simulation function factory
+# Simulation, Parameter, and Mapping Factories
+
 getTestSimulation <- function() {
   .simulation <- NULL
   function() {
     if (is.null(.simulation)) {
-      .simulation <<- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+      .simulation <<- loadSimulation(
+        system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+      )
     }
     return(.simulation)
   }
@@ -11,98 +14,61 @@ getTestSimulation <- function() {
 
 testSimulation <- getTestSimulation()
 
-testSimulations <- function() {
-  list("Aciclovir" = testSimulation())
-}
 
-# Observed data function factory
-getTestObservedData <- function() {
-  .observedData <- NULL
-  function() {
-    if (is.null(.observedData)) {
-      filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
-      dataConfig <- createImporterConfigurationForFile(filePath)
-      dataConfig$sheets <- "Laskin 1982.Group A"
-      dataConfig$namingPattern <- "{Source}.{Sheet}"
-      .observedData <<- loadDataSetsFromExcel(
-        xlsFilePath = filePath,
-        importerConfigurationOrPath = dataConfig
-      )
-    }
-    return(.observedData)
-  }
-}
-
-testObservedData <- getTestObservedData()
-
-getTestObservedDataMultiple <- function() {
-  .observedDataMultiple <- NULL
-  function() {
-    if (is.null(.observedDataMultiple)) {
-      dataSet1 <- testObservedData()[[1]]
-      dataSet1$name <- "dataSet1"
-
-      dataSet2 <- DataSet$new(name = "dataSet2")
-      dataSet2$setValues(
-        xValues = dataSet1$xValues[-length(dataSet1$xValues)],
-        yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)]
-      )
-
-      .observedDataMultiple <- list(dataSet1 = dataSet1, dataSet2 = dataSet2)
-    }
-    return(.observedDataMultiple)
-  }
-}
-
-testObservedDataMultiple <- getTestObservedDataMultiple()
-
-# Parameters function factory
 getTestParameters <- function() {
   .parameters <- NULL
-  function() {
-    if (is.null(.parameters)) {
+  .simulation <- NULL
+  function(simulation = NULL) {
+    if (!is.null(simulation)) {
       parameterPaths <- c("Aciclovir|Lipophilicity")
       parameters <- list()
       for (parameterPath in parameterPaths) {
-        modelParams <- list()
-        for (simulation in testSimulations()) {
-          modelParams <- c(
-            modelParams,
-            ospsuite::getParameter(path = parameterPath, container = simulation)
-          )
-        }
-        piParameter <- PIParameters$new(parameters = modelParams)
+        param <- ospsuite::getParameter(
+          path = parameterPath, container = simulation
+        )
+        piParameter <- PIParameters$new(parameters = list(param))
+        piParameter$minValue <- -10
+        piParameter$maxValue <- 10
         parameters <- c(parameters, piParameter)
       }
-      parameters[[1]]$minValue <- -10
-      parameters[[1]]$maxValue <- 10
-
-      .parameters <<- parameters
+      return(parameters)
     }
+
+    if (is.null(.parameters)) {
+      .simulation <<- testSimulation()
+      .parameters <<- Recall(simulation = .simulation)
+    }
+
     return(.parameters)
   }
 }
 
 testParameters <- getTestParameters()
 
-# OutputMapping function factory
+
 getTestOutputMapping <- function(includeObservedData = TRUE) {
   .outputMapping <- NULL
-  function() {
-    if (is.null(.outputMapping)) {
-      mapping <- PIOutputMapping$new(
-        quantity = getQuantity(
-          "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-          container = testSimulations()$Aciclovir
-        )
+  .simulation <- NULL
+  function(simulation = NULL) {
+    if (!is.null(simulation)) {
+      quantity <- getQuantity(
+        "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+        container = simulation
       )
+      mapping <- PIOutputMapping$new(quantity = quantity)
       if (includeObservedData) {
         mapping$addObservedDataSets(
           testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
         )
       }
-      .outputMapping <<- list(mapping)
+      return(list(mapping))
     }
+
+    if (is.null(.outputMapping)) {
+      .simulation <<- testSimulation()
+      .outputMapping <<- Recall(simulation = .simulation)
+    }
+
     return(.outputMapping)
   }
 }
@@ -110,58 +76,187 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
 testOutputMapping <- getTestOutputMapping()
 testOutputMappingWithoutObsData <- getTestOutputMapping(includeObservedData = FALSE)
 
-# Low iteration PIConfiguration for BOBYQA
-getLowIterPiConfiguration <- function(iter = 2) {
-  .configuration <- NULL
-  function() {
-    if (is.null(.configuration)) {
-      options <- AlgorithmOptions_BOBYQA
-      options$maxeval <- iter
-      .configuration <- PIConfiguration$new()
-      .configuration$algorithmOptions <- options
-    }
-    return(.configuration)
-  }
-}
 
-lowIterPiConfiguration <- getLowIterPiConfiguration()
-
-# Function to create a ParameterIdentification task
 createPiTask <- function() {
+  testSimulation <- getTestSimulation()
+  sim <- testSimulation()
+  testParameters <- getTestParameters()
+  testOutputMapping <- getTestOutputMapping()
+
   ParameterIdentification$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = testOutputMapping(),
+    simulations = sim,
+    parameters = testParameters(sim),
+    outputMappings = testOutputMapping(sim),
     configuration = NULL
   )
 }
 
-# Function to create a modified ParameterIdentification task (simulation failure)
-getTestModifiedTask <- function() {
-  function() {
-    sim <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-    sim$solver$mxStep <- 1
-    mapping <- PIOutputMapping$new(
-      quantity = getQuantity("Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)", container = sim)
-    )
-    mapping$addObservedDataSets(testObservedData())
 
-    params <- PIParameters$new(parameters = list(
-      getParameter("Aciclovir|Lipophilicity", container = sim)
-    ))
-
-    task <- ParameterIdentification$new(
-      simulations = sim,
-      parameters = params,
-      outputMappings = mapping
-    )
-    return(task)
-  }
+resetTestFactories <- function() {
+  testSimulation <<- getTestSimulation()
+  testParameters <<- getTestParameters()
+  testOutputMapping <<- getTestOutputMapping()
 }
 
-testModifiedTask <- getTestModifiedTask()
 
-# Multiple simulation and parameter paths
+# Observed Data Generators
+
+testObservedData <- function() {
+  filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
+  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig$sheets <- "Laskin 1982.Group A"
+  dataConfig$namingPattern <- "{Source}.{Sheet}"
+  loadDataSetsFromExcel(filePath, dataConfig)
+}
+
+syntheticObservedData <- function() {
+  filePath <- testthat::test_path("../data/AciclovirDataIndividuals.xlsx")
+  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig$sheets <- "Aciclovir.Synthetic"
+  dataConfig$namingPattern <- "{Source}.{Sheet}.{Subject Id}"
+  dataConfig$errorColumn <- NULL
+  loadDataSetsFromExcel(
+    xlsFilePath = filePath,
+    importerConfigurationOrPath = dataConfig
+  )
+}
+
+testObservedDataMultiple <- function() {
+  filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
+  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig$sheets <- "Laskin 1982.Group A"
+  dataConfig$namingPattern <- "{Source}.{Sheet}"
+
+  dataSet1 <- loadDataSetsFromExcel(filePath, dataConfig)[[1]]
+  dataSet1$name <- "dataSet1"
+
+  dataSet2 <- DataSet$new(name = "dataSet2")
+  dataSet2$setValues(
+    xValues = dataSet1$xValues[-length(dataSet1$xValues)],
+    yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)],
+    yErrorValues = dataSet1$yErrorValues[-length(dataSet1$yErrorValues)]
+  )
+  dataSet2$yErrorType <- dataSet1$yErrorType
+
+  list(dataSet1 = dataSet1, dataSet2 = dataSet2)
+}
+
+
+# PIConfiguration Generators
+
+lowIterPiConfiguration <- function(iter = 2) {
+  options <- AlgorithmOptions_BOBYQA
+  options$maxeval <- iter
+
+  config <- PIConfiguration$new()
+  config$algorithmOptions <- options
+  config
+}
+
+bootstrapPiConfiguration <- function(iter = 2, nBootstrap = 3) {
+  options <- AlgorithmOptions_BOBYQA
+  options$maxeval <- iter
+
+  ciOptions <- CIOptions_Bootstrap
+  ciOptions$seed <- 2203
+  ciOptions$nBootstrap <- nBootstrap
+
+  config <- PIConfiguration$new()
+  config$ciMethod <- "bootstrap"
+  config$algorithmOptions <- options
+  config$ciOptions <- ciOptions
+  config
+}
+
+
+# Specialized Test Classes
+
+PISimFailureTester <- R6::R6Class(
+  inherit = ParameterIdentification,
+  cloneable = FALSE,
+  private = list(
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      private$.fnEvaluations <- private$.fnEvaluations + 2
+      stop("Simulated failure in evaluation")
+    }
+  )
+)
+
+PIResampleTester <- R6::R6Class(
+  inherit = ParameterIdentification,
+  cloneable = FALSE,
+  private = list(
+    # Override to retain modified outputMappings after bootstrap
+    .restoreOutputMappingsState = function() {
+      return(NULL)
+    }
+  )
+)
+
+
+# PI Helpers
+
+testQuantity <- function(simulation = testSimulation()) {
+  ospsuite::getQuantity(
+    path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+    container = simulation
+  )
+}
+
+testModifiedTask <- function() {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  sim$solver$mxStep <- 1
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(
+      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+      container = sim
+    )
+  )
+  mapping$addObservedDataSets(testObservedData())
+
+  params <- PIParameters$new(parameters = list(
+    getParameter("Aciclovir|Lipophilicity", container = sim)
+  ))
+
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = params,
+    outputMappings = mapping
+  )
+}
+
+
+# General Helpers
+
+getTestDataFilePath <- function(fileName) {
+  dataPath <- testthat::test_path("../data")
+  file.path(dataPath, fileName, fsep = .Platform$file.sep)
+}
+
+getSimulationFilePath <- function(simulationName) {
+  getTestDataFilePath(paste0(simulationName, ".pkml"))
+}
+
+loadTestSimulation <- function(simulationName, loadFromCache = FALSE, addToCache = TRUE) {
+  simFile <- getSimulationFilePath(simulationName)
+  sim <- ospsuite::loadSimulation(
+    simFile,
+    loadFromCache = loadFromCache, addToCache = addToCache
+  )
+}
+
+executeWithTestFile <- function(actionWithFile) {
+  newFile <- tempfile()
+  actionWithFile(newFile)
+  file.remove(newFile)
+}
+
+
+# Multi-Simulation Setup
+
 sim_250mg <- loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
@@ -202,38 +297,3 @@ outputMapping_250mg$addObservedDataSets(
 outputMapping_500mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
-
-# Other variables
-testQuantity <- ospsuite::getQuantity(
-  path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-  container = testSimulation()
-)
-testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
-refVal <- testParam$value
-
-piConfiguration <- PIConfiguration$new()
-
-
-# Helper functions
-getTestDataFilePath <- function(fileName) {
-  dataPath <- testthat::test_path("../data")
-  file.path(dataPath, fileName, fsep = .Platform$file.sep)
-}
-
-getSimulationFilePath <- function(simulationName) {
-  getTestDataFilePath(paste0(simulationName, ".pkml"))
-}
-
-loadTestSimulation <- function(simulationName, loadFromCache = FALSE, addToCache = TRUE) {
-  simFile <- getSimulationFilePath(simulationName)
-  sim <- ospsuite::loadSimulation(
-    simFile,
-    loadFromCache = loadFromCache, addToCache = addToCache
-  )
-}
-
-executeWithTestFile <- function(actionWithFile) {
-  newFile <- tempfile()
-  actionWithFile(newFile)
-  file.remove(newFile)
-}

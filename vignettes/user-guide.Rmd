@@ -12,19 +12,25 @@ editor_options:
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
-)
-library(ospsuite.parameteridentification)
-knitr::opts_knit$set(
-  root.dir = ".." # setting up to package root folder so that the relative paths match between the vignettes and the tests
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE,
+  dev = "ragg_png",
+  dpi = 96,
+  fig.retina = 1,
+  fig.width = 1220 / 96,
+  fig.height = 495 / 96,
+  out.width = "516px"
 )
 ```
+
 
 ### Parameter estimation problems
 
 Biosimulation models include numerical parameters that determine the outputs of the model. Often, the values of these parameters are not known in advance and have to be identified by matching possible model outputs to the observed data. Finding parameter values that best match the observed data is called *parameter identification*.
 
 The `{ospsuite.parameteridentification}` package provides a workflow for setting up such tasks based on existing PKML models, mapping model outputs to observed data, and estimating parameters. Below, three models of increasing complexity are used to demonstrate the functionality of the package.
+
 
 ### PI workflow
 
@@ -42,6 +48,7 @@ To set up a PI task, the user has to define:
 
 -   Configuration of the optimization task, including selection of algorithm and algorithm options.
 
+
 #### Simulations
 
 A set of `Simulation` objects. See the documentation of `{ospsuite-r}` on [how to load and adjust simulations](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html).
@@ -51,6 +58,8 @@ For this example, we will load two instances of the Aciclovir PBPK model provide
 We will start by loading the simulation of the \*.pkml file twice. The dose in this simulation is set to 250 mg. Remember that both `Simulation` objects are created by loading the same \*.pkml file, they represent two independent instances of a simulation.
 
 ```{r loadSimulations}
+library(ospsuite.parameteridentification)
+
 sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 ```
@@ -71,6 +80,7 @@ sim_500mg_doseParam <- getParameter(path = doseParameterPath, container = sim_50
 setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
 print(sim_500mg_doseParam)
 ```
+
 
 #### Definition of parameters to be identified
 
@@ -134,6 +144,7 @@ print(piParameterCl_250mg)
 print(piParameterCl_500mg)
 ```
 
+
 #### Mapping of model output to observed data
 
 In order to calculate the error of the model, simulation outputs must be linked to observed data. One simulation output can be linked to multiple observed data sets in this framework. The error will be calculated for each pair of simulated output and linked data set and added up for the total error. The mapping is done by creating an object of the class `PIOutputMapping`. Each object links a single [`Quantity`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/Quantity.html) of a simulation to multiple [`DataSet`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/DataSet.html) objects.
@@ -185,6 +196,7 @@ outputMapping_500mg$scaling <- "log"
 
 All data sets (simulated results and observed data) within a `PIOutputMapping` can be transformed by applying offsets and scaling factors following the same logic implemented in the [`DataCombined` class](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/data-combined.html#transformations).
 
+
 #### Configuration
 
 The configuration of a PI includes the selection of an algorithm, setting algorithm settings, and some further options. A PI configuration is defined in a `PIConfiguration` object and can be re-used by multiple PI tasks. If no user-defined configuration is provided to a PI task, a default one is created with the following properties:
@@ -211,16 +223,17 @@ print(AlgorithmOptions_BOBYQA)
 E.g. to set the maximal number of function evaluations to 1500 for the `BOBYQA` algorithm, we can use the following code:
 
 ```{r}
-defOptions <- AlgorithmOptions_BOBYQA
-defOptions$maxFunctionEvaluations <- 1500
-piConfiguration$algorithmOptions <- defOptions
+algOptions <- AlgorithmOptions_BOBYQA
+algOptions$maxFunctionEvaluations <- 1500
+piConfiguration$algorithmOptions <- algOptions
 ```
+
 
 #### Running a parameter identification task
 
 After the simulation, identification parameters, mappings of observed and simulated data, and the configuration are defined, they are used in an instance of the `ParameterIdentification` class:
 
-```{r include=TRUE, eval=TRUE}
+```{r}
 piTask <- ParameterIdentification$new(
   simulations = list(sim_250mg, sim_500mg),
   parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
@@ -240,20 +253,28 @@ NOTE: the figures are created with the current values of the parameters, not the
 We can now run the PI and print the results:
 
 ```{r}
-piResults <- piTask$run()
-print(piResults)
+piResult <- piTask$run()
+print(piResult)
 ```
 
-The output of the optimization run is:
+`piResult` is an R6 object that encapsulates the optimization output (and, if configured, confidence intervals) and provides helper methods like `$toDataFrame()` and `$toList()` for exporting results.
 
--   `taskResults$par`: a vector of point estimates for each of the parameters
--   `taskResults$lwr` and `taskResults$upr`: vectors with lower bounds and upper bounds for the 95% confidence interval for each of the parameters
--   `taskResults$cv`: a vector with the coefficient of variation (standard deviation over point estimate, in percents) for each of the parameters
--   `taskResults$value` is the objective function value at the point estimate
--   `taskResults$elapsed` (seconds) is the wall time it took to run the main optimization routine, excluding the hessian calculations
--   `taskResults$nrOfFnEvaluations` is the number of times the objective function was evaluated in the main optimization routine, excluding the hessian calculations
 
-The optimal values are directly applied to the `Parameter` objects used in the PI.
+#### Export the results
+
+-   Use `$toDataFrame()` to get a tidy table of parameter estimates and related fields:
+
+```{r}
+piResult$toDataFrame()
+```
+
+-   Use `$toList()` to export full details, including diagnostics, cost metrics, and residuals.\
+    `costDetails` includes items such as `SSR`, `residuals`, `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
+
+```{r}
+names(piResult$toList())
+```
+
 
 #### Diagnostics
 

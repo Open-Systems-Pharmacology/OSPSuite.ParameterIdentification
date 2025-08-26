@@ -1,5 +1,6 @@
 # Testing PIParameters with a Single Parameter ----------------------------
 
+testParam <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
 refVal <- testParam$value
 
 test_that("PIParameters object is correctly created", {
@@ -13,9 +14,14 @@ test_that("PIParameters object is correctly created", {
   expect_equal(piParam$unit, testParam$unit)
 })
 
-test_that("It can print PIOutputMapping", {
+test_that("PIParameters can print PIOutputMapping", {
   piParam <- PIParameters$new(testParam)
   expect_snapshot(print(piParam))
+})
+
+test_that("PIParameters can export to data.frame", {
+  piParam <- PIParameters$new(testParam)
+  expect_snapshot(piParam$toDataFrame())
 })
 
 test_that("Start, min, and max values are set correctly", {
@@ -64,7 +70,8 @@ test_that("Unit can be changed correctly", {
   )
   expect_error(
     piParam$unit <- "invalidUnit",
-    "not supported by the dimension"
+    messages$errorUnitNotSupported("invalidUnit", "Velocity"),
+    fixed = TRUE
   )
 })
 
@@ -87,6 +94,11 @@ test_that("PIParameters object is correctly created from list of parameters", {
   expect_equal(piParam$minValue, refVal * 0.1)
   expect_equal(piParam$maxValue, refVal * 10)
   expect_equal(piParam$unit, testParamsList[[1]]$unit)
+})
+
+test_that("PIParameters with multiple parameters can export to data.frame", {
+  piParam <- PIParameters$new(testParam)
+  expect_snapshot(piParam$toDataFrame())
 })
 
 test_that("Start, min, and max values are set correctly", {
@@ -135,6 +147,7 @@ test_that("Unit can be changed correctly", {
   )
   expect_error(
     piParam$unit <- "invalidUnit",
-    "not supported by the dimension"
+    messages$errorUnitNotSupported("invalidUnit", "Volume"),
+    fixed = TRUE
   )
 })

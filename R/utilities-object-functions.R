@@ -50,7 +50,7 @@
 #' @keywords internal
 #' @noRd
 .calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
-                                 robustMethod = "none", scaleVar = FALSE, ...) {
+                                  robustMethod = "none", scaleVar = FALSE, ...) {
   additionalArgs <- list(...)
 
   # Validate input dataframe structure
@@ -375,6 +375,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' which must contain `yDimension`, `yUnit`, `yValues`, and `lloq` columns.
 #'
 #' @param df A `tbl_df` representing the observed vs predicted data frame (`obsVsPredDf`).
+#' @param base A positive numeric value specifying the logarithm base. Defaults
+#' to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
 #' @keywords internal
@@ -384,8 +386,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' \dontrun{
 #' transformedDf <- applyLogTransformation(df)
 #' }
-.applyLogTransformation <- function(df) {
+.applyLogTransformation <- function(df, base = exp(1)) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
+  ospsuite.utils::validateIsNumeric(base)
   ospsuite.utils::validateIsIncluded(
     c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
   )
@@ -399,11 +402,11 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
-    epsilon = UNITS_EPSILON, base = exp(1)
+    epsilon = UNITS_EPSILON, base = base
   )
   df$lloq <- ospsuite.utils::logSafe(
     df$lloq,
-    epsilon = UNITS_EPSILON, base = exp(1)
+    epsilon = UNITS_EPSILON, base = base
   )
 
   return(df)

@@ -1,3 +1,7 @@
+#' @title Internal Message Templates
+#'
+#' @keywords internal
+#' @noRd
 messages <- ospsuite.utils::messages
 
 messages$errorDimensionsNotEqual <- function() {
@@ -12,10 +16,21 @@ messages$errorWeightsNames <- function() {
   "All weights must be a named list with names matching observed data set names."
 }
 
-messages$errorWeightsLengthMismatch <- function(label, expected, actual) {
+messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",
     label, expected, actual
+  )
+}
+
+messages$errorDataSetWeightsMismatch <- function() {
+  "Dataset weights do not align with observed datasets in output mapping."
+}
+
+messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
+  sprintf(
+    "Number of combined data entries must be %d to match output mappings, but got %d.",
+    expected, actual
   )
 }
 
@@ -60,12 +75,48 @@ messages$logScaleFlagError <- function() {
   "Logarithmic scaling is not available for non-positive parameter values."
 }
 
-messages$runningOptimizationAlgorithm <- function(name) {
-  paste0("Running optimization algorithm: ", name)
+messages$optimizationAlgorithm <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown optimization algorithm: ", name)
+  } else {
+    paste0(
+      "Starting optimization using '", name, "' with initial value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
+messages$ciMethod <- function(name, par, error = FALSE) {
+  if (error) {
+    paste0("Unknown CI estimation method: ", name)
+  } else {
+    paste0(
+      "Starting confidence interval estimation using '", name,
+      "' for parameter value(s):\n  ",
+      paste(.formatValues(par), collapse = ", ")
+    )
+  }
+}
+
+messages$evaluationFeedback <- function(fneval, par, objValue) {
+  paste0(
+    "fneval: ", fneval,
+    " | parameters: ", paste(.formatValues(par), collapse = ", "),
+    " | objective: ", .formatValues(objValue), "\n",
+    sep = ""
+  )
 }
 
 messages$hessianEstimation <- function() {
   "Post-hoc estimation of Hessian matrix."
+}
+
+messages$statusAutoEstimateCI <- function() {
+  "Skipping confidence interval estimation (autoEstimateCI = FALSE)"
+}
+
+messages$errorMissingOptimizationResult <- function() {
+  "No optimization result found. Ensure the optimization was run before estimating confidence intervals."
 }
 
 messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
@@ -110,23 +161,6 @@ messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
 }
 
-
-messages$optimizationAlgorithm <- function(algorithm, error = FALSE) {
-  if (error) {
-    paste("Unknown optimization algorithm:", algorithm)
-  } else {
-    paste0("Starting optimization using '", algorithm, "' algorithm.")
-  }
-}
-
-messages$ciMethod <- function(method, error = FALSE) {
-  if (error) {
-    paste("Unknown CI estimation method:", method)
-  } else {
-    paste0("Starting confidence interval estimation using '", method, "' method.")
-  }
-}
-
 messages$ciEstimationError <- function(step, errorMessage) {
   paste0("Error during CI estimation step '", step, "': ", errorMessage)
 }
@@ -142,6 +176,44 @@ messages$plMaxiterWarning <- function(index) {
   )
 }
 
+messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
+  sprintf(
+    "Classified observed data: %d individual, %d aggregated dataset(s).",
+    nIndividual,
+    nAggregated
+  )
+}
+
+messages$warningLowIndividualData <- function(n = 3) {
+  sprintf(
+    "Less than %d individual datasets detected — bootstrap CI may be unreliable.",
+    n
+  )
+}
+
+messages$errorUnsupportedErrorType <- function() {
+  stop("Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'.")
+}
+
 messages$statusBootstrap <- function(index, nTotal) {
   paste0("Running bootstrap replicate ", index, " of ", nTotal, ".")
+}
+
+messages$errorGPRModelConvergence <- function(dataSetName) {
+  sprintf(
+    "GPR model failed to converge for dataset '%s'.", dataSetName
+  )
+}
+
+messages$statusGPRModelFitted <- function(dataSetName) {
+  sprintf(
+    "GPR model fitted successfully for dataset '%s'.", dataSetName
+  )
+}
+
+messages$warnParameterMetadata <- function(message) {
+  paste0(
+    "Could not extract parameter metadata from piParameters: ",
+    message
+  )
 }

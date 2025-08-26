@@ -6,18 +6,18 @@ template:
 authors:
   esqLABS GmbH:
     href: https://esqlabs.com/
-    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png'
-      style='max-width:33px'>esqLABS
+    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/circles.png'
+      style='max-width:33px'>ESQlabs
   Open-Systems-Pharmacology Community:
     href: https://www.open-systems-pharmacology.org/
     html: <img src='https://open-systems-pharmacology.github.io/ospsuiteR/reference/figures/osp.png'
       style='max-width:33px'>Open Systems Pharmacology
   Pavel Balazki:
     href: https://github.com/PavelBal
-  Sergei Vavilov:
-    href: https://github.com/svavil
   Rudi Engelke:
     href: https://github.com/rengelke
+  Sergei Vavilov:
+    href: https://github.com/svavil
   Felix Mil:
     href: https://github.com/Felixmil
 
@@ -26,12 +26,14 @@ development:
 
 reference:
 - title: Parameter identification workflow
+  desc: Main classes for running parameter identification
   contents:
   - ParameterIdentification
   - PIConfiguration
   - PIOutputMapping
   - PIParameters
-- title: Supported options
+  - PIResult
+- title: Configuration options
   contents:
   - Algorithms
   - contains("AlgorithmOptions")
@@ -41,7 +43,7 @@ reference:
   - robustMethodOptions
   - ScalingOptions
   - CIMethods
-  - CIOptions
+  - contains("CIOptions")
 - title: Internal functions
   contents:
   - plot.modelCost
@@ -58,6 +60,6 @@ articles:
 - title: Details
   navbar: Details
   contents:
-  - error-calculation
   - optimization-algorithms
-
+  - confidence-intervals
+  - error-calculation

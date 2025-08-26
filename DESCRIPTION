@@ -10,28 +10,31 @@ Authors@R:
              family = "Balazki",
              role = c("aut", "cre"),
              email = "pavel.balazki@gmail.com"),
-      person(given = "Sergei",
-              family = "Vavilov",
-               role = "aut"),
       person(given = "Rudi",
-              family = "Engelke",
-              role = "aut"),
+             family = "Engelke",
+             role = "aut", "cre"),
+      person(given = "Sergei",
+             family = "Vavilov",
+             role = "aut"),
       person(given = "Felix",
-            family = "Mil",
-            role = "ctb")
+             family = "Mil",
+             role = "ctb")
       )
 Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
 Description: R package for performing parameter identification for the 
     Open Systems Pharmacology models.
 License: GPL-2 | file LICENSE
-URL: https://github.com/open-systems-pharmacology/ospsuite.parameteridentification
+URL: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification,
+     https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification
+BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues
 Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.1),
-    ospsuite (>= 12.2.0)
+    ospsuite (>= 12.3.0)
 Imports:
     DEoptim,
+    DiceKriging,
     dfoptim,
     ggplot2,
     ggtext,

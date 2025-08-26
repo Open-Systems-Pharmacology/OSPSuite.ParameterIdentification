@@ -125,6 +125,28 @@ PIParameters <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Export parameter metadata and configuration to a data frame.
+    #' Returns one row per internal model parameter wrapped by the `PIParameters` object.
+    #' @param group Optional character label identifying the optimization group.
+    #' @return A `data.frame` with one row per internal parameter.
+    toDataFrame = function(group = NULL) {
+      n <- length(private$.parameters)
+
+      parametersDf <- data.frame(
+        group = rep(group %||% NA_integer_, n),
+        name = sapply(private$.parameters, `[[`, "name"),
+        path = sapply(private$.parameters, `[[`, "fullPath"),
+        unit = rep(self$unit, n),
+        currValue = rep(self$currValue, n),
+        startValue = rep(self$startValue, n),
+        minValue = rep(self$minValue, n),
+        maxValue = rep(self$maxValue, n),
+        stringsAsFactors = FALSE
+      )
+
+      return(parametersDf)
+    },
+
     #' @description Prints a summary of the PIParameters.
     print = function() {
       ospsuite.utils::ospPrintClass(self)

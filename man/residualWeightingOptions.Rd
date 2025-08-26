@@ -16,14 +16,14 @@ discrepancies between simulations and observed data are evaluated.
 }
 \details{
 The methods include:
-\describe{
-\item{\code{"none"}}{No weighting applied, treating all residuals equally.}
-\item{\code{"error"}}{Weights based on error estimates for the dependent
-variable in observed data.}
-\item{\code{"std"}}{Weights equal to the reciprocal of the standard deviation
-of the observed data.}
-\item{\code{"mean"}}{Weights based on the reciprocal of the mean of the absolute
-values of the observed data, useful for relative error scaling.}
+\itemize{
+\item \strong{\code{none}} – No weighting applied, treating all residuals equally.
+\item \strong{\code{error}} – Weights based on error estimates for the dependent variable
+in observed data.
+\item \strong{\code{std}} – Weights equal to the reciprocal of the standard deviation of
+the observed data.
+\item \strong{\code{mean}} – Weights based on the reciprocal of the mean of the absolute
+values of the observed data, useful for relative error scaling.
 }
 }
 \keyword{datasets}

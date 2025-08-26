@@ -1,58 +1,48 @@
 #' @title Optimizer Class
 #'
 #' @description Internal class for handling optimization in parameter identification.
-#' Provides a unified interface for different optimization algorithms.
+#' Provides a unified interface for different optimization algorithms and supports
+#' multiple methods for estimating parameter uncertainty.
 #'
+#' @keywords internal
 #' @noRd
 Optimizer <- R6::R6Class(
   "Optimizer",
   cloneable = FALSE,
   active = list(
-    #' @field algorithm A string specifying the optimization algorithm to use. See
+    #' @field algorithm Optimization algorithm name. Read only. See
     #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
     #' algorithms.
     algorithm = function(value) {
       if (missing(value)) {
-        private$.algorithm
+        private$.configuration$algorithm
       } else {
-        ospsuite.utils::validateIsCharacter(value)
-        ospsuite.utils::validateEnumValue(value, Algorithms)
-        private$.algorithm <- value
+        stop(messages$errorPropertyReadOnly("algorithm"))
       }
     },
-    #' @field ciMethod Confidence interval estimation method to be used. See
+    #' @field ciMethod Confidence interval estimation method. Read only. See
     #' [`ospsuite.parameteridentification::CIMethods`] for a list of supported
     #' methods.
     ciMethod = function(value) {
       if (missing(value)) {
-        private$.ciMethod
+        private$.configuration$ciMethod
       } else {
-        ospsuite.utils::validateIsCharacter(value)
-        ospsuite.utils::validateEnumValue(value, CIMethods)
-        private$.ciMethod <- value
+        stop(messages$errorPropertyReadOnly("ciMethod"))
       }
     },
-    #' @field modelCostField Name of the list field containing the model cost value.
+    #' @field modelCostField Name of the cost field returned in optimization.
+    #' Read only,
     modelCostField = function(value) {
       if (missing(value)) {
-        private$.modelCostField
+        private$.configuration$modelCostField
       } else {
-        ospsuite.utils::validateIsCharacter(value)
-        private$.modelCostField <- value
+        stop(messages$errorPropertyReadOnly("modelCostField"))
       }
     }
   ),
   private = list(
-    # Optimization algorithm name
-    .algorithm = NULL,
-    # Confidence interval estimation method name
-    .ciMethod = NULL,
-    # Field name in the objective function result that stores the model cost
-    .modelCostField = NULL,
-    # Optimizer-specific control options
-    .controlOptim = NULL,
-    # Confidence interval estimation-specific control options
-    .controlCI = NULL,
+    # `PIConfiguration` object instance
+    .configuration = NULL,
     # Print optimization status messages
     .verbose = NULL,
 
@@ -120,39 +110,67 @@ Optimizer <- R6::R6Class(
         }
       )
 
+      # Currently assumes SSR objective; extend with MLE logic as needed
+      # For SSR-based objective: Cov(θ) = σ² * (H / 2)^(-1), with σ² = SSR / (n - p)
+      # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
+      cost <- fn(p = par, modelCostField = NULL)
+      ssr <- purrr::pluck(
+        cost, "costVariables", "weightedSSR",
+        .default = 1
+      )
+      nObs <- purrr::pluck(
+        cost, "costVariables", "nObservations",
+        .default = length(par) + 1
+      )
+      dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
+      sigma2 <- ssr / dof # for MLE use: sigma2 = 1
+
       if (!is.null(hess)) {
-        # Invert Hessian to obtain FIM (covariance matrix)
-        fim <- tryCatch(
-          solve(hess / 2),
+        # Invert Hessian to obtain covariance matrix
+        covMat <- tryCatch(
+          {
+            sigma2 * solve(hess / 2)
+          },
           error = function(e) {
-            result$error <- messages$ciEstimationError(
-              "Fisher-Information Matrix calculation", e$message
-            )
+            if (is.null(result$error)) {
+              result$error <- messages$ciEstimationError(
+                "Covariance matrix calculation", e$message
+              )
+            }
             NULL
           }
         )
 
         # Compute standard errors and CIs
-        if (!is.null(fim)) {
-          result$details$hessian <- hess
-          result$se <- sqrt(diag(fim))
-          result$cv <- result$se / abs(par) * 100
-          result$lowerCI <- par - zScore * result$se
-          result$upperCI <- par + zScore * result$se
-
-          # Compute correlation matrix
-          corMat <- tryCatch(
-            {
-              fim / (result$se %o% result$se)
-            },
-            error = function(e) {
-              result$error <- messages$ciEstimationError(
-                "Correlation matrix calculation", e$message
-              )
-              NULL
-            }
+        if (!is.null(covMat)) {
+          # Check if covariance matrix is positive definite
+          eigenValues <- tryCatch(
+            eigen(covMat, symmetric = TRUE, only.values = TRUE)$values,
+            error = function(e) NA_real_
           )
-          result$details$corMat <- corMat
+
+          if (any(is.na(eigenValues)) || any(eigenValues <= 0)) {
+            result$error <- messages$ciEstimationError(
+              "Covariance matrix validity check",
+              "Covariance matrix is not positive definite."
+            )
+          } else {
+            result$details$hessian <- hess
+            result$details$covMat <- covMat
+            result$details$eigen <- eigenValues
+
+            result$sd <- sqrt(diag(covMat))
+            result$cv <- result$sd / abs(par)
+            result$lowerCI <- par - zScore * result$sd
+            result$upperCI <- par + zScore * result$sd
+
+            # Compute correlation matrix
+            corMat <- tryCatch(
+              covMat / (result$sd %o% result$sd),
+              error = function(e) NA_real_
+            )
+            result$details$corMat <- corMat
+          }
         }
       }
 
@@ -188,11 +206,13 @@ Optimizer <- R6::R6Class(
       }
 
       # Compute standard errors and CIs
+      names(result)[names(result) == "sd"] <- "se"
+      names(result)[names(result) == "cv"] <- "rse"
       result$lowerCI <- lowerCI
       result$upperCI <- upperCI
       result$se <- (upperCI - lowerCI) / (2 * zScore)
-      result$cv <- result$se / abs(par) * 100
-      result$details$paramHistory <- paramHistory
+      result$rse <- result$se / abs(par)
+      result$details$paramHistory <- as.data.frame(paramHistory)
 
       return(result)
     },
@@ -234,6 +254,9 @@ Optimizer <- R6::R6Class(
 
         costNew <- 0.5 * optimResult$value # fn(optimResult$par)
         paramHistory[[i]] <- c(p, i, newPar[p], costNew)
+
+        # Trigger .NET gc
+        ospsuite::clearMemory()
 
         # Stop when cost threshold is crossed
         if (costNew > costThreshold) break
@@ -281,17 +304,25 @@ Optimizer <- R6::R6Class(
         )
 
         bootstrapResults[i, ] <- optimResult$par
+
+        # Trigger .NET gc
+        ospsuite::clearMemory()
       }
 
-      bootstrapResults <- bootstrapResults[stats::complete.cases(bootstrapResults), ]
+      bootstrapResults <- bootstrapResults[
+        stats::complete.cases(bootstrapResults), ,
+        drop = FALSE
+      ]
 
       # Compute standard errors and CIs
       lowerLevel <- (1 - controlCI$confLevel) / 2
       upperLevel <- (1 + controlCI$confLevel) / 2
       result$lowerCI <- apply(bootstrapResults, 2, quantile, probs = lowerLevel)
       result$upperCI <- apply(bootstrapResults, 2, quantile, probs = upperLevel)
-      result$se <- apply(bootstrapResults, 2, sd)
-      result$cv <- result$se / abs(par) * 100
+      result$sd <- apply(bootstrapResults, 2, function(x) {
+        sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
+      })
+      result$cv <- result$sd / abs(par)
 
       # Compute correlation matrix
       result$details$bootstrapResults <- bootstrapResults
@@ -317,26 +348,33 @@ Optimizer <- R6::R6Class(
       return(par)
     },
 
-    # Converts the objective function to handle fixed parameters and extract modelCost
+    # Converts the objective function to handle fixed parameters and extract
+    # modelCost with dynamic overrides
     .preprocessFn = function(fn, fixedParams) {
       # If fn is already preprocessed, return it to prevent infinite recursion
       if (inherits(fn, "preprocessedFn")) {
         return(fn)
       }
 
-      wrappedFn <- function(p, ...) {
+      wrappedFn <- function(p, ..., modelCostField) {
         result <- fn(p, ...)
-        if (is.list(result)) {
-          if (!private$.modelCostField %in% names(result)) {
-            stop(messages$objectiveFnOutputError(private$.modelCostField))
-          }
-          return(purrr::pluck(result, private$.modelCostField))
+
+        if (missing(modelCostField)) {
+          modelCostField <- private$.configuration$modelCostField
         }
-        return(result)
+
+        if (is.null(modelCostField) || !is.list(result)) {
+          return(result)
+        }
+
+        if (!modelCostField %in% names(result)) {
+          stop(messages$objectiveFnOutputError(modelCostField))
+        }
+
+        return(purrr::pluck(result, modelCostField))
       }
 
       class(wrappedFn) <- "preprocessedFn"
-
       return(wrappedFn)
     },
 
@@ -348,17 +386,17 @@ Optimizer <- R6::R6Class(
         convergence = NULL,
         iterations = NULL,
         fnEvaluations = NULL,
-        algorithm = private$.algorithm,
+        algorithm = private$.configuration$algorithm,
         elapsed = NULL
       )
 
-      if (private$.algorithm == "HJKB") {
+      if (private$.configuration$algorithm == "HJKB") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
         baseResult$convergence <- optimResult$convergence == 0
         baseResult$iterations <- optimResult$niter
         baseResult$fnEvaluations <- optimResult$feval
-      } else if (private$.algorithm == "BOBYQA") {
+      } else if (private$.configuration$algorithm == "BOBYQA") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
         baseResult$convergence <- optimResult$convergence > 0
@@ -367,7 +405,7 @@ Optimizer <- R6::R6Class(
         }
         baseResult$iterations <- optimResult$iter
         baseResult$fnEvaluations <- optimResult$iter
-      } else if (private$.algorithm == "DEoptim") {
+      } else if (private$.configuration$algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
         relChange <- try(
@@ -393,12 +431,12 @@ Optimizer <- R6::R6Class(
     # Initialize confidence interval (CI) result list
     .initializeCIResult = function() {
       list(
-        se = NULL,
+        sd = NULL,
         cv = NULL,
         lowerCI = NULL,
         upperCI = NULL,
         error = NULL,
-        method = private$.ciMethod,
+        method = private$.configuration$ciMethod,
         elapsed = NULL,
         details = list()
       )
@@ -406,32 +444,15 @@ Optimizer <- R6::R6Class(
   ),
   public = list(
     #' @description Initialize an Optimizer instance for parameter estimation.
-    #' @param algorithm Character string specifying the optimization algorithm. See
-    #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
-    #' algorithms.
-    #' @param ciMethod Character string specifying the confidence interval
-    #' estimation method. See
-    #' [`ospsuite.parameteridentification::ciMethods`] for a list of supported
-    #' methods.
-    #' @param controlOptim Optional list with control settings for the optimizer.
-    #' @param controlCI Optional list with control settings for confidence interval
-    #' estimation.
-    #' @param modelCostField Optional character string specifying the field name
-    #' in objective function result storing model cost.
-    initialize = function(algorithm, ciMethod = "hessian", controlOptim = NULL,
-                          controlCI = NULL, modelCostField = NULL) {
-      ospsuite.utils::validateEnumValue(algorithm, Algorithms)
-      ospsuite.utils::validateEnumValue(ciMethod, CIMethods)
-      ospsuite.utils::validateIsCharacter(modelCostField, TRUE)
+    #'
+    #' @param configuration `PIConfiguration` for additional settings. For details
+    #' on creating a `PIConfiguration` object, see
+    #' [`ospsuite.parameteridentification::PIConfiguration`].
+    initialize = function(configuration) {
+      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
 
-      private$.algorithm <- algorithm
-      private$.ciMethod <- ciMethod
+      private$.configuration <- configuration
       private$.verbose <- TRUE
-
-      private$.controlOptim <- controlOptim %||% AlgorithmDefaults[[algorithm]]
-      private$.controlCI <- controlCI %||% CIDefaults[[ciMethod]]
-
-      private$.modelCostField <- modelCostField %||% "modelCost"
     },
 
     #' @description Run optimization process using the selected algorithm
@@ -458,26 +479,29 @@ Optimizer <- R6::R6Class(
       }
 
       fn <- private$.preprocessFn(fn)
+      algorithm <- private$.configuration$algorithm
+      algorithmOptions <- private$.configuration$algorithmOptions %||%
+        AlgorithmDefaults[[algorithm]]
 
-      optimizeFn <- switch(private$.algorithm,
+      optimizeFn <- switch(algorithm,
         "HJKB" = private$.runHJKB,
         "BOBYQA" = private$.runBOBYQA,
         "DEoptim" = private$.runDEoptim,
-        stop(messages$optimizationAlgorithm(private$.algorithm, TRUE))
+        stop(messages$optimizationAlgorithm(algorithm, error = TRUE))
       )
 
       if (private$.verbose) {
-        message(messages$optimizationAlgorithm(private$.algorithm, FALSE))
+        message(messages$optimizationAlgorithm(algorithm, par, FALSE))
       }
 
       startTime <- proc.time()
       rawResult <- optimizeFn(
-        par         = par,
-        fn          = fn,
-        lower       = lower,
-        upper       = upper,
-        control     = private$.controlOptim,
-        fixedParams = fixedParams
+        par          = par,
+        fn           = fn,
+        lower        = lower,
+        upper        = upper,
+        controlOptim = algorithmOptions,
+        fixedParams  = fixedParams
       )
       elapsedTime <- proc.time() - startTime
 
@@ -510,15 +534,18 @@ Optimizer <- R6::R6Class(
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
       }
 
-      optimizer <- optimizer %||% self
-      fn <- private$.preprocessFn(fn)
       private$.verbose <- FALSE
 
-      estimateCIFn <- switch(private$.ciMethod,
+      fn <- private$.preprocessFn(fn)
+      ciMethod <- private$.configuration$ciMethod
+      ciOptions <- private$.configuration$ciOptions %||% CIDefaults[[ciMethod]]
+      optimizer <- optimizer %||% self
+
+      estimateCIFn <- switch(ciMethod,
         "hessian" = private$.estimateHessianCI,
         "PL" = private$.estimateCIProfileLikelihood,
         "bootstrap" = private$.estimateBootstrapCI,
-        stop(messages$ciMethod(private$.ciMethod, TRUE))
+        stop(messages$ciMethod(ciMethod, error = TRUE))
       )
 
       allowedArgs <- names(formals(estimateCIFn))
@@ -527,17 +554,19 @@ Optimizer <- R6::R6Class(
         fn = fn,
         lower = lower,
         upper = upper,
-        controlCI = private$.controlCI,
+        controlCI = ciOptions,
         optimizer = optimizer
       )
       filteredArgs <- argsList[intersect(names(argsList), allowedArgs)]
 
+      message(messages$ciMethod(ciMethod, par, FALSE))
+
       startTime <- proc.time()
-      message(messages$ciMethod(private$.ciMethod))
       rawResult <- do.call(estimateCIFn, filteredArgs)
       elapsedTime <- proc.time() - startTime
 
       rawResult$elapsed <- elapsedTime[["elapsed"]]
+
       private$.verbose <- TRUE
 
       return(rawResult)

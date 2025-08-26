@@ -17,23 +17,36 @@ function value after each evaluation. Default is \code{FALSE}.}
 \item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for simulation
 runs. If \code{NULL}, default options are used.}
 
-\item{\code{objectiveFunctionOptions}}{Configures model fit evaluation settings,
-influencing error and fit metrics. For option details and impact on cost metrics,
-see \code{\link{ObjectiveFunctionSpecs}}. Defaults
-found in \code{\link{ObjectiveFunctionOptions}}.}
+\item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
+affecting error metrics and cost calculation. See \code{\link{ObjectiveFunctionSpecs}}
+and \code{\link{calculateCostMetrics}} for details. Defaults in \code{\link{ObjectiveFunctionOptions}}.}
 
-\item{\code{algorithm}}{A string specifying the optimization algorithm to use. See
+\item{\code{algorithm}}{Optimization algorithm name. See
 \code{\link{Algorithms}} for a list of supported
 algorithms. Defaults to \code{BOBYQA}.}
 
-\item{\code{algorithmOptions}}{A list of named parameters for algorithm-specific
-settings. Refer to \code{\link{AlgorithmOptions}}
-for default settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
-denotes the algorithm name). If \code{NULL}, the algorithm's default settings
-are applied.}
+\item{\code{ciMethod}}{Confidence interval estimation method. See
+\code{\link{CIMethods}} for available options.
+Defaults to \code{hessian}.}
 
-\item{\code{estimateCI}}{Boolean. If \code{TRUE}, will estimate confidence intervals
-after optimization algorithm completion.}
+\item{\code{algorithmOptions}}{Named list of settings specific to the selected
+algorithm.. Refer to \code{\link{AlgorithmOptions}}
+for default settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
+denotes the algorithm name). If \code{NULL}, algorithm's default settings are
+applied.}
+
+\item{\code{ciOptions}}{Named list of settings for the selected CI method.
+Refer to \code{\link{CIOptions}} for default
+settings per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the
+method name). If \code{NULL}, CI method's default settings are applied.}
+
+\item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
+automatically estimated after optimization. If \code{FALSE}, the step is
+skipped and can be triggered manually by calling the \code{estimateCI()}
+method on the \code{ParameterIdentification} object.}
+
+\item{\code{modelCostField}}{Read-only field name in the cost object used as the
+optimization target. Currently, only \code{modelCost} is supported.}
 }
 \if{html}{\out{</div>}}
 }
