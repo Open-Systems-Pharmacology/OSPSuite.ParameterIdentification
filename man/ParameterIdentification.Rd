@@ -5,21 +5,24 @@
 \alias{ParameterIdentification}
 \title{ParameterIdentification}
 \description{
-Executes optimization to find the best parameter values by comparing
-simulation results against observed data.
+Performs parameter estimation by fitting model simulations to
+observed data. Supports customizable optimization and confidence interval
+methods.
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{simulations}}{A named list of simulation objects, keyed by the IDs
+\item{\code{simulations}}{A named list of \code{Simulation} objects, keyed by the IDs
 of their root containers.}
 
-\item{\code{parameters}}{Read-only list of \code{PIParameters} objects for optimization.}
+\item{\code{parameters}}{A list of \code{PIParameters}, each representing a grouped
+set of model parameters to be optimized (read-only).}
 
-\item{\code{configuration}}{A \code{PIConfiguration} object instance.}
+\item{\code{configuration}}{A \code{PIConfiguration} object controlling algorithm,
+CI estimation, and objective function options.}
 
-\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects linking
-observed data to simulation outputs.}
+\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping observed
+datasets to simulated outputs.}
 }
 \if{html}{\out{</div>}}
 }
@@ -52,27 +55,30 @@ Initializes a \code{ParameterIdentification} instance.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{simulations}}{An object or a list of objects of class \code{Simulation}.
-Parameters of the simulation object will be varied and the results simulated.
-For creating \code{Simulation} objects, see \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation}}.}
+\item{\code{simulations}}{A \code{Simulation} or list of \code{Simulation} objects to be
+used for parameter estimation. Each simulation must contain the model
+parameters specified in \code{parameters}. Use \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}}
+to load simulation files.}
 
-\item{\code{parameters}}{An object or a list of objects of class \code{PIParameters}.
-These parameters will be varied. For creating \code{PIParameters} objects, refer to
-\code{\link{PIParameters}}.}
+\item{\code{parameters}}{A \code{PIParameters} or list of \code{PIParameters} objects
+specifying the model parameters to optimize. Each \code{PIParameters} object
+may group one or more underlying model parameters. See
+\code{\link{PIParameters}} for details.}
 
-\item{\code{outputMappings}}{List of objects of the class \code{PIOutputMapping}. Each
-object maps a model output (represented by a \code{Quantity}) with a set of
-observed data given as \code{XYData} objects. For guidance on creating \code{PIOutputMapping}
-objects, see \code{\link{PIOutputMapping}}.}
+\item{\code{outputMappings}}{A \code{PIOutputMapping} or list of \code{PIOutputMapping}
+objects mapping model outputs (represented by \code{Quantity} objects) to
+observed data. #' See \code{\link{PIOutputMapping}}
+for details.}
 
-\item{\code{configuration}}{(Optional) \code{PIConfiguration} for additional settings.
-Uses default if omitted. For details on creating a \code{PIConfiguration} object,
-see \code{\link{PIConfiguration}}.}
+\item{\code{configuration}}{(Optional) A \code{PIConfiguration} object specifying
+algorithm, CI method, and objective function settings. Defaults to a new
+configuration if omitted. See \code{\link{PIConfiguration}}
+for configuration options.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A new \code{ParameterIdentification} object.
+A \code{ParameterIdentification} object ready to run parameter estimation.
 Executes Parameter Identification
 }
 }
@@ -96,26 +102,27 @@ Estimate Confidence Intervals
 \if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
 \subsection{Method \code{estimateCI()}}{
-Manually computes confidence intervals for the optimized
-parameters using the method specified in \code{PIConfiguration}. This is
-intended for advanced use cases where \code{autoEstimateCI} was set to \code{FALSE}.
+Computes confidence intervals for the optimized parameters
+using the method defined in the associated \code{PIConfiguration}. Intended
+for advanced use when \code{autoEstimateCI} was set to \code{FALSE} during the
+initial run.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-A list with confidence interval results, including bounds, standard
-errors, and coefficient of variation.
-Plots Parameter Estimation Results
+The same \code{\link{PIResult}} object returned by the \code{run()} method,
+updated to include confidence interval estimates.
+Plot Parameter Estimation Results
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-plotResults"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-plotResults}{}}}
 \subsection{Method \code{plotResults()}}{
-Generates plots for each output mapping based on the current
-or provided parameter values. Simulations are executed with these parameters
-to visualize the estimation results.
+Re-runs model simulations using the current or specified
+parameter values and generates plots comparing predictions to observed
+data.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotResults(par = NULL)}\if{html}{\out{</div>}}
 }
@@ -129,12 +136,20 @@ to visualize the estimation results.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A list of \code{ggplot2} plots, one for each \code{PIOutputMapping}.
-Calculate Objective Function Values (OFV) on an n-Dimensional Grid
+A list of \code{ggplot2} plots (one per output mapping), showing:
+\itemize{
+\item Individual time profiles
+\item Observed vs. simulated values
+\item Residuals vs. time
+Perform a Parameter Grid Search
+}
 
 Generates a grid of parameter combinations, computes the OFV for each,
-and optionally sets the best result as the starting point for subsequent
-optimizations.
+and optionally sets the best result as the starting point for s subsequent
+optimization.
+
+Note: The resulting grid can be used to explore the parameter space or
+initialize better starting values.
 }
 }
 \if{html}{\out{<hr>}}
@@ -172,7 +187,8 @@ values to the best grid point. Default is \code{FALSE}.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A tibble with parameter values and their corresponding OFV.
+A tibble where each row is a parameter combination and the
+corresponding objective function value (\code{ofv}).
 Calculate Objective Function Value (OFV) Profiles
 
 Generates OFV profiles by varying each parameter independently while
@@ -197,8 +213,8 @@ holding others constant.
 \item{\code{par}}{Numeric vector of parameter values, one for each parameter.
 Defaults to current parameter values if \code{NULL}, invalid or mismatched.}
 
-\item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\% below
-\code{par} and \code{upper} is 10\% above \code{par}. Default is \code{0.1}.}
+\item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\%
+below \code{par} and \code{upper} is 10\% above \code{par}. Default is \code{0.1}.}
 
 \item{\code{totalEvaluations}}{Integer specifying the total number of grid
 points across each parameter profile. Default is 20.}
@@ -206,8 +222,9 @@ points across each parameter profile. Default is 20.}
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A list of tibbles, one per parameter, with columns for parameter
-values and OFVs (\code{ofv}).
+A list of tibbles, one for each parameter, showing how the
+objective function value (OFV) changes when varying that parameter while
+keeping the others fixed.
 }
 }
 \if{html}{\out{<hr>}}
