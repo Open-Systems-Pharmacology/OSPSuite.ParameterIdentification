@@ -9,7 +9,7 @@ and evaluation settings for parameter identification."><meta name="robots" conte
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,13 +25,14 @@ and evaluation settings for parameter identification."><meta name="robots" conte
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -41,7 +42,7 @@ and evaluation settings for parameter identification."><meta name="robots" conte
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>PIConfiguration</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/PIConfiguration.R" class="external-link"><code>R/PIConfiguration.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/PIConfiguration.R" class="external-link"><code>R/PIConfiguration.R</code></a></small>
       <div class="d-none name"><code>PIConfiguration.Rd</code></div>
     </div>
 
@@ -64,29 +65,48 @@ runs. If <code>NULL</code>, default options are used.</p></dd>
 
 
 <dt><code>objectiveFunctionOptions</code></dt>
-<dd><p>Configures model fit evaluation settings,
-influencing error and fit metrics. For option details and impact on cost metrics,
-see <code><a href="ObjectiveFunctionSpecs.html">ObjectiveFunctionSpecs</a></code>. Defaults
-found in <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>.</p></dd>
+<dd><p>Settings for model fit evaluation,
+affecting error metrics and cost calculation. See <code><a href="ObjectiveFunctionSpecs.html">ObjectiveFunctionSpecs</a></code>
+and <code>calculateCostMetrics</code> for details. Defaults in <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>.</p></dd>
 
 
 <dt><code>algorithm</code></dt>
-<dd><p>A string specifying the optimization algorithm to use. See
+<dd><p>Optimization algorithm name. See
 <code><a href="Algorithms.html">Algorithms</a></code> for a list of supported
 algorithms. Defaults to <code>BOBYQA</code>.</p></dd>
 
 
+<dt><code>ciMethod</code></dt>
+<dd><p>Confidence interval estimation method. See
+<code><a href="CIMethods.html">CIMethods</a></code> for available options.
+Defaults to <code>hessian</code>.</p></dd>
+
+
 <dt><code>algorithmOptions</code></dt>
-<dd><p>A list of named parameters for algorithm-specific
-settings. Refer to <code><a href="AlgorithmOptions.html">AlgorithmOptions</a></code>
+<dd><p>Named list of settings specific to the selected
+algorithm.. Refer to <code><a href="AlgorithmOptions.html">AlgorithmOptions</a></code>
 for default settings per algorithm (e.g., <code>AlgorithmOptions_XYZ</code> where <code>XYZ</code>
-denotes the algorithm name). If <code>NULL</code>, the algorithm's default settings
-are applied.</p></dd>
+denotes the algorithm name). If <code>NULL</code>, algorithm's default settings are
+applied.</p></dd>
 
 
-<dt><code>estimateCI</code></dt>
-<dd><p>Boolean. If <code>TRUE</code>, will estimate confidence intervals
-after optimization algorithm completion.</p></dd>
+<dt><code>ciOptions</code></dt>
+<dd><p>Named list of settings for the selected CI method.
+Refer to <code><a href="CIOptions.html">CIOptions</a></code> for default
+settings per method (e.g., <code>CIOptions_XYZ</code> where <code>XYZ</code> corresponds to the
+method name). If <code>NULL</code>, CI method's default settings are applied.</p></dd>
+
+
+<dt><code>autoEstimateCI</code></dt>
+<dd><p>Logical. If <code>TRUE</code>, confidence intervals are
+automatically estimated after optimization. If <code>FALSE</code>, the step is
+skipped and can be triggered manually by calling the <code>estimateCI()</code>
+method on the <code>ParameterIdentification</code> object.</p></dd>
+
+
+<dt><code>modelCostField</code></dt>
+<dd><p>Read-only field name in the cost object used as the
+optimization target. Currently, only <code>modelCost</code> is supported.</p></dd>
 
 
 </dl><p></p></div>
@@ -145,11 +165,11 @@ after optimization algorithm completion.</p></dd>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

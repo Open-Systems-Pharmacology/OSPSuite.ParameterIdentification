@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/LICENSE-text.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/error-calculation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/optimization-algorithms.html</loc></url>
@@ -16,6 +17,7 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIConfiguration.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ParameterIdentification.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ScalingOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-applyLogTransformation.html</loc></url>

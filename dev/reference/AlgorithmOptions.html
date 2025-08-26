@@ -9,7 +9,7 @@ These algorithms are configured via the PIConfiguration class."><meta name="robo
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,13 +25,14 @@ These algorithms are configured via the PIConfiguration class."><meta name="robo
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -41,7 +42,7 @@ These algorithms are configured via the PIConfiguration class."><meta name="robo
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Algorithm Options for Optimization Algorithms</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
       <div class="d-none name"><code>AlgorithmOptions.Rd</code></div>
     </div>
 
@@ -69,21 +70,21 @@ These algorithms are configured via the <code>PIConfiguration</code> class.</p>
     <h2 id="algorithmoptions-hjkb">AlgorithmOptions_HJKB<a class="anchor" aria-label="anchor" href="#algorithmoptions-hjkb"></a></h2>
 
 
-<p>Default options for the HJKB algorithm. See <code><a href="https://rdrr.io/pkg/dfoptim/man/hookejeeves.html" class="external-link">dfoptim::hjkb()</a></code> for more details
+<p>Default options for the <code>HJKB</code> algorithm. See <code><a href="https://rdrr.io/pkg/dfoptim/man/hookejeeves.html" class="external-link">dfoptim::hjkb()</a></code> for more details
 on the options.</p>
     </div>
     <div class="section level2">
     <h2 id="algorithmoptions-bobyqa">AlgorithmOptions_BOBYQA<a class="anchor" aria-label="anchor" href="#algorithmoptions-bobyqa"></a></h2>
 
 
-<p>Default options for the BOBYQA algorithm. See <code><a href="https://astamm.github.io/nloptr/reference/nl.opts.html" class="external-link">nloptr::nl.opts()</a></code> for more
+<p>Default options for the <code>BOBYQA</code> algorithm. See <code><a href="https://astamm.github.io/nloptr/reference/nl.opts.html" class="external-link">nloptr::nl.opts()</a></code> for more
 details on the options.</p>
     </div>
     <div class="section level2">
     <h2 id="algorithmoptions-deoptim">AlgorithmOptions_DEoptim<a class="anchor" aria-label="anchor" href="#algorithmoptions-deoptim"></a></h2>
 
 
-<p>Default options for the DEoptim algorithm. See <code><a href="https://rdrr.io/pkg/DEoptim/man/DEoptim.control.html" class="external-link">DEoptim::DEoptim.control()</a></code>
+<p>Default options for the <code>DEoptim</code> algorithm. See <code><a href="https://rdrr.io/pkg/DEoptim/man/DEoptim.control.html" class="external-link">DEoptim::DEoptim.control()</a></code>
 for more details on the options.</p>
     </div>
 
@@ -92,11 +93,11 @@ for more details on the options.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

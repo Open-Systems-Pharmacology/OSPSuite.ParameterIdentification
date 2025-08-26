@@ -11,7 +11,7 @@ for tailoring how model fit is assessed, configured within PIConfiguration."><me
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,13 +27,14 @@ for tailoring how model fit is assessed, configured within PIConfiguration."><me
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -43,7 +44,7 @@ for tailoring how model fit is assessed, configured within PIConfiguration."><me
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Objective Function Specifications</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
       <div class="d-none name"><code>ObjectiveFunctionSpecs.Rd</code></div>
     </div>
 
@@ -64,12 +65,18 @@ for tailoring how model fit is assessed, configured within <code>PIConfiguration
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Includes:</p><ul><li><p><code>objectiveFunctionType</code>: Types of error calculations ("lsq" for least squares, "m3" for method 3).</p></li>
-<li><p><code>residualWeightingMethod</code>: Methods for weighting residuals ("none", "std", "mean", "error").</p></li>
-<li><p><code>robustMethod</code>: Approaches for robust outlier handling ("none", "huber", "bisquare").</p></li>
-<li><p><code>scaleVar</code>: Boolean for variance scaling (TRUE, FALSE).</p></li>
-<li><p><code>linScaleCV</code>: Coefficient of variation for linear scale, with numeric range 1e-9 to 1.</p></li>
-<li><p><code>logScaleSD</code>: Standard deviation for log scale, with numeric range 1e-9 to Inf.</p></li>
+    <p>Includes:</p><ul><li><p><strong><code>objectiveFunctionType</code></strong> – Type of error calculation. Allowed values:
+<code>lsq</code> (least squares), <code>m3"</code> (M3 method).</p></li>
+<li><p><strong><code>residualWeightingMethod</code></strong> – Method for weighting residuals. Allowed values:
+<code>none</code>, <code>std</code>, <code>mean</code>, <code>error</code>.</p></li>
+<li><p><strong><code>robustMethod</code></strong> – Approach for robust outlier handling. Allowed values:
+<code>none</code>, <code>huber</code>, <code>bisquare</code>.</p></li>
+<li><p><strong><code>scaleVar</code></strong> – Boolean for variance scaling. Allowed values: <code>TRUE</code>, <code>FALSE</code>.</p></li>
+<li><p><strong><code>scaling</code></strong> – Scaling type. Allowed values: <code>lin</code> (linear), <code>log</code> (logarithmic).</p></li>
+<li><p><strong><code>linScaleCV</code></strong> – Coefficient of variation for linear scaling. Numeric
+range: <code>1e-9</code> to <code>1</code>.</p></li>
+<li><p><strong><code>logScaleSD</code></strong> – Standard deviation for log scaling. Numeric range: <code>1e-9</code>
+to <code>Inf</code>.</p></li>
 </ul><p>These options directly influence the optimization process by defining how
 discrepancies between simulated and observed data are quantified and managed.</p>
     </div>
@@ -79,11 +86,11 @@ discrepancies between simulated and observed data are quantified and managed.</p
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>
