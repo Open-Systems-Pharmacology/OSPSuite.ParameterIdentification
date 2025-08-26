@@ -24,7 +24,8 @@ Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
 Description: R package for performing parameter identification for the 
     Open Systems Pharmacology models.
 License: GPL-2 | file LICENSE
-URL: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification
+URL: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification,
+     https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification
 BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues
 Encoding: UTF-8
 LazyData: true

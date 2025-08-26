@@ -1,15 +1,16 @@
 #' @title ParameterIdentification
 #' @docType class
-#' @description Executes optimization to find the best parameter values by comparing
-#' simulation results against observed data.
-#' @import R6 ospsuite.utils
+#' @description
+#' Performs parameter estimation by fitting model simulations to
+#' observed data. Supports customizable optimization and confidence interval
+#' methods.
 #' @export
 #' @format NULL
 ParameterIdentification <- R6::R6Class(
   "ParameterIdentification",
   cloneable = FALSE,
   active = list(
-    #' @field simulations A named list of simulation objects, keyed by the IDs
+    #' @field simulations A named list of `Simulation` objects, keyed by the IDs
     #' of their root containers.
     simulations = function(value) {
       if (missing(value)) {
@@ -19,7 +20,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field parameters Read-only list of `PIParameters` objects for optimization.
+    #' @field parameters A list of `PIParameters`, each representing a grouped
+    #' set of model parameters to be optimized (read-only).
     parameters = function(value) {
       if (missing(value)) {
         private$.piParameters
@@ -28,7 +30,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field configuration A `PIConfiguration` object instance.
+    #' @field configuration A `PIConfiguration` object controlling algorithm,
+    #' CI estimation, and objective function options.
     configuration = function(value) {
       if (missing(value)) {
         private$.configuration
@@ -38,8 +41,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field outputMappings A list of `PIOutputMapping` objects linking
-    #' observed data to simulation outputs.
+    #' @field outputMappings A list of `PIOutputMapping` objects mapping observed
+    #' datasets to simulated outputs.
     outputMappings = function(value) {
       if (missing(value)) {
         private$.outputMappings
@@ -69,7 +72,7 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
-    # Last optimization result
+    # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
@@ -86,9 +89,10 @@ ParameterIdentification <- R6::R6Class(
 
     # Batch Initialization for Simulations
     #
-    # Initializes simulation batches, preparing them for parameter
-    # identification by clearing outputs, updating schemas with observed data, and setting
-    # variable parameters. Optimizes repeated calls by checking initialization necessity.
+    # Initializes simulation batches, preparing them for parameter identification
+    # by clearing outputs, updating schemas with observed data, and setting
+    # variable parameters. Optimizes repeated calls by checking initialization
+    # necessity.
     .batchInitialization = function() {
       # If the flag is already set to FALSE, short-cuts the execution of the function
       # This way, the function call be called repeatedly with minimal overhead
@@ -534,20 +538,24 @@ ParameterIdentification <- R6::R6Class(
   public = list(
     #' @description Initializes a `ParameterIdentification` instance.
     #'
-    #' @param simulations An object or a list of objects of class `Simulation`.
-    #' Parameters of the simulation object will be varied and the results simulated.
-    #' For creating `Simulation` objects, see [`ospsuite::loadSimulation`].
-    #' @param parameters An object or a list of objects of class `PIParameters`.
-    #' These parameters will be varied. For creating `PIParameters` objects, refer to
-    #' [`ospsuite.parameteridentification::PIParameters`].
-    #' @param configuration (Optional) `PIConfiguration` for additional settings.
-    #' Uses default if omitted. For details on creating a `PIConfiguration` object,
-    #' see [`ospsuite.parameteridentification::PIConfiguration`].
-    #' @param outputMappings List of objects of the class `PIOutputMapping`. Each
-    #' object maps a model output (represented by a `Quantity`) with a set of
-    #' observed data given as `XYData` objects. For guidance on creating `PIOutputMapping`
-    #' objects, see [`ospsuite.parameteridentification::PIOutputMapping`].
-    #' @return A new `ParameterIdentification` object.
+    #' @param simulations A `Simulation` or list of `Simulation` objects to be
+    #' used for parameter estimation. Each simulation must contain the model
+    #' parameters specified in `parameters`. Use [`ospsuite::loadSimulation()`]
+    #' to load simulation files.
+    #' @param parameters A `PIParameters` or list of `PIParameters` objects
+    #' specifying the model parameters to optimize. Each `PIParameters` object
+    #' may group one or more underlying model parameters. See
+    #' [`ospsuite.parameteridentification::PIParameters`] for details.
+    #' @param configuration (Optional) A `PIConfiguration` object specifying
+    #' algorithm, CI method, and objective function settings. Defaults to a new
+    #' configuration if omitted. See [`ospsuite.parameteridentification::PIConfiguration`]
+    #' for configuration options.
+    #' @param outputMappings A `PIOutputMapping` or list of `PIOutputMapping`
+    #' objects mapping model outputs (represented by `Quantity` objects) to
+    #' observed data. #' See [`ospsuite.parameteridentification::PIOutputMapping`]
+    #' for details.
+    #'
+    #' @return A `ParameterIdentification` object ready to run parameter estimation.
     initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
@@ -647,11 +655,12 @@ ParameterIdentification <- R6::R6Class(
       return(piResult)
     },
 
-    #' Estimates Confidence Intervals
+    #' Estimate Confidence Intervals
     #'
-    #' @description Manually computes confidence intervals for the optimized
-    #' parameters using the method specified in `PIConfiguration`. This is
-    #' intended for advanced use cases where `autoEstimateCI` was set to `FALSE`.
+    #' @description Computes confidence intervals for the optimized parameters
+    #' using the method defined in the associated `PIConfiguration`. Intended
+    #' for advanced use when `autoEstimateCI` was set to `FALSE` during the
+    #' initial run.
     #'
     #' @return The same [`PIResult`] object returned by the `run()` method,
     #' updated to include confidence interval estimates.
@@ -708,15 +717,18 @@ ParameterIdentification <- R6::R6Class(
       return(piResult)
     },
 
-    #' Plots Parameter Estimation Results
+    #' Plot Parameter Estimation Results
     #'
-    #' @description Generates plots for each output mapping based on the current
-    #' or provided parameter values. Simulations are executed with these parameters
-    #' to visualize the estimation results.
+    #' @description Re-runs model simulations using the current or specified
+    #' parameter values and generates plots comparing predictions to observed
+    #' data.
     #'
     #' @param par Optional parameter values for simulations, in the order of
     #' `ParameterIdentification$parameters`. Use current values if `NULL`.
-    #' @return A list of `ggplot2` plots, one for each `PIOutputMapping`.
+    #' @return A list of `ggplot2` plots (one per output mapping), showing:
+    #' - Individual time profiles
+    #' - Observed vs. simulated values
+    #' - Residuals vs. time
     plotResults = function(par = NULL) {
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
@@ -758,11 +770,14 @@ ParameterIdentification <- R6::R6Class(
       return(multiPlot)
     },
 
-    #' Calculate Objective Function Values (OFV) on an n-Dimensional Grid
+    #' Perform a Parameter Grid Search
     #'
     #' Generates a grid of parameter combinations, computes the OFV for each,
-    #' and optionally sets the best result as the starting point for subsequent
-    #' optimizations.
+    #' and optionally sets the best result as the starting point for s subsequent
+    #' optimization.
+    #'
+    #' Note: The resulting grid can be used to explore the parameter space or
+    #' initialize better starting values.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
     #' `PIParameter` minimum values.
@@ -775,7 +790,8 @@ ParameterIdentification <- R6::R6Class(
     #' @param setStartValue Logical. If `TRUE`, updates `PIParameter` starting
     #' values to the best grid point. Default is `FALSE`.
     #'
-    #' @return A tibble with parameter values and their corresponding OFV.
+    #' @return A tibble where each row is a parameter combination and the
+    #' corresponding objective function value (`ofv`).
     gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
                           totalEvaluations = 50, setStartValue = FALSE) {
       ospsuite.utils::validateIsNumeric(lower, nullAllowed = TRUE)
@@ -867,13 +883,14 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @param par Numeric vector of parameter values, one for each parameter.
     #' Defaults to current parameter values if `NULL`, invalid or mismatched.
-    #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10% below
-    #' `par` and `upper` is 10% above `par`. Default is `0.1`.
+    #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10%
+    #' below `par` and `upper` is 10% above `par`. Default is `0.1`.
     #' @param totalEvaluations Integer specifying the total number of grid
     #' points across each parameter profile. Default is 20.
     #'
-    #' @return A list of tibbles, one per parameter, with columns for parameter
-    #' values and OFVs (`ofv`).
+    #' @return A list of tibbles, one for each parameter, showing how the
+    #' objective function value (OFV) changes when varying that parameter while
+    #' keeping the others fixed.
     calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
       ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(boundFactor)
