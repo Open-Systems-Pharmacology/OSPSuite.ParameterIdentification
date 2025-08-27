@@ -60,6 +60,7 @@ articles:
 - title: Details
   navbar: Details
   contents:
+  - data-mapping
   - optimization-algorithms
   - confidence-intervals
   - error-calculation
