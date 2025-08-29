@@ -72,6 +72,8 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
+    # Cached unit converted observed data
+    .obsDataCache = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from last objective function evaluation
@@ -267,6 +269,9 @@ ParameterIdentification <- R6::R6Class(
           private$.gprModels,
           bootstrapSeed
         )
+
+        # Reset cached observed data
+        private$.obsDataCache <- NULL
       }
 
       return(private$.outputMappings)
@@ -327,11 +332,31 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
 
+      if (is.null(private$.obsCache)) {
+        private$.obsDataCache <- vector("list", length(outputMappings))
+      }
+
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
-        # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+        # Cache unit conversion: observed rows are constant, simulated rows change
+        if (is.null(private$.obsDataCache[[idx]])) {
+          # First call: convert all rows once, cache observed in base units
+          obsVsPredDf <- obsVsPredList[[idx]]$toDataFrame()
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredDf)
+          private$.obsDataCache[[idx]] <- dplyr::filter(
+            obsVsPredDf, dataType == "observed"
+          )
+        } else {
+          # Subsequent calls: get fresh simulated subset only
+          simDf <- dplyr::filter(
+            obsVsPredList[[idx]]$toDataFrame(), dataType == "simulated"
+          )
+          obsVsPredDf <- dplyr::bind_rows(simDf, private$.obsDataCache[[idx]])
+          # Safety, will return immediately if units are converted
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredDf)
+        }
+
         # Apply LLOQ handling for LSQ
         if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
           # replace values < LLOQ with LLOQ/2 in simulated data
@@ -621,6 +646,8 @@ ParameterIdentification <- R6::R6Class(
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
+      # Reset cached observed data
+      private$.obsDataCache <- NULL
 
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()
