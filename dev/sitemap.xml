@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/LICENSE-text.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/data-mapping.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/error-calculation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/optimization-algorithms.html</loc></url>
