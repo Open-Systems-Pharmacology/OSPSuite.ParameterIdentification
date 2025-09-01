@@ -332,7 +332,7 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
 
-      if (is.null(private$.obsCache)) {
+      if (is.null(private$.obsDataCache)) {
         private$.obsDataCache <- vector("list", length(outputMappings))
       }
 
