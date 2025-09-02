@@ -25,6 +25,7 @@
 - Confidence interval estimation can be disabled by setting `piConfiguration$autoEstimateCI <- FALSE`; it can then be run explicitly with `ParameterIdentification$estimateCI()` (#196).
 - New vignette on confidence intervals, covering available methods, configuration, and result inspection (#198).
 - New vignette on data mapping, including adding data weights and set data transformation (#199).
+- `PIResult` stores `costDetails` from the best (minimum modelCost) evaluation rather than the last, ensuring correct output when runs are limited or stop early (#206).
 
 
 # ospsuite.parameteridentification 2.0.2
