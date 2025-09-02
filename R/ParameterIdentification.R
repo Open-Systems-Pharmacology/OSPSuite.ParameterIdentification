@@ -339,21 +339,33 @@ ParameterIdentification <- R6::R6Class(
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
-        # Cache unit conversion: observed rows are constant, simulated rows change
-        if (is.null(private$.obsDataCache[[idx]])) {
-          # First call: convert all rows once, cache observed in base units
-          obsVsPredDf <- obsVsPredList[[idx]]$toDataFrame()
-          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredDf)
-          private$.obsDataCache[[idx]] <- dplyr::filter(
-            obsVsPredDf, dataType == "observed"
+
+        cache <- private$.obsDataCache[[idx]]
+
+        if (is.null(cache) || is.null(cache$units)) {
+          # First call or units not lockable: : convert to current simulated units,
+
+          df0 <- obsVsPredList[[idx]]$toDataFrame()
+          converted <- .convertUnitsToSource(df0, dataType = "simulated")
+          private$.obsDataCache[[idx]] <- list(
+            observed = dplyr::filter(converted$data, dataType == "observed"),
+            units    = converted$units
           )
+          obsVsPredDf <- converted$data
         } else {
-          # Subsequent calls: get fresh simulated subset only
-          simDf <- dplyr::filter(
-            obsVsPredList[[idx]]$toDataFrame(), dataType == "simulated"
+          # Fast path with locked units: combine fresh simulated with cached observed
+          df0   <- obsVsPredList[[idx]]$toDataFrame()
+          simDf <- df0[df0$dataType == "simulated", , drop = FALSE]
+
+          obsVsPredDf <- dplyr::bind_rows(
+            simDf, cache$observed
           )
-          obsVsPredDf <- dplyr::bind_rows(simDf, private$.obsDataCache[[idx]])
-          # Safety, will return immediately if units are converted
+          yErrUnit <- unique(stats::na.omit(obsVsPredDf$yErrorUnit))
+          if (length(yErrUnit) == 1L) {
+            obsVsPredDf$yErrorUnit[is.na(obsVsPredDf$yErrorUnit)] <- yErrUnit[[1]]
+          }
+
+          # Converter will return early if units already aligned
           obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredDf)
         }
 
@@ -363,7 +375,7 @@ ParameterIdentification <- R6::R6Class(
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
             obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
-              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+                           obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
           }
         }
 
