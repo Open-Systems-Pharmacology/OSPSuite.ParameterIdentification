@@ -60,6 +60,18 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
   expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
 })
 
+test_that("run() stores best running cost in costDetails", {
+  piTask <- createPiTask()
+  piTask$configuration$algorithm <- "BOBYQA"
+  piTask$configuration$algorithmOptions <- list(maxeval = 3)
+  piTask$configuration$autoEstimateCI <- FALSE
+
+  suppressMessages(result <- piTask$run())
+  resultList <- result$toList()
+
+  expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
+})
+
 
 # HJBK Algorithm
 

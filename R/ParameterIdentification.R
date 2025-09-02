@@ -74,6 +74,8 @@ ParameterIdentification <- R6::R6Class(
     .savedSimulationState = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
+    # Stores full cost summary from the best objective function evaluation
+    .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
     # Number of function evaluations
@@ -384,6 +386,20 @@ ParameterIdentification <- R6::R6Class(
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
       private$.lastCostSummary <- runningCost
 
+      # Evaluate running cost
+      costField <- private$.configuration$modelCostField
+      currCost  <- runningCost[[costField]]
+      bestCost <- if (is.null(private$.bestCostSummary)) {
+        Inf
+      } else {
+        private$.bestCostSummary[[costField]]
+      }
+
+      # Only overwrite when strictly better
+      if (is.finite(currCost) && currCost < bestCost) {
+        private$.bestCostSummary <- runningCost
+      }
+
       #  Optionally print evaluation feedback
       if (private$.configuration$printEvaluationFeedback) {
         cat(
@@ -646,7 +662,7 @@ ParameterIdentification <- R6::R6Class(
         piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = ciResult,
-          costDetails = private$.lastCostSummary,
+          costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )
@@ -709,7 +725,7 @@ ParameterIdentification <- R6::R6Class(
       piResult <- PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
-        costDetails = private$.lastCostSummary,
+        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
