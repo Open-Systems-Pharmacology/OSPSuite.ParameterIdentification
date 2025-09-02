@@ -24,7 +24,9 @@
 - Optimization and CI estimation validated against PK-Sim results for the Aciclovir model, confirming correctness of estimates (#193).
 - Confidence interval estimation can be disabled by setting `piConfiguration$autoEstimateCI <- FALSE`; it can then be run explicitly with `ParameterIdentification$estimateCI()` (#196).
 - New vignette on confidence intervals, covering available methods, configuration, and result inspection (#198).
+- New vignette on data mapping, including adding data weights and set data transformation (#199).
 - Improved performance of `.objectiveFunction()` by caching unit-converted observed data (#202).
+
 
 # ospsuite.parameteridentification 2.0.2
 
