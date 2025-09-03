@@ -60,6 +60,16 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
   expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
 })
 
+test_that("run() works when simulation output intervals are cleared", {
+  piTask <- createPiTask()
+  piTask$configuration$algorithm <- "BOBYQA"
+  piTask$configuration$algorithmOptions <- list(maxeval = 1)
+  piTask$configuration$autoEstimateCI <- FALSE
+  piTask$configuration$clearSimulationOutputIntervals <- TRUE
+  suppressMessages(
+    expect_no_error(piTask$run())
+  )
+})
 
 # HJBK Algorithm
 
