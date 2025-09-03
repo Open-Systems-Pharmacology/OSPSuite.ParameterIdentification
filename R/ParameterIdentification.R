@@ -72,6 +72,8 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
+    # Cached unit converted observed data
+    .obsDataCache = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from last objective function evaluation
@@ -267,6 +269,9 @@ ParameterIdentification <- R6::R6Class(
           private$.gprModels,
           bootstrapSeed
         )
+
+        # Reset cached observed data
+        private$.obsDataCache <- NULL
       }
 
       return(private$.outputMappings)
@@ -327,18 +332,50 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
 
+      if (is.null(private$.obsDataCache)) {
+        private$.obsDataCache <- vector("list", length(outputMappings))
+      }
+
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
-        # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+
+        cache <- private$.obsDataCache[[idx]]
+
+        if (is.null(cache) || is.null(cache$units)) {
+          # First call or units not lockable: : convert to current simulated units,
+
+          df0 <- obsVsPredList[[idx]]$toDataFrame()
+          converted <- .convertUnitsToSource(df0, dataType = "simulated")
+          private$.obsDataCache[[idx]] <- list(
+            observed = dplyr::filter(converted$data, dataType == "observed"),
+            units    = converted$units
+          )
+          obsVsPredDf <- converted$data
+        } else {
+          # Fast path with locked units: combine fresh simulated with cached observed
+          df0   <- obsVsPredList[[idx]]$toDataFrame()
+          simDf <- df0[df0$dataType == "simulated", , drop = FALSE]
+
+          obsVsPredDf <- dplyr::bind_rows(
+            simDf, cache$observed
+          )
+          yErrUnit <- unique(stats::na.omit(obsVsPredDf$yErrorUnit))
+          if (length(yErrUnit) == 1L) {
+            obsVsPredDf$yErrorUnit[is.na(obsVsPredDf$yErrorUnit)] <- yErrUnit[[1]]
+          }
+
+          # Converter will return early if units already aligned
+          obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredDf)
+        }
+
         # Apply LLOQ handling for LSQ
         if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
           # replace values < LLOQ with LLOQ/2 in simulated data
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
             obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
-              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+                           obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
           }
         }
 
@@ -621,6 +658,8 @@ ParameterIdentification <- R6::R6Class(
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
       private$.gridSearchFlag <- FALSE
+      # Reset cached observed data
+      private$.obsDataCache <- NULL
 
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()
