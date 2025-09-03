@@ -136,7 +136,9 @@ ParameterIdentification <- R6::R6Class(
 
         # Clear output intervals and output quantities of all simulations
         for (simulation in private$.simulations) {
-          ospsuite::clearOutputIntervals(simulation)
+          if (private$.configuration$clearSimulationOutputIntervals) {
+            ospsuite::clearOutputIntervals(simulation)
+          }
           ospsuite::clearOutputs(simulation)
         }
 
