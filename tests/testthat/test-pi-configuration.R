@@ -12,6 +12,7 @@ test_that("Initialization sets default values correctly", {
   piConfiguration <- PIConfiguration$new()
   # expect_false(piConfiguration$simulateSteadyState)
   # expect_equal(piConfiguration$steadyStateTime, 1000)
+  expect_false(piConfiguration$clearSimulationOutputIntervals)
   expect_false(piConfiguration$printEvaluationFeedback)
   expect_equal(
     piConfiguration$objectiveFunctionOptions$objectiveFunctionType,

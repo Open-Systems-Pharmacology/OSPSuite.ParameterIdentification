@@ -56,6 +56,19 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
+    #' @field clearSimulationOutputIntervals
+    #' Logical. If TRUE, all simulation output intervals are cleared before adding
+    #' outputs and observed time points. This can reduce memory usage but may skip
+    #' event or dose triggers between observations. Default: FALSE.
+    clearSimulationOutputIntervals = function(value) {
+        if (missing(value)) {
+          private$.clearSimulationOutputIntervals
+        } else {
+          ospsuite.utils::validateIsLogical(value)
+          private$.clearSimulationOutputIntervals <- value
+        }
+      },
+
     #' @field objectiveFunctionOptions Settings for model fit evaluation,
     #' affecting error metrics and cost calculation. See [`ObjectiveFunctionSpecs`]
     #' and [`calculateCostMetrics`] for details. Defaults in [`ObjectiveFunctionOptions`].
@@ -146,6 +159,7 @@ PIConfiguration <- R6::R6Class(
     .steadyStateTime = NULL,
     .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
+    .clearSimulationOutputIntervals = NULL,
     .objectiveFunctionOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL,
@@ -159,6 +173,7 @@ PIConfiguration <- R6::R6Class(
     #' @return A new `PIConfiguration` object.
     initialize = function() {
       private$.simulateSteadyState <- FALSE
+      private$.clearSimulationOutputIntervals = FALSE
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
