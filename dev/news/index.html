@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9009</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.0.2.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,8 @@
 <li>Confidence interval estimation can be disabled by setting <code>piConfiguration$autoEstimateCI &lt;- FALSE</code>; it can then be run explicitly with <code>ParameterIdentification$estimateCI()</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/196" class="external-link">#196</a>).</li>
 <li>New vignette on confidence intervals, covering available methods, configuration, and result inspection (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/198" class="external-link">#198</a>).</li>
 <li>New vignette on data mapping, including adding data weights and set data transformation (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/199" class="external-link">#199</a>).</li>
+<li>
+<code>PIResult</code> stores <code>costDetails</code> from the best (minimum modelCost) evaluation rather than the last, ensuring correct output when runs are limited or stop early (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/206" class="external-link">#206</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">
