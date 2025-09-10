@@ -1,6 +1,8 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/404.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/LICENSE-text.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/confidence-intervals.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/data-mapping.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/error-calculation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/optimization-algorithms.html</loc></url>
@@ -10,14 +12,16 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/news/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/Algorithms.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIMethods.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionSpecs.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIConfiguration.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIOutputMapping.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIParameters.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIResult.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ParameterIdentification.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ScalingOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/calculateCostMetrics.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-applyLogTransformation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateBisquareWeights.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateCensoredContribution.html</loc></url>

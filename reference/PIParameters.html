@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,13 +23,15 @@
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/data-mapping.html">Data mapping and weights</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -39,7 +41,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>PIParameters</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/PIParameters.R" class="external-link"><code>R/PIParameters.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/PIParameters.R" class="external-link"><code>R/PIParameters.R</code></a></small>
       <div class="d-none name"><code>PIParameters.Rd</code></div>
     </div>
 
@@ -48,10 +50,6 @@
     </div>
 
 
-    <div class="section level2">
-    <h2 id="super-class">Super class<a class="anchor" aria-label="anchor" href="#super-class"></a></h2>
-    <p><code><a href="https://www.open-systems-pharmacology.org/OSPSuite.RUtils/reference/Printable.html" class="external-link">ospsuite.utils::Printable</a></code> -&gt; <code>PIParameters</code></p>
-    </div>
     <div class="section level2">
     <h2 id="active-bindings">Active bindings<a class="anchor" aria-label="anchor" href="#active-bindings"></a></h2>
     <p></p><div class="r6-active-bindings"><dl><dt><code>parameters</code></dt>
@@ -90,6 +88,7 @@ in units specified by <code>PIParameters$unit</code>.</p></dd>
 
 <ul><li><p><a href="#method-PIParameters-new"><code>PIParameters$new()</code></a></p></li>
 <li><p><a href="#method-PIParameters-setValue"><code>PIParameters$setValue()</code></a></p></li>
+<li><p><a href="#method-PIParameters-toDataFrame"><code>PIParameters$toDataFrame()</code></a></p></li>
 <li><p><a href="#method-PIParameters-print"><code>PIParameters$print()</code></a></p></li>
 <li><p><a href="#method-PIParameters-clone"><code>PIParameters$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-PIParameters-new"></a><div class="section">
@@ -132,10 +131,31 @@ Value is specified in units of <code>PIParameters$unit</code>.</p><div class="se
 </dl><p></p></div>
 </div>
 
+</div><p></p><hr><a id="method-PIParameters-toDataFrame"></a><div class="section">
+<h3 id="method-todataframe-">Method <code>toDataFrame()</code><a class="anchor" aria-label="anchor" href="#method-todataframe-"></a></h3>
+<p>Export parameter metadata and configuration to a data frame.
+Returns one row per internal model parameter wrapped by the <code>PIParameters</code> object.</p><div class="section">
+<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span>group <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>group</code></dt>
+<dd><p>Optional character label identifying the optimization group.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+<div class="section">
+<h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
+<p>A <code>data.frame</code> with one row per internal parameter.</p>
+</div>
+
 </div><p></p><hr><a id="method-PIParameters-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Prints a summary of the PIParameters.</p><div class="section">
-<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -143,12 +163,12 @@ Value is specified in units of <code>PIParameters$unit</code>.</p><div class="se
 </div><p></p><hr><a id="method-PIParameters-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIParameters</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -165,11 +185,11 @@ Value is specified in units of <code>PIParameters$unit</code>.</p><div class="se
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

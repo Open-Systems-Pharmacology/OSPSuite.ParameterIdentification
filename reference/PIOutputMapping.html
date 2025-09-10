@@ -11,7 +11,7 @@ and compare simulation outputs with empirical data."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,13 +27,15 @@ and compare simulation outputs with empirical data."></head><body>
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/data-mapping.html">Data mapping and weights</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -43,7 +45,7 @@ and compare simulation outputs with empirical data."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>PIOutputMapping</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/PIOutputMapping.R" class="external-link"><code>R/PIOutputMapping.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/PIOutputMapping.R" class="external-link"><code>R/PIOutputMapping.R</code></a></small>
       <div class="d-none name"><code>PIOutputMapping.Rd</code></div>
     </div>
 
@@ -55,10 +57,6 @@ and compare simulation outputs with empirical data.</p>
 
 
     <div class="section level2">
-    <h2 id="super-class">Super class<a class="anchor" aria-label="anchor" href="#super-class"></a></h2>
-    <p><code><a href="https://www.open-systems-pharmacology.org/OSPSuite.RUtils/reference/Printable.html" class="external-link">ospsuite.utils::Printable</a></code> -&gt; <code>PIOutputMapping</code></p>
-    </div>
-    <div class="section level2">
     <h2 id="active-bindings">Active bindings<a class="anchor" aria-label="anchor" href="#active-bindings"></a></h2>
     <p></p><div class="r6-active-bindings"><dl><dt><code>observedDataSets</code></dt>
 <dd><p>A named list containing <code>DataSet</code> objects for comparison
@@ -67,6 +65,10 @@ with simulation outcomes.</p></dd>
 
 <dt><code>dataTransformations</code></dt>
 <dd><p>A named list of factors and offsets.</p></dd>
+
+
+<dt><code>dataWeights</code></dt>
+<dd><p>A named list of y-value weights.</p></dd>
 
 
 <dt><code>quantity</code></dt>
@@ -100,6 +102,7 @@ numeric vectors 'xVals' and 'yVals', and returns a named list with keys
 <li><p><a href="#method-PIOutputMapping-addObservedDataSets"><code>PIOutputMapping$addObservedDataSets()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-removeObservedDataSet"><code>PIOutputMapping$removeObservedDataSet()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataTransformations"><code>PIOutputMapping$setDataTransformations()</code></a></p></li>
+<li><p><a href="#method-PIOutputMapping-setDataWeights"><code>PIOutputMapping$setDataWeights()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-print"><code>PIOutputMapping$print()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-clone"><code>PIOutputMapping$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-PIOutputMapping-new"></a><div class="section">
@@ -128,7 +131,7 @@ Adds or updates observed data using <code>DataSet</code> objects.</p>
 
 <div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">data</span>, weights <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
@@ -136,6 +139,11 @@ Adds or updates observed data using <code>DataSet</code> objects.</p>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>A <code>DataSet</code> object or a list thereof, matching the simulation
 quantity dimensions.</p></dd>
+
+
+<dt><code>weights</code></dt>
+<dd><p>A named list of numeric values or numeric vectors. The names
+must match the names of the observed datasets.</p></dd>
 
 
 </dl><p></p></div>
@@ -201,10 +209,33 @@ Absence of labels applies transformations globally.</p></dd>
 </dl><p></p></div>
 </div>
 
+</div><p></p><hr><a id="method-PIOutputMapping-setDataWeights"></a><div class="section">
+<h3 id="method-setdataweights-">Method <code>setDataWeights()</code><a class="anchor" aria-label="anchor" href="#method-setdataweights-"></a></h3>
+<p>Assigns weights to observed data sets for residual weighting
+during parameter identification.</p><div class="section">
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">setDataWeights</span><span class="op">(</span><span class="va">weights</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>weights</code></dt>
+<dd><p>A named list of numeric values or numeric vectors. The names
+must match the names of the observed datasets.</p>
+<p>Each element in the list can be:</p><ul><li><p>a scalar, which will be broadcast to all y-values of the corresponding
+dataset,</p></li>
+<li><p>or a numeric vector matching the number of y-values for that dataset.</p></li>
+</ul><p>To apply both dataset-level and point-level weights, multiply them beforehand
+and provide the combined result as a single numeric vector per dataset.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
 </div><p></p><hr><a id="method-PIOutputMapping-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p>Prints a summary of the PIOutputMapping.</p><div class="section">
-<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -212,12 +243,12 @@ Absence of labels applies transformations globally.</p></dd>
 </div><p></p><hr><a id="method-PIOutputMapping-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -234,11 +265,11 @@ Absence of labels applies transformations globally.</p></dd>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

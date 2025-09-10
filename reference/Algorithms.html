@@ -11,7 +11,7 @@ the PIConfiguration class."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,13 +27,15 @@ the PIConfiguration class."></head><body>
     <li><a class="dropdown-item" href="../articles/user-guide.html">User guide</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Details</h6></li>
-    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/data-mapping.html">Data mapping and weights</a></li>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
+    <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
+    <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -43,7 +45,7 @@ the PIConfiguration class."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Optimization Algorithms</h1>
-      <small class="dont-index">Source: <a href="https://github.com/open-systems-pharmacology/ospsuite.parameteridentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/blob/main/R/enums.R" class="external-link"><code>R/enums.R</code></a></small>
       <div class="d-none name"><code>Algorithms.Rd</code></div>
     </div>
 
@@ -64,18 +66,11 @@ the <code>PIConfiguration</code> class.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Supported algorithms include:</p><dl><dt><code>"HJKB"</code></dt>
-<dd><p>Hooke-Jeeves algorithm from the <span class="pkg">dfoptim</span> package.</p></dd>
-
-<dt><code>"BOBYQA"</code></dt>
-<dd><p>BOBYQA algorithm from the <span class="pkg">nloptr</span> package.</p></dd>
-
-<dt><code>"DEoptim"</code></dt>
-<dd><p>Differential evolution algorithm from the <span class="pkg">DEoptim</span>
-package, suitable for stochastic global optimization.</p></dd>
-
-
-</dl><p>These algorithms can be specified and configured within the <code>PIConfiguration</code>
+    <p>Supported algorithms include:</p><ul><li><p><strong><code>HJKB</code></strong> – Hooke-Jeeves algorithm from the <span class="pkg">dfoptim</span> package.</p></li>
+<li><p><strong><code>BOBYQA</code></strong> – BOBYQA algorithm from the <span class="pkg">nloptr</span> package.</p></li>
+<li><p><strong><code>DEoptim</code></strong> – Differential evolution algorithm from the <span class="pkg">DEoptim</span>
+package, suitable for stochastic global optimization.</p></li>
+</ul><p>These algorithms can be specified and configured within the <code>PIConfiguration</code>
 class to tailor the parameter identification process to specific needs.</p>
     </div>
 
@@ -84,11 +79,11 @@ class to tailor the parameter identification process to specific needs.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/esqlabs.png" style="max-width:33px">esqLABS</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
 </div>
 
     </footer></div>

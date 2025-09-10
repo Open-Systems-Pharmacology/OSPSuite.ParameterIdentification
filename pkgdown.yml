@@ -1,11 +1,13 @@
 pandoc: 3.1.11
-pkgdown: 2.1.1
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
+  confidence-intervals: confidence-intervals.html
+  data-mapping: data-mapping.html
   error-calculation: error-calculation.html
   optimization-algorithms: optimization-algorithms.html
   user-guide: user-guide.html
-last_built: 2025-03-19T08:29Z
+last_built: 2025-09-10T11:02Z
 urls:
   reference: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference
   article: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles
