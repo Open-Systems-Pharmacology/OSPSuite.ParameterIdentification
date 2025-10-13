@@ -333,9 +333,8 @@ Optimizer <- R6::R6Class(
         na.rm = TRUE,
         type = 9
       )
-
-      # Handle skewed distirbutions where CI bounds are on wrong side of estimate
-      # If conficls, return one-sided CI
+      
+      # Estimate falls outside [lower, upper], switch to a one-sided bound
       lowerConflicts <- result$lowerCI > par
       upperConflicts <- result$upperCI < par
       

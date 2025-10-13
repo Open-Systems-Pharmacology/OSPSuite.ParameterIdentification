@@ -243,13 +243,13 @@ test_that("Optimizer fails when idx is larger than parameter length", {
 xVals <- seq(-5, 5, length.out = 20)
 trueParams <- c(1, -2, 3)
 
-set.seed(2203)
 # Quadratic function to simulate y-values
 fnSimulate <- function(p) {
   p[1] * xVals^2 + p[2] * xVals + p[3]
 }
 
 # Generate noisy observed data
+set.seed(2203)
 yObs <- fnSimulate(trueParams) + rnorm(length(xVals), mean = 0, sd = 1)
 
 # Objective Function: sum of squared residuals (SSR)
@@ -328,24 +328,23 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
 
-# Generate bootstrap datasets (unique to bootstrap test)
-nBootstrap <- 10
-bootstrapSeeds <- sample(1e6, nBootstrap)
-yObsList <- vector("list", nBootstrap)
-
-for (i in seq_len(nBootstrap)) {
-  noiseSeed <- 1000 + i
-  set.seed(noiseSeed)
-  yObsList[[i]] <- fnSimulate(trueParams) + rnorm(length(xVals), mean = 0, sd = 1)
-}
+# Generate observed data for bootstrap
+set.seed(1000)
+nDatasets <- 100
+yObsList <- replicate(
+  nDatasets,
+  fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+  simplify = FALSE
+)
 
 # Objective Function for bootstrap: sum of squared residuals (SSR)
 fnObjectiveBootstrap <- function(p, bootstrapSeed = NULL) {
   if (!is.null(bootstrapSeed)) {
     set.seed(bootstrapSeed)
-    selectedData <- sample(yObsList, 1)[[1]]
+    idx <- sample.int(length(yObsList), 1L)
+    selectedData <- yObsList[[idx]]
   } else {
-    yObsList[[1]]
+    selectedData <- yObsList[[1]]
   }
 
   ySim <- fnSimulate(p)
