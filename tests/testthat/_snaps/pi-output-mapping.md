@@ -2,7 +2,7 @@
 
     Code
       print(outputMapping)
-    Message
+    Output
       <PIOutputMapping>
         * Output path: Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral
         Venous Blood)

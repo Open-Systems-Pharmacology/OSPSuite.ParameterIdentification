@@ -2,7 +2,7 @@
 
     Code
       print(piParam)
-    Message
+    Output
       <PIParameters>
         * Number of parameters: 1
         * Value: 1.764e-05

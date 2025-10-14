@@ -113,7 +113,7 @@
 
     Code
       piResult$print()
-    Message
+    Output
       <PIResult>
       Optimization Summary:
         * Algorithm: BOBYQA

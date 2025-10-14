@@ -1,10 +1,11 @@
-# ParameterIdentification instance prints without errors
+# ParameterIdentification instance prints expected output
 
     Code
       print(piTask)
-    Message
+    Output
       <ParameterIdentification>
         * Number of parameters: 1
       Simulations:
+        *
       <SimPath>
 
