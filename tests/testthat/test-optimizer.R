@@ -117,6 +117,7 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
   )
   optResult$elapsed <- 0L
   optResult$iterations <- 100L
+  optResult$fnEvaluations <- 100L
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 

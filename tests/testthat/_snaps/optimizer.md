@@ -30,7 +30,7 @@
 
     list(par = c(5.51056363987369, 0.384109285445577, 0.683844281729887
     ), value = 0.421489866588719, convergence = TRUE, iterations = 100L, 
-        fnEvaluations = 123L, algorithm = "BOBYQA", elapsed = 0L)
+        fnEvaluations = 100L, algorithm = "BOBYQA", elapsed = 0L)
 
 # Optimizer output has correct structure and values for HJKB
 
