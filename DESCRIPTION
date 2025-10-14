@@ -53,7 +53,7 @@ Suggests:
     sysfonts,
     testthat (>= 3.0.0),
     vdiffr
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
