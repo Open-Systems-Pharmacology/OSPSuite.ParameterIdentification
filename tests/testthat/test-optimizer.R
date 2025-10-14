@@ -115,7 +115,8 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
     fixed = TRUE
   )
-  optResult$elapsed <- 0
+  optResult$elapsed <- 0L
+  optResult$iterations <- 100L
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
