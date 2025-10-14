@@ -65,6 +65,9 @@
       $upperCI
       [1] 1.719875
       
+      $ciType
+      [1] NA
+      
       $paramNames
       [1] "Lipophilicity"
       
@@ -135,6 +138,6 @@
     Output
         group          name                                   path      unit estimate
       1     1 Lipophilicity Vergin 1995 IV|Aciclovir|Lipophilicity Log Units 1.313491
-               sd        cv   lowerCI  upperCI initialValue
-      1 0.2073428 0.1578562 0.9071067 1.719875       -0.097
+               sd        cv   lowerCI  upperCI ciType initialValue
+      1 0.2073428 0.1578562 0.9071067 1.719875   <NA>       -0.097
 

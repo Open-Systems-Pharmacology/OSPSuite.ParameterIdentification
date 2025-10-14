@@ -31,7 +31,7 @@ PIResult <- R6::R6Class(
     #' `par`, `value`, `startValues`, `elapsed`, `convergence`, etc.
     #' @param ciResult (Optional) A named list of confidence interval results,
     #' returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
-    #' `lowerCI`, `upperCI`, `elapsed`, and `details`.
+    #' `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
     #' @param costDetails (Optional) A named list with detailed cost metrics
     #' computed during optimization.
     #' @param configuration (Optional) The `PIConfiguration` object used during
@@ -63,6 +63,7 @@ PIResult <- R6::R6Class(
     # - cv: numeric vector
     # - lowerCI: numeric vector
     # - upperCI: numeric vector
+    # - ciType: character vector
     # - ciMethod: character
     # - ciElapsed: numeric
     # - ciError: error object or NULL
@@ -123,6 +124,7 @@ PIResult <- R6::R6Class(
         cv = ciResult$cv %||% rep(NA_real_, length(optimResult$par)),
         lowerCI = ciResult$lowerCI %||% rep(NA_real_, length(optimResult$par)),
         upperCI = ciResult$upperCI %||% rep(NA_real_, length(optimResult$par)),
+        ciType = ciResult$ciType %||% rep(NA_character_, length(optimResult$par)),
         paramNames = paramNames
       )
     },
@@ -139,6 +141,7 @@ PIResult <- R6::R6Class(
     #' - `cv`: Coefficient of variation
     #' - `lowerCI`: Lower confidence bound
     #' - `upperCI`: Upper confidence bound
+    #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
     #' - `initialValue`: Initial parameter value used for optimization
     toDataFrame = function() {
       params <- dplyr::distinct(private$.parameters, group, .keep_all = TRUE)
@@ -152,6 +155,7 @@ PIResult <- R6::R6Class(
         cv = private$.result$cv,
         lowerCI = private$.result$lowerCI,
         upperCI = private$.result$upperCI,
+        ciType = private$.result$ciType,
         initialValue = private$.result$initialParameters,
         stringsAsFactors = FALSE
       )

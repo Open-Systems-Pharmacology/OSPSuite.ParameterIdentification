@@ -9,7 +9,7 @@
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
         unit = "Log Units", estimate = 1.31885961110325, sd = 0.206821692216866, 
         cv = 0.156818580594682, lowerCI = 0.913496543136562, upperCI = 1.72422267906993, 
-        initialValue = -0.097), class = "data.frame", row.names = c(NA, 
+        ciType = NA_character_, initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
 # estimateCI() works with bootstrap and individual data
@@ -17,7 +17,7 @@
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
         unit = "Log Units", estimate = 1.32972212182594, sd = 0.0231671007533465, 
         cv = 0.0174225128491763, lowerCI = 1.32079980321311, upperCI = 1.36227120490337, 
-        initialValue = -0.097), class = "data.frame", row.names = c(NA, 
+        ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
 # estimateCI() works with bootstrap and aggregated data
@@ -25,7 +25,7 @@
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
         unit = "Log Units", estimate = 1.31885961110325, sd = 0.494677293374105, 
         cv = 0.375079568143193, lowerCI = 0.490225195071332, upperCI = 1.36526952517353, 
-        initialValue = -0.097), class = "data.frame", row.names = c(NA, 
+        ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
 # estimateCI() outputs expected messages for mixed datasets
