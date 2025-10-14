@@ -3,12 +3,8 @@
 # Function that allows to replace paths that will differ on the different
 # machines by a fixed value to be used in snapshots
 transformId <- function(x) {
-  gsub(
-    pattern = ".*ospsuite/extdata/Aciclovir\\.pkml",
-    replacement = "<SimPath>",
-    x,
-    fixed = FALSE
-  )
+  x <- gsub("(?m)^\\s*[•*]\\s*\\n\\s*", "  • ", x, perl = TRUE)
+  gsub("(?m)\\S*Aciclovir\\.pkml", "<SimPath>", x, perl = TRUE)
 }
 
 test_that("ParameterIdentification is created successfully", {
