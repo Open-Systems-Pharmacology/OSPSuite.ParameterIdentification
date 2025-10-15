@@ -325,31 +325,36 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
 
-# Generate observed data for bootstrap
-set.seed(1000)
-nDatasets <- 100
-yObsList <- replicate(
-  nDatasets,
-  fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
-  simplify = FALSE
-)
 
-# Objective Function for bootstrap: sum of squared residuals (SSR)
-fnObjectiveBootstrap <- function(p, bootstrapSeed = NULL) {
-  if (!is.null(bootstrapSeed)) {
-    set.seed(bootstrapSeed)
-    idx <- sample.int(length(yObsList), 1L)
-    selectedData <- yObsList[[idx]]
-  } else {
-    selectedData <- yObsList[[1]]
+# Objective function factory for bootstrap
+makeFnObjectiveBootstrap <- function(yObsList) {
+  force(yObsList)
+  function(p, bootstrapSeed = NULL) {
+    if (!is.null(bootstrapSeed)) {
+      set.seed(bootstrapSeed)
+      idx <- sample.int(length(yObsList), 1L)
+      selectedData <- yObsList[[idx]]
+    } else {
+      selectedData <- yObsList[[1]]
+    }
+    ySim <- fnSimulate(p)
+    SSR <- sum((selectedData - ySim)^2)
+    list(modelCost = SSR)
   }
-
-  ySim <- fnSimulate(p)
-  SSR <- sum((selectedData - ySim)^2)
-  list(modelCost = SSR)
 }
 
 test_that("Optimizer estimates confidence intervals using bootstrap method", {
+  # Generate observed data for bootstrap
+  set.seed(1000)
+  nDatasets <- 100
+  yObsList <- replicate(
+    nDatasets,
+    fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+    simplify = FALSE
+  )
+
+  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "HJKB"
   piConfig$ciMethod <- "bootstrap"
@@ -378,4 +383,45 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
   ciResult$elapsed <- NA_real_
   ciResult$details$bootstrapResults <- ciResult$details$bootstrapResults[1:5, ]
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
+})
+
+test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
+  # Use sparse data and small nBootstrap to induce skewed bootstrap CIs
+  set.seed(1000)
+  nDatasets <- 10
+  yObsList <- replicate(
+    nDatasets,
+    fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+    simplify = FALSE
+  )
+
+  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "bootstrap"
+  ciOptions <- CIDefaults[["bootstrap"]]
+  ciOptions$seed <- 1803
+  ciOptions$nBootstrap <- 10
+  piConfig$ciOptions <- ciOptions
+  optimizer <- Optimizer$new(piConfig)
+
+  suppressMessages(
+    optResult <- optimizer$run(
+      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+    )
+  )
+  suppressMessages(
+    expect_message(
+      expect_no_error(
+        ciResult <- optimizer$estimateCI(
+          par = optResult$par, fn = fnObjectiveBootstrap, lower = lowerTest, upper = upperTest
+        )
+      ),
+      messages$ciMethod(piConfig$ciMethod, optResult$par),
+      fixed = TRUE
+    )
+  )
+  expect_equal(ciResult$ciType, c("two-sided", "one-sided", "two-sided"))
+  expect_equal(ciResult$lowerCI, c(0.971, NA, 2.659), tolerance = 0.01)
 })
