@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,11 +144,27 @@ mg.</p>
 <span><span class="co"># Get the instances of the parameters</span></span>
 <span><span class="va">sim_250mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">doseParameterPath</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_250mg_doseParam</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;Parameter&gt;</span></span></span>
+<span><span class="co">#&gt;   • Quantity Type: Parameter</span></span>
+<span><span class="co">#&gt;   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
+<span><span class="co">#&gt;   • Value: 2.50e-04 [kg]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Formula</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   • isConstant: TRUE</span></span>
 <span><span class="va">sim_500mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">doseParameterPath</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Chage the value to 500 mg</span></span>
 <span><span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/setParameterValues.html" class="external-link">setParameterValues</a></span><span class="op">(</span>parameters <span class="op">=</span> <span class="va">sim_500mg_doseParam</span>, values <span class="op">=</span> <span class="fl">500</span>, units <span class="op">=</span> <span class="st">"mg"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_500mg_doseParam</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_500mg_doseParam</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;Parameter&gt;</span></span></span>
+<span><span class="co">#&gt;   • Quantity Type: Parameter</span></span>
+<span><span class="co">#&gt;   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
+<span><span class="co">#&gt;   • Value: 5.00e-04 [kg]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Formula</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   • isConstant: TRUE</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="definition-of-parameters-to-be-identified">Definition of parameters to be identified<a class="anchor" aria-label="anchor" href="#definition-of-parameters-to-be-identified"></a>
@@ -202,13 +218,27 @@ start, min, and max values of the renal clearance parameter are given in
 <code>1/min</code>:</p></li>
 </ul>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
+<span><span class="co">#&gt;   • Number of parameters: 1</span></span>
+<span><span class="co">#&gt;   • Value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Start value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Min value: 0.09412</span></span>
+<span><span class="co">#&gt;   • Max value: 9.412</span></span>
+<span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
 <p>Setting the unit to <code>1/h</code> will cause the identification to
 start at <code>0.94 1/h</code>, while the current value is still
 <code>0.94 1/h</code> or <code>0.94 1/h * 60 min = 56.47 1/h</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/h`</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
+<span><span class="co">#&gt;   • Number of parameters: 1</span></span>
+<span><span class="co">#&gt;   • Value: 56.47</span></span>
+<span><span class="co">#&gt;   • Start value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Min value: 0.09412</span></span>
+<span><span class="co">#&gt;   • Max value: 9.412</span></span>
+<span><span class="co">#&gt;   • Unit: 1/h</span></span></code></pre></div>
 <p>We will set the boundaries for lipophilicity to [-10, 10], and for
 renal clearance to [0, 10] <code>1/min</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -224,8 +254,29 @@ renal clearance to [0, 10] <code>1/min</code>:</p>
 <span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterLipo</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
+<span><span class="co">#&gt;   • Number of parameters: 2</span></span>
+<span><span class="co">#&gt;   • Value: -0.097</span></span>
+<span><span class="co">#&gt;   • Start value: -0.097</span></span>
+<span><span class="co">#&gt;   • Min value: -10</span></span>
+<span><span class="co">#&gt;   • Max value: 10</span></span>
+<span><span class="co">#&gt;   • Unit: Log Units</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_500mg</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
+<span><span class="co">#&gt;   • Number of parameters: 1</span></span>
+<span><span class="co">#&gt;   • Value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Start value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Min value: 0</span></span>
+<span><span class="co">#&gt;   • Max value: 10</span></span>
+<span><span class="co">#&gt;   • Unit: 1/min</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_500mg</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
+<span><span class="co">#&gt;   • Number of parameters: 1</span></span>
+<span><span class="co">#&gt;   • Value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Start value: 0.9412</span></span>
+<span><span class="co">#&gt;   • Min value: 0</span></span>
+<span><span class="co">#&gt;   • Max value: 10</span></span>
+<span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="mapping-of-model-output-to-observed-data">Mapping of model output to observed data<a class="anchor" aria-label="anchor" href="#mapping-of-model-output-to-observed-data"></a>
@@ -269,7 +320,13 @@ one for each dose group:</p>
 <code class="sourceCode R"><span><span class="va">outputMapping_250mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`</span><span class="op">)</span></span>
 <span><span class="va">outputMapping_500mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">outputMapping_250mg</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">outputMapping_250mg</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIOutputMapping&gt;</span></span></span>
+<span><span class="co">#&gt;   • Output path: Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral</span></span>
+<span><span class="co">#&gt;   Venous Blood)</span></span>
+<span><span class="co">#&gt;   • Observed data labels: Aciclovir_Profiles.Vergin 1995.Iv.250 mg</span></span>
+<span><span class="co">#&gt;   • Data weight labels: NULL</span></span>
+<span><span class="co">#&gt;   • Scaling: lin</span></span></code></pre></div>
 <p>The scaling of the output mapping defines how the residuals between
 simulated and observed data are calculated. For details, see the article
 error-functions. For concentration data, we will change the scaling to
@@ -292,7 +349,14 @@ by multiple PI tasks. If no user-defined configuration is provided to a
 PI task, a default one is created with the following properties:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piConfiguration</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piConfiguration</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIConfiguration&gt;</span></span></span>
+<span><span class="co">#&gt;   • Optimization algorithm: BOBYQA</span></span>
+<span><span class="co">#&gt;   • Confidence interval method: hessian</span></span>
+<span><span class="co">#&gt;   • Objective function type: lsq</span></span>
+<span><span class="co">#&gt;   • Residual weighting method: none</span></span>
+<span><span class="co">#&gt;   • Robust residual calculation method: none</span></span>
+<span><span class="co">#&gt;   • Print feedback after each function evaluation: FALSE</span></span></code></pre></div>
 <ul>
 <li><p><code>printEvaluationFeedback</code> (logical) indicates if the
 objective function value should be printed at each iteration</p></li>
@@ -370,7 +434,22 @@ parameters, not the start values!</p>
 <p>We can now run the PI and print the results:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piResult</span> <span class="op">&lt;-</span> <span class="va">piTask</span><span class="op">$</span><span class="fu">run</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piResult</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piResult</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIResult&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">Optimization Summary</span>:</span></span>
+<span><span class="co">#&gt;   • Algorithm: BOBYQA</span></span>
+<span><span class="co">#&gt;   • CI Method: hessian</span></span>
+<span><span class="co">#&gt;   • Convergence: TRUE</span></span>
+<span><span class="co">#&gt;   • Objective value: 6.536</span></span>
+<span><span class="co">#&gt;   • Iterations: 109</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 109</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 27.14 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 12.22 s</span></span>
+<span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
+<span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,</span></span>
+<span><span class="co">#&gt;   -1.068]</span></span>
+<span><span class="co">#&gt;   • TSspec: Estimate = 0.8353, SD = 0.1651, CV = 0.1977, CI = [0.5116, 1.159]</span></span>
+<span><span class="co">#&gt;   • TSspec: Estimate = 0.7572, SD = 0.1513, CV = 0.1999, CI = [0.4605, 1.054]</span></span></code></pre></div>
 <p><code>piResult</code> is an R6 object that encapsulates the
 optimization output (and, if configured, confidence intervals) and
 provides helper methods like <code>$toDataFrame()</code> and
@@ -393,10 +472,14 @@ estimates and related fields:</li>
 <span><span class="co">#&gt; 1                                                 Vergin 1995 IV|Aciclovir|Lipophilicity</span></span>
 <span><span class="co">#&gt; 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec</span></span>
 <span><span class="co">#&gt; 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec</span></span>
-<span><span class="co">#&gt;        unit   estimate        sd         cv    lowerCI   upperCI initialValue</span></span>
-<span><span class="co">#&gt; 1 Log Units -1.2816387 0.1090013 0.08504839 -1.4952774 -1.068000    -0.097000</span></span>
-<span><span class="co">#&gt; 2     1/min  0.8352532 0.1651480 0.19772213  0.5115690  1.158937     0.941241</span></span>
-<span><span class="co">#&gt; 3     1/min  0.7571563 0.1513412 0.19988100  0.4605331  1.053780     0.941241</span></span></code></pre></div>
+<span><span class="co">#&gt;        unit   estimate        sd         cv    lowerCI   upperCI ciType</span></span>
+<span><span class="co">#&gt; 1 Log Units -1.2816387 0.1090013 0.08504839 -1.4952774 -1.068000   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2     1/min  0.8352532 0.1651480 0.19772213  0.5115690  1.158937   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3     1/min  0.7571563 0.1513412 0.19988100  0.4605331  1.053780   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt;   initialValue</span></span>
+<span><span class="co">#&gt; 1    -0.097000</span></span>
+<span><span class="co">#&gt; 2     0.941241</span></span>
+<span><span class="co">#&gt; 3     0.941241</span></span></code></pre></div>
 <ul>
 <li>Use <code>$toList()</code> to export full details, including
 diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>SSR</code>,
@@ -411,7 +494,8 @@ diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes i
 <span><span class="co">#&gt;  [7] "iterations"        "fnEvaluations"     "ciMethod"         </span></span>
 <span><span class="co">#&gt; [10] "ciElapsed"         "ciError"           "ciDetails"        </span></span>
 <span><span class="co">#&gt; [13] "sd"                "cv"                "lowerCI"          </span></span>
-<span><span class="co">#&gt; [16] "upperCI"           "paramNames"        "costDetails"</span></span></code></pre></div>
+<span><span class="co">#&gt; [16] "upperCI"           "ciType"            "paramNames"       </span></span>
+<span><span class="co">#&gt; [19] "costDetails"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
