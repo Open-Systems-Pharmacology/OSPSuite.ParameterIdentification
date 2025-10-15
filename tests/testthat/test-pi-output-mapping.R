@@ -47,7 +47,7 @@ test_that("PIOutputMapping allows scaling to be changed to predefined values", {
   expect_equal(outputMapping$scaling, "log")
   outputMapping$scaling <- "lin"
   expect_equal(outputMapping$scaling, "lin")
-  expect_error(outputMapping$scaling <- "invalidScaling", "not in defined")
+  expect_error(outputMapping$scaling <- "invalidScaling", "is not a valid value")
 })
 
 test_that("PIOutputMapping applies global x-offsets to datasets", {

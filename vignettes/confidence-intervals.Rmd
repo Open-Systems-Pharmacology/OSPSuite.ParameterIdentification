@@ -13,7 +13,7 @@ editor_options:
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE, 
+  collapse = TRUE,
   comment = "#>",
   eval = FALSE
 )
@@ -46,13 +46,20 @@ explains how to configure and run them, and shows how to inspect the results.
     only minimal assumptions about the likelihood, but it is computationally
     more intensive than the other methods.
 
-    Resampling depends on the type of observed data:
+    Resampling depends on the type of observed data: 
 
-    -   For individual datasets, new samples of individuals are drawn.  
+    -   For individual datasets, new samples of individuals are drawn.
     -   For aggregated datasets, resampling is based on Gaussian Process
-        Regression (GPR).  
-    -   With both types of data, a mixed strategy is applied.  
+        Regression (GPR).
+    -   With both types of data, a mixed strategy is applied.
     -   User-defined dataset weights are respected during resampling.
+
+    **Note**: When using the bootstrap method, if the parameter estimate falls outside 
+    the computed confidence interval, which can occur with highly skewed distributions, 
+    the package automatically reports a one-sided confidence interval. The conflicting 
+    bound is set to `NA`, and the `ciType` field is set to `"one-sided"`. If both 
+    bounds conflict, `ciType` is set to `"failed"`. For successfully estimated 
+    two-sided intervals, `ciType` is `"two-sided"`.
 
 
 ## Advanced Configuration Options
@@ -87,7 +94,7 @@ The example below shows how the Hessian method is selected and its default optio
 piConfiguration <- PIConfiguration$new()
 
 # select CI method
-piConfiguration$ciMethod  <- "hessian"
+piConfiguration$ciMethod <- "hessian"
 
 # assign default options and adjust if necessary
 piConfiguration$ciOptions <- CIOptions_Hessian
@@ -117,20 +124,20 @@ piResult <- piTask$estimateCI()
 
 The printout of a `PIResult` object shows the main outcomes of a parameter identification run, including parameter estimates, standard deviations, coefficients of variation, and confidence intervals (if available).
 
-For programmatic access, the results of a PI run can be exported either as a 
+For programmatic access, the results of a PI run can be exported either as a
 data frame or as a list:
 
 ```{r}
-df  <- piResult$toDataFrame()   # tidy table with estimates, sd, cv, lowerCI, upperCI, etc.
-lst <- piResult$toList()        # full details including cost information and CI-specific details
+df <- piResult$toDataFrame() # tidy table with estimates, sd, cv, lowerCI, upperCI, ciType, etc.
+lst <- piResult$toList() # full details including cost information and CI-specific details
 ```
 
-The list output also contains a `ciDetails` entry where method-specific 
+The list output also contains a `ciDetails` entry where method-specific
 information is stored:
 
-- `hessian`: Hessian matrix, covariance matrix, eigenvalues, and correlation matrix  
-- `PL`: parameter history and likelihood thresholds  
-- `bootstrap`: bootstrap replicates, empirical confidence bounds, and the seed 
+- `hessian`: Hessian matrix, covariance matrix, eigenvalues, and correlation matrix
+- `PL`: parameter history and likelihood thresholds
+- `bootstrap`: bootstrap replicates, empirical confidence bounds, and the seed
 used for resampling  
 
 

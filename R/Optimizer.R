@@ -317,8 +317,40 @@ Optimizer <- R6::R6Class(
       # Compute standard errors and CIs
       lowerLevel <- (1 - controlCI$confLevel) / 2
       upperLevel <- (1 + controlCI$confLevel) / 2
-      result$lowerCI <- apply(bootstrapResults, 2, quantile, probs = lowerLevel)
-      result$upperCI <- apply(bootstrapResults, 2, quantile, probs = upperLevel)
+      result$lowerCI <- apply(
+        bootstrapResults,
+        2,
+        quantile,
+        probs = lowerLevel,
+        na.rm = TRUE,
+        type = 9
+      )
+      result$upperCI <- apply(
+        bootstrapResults,
+        2,
+        quantile,
+        probs = upperLevel,
+        na.rm = TRUE,
+        type = 9
+      )
+      
+      # Estimate falls outside [lower, upper], switch to a one-sided bound
+      lowerConflicts <- result$lowerCI > par
+      upperConflicts <- result$upperCI < par
+      
+      result$lowerCI[lowerConflicts] <- NA_real_
+      result$upperCI[upperConflicts] <- NA_real_
+
+      result$ciType <- ifelse(
+        lowerConflicts & upperConflicts,
+        "failed",
+        ifelse(
+          lowerConflicts | upperConflicts,
+          "one-sided",
+          "two-sided"
+        )
+      )
+
       result$sd <- apply(bootstrapResults, 2, function(x) {
         sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
       })

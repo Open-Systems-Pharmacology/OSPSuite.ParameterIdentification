@@ -2,7 +2,7 @@
 
     Code
       print(piConfiguration)
-    Message
+    Output
       <PIConfiguration>
         * Optimization algorithm: BOBYQA
         * Confidence interval method: hessian

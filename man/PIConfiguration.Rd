@@ -18,8 +18,9 @@ function value after each evaluation. Default is \code{FALSE}.}
 runs. If \code{NULL}, default options are used.}
 
 \item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
-affecting error metrics and cost calculation. See \code{\link{ObjectiveFunctionSpecs}}
-and \code{\link{calculateCostMetrics}} for details. Defaults in \code{\link{ObjectiveFunctionOptions}}.}
+affecting error metrics and cost calculation. See
+\code{\link{ObjectiveFunctionSpecs}} for details. Defaults in
+\code{\link{ObjectiveFunctionOptions}}.}
 
 \item{\code{algorithm}}{Optimization algorithm name. See
 \code{\link{Algorithms}} for a list of supported

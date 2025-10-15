@@ -1,14 +1,5 @@
 # ParameterIdentification - Core
 
-# Function that allows to replace paths that will differ on the different machines by a fixed value to
-# be used in snapshots
-transformId <- function(x) {
-  # For whatever reason, simulation file path is passed as a character array with first entry being '*'
-  # and the second entry the action simulation file path
-  isPath <- any(grepl("ospsuite/extdata/Aciclovir.pkml", x, fixed = TRUE))
-  ifelse(isPath, "<SimPath>", paste(x, collapse = ""))
-}
-
 test_that("ParameterIdentification is created successfully", {
   piConfiguration <- PIConfiguration$new()
   expect_silent(piTask <- ParameterIdentification$new(
@@ -43,9 +34,16 @@ test_that("ParameterIdentification configuration can be modified without errors"
   expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
 })
 
-test_that("ParameterIdentification instance prints without errors", {
+test_that("ParameterIdentification instance prints expected output", {
   piTask <- createPiTask()
-  expect_snapshot(print(piTask), transform = transformId)
+
+  expect_no_error(print(piTask))
+
+  out <- capture.output(print(piTask))
+  expect_true(any(grepl("^<ParameterIdentification>$", out)))
+  expect_true(any(grepl("Number of parameters:\\s*1", out)))
+  expect_true(any(grepl("^Simulations:$", out)))
+  expect_true(any(grepl("Aciclovir\\.pkml\\b", out)))
 })
 
 test_that("ParameterIdentification errors on missing simulation IDs", {

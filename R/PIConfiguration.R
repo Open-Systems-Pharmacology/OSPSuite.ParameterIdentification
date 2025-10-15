@@ -57,8 +57,9 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field objectiveFunctionOptions Settings for model fit evaluation,
-    #' affecting error metrics and cost calculation. See [`ObjectiveFunctionSpecs`]
-    #' and [`calculateCostMetrics`] for details. Defaults in [`ObjectiveFunctionOptions`].
+    #'   affecting error metrics and cost calculation. See
+    #'   [`ObjectiveFunctionSpecs`] for details. Defaults in
+    #'   [`ObjectiveFunctionOptions`].
     objectiveFunctionOptions = function(value) {
       if (missing(value)) {
         private$.objectiveFunctionOptions

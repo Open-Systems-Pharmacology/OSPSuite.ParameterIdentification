@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Minor improvements and bug fixes
+
+- Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to `NA`and `ciType` is set to `one-sided` (#217).
+
 # ospsuite.parameteridentification 2.1.0
 
 ## Breaking changes

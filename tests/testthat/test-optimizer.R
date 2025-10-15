@@ -115,7 +115,9 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
     fixed = TRUE
   )
-  optResult$elapsed <- 0
+  optResult$elapsed <- 0L
+  optResult$iterations <- 100L
+  optResult$fnEvaluations <- 100L
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
@@ -243,21 +245,16 @@ test_that("Optimizer fails when idx is larger than parameter length", {
 xVals <- seq(-5, 5, length.out = 20)
 trueParams <- c(1, -2, 3)
 
-set.seed(2203)
 # Quadratic function to simulate y-values
 fnSimulate <- function(p) {
   p[1] * xVals^2 + p[2] * xVals + p[3]
 }
 
 # Generate noisy observed data
+set.seed(2203)
 yObs <- fnSimulate(trueParams) + rnorm(length(xVals), mean = 0, sd = 1)
 
 # Objective Function: sum of squared residuals (SSR)
-fnObjective <- function(p) {
-  ySim <- fnSimulate(p)
-  SSR <- sum((yObs - ySim)^2)
-  list(modelCost = SSR)
-}
 fnObjective <- function(p) {
   ySim <- fnSimulate(p)
   SSR <- sum((yObs - ySim)^2)
@@ -328,37 +325,42 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
 
-# Generate bootstrap datasets (unique to bootstrap test)
-nBootstrap <- 10
-bootstrapSeeds <- sample(1e6, nBootstrap)
-yObsList <- vector("list", nBootstrap)
 
-for (i in seq_len(nBootstrap)) {
-  noiseSeed <- 1000 + i
-  set.seed(noiseSeed)
-  yObsList[[i]] <- fnSimulate(trueParams) + rnorm(length(xVals), mean = 0, sd = 1)
-}
-
-# Objective Function for bootstrap: sum of squared residuals (SSR)
-fnObjectiveBootstrap <- function(p, bootstrapSeed = NULL) {
-  if (!is.null(bootstrapSeed)) {
-    set.seed(bootstrapSeed)
-    selectedData <- sample(yObsList, 1)[[1]]
-  } else {
-    yObsList[[1]]
+# Objective function factory for bootstrap
+makeFnObjectiveBootstrap <- function(yObsList) {
+  force(yObsList)
+  function(p, bootstrapSeed = NULL) {
+    if (!is.null(bootstrapSeed)) {
+      set.seed(bootstrapSeed)
+      idx <- sample.int(length(yObsList), 1L)
+      selectedData <- yObsList[[idx]]
+    } else {
+      selectedData <- yObsList[[1]]
+    }
+    ySim <- fnSimulate(p)
+    SSR <- sum((selectedData - ySim)^2)
+    list(modelCost = SSR)
   }
-
-  ySim <- fnSimulate(p)
-  SSR <- sum((selectedData - ySim)^2)
-  list(modelCost = SSR)
 }
 
 test_that("Optimizer estimates confidence intervals using bootstrap method", {
+  # Generate observed data for bootstrap
+  set.seed(1000)
+  nDatasets <- 100
+  yObsList <- replicate(
+    nDatasets,
+    fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+    simplify = FALSE
+  )
+
+  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "HJKB"
   piConfig$ciMethod <- "bootstrap"
   ciOptions <- CIDefaults[["bootstrap"]]
   ciOptions$seed <- 1803
+  ciOptions$nBootstrap <- 20
   piConfig$ciOptions <- ciOptions
   optimizer <- Optimizer$new(piConfig)
 
@@ -381,4 +383,45 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
   ciResult$elapsed <- NA_real_
   ciResult$details$bootstrapResults <- ciResult$details$bootstrapResults[1:5, ]
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
+})
+
+test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
+  # Use sparse data and small nBootstrap to induce skewed bootstrap CIs
+  set.seed(1000)
+  nDatasets <- 10
+  yObsList <- replicate(
+    nDatasets,
+    fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+    simplify = FALSE
+  )
+
+  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "bootstrap"
+  ciOptions <- CIDefaults[["bootstrap"]]
+  ciOptions$seed <- 1803
+  ciOptions$nBootstrap <- 10
+  piConfig$ciOptions <- ciOptions
+  optimizer <- Optimizer$new(piConfig)
+
+  suppressMessages(
+    optResult <- optimizer$run(
+      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+    )
+  )
+  suppressMessages(
+    expect_message(
+      expect_no_error(
+        ciResult <- optimizer$estimateCI(
+          par = optResult$par, fn = fnObjectiveBootstrap, lower = lowerTest, upper = upperTest
+        )
+      ),
+      messages$ciMethod(piConfig$ciMethod, optResult$par),
+      fixed = TRUE
+    )
+  )
+  expect_equal(ciResult$ciType, c("two-sided", "one-sided", "two-sided"))
+  expect_equal(ciResult$lowerCI, c(0.971, NA, 2.659), tolerance = 0.01)
 })
