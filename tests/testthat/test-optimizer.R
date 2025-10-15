@@ -258,11 +258,6 @@ yObs <- fnSimulate(trueParams) + rnorm(length(xVals), mean = 0, sd = 1)
 fnObjective <- function(p) {
   ySim <- fnSimulate(p)
   SSR <- sum((yObs - ySim)^2)
-  list(modelCost = SSR)
-}
-fnObjective <- function(p) {
-  ySim <- fnSimulate(p)
-  SSR <- sum((yObs - ySim)^2)
 
   list(
     modelCost = SSR,
@@ -360,6 +355,7 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
   piConfig$ciMethod <- "bootstrap"
   ciOptions <- CIDefaults[["bootstrap"]]
   ciOptions$seed <- 1803
+  ciOptions$nBootstrap <- 20
   piConfig$ciOptions <- ciOptions
   optimizer <- Optimizer$new(piConfig)
 
