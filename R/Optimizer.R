@@ -378,7 +378,7 @@ Optimizer <- R6::R6Class(
       result$lowerCI <- apply(
         bootstrapResults,
         2,
-        quantile,
+        stats::quantile,
         probs = lowerLevel,
         na.rm = TRUE,
         type = 9
@@ -386,7 +386,7 @@ Optimizer <- R6::R6Class(
       result$upperCI <- apply(
         bootstrapResults,
         2,
-        quantile,
+        stats::quantile,
         probs = upperLevel,
         na.rm = TRUE,
         type = 9
@@ -410,7 +410,7 @@ Optimizer <- R6::R6Class(
       )
 
       result$sd <- apply(bootstrapResults, 2, function(x) {
-        sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
+        stats::sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
       })
       result$cv <- result$sd / abs(par)
 

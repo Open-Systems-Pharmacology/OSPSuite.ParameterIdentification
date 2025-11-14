@@ -28,37 +28,87 @@ This example will use the clarithromycin model from the [OSP model library.](htt
 We will read the five simulations from \*.pkml files provided with the package:
 
 ```{r}
-simulations <- c("IV250" = loadSimulation(system.file("extdata", "Chu1992 iv 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO250" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO250MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO500" = loadSimulation(system.file("extdata", "Chu1993 po 250mg Clarithromycin.pkml", package = "ospsuite.parameteridentification")),
-                 "PO500MD" = loadSimulation(system.file("extdata", "Chu1993 po 250mg md Clarithromycin.pkml", package = "ospsuite.parameteridentification")))
+simulations <- c(
+  "IV250" = loadSimulation(system.file(
+    "extdata",
+    "Clarithromycin_Chu_1992_iv_250mg.pkml",
+    package = "ospsuite.parameteridentification"
+  )),
+  "PO250" = loadSimulation(system.file(
+    "extdata",
+    "Clarithromycin_Chu_1993_po_250mg.pkml",
+    package = "ospsuite.parameteridentification"
+  )),
+  "PO250MD" = loadSimulation(system.file(
+    "extdata",
+    "Clarithromycin_Chu_1993_po_250mg_md.pkml",
+    package = "ospsuite.parameteridentification"
+  )),
+  "PO500" = loadSimulation(system.file(
+    "extdata",
+    "Clarithromycin_Chu_1993_po_250mg.pkml",
+    package = "ospsuite.parameteridentification"
+  )),
+  "PO500MD" = loadSimulation(system.file(
+    "extdata",
+    "Clarithromycin_Chu_1993_po_250mg_md.pkml",
+    package = "ospsuite.parameteridentification"
+  ))
 ```
 
 and then change the doses of the 500 mg groups:
 
 ```{r}
-setParameterValuesByPath("Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose", simulation = simulations$PO500,
-                         values = 500, units = "mg")
+setParameterValuesByPath(
+  "Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose",
+  simulation = simulations$PO500,
+  values = 500,
+  units = "mg"
+)
 
 # Get all `Dose` parameters for the MD simulation
-doseParams <- getAllParametersMatching("Applications|**|Dose", container = simulations$PO500MD)
-setParameterValues(parameters = doseParams, values = rep(500, length(doseParams)), units = rep("mg", length(doseParams)))
+doseParams <- getAllParametersMatching(
+  "Applications|**|Dose",
+  container = simulations$PO500MD
+)
+setParameterValues(
+  parameters = doseParams,
+  values = rep(500, length(doseParams)),
+  units = rep("mg", length(doseParams))
+)
 ```
 
 ### Defining `PIParameters`
 
 ```{r}
-parameterInputData <- list(list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
-                           list(path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance", min = 0, max = 100, start = 10),
-                           list(path = "Clarithromycin|Specific intestinal permeability (transcellular)", min = 0, max = 1, start = 0.01))
+parameterInputData <- list(
+  list(path = "Clarithromycin-CYP3A4-fit|kcat", min = 0, max = 100, start = 10),
+  list(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-fitted|Specific clearance",
+    min = 0,
+    max = 100,
+    start = 10
+  ),
+  list(
+    path = "Clarithromycin|Specific intestinal permeability (transcellular)",
+    min = 0,
+    max = 1,
+    start = 0.01
+  )
+)
 
 parameters <- vector("list", length = length(parameterInputData))
 for (idx in seq_along(parameterInputData)) {
   modelParams <- list()
   for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter( path = parameterInputData[[idx]]$path, container = simulation ))
-    }
+    modelParams <- c(
+      modelParams,
+      ospsuite::getParameter(
+        path = parameterInputData[[idx]]$path,
+        container = simulation
+      )
+    )
+  }
   parameters[[idx]] <- PIParameters$new(parameters = modelParams)
   parameters[[idx]]$minValue <- parameterInputData[[idx]]$min
   parameters[[idx]]$maxValue <- parameterInputData[[idx]]$max
@@ -87,25 +137,40 @@ Create mappings of simulation outputs to the observed data sets.
 ```{r}
 outputPath <- "Organism|PeripheralVenousBlood|Clarithromycin|Plasma (Peripheral Venous Blood)"
 outputMappings <- vector("list", length = length(simulations))
-outputMappings[[1]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
-                                                                  container = simulations$IV250))
-outputMappings[[1]]$addObservedDataSets(obsData$Clarithromycin_Profiles.IV250.IV250SD)
+outputMappings[[1]] <- PIOutputMapping$new(
+  quantity = getQuantity(outputPath, container = simulations$IV250)
+)
+outputMappings[[1]]$addObservedDataSets(
+  obsData$Clarithromycin_Profiles.IV250.IV250SD
+)
 
-outputMappings[[2]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
-                                                                  container = simulations$PO250))
-outputMappings[[2]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO250.PO500SD)
+outputMappings[[2]] <- PIOutputMapping$new(
+  quantity = getQuantity(outputPath, container = simulations$PO250)
+)
+outputMappings[[2]]$addObservedDataSets(
+  obsData$Clarithromycin_Profiles.PO250.PO500SD
+)
 
-outputMappings[[3]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
-                                                                  container = simulations$PO250MD))
-outputMappings[[3]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO250MD.PO250MD)
+outputMappings[[3]] <- PIOutputMapping$new(
+  quantity = getQuantity(outputPath, container = simulations$PO250MD)
+)
+outputMappings[[3]]$addObservedDataSets(
+  obsData$Clarithromycin_Profiles.PO250MD.PO250MD
+)
 
-outputMappings[[4]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
-                                                                  container = simulations$PO500))
-outputMappings[[4]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO500.PO500SD)
+outputMappings[[4]] <- PIOutputMapping$new(
+  quantity = getQuantity(outputPath, container = simulations$PO500)
+)
+outputMappings[[4]]$addObservedDataSets(
+  obsData$Clarithromycin_Profiles.PO500.PO500SD
+)
 
-outputMappings[[5]] <- PIOutputMapping$new(quantity = getQuantity(outputPath,
-                                                                  container = simulations$PO500MD))
-outputMappings[[5]]$addObservedDataSets(obsData$Clarithromycin_Profiles.PO500MD.PO500MD)
+outputMappings[[5]] <- PIOutputMapping$new(
+  quantity = getQuantity(outputPath, container = simulations$PO500MD)
+)
+outputMappings[[5]]$addObservedDataSets(
+  obsData$Clarithromycin_Profiles.PO500MD.PO500MD
+)
 
 
 for (idx in seq_along(outputMappings)) {

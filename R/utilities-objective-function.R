@@ -211,7 +211,7 @@
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(log(pmax(
     0,
-    dnorm(
+    stats::dnorm(
       residualsData$ySimulated,
       residualsData$yObserved,
       1 / residualsData$totalWeights

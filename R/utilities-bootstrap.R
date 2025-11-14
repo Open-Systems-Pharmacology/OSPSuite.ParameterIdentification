@@ -514,7 +514,7 @@
   # generated using quantile-based thresholds.
   quantiles <- seq(1, minProb, by = -0.05)
   cappedVariants <- lapply(quantiles, function(q) {
-    cap <- quantile(noiseVar, probs = q, na.rm = TRUE)
+    cap <- stats::quantile(noiseVar, probs = q, na.rm = TRUE)
     pmin(noiseVar, cap)
   })
 
@@ -586,7 +586,7 @@
   # Compute CV for increasing amounts of symmetric trimming
   for (i in 0:maxTrim) {
     trimmed <- sorted[(i + 1):(n - i)]
-    cvs[i + 1] <- sd(trimmed) / abs(mean(trimmed))
+    cvs[i + 1] <- stats::sd(trimmed) / abs(mean(trimmed))
   }
 
   # Find point where CV stops decreasing sharply (plateau starts)
