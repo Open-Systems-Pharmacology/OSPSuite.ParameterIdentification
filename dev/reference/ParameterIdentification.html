@@ -11,7 +11,7 @@ methods."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,13 +69,13 @@ set of model parameters to be optimized (read-only).</p></dd>
 
 
 <dt><code>configuration</code></dt>
-<dd><p>A <code>PIConfiguration</code> object controlling algorithm,
-CI estimation, and objective function options.</p></dd>
+<dd><p>A <code>PIConfiguration</code> object controlling algorithm, CI
+estimation, and objective function options.</p></dd>
 
 
 <dt><code>outputMappings</code></dt>
-<dd><p>A list of <code>PIOutputMapping</code> objects mapping observed
-datasets to simulated outputs.</p></dd>
+<dd><p>A list of <code>PIOutputMapping</code> objects mapping
+observed datasets to simulated outputs.</p></dd>
 
 
 </dl><p></p></div>
@@ -110,8 +110,8 @@ datasets to simulated outputs.</p></dd>
 <p></p><div class="arguments"><dl><dt><code>simulations</code></dt>
 <dd><p>A <code>Simulation</code> or list of <code>Simulation</code> objects to be
 used for parameter estimation. Each simulation must contain the model
-parameters specified in <code>parameters</code>. Use <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">ospsuite::loadSimulation()</a></code>
-to load simulation files.</p></dd>
+parameters specified in <code>parameters</code>. Use
+<code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">ospsuite::loadSimulation()</a></code> to load simulation files.</p></dd>
 
 
 <dt><code>parameters</code></dt>
@@ -124,30 +124,33 @@ may group one or more underlying model parameters. See
 <dt><code>outputMappings</code></dt>
 <dd><p>A <code>PIOutputMapping</code> or list of <code>PIOutputMapping</code>
 objects mapping model outputs (represented by <code>Quantity</code> objects) to
-observed data. #' See <code><a href="PIOutputMapping.html">PIOutputMapping</a></code>
-for details.</p></dd>
+observed data. #' See
+<code><a href="PIOutputMapping.html">PIOutputMapping</a></code> for details.</p></dd>
 
 
 <dt><code>configuration</code></dt>
 <dd><p>(Optional) A <code>PIConfiguration</code> object specifying
-algorithm, CI method, and objective function settings. Defaults to a new
-configuration if omitted. See <code><a href="PIConfiguration.html">PIConfiguration</a></code>
-for configuration options.</p></dd>
+algorithm, CI method, and objective function settings. Defaults to a
+new configuration if omitted. See
+<code><a href="PIConfiguration.html">PIConfiguration</a></code> for configuration
+options.</p></dd>
 
 
 </dl><p></p></div>
 </div>
 <div class="section">
 <h4 id="returns">Returns<a class="anchor" aria-label="anchor" href="#returns"></a></h4>
-<p>A <code>ParameterIdentification</code> object ready to run parameter estimation.
+<p>A <code>ParameterIdentification</code> object ready to run parameter
+estimation.
 Executes Parameter Identification</p>
 </div>
 
 </div><p></p><hr><a id="method-ParameterIdentification-run"></a><div class="section">
 <h3 id="method-run-">Method <code>run()</code><a class="anchor" aria-label="anchor" href="#method-run-"></a></h3>
-<p>Runs parameter identification using the configured optimization
-algorithm. Returns a structured <code>piResults</code>object containing estimated
-parameters, diagnostics, and (optionally) confidence intervals.</p><div class="section">
+<p>Runs parameter identification using the configured
+optimization algorithm. Returns a structured <code>piResults</code>object
+containing estimated parameters, diagnostics, and (optionally)
+confidence intervals.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">run</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
@@ -200,8 +203,8 @@ data.</p><div class="section">
 <li><p>Residuals vs. time
 Perform a Parameter Grid Search</p></li>
 </ul><p>Generates a grid of parameter combinations, computes the OFV for each,
-and optionally sets the best result as the starting point for s subsequent
-optimization.</p>
+and optionally sets the best result as the starting point for s
+subsequent optimization.</p>
 <p>Note: The resulting grid can be used to explore the parameter space or
 initialize better starting values.</p>
 </div>
@@ -292,13 +295,13 @@ points across each parameter profile. Default is 20.</p></dd>
 <div class="section">
 <h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
 <p>A list of tibbles, one for each parameter, showing how the
-objective function value (OFV) changes when varying that parameter while
-keeping the others fixed.</p>
+objective function value (OFV) changes when varying that parameter
+while keeping the others fixed.</p>
 </div>
 
 </div><p></p><hr><a id="method-ParameterIdentification-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
-<p>Prints a summary of ParameterIdentification instance.</p><div class="section">
+<p>Prints a summary of <code>ParameterIdentification</code> instance.</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
@@ -313,11 +316,11 @@ keeping the others fixed.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>
