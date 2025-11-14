@@ -1,7 +1,7 @@
 #' @title PIConfiguration
 #' @docType class
-#' @description Encapsulates configurations such as optimization algorithm choice,
-#' and evaluation settings for parameter identification.
+#' @description Encapsulates configurations such as optimization algorithm
+#'   choice, and evaluation settings for parameter identification.
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -32,7 +32,7 @@ PIConfiguration <- R6::R6Class(
     #   }
     # },
     #' @field printEvaluationFeedback Boolean. If `TRUE`, prints objective
-    #' function value after each evaluation. Default is `FALSE`.
+    #'   function value after each evaluation. Default is `FALSE`.
     printEvaluationFeedback = function(value) {
       if (missing(value)) {
         private$.printEvaluationFeedback
@@ -42,8 +42,8 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field simulationRunOptions Object of `SimulationRunOptions` for simulation
-    #' runs. If `NULL`, default options are used.
+    #' @field simulationRunOptions Object of `SimulationRunOptions` for
+    #'   simulation runs. If `NULL`, default options are used.
     simulationRunOptions = function(value) {
       if (missing(value)) {
         private$.simulationRunOptions
@@ -69,8 +69,8 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field algorithm Optimization algorithm name. See
-    #' [`ospsuite.parameteridentification::Algorithms`] for a list of supported
-    #' algorithms. Defaults to `BOBYQA`.
+    #'   [`ospsuite.parameteridentification::Algorithms`] for a list of
+    #'   supported algorithms. Defaults to `BOBYQA`.
     algorithm = function(value) {
       if (missing(value)) {
         private$.algorithm
@@ -82,8 +82,8 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field ciMethod Confidence interval estimation method. See
-    #' [`ospsuite.parameteridentification::CIMethods`] for available options.
-    #' Defaults to `hessian`.
+    #'   [`ospsuite.parameteridentification::CIMethods`] for available options.
+    #'   Defaults to `hessian`.
     ciMethod = function(value) {
       if (missing(value)) {
         private$.ciMethod
@@ -95,10 +95,11 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field algorithmOptions Named list of settings specific to the selected
-    #' algorithm.. Refer to [`ospsuite.parameteridentification::AlgorithmOptions`]
-    #' for default settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
-    #' denotes the algorithm name). If `NULL`, algorithm's default settings are
-    #' applied.
+    #'   algorithm.. Refer to
+    #'   [`ospsuite.parameteridentification::AlgorithmOptions`] for default
+    #'   settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
+    #'   denotes the algorithm name). If `NULL`, algorithm's default settings
+    #'   are applied.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
@@ -107,10 +108,10 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
-    #' @field ciOptions Named list of settings for the selected CI method.
-    #' Refer to [`ospsuite.parameteridentification::CIOptions`] for default
-    #' settings per method (e.g., `CIOptions_XYZ` where `XYZ` corresponds to the
-    #' method name). If `NULL`, CI method's default settings are applied.
+    #' @field ciOptions Named list of settings for the selected CI method. Refer
+    #'   to [`ospsuite.parameteridentification::CIOptions`] for default settings
+    #'   per method (e.g., `CIOptions_XYZ` where `XYZ` corresponds to the method
+    #'   name). If `NULL`, CI method's default settings are applied.
     ciOptions = function(value) {
       if (missing(value)) {
         private$.ciOptions
@@ -120,9 +121,9 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field autoEstimateCI Logical. If `TRUE`, confidence intervals are
-    #' automatically estimated after optimization. If `FALSE`, the step is
-    #' skipped and can be triggered manually by calling the `estimateCI()`
-    #' method on the `ParameterIdentification` object.
+    #'   automatically estimated after optimization. If `FALSE`, the step is
+    #'   skipped and can be triggered manually by calling the `estimateCI()`
+    #'   method on the `ParameterIdentification` object.
     autoEstimateCI = function(value) {
       if (missing(value)) {
         private$.autoEstimateCI
@@ -133,7 +134,7 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field modelCostField Read-only field name in the cost object used as the
-    #' optimization target. Currently, only `modelCost` is supported.
+    #'   optimization target. Currently, only `modelCost` is supported.
     modelCostField = function(value) {
       if (missing(value)) {
         private$.modelCostField
@@ -169,7 +170,7 @@ PIConfiguration <- R6::R6Class(
       private$.autoEstimateCI <- TRUE
     },
 
-    #' @description Prints a summary of the PIConfiguration.
+    #' @description Prints a summary of the `PIConfiguration`.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
       ospsuite.utils::ospPrintItems(list(
@@ -180,8 +181,8 @@ PIConfiguration <- R6::R6Class(
         "Robust residual calculation method" = private$.objectiveFunctionOptions$robustMethod,
         "Print feedback after each function evaluation" = private$.printEvaluationFeedback
       ))
-      #     private$printLine("Simulate to steady-state", private$.simulateSteadyState)
-      #      private$printLine("Steady-state time [min]", private$.steadyStateTime)
+      # private$printLine("Simulate to steady-state", private$.simulateSteadyState)
+      # private$printLine("Steady-state time [min]", private$.steadyStateTime)
     }
   )
 )

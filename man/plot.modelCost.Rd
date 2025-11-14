@@ -9,7 +9,8 @@
 \arguments{
 \item{x}{A \code{modelCost} object containing residuals to plot.}
 
-\item{legpos}{Position of the legend; default is "topright". Use NA to omit the legend.}
+\item{legpos}{Position of the legend; default is "topright". Use NA to omit
+the legend.}
 
 \item{...}{Additional arguments passed to the plot function.}
 }

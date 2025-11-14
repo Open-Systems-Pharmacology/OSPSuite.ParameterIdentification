@@ -1,8 +1,9 @@
 #' @title Optimizer Class
 #'
-#' @description Internal class for handling optimization in parameter identification.
-#' Provides a unified interface for different optimization algorithms and supports
-#' multiple methods for estimating parameter uncertainty.
+#' @description Internal class for handling optimization in parameter
+#'   identification. Provides a unified interface for different optimization
+#'   algorithms and supports multiple methods for estimating parameter
+#'   uncertainty.
 #'
 #' @keywords internal
 #' @noRd
@@ -181,7 +182,7 @@ Optimizer <- R6::R6Class(
     .estimateCIProfileLikelihood = function(par, fn, controlCI, optimizer) {
       result <- private$.initializeCIResult()
 
-      # Calculate cost threshold based on confidence level (chi-squared criterion)
+      # Calculate cost threshold based on confidence level (chi-sq criterion)
       controlCI$costThreshold <- 0.5 * fn(par) + qchisq(controlCI$confLevel, df = 1)
 
       zScore <- qnorm(1 - (1 - controlCI$confLevel) / 2)
@@ -217,7 +218,7 @@ Optimizer <- R6::R6Class(
       return(result)
     },
 
-    # Profile likelihood confidence interval estimation for one parameter.
+    # Profile likelihood confidence interval estimation for one parameter
     .computeProfileCI = function(par, fn, optimizer, p, direction, controlCI) {
       ci <- NA_real_
 
@@ -292,7 +293,7 @@ Optimizer <- R6::R6Class(
       for (i in seq_len(nBootstrap)) {
         message(messages$statusBootstrap(i, nBootstrap))
 
-        # Pass individual seed to obj. function to resample observed data reproducibly
+        # Pass individual seed to obj. function to resample observed data
         bootstrapFn <- function(p) fn(p, bootstrapSeed = seedVector[i])
 
         # Re-optimize with resampled data
@@ -333,11 +334,11 @@ Optimizer <- R6::R6Class(
         na.rm = TRUE,
         type = 9
       )
-      
+
       # Estimate falls outside [lower, upper], switch to a one-sided bound
       lowerConflicts <- result$lowerCI > par
       upperConflicts <- result$upperCI < par
-      
+
       result$lowerCI[lowerConflicts] <- NA_real_
       result$upperCI[upperConflicts] <- NA_real_
 
@@ -383,7 +384,7 @@ Optimizer <- R6::R6Class(
     # Converts the objective function to handle fixed parameters and extract
     # modelCost with dynamic overrides
     .preprocessFn = function(fn, fixedParams) {
-      # If fn is already preprocessed, return it to prevent infinite recursion
+      # If fn is already pre-processed, return it to prevent infinite recursion
       if (inherits(fn, "preprocessedFn")) {
         return(fn)
       }
@@ -477,9 +478,9 @@ Optimizer <- R6::R6Class(
   public = list(
     #' @description Initialize an Optimizer instance for parameter estimation.
     #'
-    #' @param configuration `PIConfiguration` for additional settings. For details
-    #' on creating a `PIConfiguration` object, see
-    #' [`ospsuite.parameteridentification::PIConfiguration`].
+    #' @param configuration `PIConfiguration` for additional settings. For
+    #'   details on creating a `PIConfiguration` object, see
+    #'   [`ospsuite.parameteridentification::PIConfiguration`].
     initialize = function(configuration) {
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
 
@@ -493,11 +494,11 @@ Optimizer <- R6::R6Class(
     #' @param lower Numeric vector of lower parameter bounds
     #' @param upper Numeric vector of upper parameter bounds
     #' @param fixedParams Optional list with fixed parameters containing two
-    #' elements:
+    #'   elements:
     #' - **`idx`**: Numeric vector specifying indices of parameters to fix
     #' - **`values`**: Numeric vector with corresponding fixed values
     #' @return List with optimization results including parameter estimates,
-    #' cost, and residuals
+    #'   cost, and residuals
     run = function(par, fn, lower, upper, fixedParams = NULL) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
@@ -546,17 +547,17 @@ Optimizer <- R6::R6Class(
     },
 
     #' @description Estimate confidence intervals using the selected method
-    #' (Hessian, Profile Likelihood, Bootstrap).
+    #'   (Hessian, Profile Likelihood, Bootstrap).
     #'
     #' @param par Numeric vector of parameter values for confidence interval
-    #' estimation.
+    #'   estimation.
     #' @param fn Objective function used for parameter estimation.
     #' @param lower Numeric vector of lower parameter bounds.
     #' @param upper Numeric vector of upper parameter bounds.
     #' @param optimizer Optional instance of Optimizer used during profile
-    #' likelihood or bootstrap CI estimation.
+    #'   likelihood or bootstrap CI estimation.
     #' @return List with confidence interval results including lower and upper
-    #' bounds, standard errors, coefficient of variation, and method details.
+    #'   bounds, standard errors, coefficient of variation, and method details.
     estimateCI = function(par, fn, lower, upper, optimizer = NULL) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)

@@ -1,6 +1,7 @@
 #' @title PIParameters
 #' @docType class
-#' @description A parameter to be optimized in a parameter identification routine
+#' @description A parameter to be optimized in a parameter identification
+#'   routine
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -8,8 +9,8 @@ PIParameters <- R6::R6Class(
   "PIParameters",
   cloneable = TRUE,
   active = list(
-    #' @field parameters A list of parameter objects.
-    #' Adding or removing parameters is not supported.
+    #' @field parameters A list of parameter objects. Adding or removing
+    #'   parameters is not supported.
     parameters = function(value) {
       if (missing(value)) {
         private$.parameters
@@ -18,8 +19,8 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field currValue The current parameter values for simulations,
-    #' in units specified by `PIParameters$unit`.
+    #' @field currValue The current parameter values for simulations, in units
+    #'   specified by `$unit`.
     currValue = function(value) {
       if (missing(value)) {
         toUnit(
@@ -72,7 +73,8 @@ PIParameters <- R6::R6Class(
       }
     },
 
-    #' @field unit Parameter value units. Changing the unit does NOT auto-adjust min/max/start values.
+    #' @field unit Parameter value units. Changing the unit does NOT
+    #'   automatically adjust min/max/start values.
     unit = function(value) {
       if (missing(value)) {
         private$.unit
@@ -90,10 +92,10 @@ PIParameters <- R6::R6Class(
     .unit = NULL
   ),
   public = list(
-    #' @description Initialize a new instance of the class.
-    #' The initial start value is derived from the first parameter upon creation,
-    #' modifiable via `PIParameters$startValue`. All parameters are optimized
-    #' using this unified value.
+    #' @description Initialize a new instance of the class. The initial start
+    #'   value is derived from the first parameter upon creation, modifiable via
+    #'   `PIParameters$startValue`. All parameters are optimized using this
+    #'   unified value.
     #' @param parameters List of `Parameter` class objects to be optimized.
     #' @return A new `PIParameters` object.
     initialize = function(parameters) {
@@ -113,8 +115,8 @@ PIParameters <- R6::R6Class(
       private$.unit <- parameters[[1]]$unit
     },
 
-    #' @description Updates parameter(s) value.
-    #' Value is specified in units of `PIParameters$unit`.
+    #' @description Updates parameter(s) value. Value is specified in units of
+    #'   `$unit`.
     #' @param value Numeric value to set.
     setValue = function(value) {
       ospsuite.utils::validateIsNumeric(value)
@@ -126,7 +128,8 @@ PIParameters <- R6::R6Class(
     },
 
     #' @description Export parameter metadata and configuration to a data frame.
-    #' Returns one row per internal model parameter wrapped by the `PIParameters` object.
+    #'   Returns one row per internal model parameter wrapped by the
+    #'   `PIParameters` object.
     #' @param group Optional character label identifying the optimization group.
     #' @return A `data.frame` with one row per internal parameter.
     toDataFrame = function(group = NULL) {

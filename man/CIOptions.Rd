@@ -23,12 +23,12 @@ CIOptions_PL
 CIOptions_Bootstrap
 }
 \description{
-Default options for various confidence interval estimation methods used within
-the package. These methods are configured via the \code{PIConfiguration} class.
+Default options for various confidence interval estimation methods used
+within the package. These methods are configured via the \code{PIConfiguration}
+class.
 }
 \section{CIOptions_Hessian}{
-
-Default options for the \strong{\code{hessian}} method.
+ Default options for the \strong{\code{hessian}} method.
 \itemize{
 \item \strong{\code{epsilon}}: Numerical step size for numerical differentiation. Default
 is \code{NULL}, which applies an adaptive step size.
@@ -38,8 +38,8 @@ is \code{NULL}, which applies an adaptive step size.
 }
 
 \section{CIOptions_PL}{
-
-Default options for the \strong{\code{PL}} (Profile Likelihood) method.
+ Default options for the \strong{\code{PL}} (Profile Likelihood)
+method.
 \itemize{
 \item \strong{\code{epsilon}}: Numerical step size for profile likelihood adjustments.
 Default is \code{NULL}, which applies an adaptive step size.
@@ -51,8 +51,7 @@ Default is \code{100}.
 }
 
 \section{CIOptions_Bootstrap}{
-
-Default options for the \strong{\code{bootstrap}} method.
+ Default options for the \strong{\code{bootstrap}} method.
 \itemize{
 \item \strong{\code{nSamples}}: Number of bootstrap resampling iterations. Default is \code{1000}.
 \item \strong{\code{confLevel}}: Confidence level for interval estimation. Default is \code{0.95}

@@ -14,21 +14,22 @@
   return(.getSimulationContainer(entity$parentContainer))
 }
 
-#' Validates Matching IDs across Simulation IDs, PI Parameters, and Output Mappings
+#' Validates Matching IDs across Simulation IDs, PI Parameters, and Output
+#' Mappings
 #'
-#' Ensures that every Simulation ID is present and matches with corresponding IDs
-#' in PIParameter and OutputMapping instances. This function is crucial for
-#' maintaining consistency and preventing mismatches that could disrupt parameter
-#' identification processes.
+#' Ensures that every Simulation ID is present and matches with corresponding
+#' IDs in `PIParameter` and `OutputMapping` instances. This function is crucial
+#' for maintaining consistency and preventing mismatches that could disrupt
+#' parameter identification processes.
 #'
 #' @param simulationIds Vector of simulation IDs.
-#' @param piParameters List of `PIParameter` instances, from which IDs are extracted
-#' and validated against simulationIds.
+#' @param piParameters List of `PIParameter` instances, from which IDs are
+#'   extracted and validated against `simulationIds`.
 #' @param outputMappings List of `OutputMapping` instances, from which IDs are
-#' extracted and validated against simulationIds.
+#'   extracted and validated against `simulationIds`.
 #'
-#' @return TRUE if all IDs match accordingly, otherwise throws an error detailing
-#' the mismatch or absence of IDs.
+#' @return TRUE if all IDs match accordingly, otherwise throws an error
+#'   detailing the mismatch or absence of IDs.
 #' @keywords internal
 .validateSimulationIds <- function(simulationIds, piParameters, outputMappings) {
   # Extract unique IDs from piParameters assuming up to two levels of list depth
@@ -66,14 +67,14 @@
 
 #' Stores current simulation output state
 #'
-#' @description Stores simulation output intervals, output time points,
-#' and output selections in the current state.
+#' @description Stores simulation output intervals, output time points, and
+#'   output selections in the current state.
 #'
 #' @param simulations List of `Simulation` objects
 #'
 #' @return A named list with entries `outputIntervals`, `timePoints`, and
-#' `outputSelections`. Every entry is a named list with names being the IDs
-#' of the simulations.
+#'   `outputSelections`. Every entry is a named list with names being the IDs of
+#'   the simulations.
 #' @keywords internal
 .storeSimulationState <- function(simulations) {
   simulations <- c(simulations)
@@ -108,10 +109,9 @@
 #' Restore simulation output state
 #'
 #' @inheritParams .storeSimulationState
-#' @param simStateList Output of the function `.storeSimulationState`.
-#' A named list with entries `outputIntervals`, `timePoints`, and
-#' `outputSelections`. Every entry is a named list with names being the IDs of
-#' the simulations.
+#' @param simStateList Output of the function `.storeSimulationState`. A named
+#'   list with entries `outputIntervals`, `timePoints`, and `outputSelections`.
+#'   Every entry is a named list with names being the IDs of the simulations.
 #'
 #' @keywords internal
 .restoreSimulationState <- function(simulations, simStateList) {

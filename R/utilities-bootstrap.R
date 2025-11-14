@@ -15,7 +15,8 @@
 
 #' Check if any aggregated dataset exists
 #'
-#' Returns TRUE if at least one dataset across all output mappings is aggregated.
+#' Returns TRUE if at least one dataset across all output mappings is
+#' aggregated.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return Logical scalar.
@@ -29,10 +30,10 @@
 
 #' Classify Observed Datasets for Bootstrap
 #'
-#' Evaluates all observed datasets in the output mappings and classifies them
-#' as either individual or aggregated based on the presence of `yErrorType`.
-#' Prints a status message with the number of individual and aggregated datasets,
-#' and warns if too few individual datasets are available for stable bootstrap CI.
+#' Evaluates all observed datasets in the output mappings and classifies them as
+#' either individual or aggregated based on the presence of `yErrorType`. Prints
+#' a status message with the number of individual and aggregated datasets, and
+#' warns if too few individual datasets are available for stable bootstrap CI.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to classify.
 #' @keywords internal
@@ -59,9 +60,8 @@
 
 #' Apply Resampled Dataset Weights and Values
 #'
-#' Applies both weights and values to each dataset, as stored in the
-#' original output mapping state. Aggregated datasets are resampled using
-#' GPR models.
+#' Applies both weights and values to each dataset, as stored in the original
+#' output mapping state. Aggregated datasets are resampled using GPR models.
 #'
 #' @param outputMappings List of `PIOutputMapping` objects.
 #' @param mappingState A named list with `dataSetWeights` and `dataSetValues`.
@@ -85,8 +85,8 @@
 
   # Resample and apply synthetic y-values for aggregated datasets using GPR.
   # This replaces mean values with simulated realizations that preserve temporal
-  # correlation, thereby reflecting realistic sampling uncertainty in time-series
-  # data.
+  # correlation, thereby reflecting realistic sampling uncertainty in
+  # time-series data.
   if (.hasAggregatedData(outputMappings)) {
     outputMappings <- .resampleAndApplyMappingValues(
       outputMappings = outputMappings,
@@ -101,12 +101,12 @@
 
 #' Resample and apply dataset weights
 #'
-#' Resamples dataset weights based on a bootstrap seed and applies them to
-#' each output mapping.
+#' Resamples dataset weights based on a bootstrap seed and applies them to each
+#' output mapping.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of initial dataset weight lists, one per output
-#' mapping.
+#'   mapping.
 #' @param seed An integer seed used for bootstrap resampling.
 #' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
@@ -118,11 +118,12 @@
 
 #' Resample and apply dataset values
 #'
-#' Resamples dataset values (used for aggregated datasets) using GPR models
-#' and applies them to each output mapping.
+#' Resamples dataset values (used for aggregated datasets) using GPR models and
+#' applies them to each output mapping.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingValues A list of original dataset values, one per output mapping.
+#' @param mappingValues A list of original dataset values, one per output
+#'   mapping.
 #' @param gprModels List of GPR models, one per output mapping.
 #' @param seed An integer seed used for bootstrap resampling.
 #' @return Updated list of `PIOutputMapping` objects.
@@ -138,11 +139,13 @@
 
 #' Resample mapping-level dataset weights
 #'
-#' Resamples dataset weights for each output mapping using a shared bootstrap strategy.
-#' Ensures mapping weights align with observed datasets and applies point-level resampling.
+#' Resamples dataset weights for each output mapping using a shared bootstrap
+#' strategy. Ensures mapping weights align with observed datasets and applies
+#' point-level resampling.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of named dataset weight lists, one per output mapping.
+#' @param mappingWeights A list of named dataset weight lists, one per output
+#'   mapping.
 #' @param seed Integer used for bootstrap resampling.
 #' @return A list of resampled dataset weight lists, one per output mapping.
 #' @keywords internal
@@ -172,11 +175,13 @@
 
 #' Resample dataset-level weights using bootstrap
 #'
-#' Performs bootstrap resampling by adjusting dataset-level weights. Each dataset’s
-#' total weight is split into a dataset-level weight and normalized point-level weights.
-#' Sampling is performed with replacement, and point weights are scaled accordingly.
+#' Performs bootstrap resampling by adjusting dataset-level weights. Each
+#' dataset’s total weight is split into a dataset-level weight and normalized
+#' point-level weights. Sampling is performed with replacement, and point
+#' weights are scaled accordingly.
 #'
-#' @param dataSetWeights A named list of numeric weight vectors (one per dataset).
+#' @param dataSetWeights A named list of numeric weight vectors (one per
+#'   dataset).
 #' @param seed Integer used to control the resampling.
 #' @return A named list of resampled weight vectors.
 #' @keywords internal
@@ -239,8 +244,8 @@
 
 #' Resample mapping-level dataset values using GPR
 #'
-#' Resamples dataset values for each output mapping. Aggregated datasets
-#' are simulated from GPR models; others are returned unchanged.
+#' Resamples dataset values for each output mapping. Aggregated datasets are
+#' simulated from GPR models; others are returned unchanged.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingValues A list of dataset value lists, one per output mapping.
@@ -286,7 +291,8 @@
 #' Datasets without a GPR model are returned unchanged.
 #'
 #' @param dataSetValues A named list of dataset value structures.
-#' @param gprModels A named list of GPR models (or NULL for non-aggregated datasets).
+#' @param gprModels A named list of GPR models (or NULL for non-aggregated
+#'   datasets).
 #' @param seed An integer seed for reproducibility.
 #' @return A named list of dataset value structures with updated y-values.
 #' @keywords internal
@@ -350,7 +356,7 @@
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A nested list of fitted GPR models (or NULL for non-aggregated
-#' datasets).
+#'   datasets).
 #'
 #' @keywords internal
 #' @noRd
@@ -394,8 +400,8 @@
 #'
 #' Aggregated datasets provide only summary statistics (mean and variability),
 #' without individual observations. Because measurements are time-correlated,
-#' simple pointwise sampling is inappropriate. This function fits a GPR model
-#' to log-transformed y-values and their uncertainty to enable the simulation of
+#' simple pointwise sampling is inappropriate. This function fits a GPR model to
+#' log-transformed y-values and their uncertainty to enable the simulation of
 #' smooth, realistic trajectories during bootstrap resampling.
 #'
 #' Handles both arithmetic and geometric standard deviations. If model fitting
@@ -407,8 +413,8 @@
 #' @param yErrorValues Numeric vector of error values.
 #' @param yErrorType Character; either `GeometricStdDev` or `ArithmeticStdDev`.
 #' @param kernelType Character; kernel type for GPR. Default is "matern5_2".
-#' @param minProb Numeric between 0 and 1. Lowest quantile used for capping noise
-#' variance. Default is 0.5.
+#' @param minProb Numeric between 0 and 1. Lowest quantile used for capping
+#'   noise variance. Default is 0.5.
 #' @return A fitted `DiceKriging::km` object.
 #' @keywords internal
 #' @noRd
@@ -423,7 +429,8 @@
   noiseVar <- switch(yErrorType,
     ArithmeticStdDev = {
       # For arithmetic SD: Var[log(y)] ≈ (σ / y)^2 using the delta method
-      # Missing or non-finite relative errors are imputed using the mean relative error
+      # Missing or non-finite relative errors are imputed using the mean
+      # relative error
       relError <- yErrorValues / yValues
       relError[!is.finite(relError)] <- NA
       relError[is.na(relError)] <- mean(relError, na.rm = TRUE)
@@ -440,7 +447,7 @@
     stop(messages$errorUnsupportedErrorType())
   )
 
-  # DiceKriging::km may fail to converge with extreme noise values (e.g., at
+  # `DiceKriging::km` may fail to converge with extreme noise values (e.g., at
   # late timepoints). Progressively capped versions of the noise variance are
   # generated using quantile-based thresholds.
   quantiles <- seq(1, minProb, by = -0.05)
@@ -491,12 +498,13 @@
 
 #' Stabilize bootstrap coefficient of variation by minimal symmetric trimming
 #'
-#' Dynamically trims extreme values from both ends of a sorted bootstrap distribution
-#' to reach the point where the coefficient of variation (CV) stabilizes.
+#' Dynamically trims extreme values from both ends of a sorted bootstrap
+#' distribution to reach the point where the coefficient of variation (CV)
+#' stabilizes.
 #'
 #' @param values Numeric vector of bootstrap estimates.
 #' @param maxTrimFraction Maximum fraction of values to trim from each tail.
-#' Default is 0.05.
+#'   Default is 0.05.
 #'
 #' @return Trimmed numeric vector.
 #' @keywords internal

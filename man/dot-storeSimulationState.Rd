@@ -11,11 +11,11 @@
 }
 \value{
 A named list with entries \code{outputIntervals}, \code{timePoints}, and
-\code{outputSelections}. Every entry is a named list with names being the IDs
-of the simulations.
+\code{outputSelections}. Every entry is a named list with names being the IDs of
+the simulations.
 }
 \description{
-Stores simulation output intervals, output time points,
-and output selections in the current state.
+Stores simulation output intervals, output time points, and
+output selections in the current state.
 }
 \keyword{internal}

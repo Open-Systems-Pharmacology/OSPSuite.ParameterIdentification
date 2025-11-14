@@ -5,8 +5,8 @@
 \alias{PIConfiguration}
 \title{PIConfiguration}
 \description{
-Encapsulates configurations such as optimization algorithm choice,
-and evaluation settings for parameter identification.
+Encapsulates configurations such as optimization algorithm
+choice, and evaluation settings for parameter identification.
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -14,8 +14,8 @@ and evaluation settings for parameter identification.
 \item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
 function value after each evaluation. Default is \code{FALSE}.}
 
-\item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for simulation
-runs. If \code{NULL}, default options are used.}
+\item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for
+simulation runs. If \code{NULL}, default options are used.}
 
 \item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
 affecting error metrics and cost calculation. See
@@ -23,23 +23,24 @@ affecting error metrics and cost calculation. See
 \code{\link{ObjectiveFunctionOptions}}.}
 
 \item{\code{algorithm}}{Optimization algorithm name. See
-\code{\link{Algorithms}} for a list of supported
-algorithms. Defaults to \code{BOBYQA}.}
+\code{\link{Algorithms}} for a list of
+supported algorithms. Defaults to \code{BOBYQA}.}
 
 \item{\code{ciMethod}}{Confidence interval estimation method. See
 \code{\link{CIMethods}} for available options.
 Defaults to \code{hessian}.}
 
 \item{\code{algorithmOptions}}{Named list of settings specific to the selected
-algorithm.. Refer to \code{\link{AlgorithmOptions}}
-for default settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
-denotes the algorithm name). If \code{NULL}, algorithm's default settings are
-applied.}
+algorithm.. Refer to
+\code{\link{AlgorithmOptions}} for default
+settings per algorithm (e.g., \code{AlgorithmOptions_XYZ} where \code{XYZ}
+denotes the algorithm name). If \code{NULL}, algorithm's default settings
+are applied.}
 
-\item{\code{ciOptions}}{Named list of settings for the selected CI method.
-Refer to \code{\link{CIOptions}} for default
-settings per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the
-method name). If \code{NULL}, CI method's default settings are applied.}
+\item{\code{ciOptions}}{Named list of settings for the selected CI method. Refer
+to \code{\link{CIOptions}} for default settings
+per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the method
+name). If \code{NULL}, CI method's default settings are applied.}
 
 \item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
 automatically estimated after optimization. If \code{FALSE}, the step is
@@ -76,7 +77,7 @@ A new \code{PIConfiguration} object.
 \if{html}{\out{<a id="method-PIConfiguration-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-print}{}}}
 \subsection{Method \code{print()}}{
-Prints a summary of the PIConfiguration.
+Prints a summary of the \code{PIConfiguration}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$print()}\if{html}{\out{</div>}}
 }

@@ -11,8 +11,9 @@ An object of class \code{list} of length 3.
 CIMethods
 }
 \description{
-Confidence interval estimation methods supported in the \code{ParameterIdentification}
-class. These methods are configured via the \code{PIConfiguration} class.
+Confidence interval estimation methods supported in the
+\code{ParameterIdentification} class. These methods are configured via the
+\code{PIConfiguration} class.
 }
 \details{
 Supported methods:
@@ -20,9 +21,9 @@ Supported methods:
 \item \strong{\code{hessian}} - Hessian-based approximation using the Fisher Information Matrix.
 \item \strong{\code{PL}} – Profile likelihood estimation, iterating over each parameter.
 \item \strong{\code{bootstrap}} – Bootstrap resampling to estimate parameter uncertainty.
-}
 
 These methods can be specified and configured within the \code{PIConfiguration}
 class to customize confidence interval estimation.
+}
 }
 \keyword{datasets}

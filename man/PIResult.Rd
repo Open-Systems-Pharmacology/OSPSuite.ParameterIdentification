@@ -5,8 +5,9 @@
 \alias{PIResult}
 \title{PIResult}
 \description{
-Structured output of a parameter identification task, including optimization
-results, confidence intervals, parameter metadata, and configuration.
+Structured output of a parameter identification task, including
+optimization results, confidence intervals, parameter metadata, and
+configuration.
 }
 \keyword{internal}
 \section{Methods}{
@@ -26,8 +27,8 @@ results, confidence intervals, parameter metadata, and configuration.
 Initializes a \code{PIResult} instance. For internal use only.
 
 This constructor is used internally by the parameter identification
-workflow to store and standardize results from optimization and confidence
-interval estimation.
+workflow to store and standardize results from optimization and
+confidence interval estimation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIResult$new(
   optimResult,
@@ -41,13 +42,13 @@ interval estimation.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{optimResult}}{A named list containing optimization results. Typically
-produced internally by \code{Optimizer$run()} and includes fields such as
-\code{par}, \code{value}, \code{startValues}, \code{elapsed}, \code{convergence}, etc.}
+\item{\code{optimResult}}{A named list containing optimization results.
+Typically produced internally by \code{Optimizer$run()} and includes fields
+such as \code{par}, \code{value}, \code{startValues}, \code{elapsed}, \code{convergence}, etc.}
 
 \item{\code{ciResult}}{(Optional) A named list of confidence interval results,
 returned by \code{Optimizer$estimateCI()}. Contains fields like \code{sd}, \code{cv},
-\code{lowerCI}, \code{upperCI}, \code{elapsed}, and \code{details}.}
+\code{lowerCI}, \code{upperCI}, \code{ciType}, \code{elapsed}, and \code{details}.}
 
 \item{\code{costDetails}}{(Optional) A named list with detailed cost metrics
 computed during optimization.}
@@ -55,16 +56,16 @@ computed during optimization.}
 \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
 parameter identification.}
 
-\item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used
-in the optimization. If not provided, default parameter names will be
+\item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
+the optimization. If not provided, default parameter names will be
 generated automatically.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A \code{PIResult} object containing optimization results, confidence
-interval estimates (if available), parameter metadata (if available), and
-configuration.
+interval estimates (if available), parameter metadata (if available),
+and configuration.
 }
 }
 \if{html}{\out{<hr>}}
@@ -88,6 +89,7 @@ A data frame with the following columns:
 \item \code{cv}: Coefficient of variation
 \item \code{lowerCI}: Lower confidence bound
 \item \code{upperCI}: Upper confidence bound
+\item \code{ciType}: Type of confidence interval ("two-sided", "one-sided", or "failed")
 \item \code{initialValue}: Initial parameter value used for optimization
 }
 }
@@ -109,7 +111,7 @@ A named list containing all result values.
 \if{html}{\out{<a id="method-PIResult-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIResult-print}{}}}
 \subsection{Method \code{print()}}{
-Prints a summary of PIResult
+Prints a summary of \code{PIResult}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIResult$print()}\if{html}{\out{</div>}}
 }

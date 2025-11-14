@@ -2,15 +2,16 @@
 % Please edit documentation in R/utilities-quantity.R
 \name{.validateOutputMappingHasData}
 \alias{.validateOutputMappingHasData}
-\title{Validate Observed Data Availability in PIOutputMapping}
+\title{Validate observed data availability in \code{PIOutputMapping}}
 \usage{
 .validateOutputMappingHasData(object)
 }
 \arguments{
-\item{object}{A PIOutputMapping object or a list of PIOutputMapping objects.}
+\item{object}{A \code{PIOutputMapping} object or a list of \code{PIOutputMapping}
+objects.}
 }
 \description{
-Ensures each PIOutputMapping object has observed datasets. Throws an error
+Ensures each \code{PIOutputMapping} object has observed datasets. Throws an error
 if no observed data is found.
 }
 \keyword{internal}

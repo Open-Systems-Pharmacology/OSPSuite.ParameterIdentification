@@ -1,7 +1,7 @@
 #' Format Parameter Values for Display
 #'
 #' @description Formats numeric values using scientific notation for very small
-#' or large values, and fixed-point otherwise.
+#'   or large values, and fixed-point otherwise.
 #'
 #' @param par Numeric vector of parameter values.
 #' @return Character vector of formatted values.

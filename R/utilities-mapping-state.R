@@ -2,8 +2,8 @@
 
 #' Extract Output Mapping State
 #'
-#' Captures the original weights and values of all datasets in the output mappings.
-#' Used to restore state after bootstrap resampling.
+#' Captures the original weights and values of all datasets in the output
+#' mappings. Used to restore state after bootstrap resampling.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A named list with fields `dataSetWeights` and `dataSetValues`.
@@ -23,7 +23,7 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param fn A function to apply to each output mapping.
 #' @return A list of results with the same length and (optional) names as
-#' `outputMappings`.
+#'   `outputMappings`.
 #' @keywords internal
 #' @noRd
 .mapOverOutputMappings <- function(outputMappings, fn) {
@@ -44,7 +44,7 @@
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A list of named dataset weight lists, one per output mapping. Each
-#' dataset weight list contains numeric vectors of y-value weights.
+#'   dataset weight list contains numeric vectors of y-value weights.
 #' @keywords internal
 #' @noRd
 .extractMappingWeights <- function(outputMappings) {
@@ -74,7 +74,7 @@
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return A list of named dataset value lists, one per output mapping. Each
-#' dataset value list contains x/y/yError values and yErrorType.
+#'   dataset value list contains x/y/yError values and yErrorType.
 #' @keywords internal
 #' @noRd
 .extractMappingValues <- function(outputMappings) {
@@ -98,7 +98,7 @@
 #'
 #' @param dataSet A `DataSet` object.
 #' @return A named list with elements `xValues`, `yValues`, `yErrorValues`, and
-#' `yErrorType`.
+#'   `yErrorType`.
 #' @keywords internal
 #' @noRd
 .extractDataSetValues <- function(dataSet) {
@@ -118,8 +118,8 @@
 #' Applies both dataset weights and values back to a list of output mappings.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to modify.
-#' @param mappingState A named list with fields `dataSetWeights` and `dataSetValues`,
-#' typically created by `.extractOutputMappingState()`.
+#' @param mappingState A named list with fields `dataSetWeights` and
+#'   `dataSetValues`, typically created by `.extractOutputMappingState()`.
 #' @return The modified list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
@@ -132,7 +132,8 @@
 
 #' Apply Dataset Weights to Output Mappings
 #'
-#' Assigns dataset weights to each output mapping using the mapping-level weight structure.
+#' Assigns dataset weights to each output mapping using the mapping-level weight
+#' structure.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of dataset weight lists, one per output mapping.
@@ -176,7 +177,7 @@
 #'
 #' @param dataSet A `DataSet` object.
 #' @param values A list containing `xValues`, `yValues`, `yErrorValues`, and
-#' optionally `yErrorType`.
+#'   optionally `yErrorType`.
 #' @keywords internal
 #' @noRd
 .restoreDataSetValues <- function(dataSet, values) {

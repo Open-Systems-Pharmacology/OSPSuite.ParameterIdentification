@@ -7,13 +7,13 @@
 .summarizeCostLists(list1, list2)
 }
 \arguments{
-\item{list1}{The first list, containing the output of the \code{.calculateCostMetrics}
-function, which includes \code{modelCost}, \code{minLogProbability}, \code{costVariables},
-and \code{residualDetails}.}
+\item{list1}{The first list, containing the output of the
+\code{.calculateCostMetrics} function, which includes \code{modelCost},
+\code{minLogProbability}, \code{costVariables}, and \code{residualDetails}.}
 
-\item{list2}{The second list, containing the output of the \code{.calculateCostMetrics}
-function, which includes \code{modelCost}, \code{minLogProbability}, \code{costVariables},
-and \code{residualDetails}.}
+\item{list2}{The second list, containing the output of the
+\code{.calculateCostMetrics} function, which includes \code{modelCost},
+\code{minLogProbability}, \code{costVariables}, and \code{residualDetails}.}
 }
 \value{
 Returns a list that includes the sum of \code{modelCosts}, the sum of
@@ -21,8 +21,9 @@ Returns a list that includes the sum of \code{modelCosts}, the sum of
 row-bound combination of \code{residualDetails}.
 }
 \description{
-This function takes two lists, each being the output of the \code{.calculateCostMetrics}
-function, and summarizes them. It aggregates model costs and min log probabilities,
-and combines cost and residual details by row-binding.
+This function takes two lists, each being the output of the
+\code{.calculateCostMetrics} function, and summarizes them. It aggregates model
+costs and min log probabilities, and combines cost and residual details by
+row-binding.
 }
 \keyword{internal}

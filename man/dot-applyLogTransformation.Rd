@@ -7,7 +7,8 @@
 .applyLogTransformation(df, base = exp(1))
 }
 \arguments{
-\item{df}{A \code{tbl_df} representing the observed vs predicted data frame (\code{obsVsPredDf}).}
+\item{df}{A \code{tbl_df} representing the observed vs predicted data frame
+(\code{obsVsPredDf}).}
 
 \item{base}{A positive numeric value specifying the logarithm base. Defaults
 to natural logarithm (\code{exp(1)}).}
@@ -16,9 +17,10 @@ to natural logarithm (\code{exp(1)}).}
 A transformed data frame with log-transformed \code{yValues} and \code{lloq}.
 }
 \description{
-Transforms the \code{yValues} and \code{lloq} columns in the given data frame using a log
-transformation. Currently, this function only supports \code{obsVsPredDf} data frames,
-which must contain \code{yDimension}, \code{yUnit}, \code{yValues}, and \code{lloq} columns.
+Transforms the \code{yValues} and \code{lloq} columns in the given data frame using a
+log transformation. Currently, this function only supports \code{obsVsPredDf} data
+frames, which must contain \code{yDimension}, \code{yUnit}, \code{yValues}, and \code{lloq}
+columns.
 }
 \examples{
 # Assuming df is a valid obsVsPredDf data frame

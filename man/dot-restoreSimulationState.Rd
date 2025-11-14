@@ -9,10 +9,9 @@
 \arguments{
 \item{simulations}{List of \code{Simulation} objects}
 
-\item{simStateList}{Output of the function \code{.storeSimulationState}.
-A named list with entries \code{outputIntervals}, \code{timePoints}, and
-\code{outputSelections}. Every entry is a named list with names being the IDs of
-the simulations.}
+\item{simStateList}{Output of the function \code{.storeSimulationState}. A named
+list with entries \code{outputIntervals}, \code{timePoints}, and \code{outputSelections}.
+Every entry is a named list with names being the IDs of the simulations.}
 }
 \description{
 Restore simulation output state

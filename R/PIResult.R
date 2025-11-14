@@ -1,8 +1,8 @@
 #' @title PIResult
 #' @docType class
-#' @description
-#' Structured output of a parameter identification task, including optimization
-#' results, confidence intervals, parameter metadata, and configuration.
+#' @description Structured output of a parameter identification task, including
+#' optimization results, confidence intervals, parameter metadata, and
+#' configuration.
 #'
 #' @keywords internal
 #' @format NULL
@@ -16,33 +16,33 @@ PIResult <- R6::R6Class(
     .costDetails = NULL,
     # Configuration used during parameter identification
     .configuration = NULL,
-    # Flattened PIParameter metadata
+    # Flattened `PIParameters` metadata
     .parameters = NULL
   ),
   public = list(
     #' @description Initializes a `PIResult` instance. For internal use only.
     #'
-    #' This constructor is used internally by the parameter identification
-    #' workflow to store and standardize results from optimization and confidence
-    #' interval estimation.
+    #'   This constructor is used internally by the parameter identification
+    #'   workflow to store and standardize results from optimization and
+    #'   confidence interval estimation.
     #'
-    #' @param optimResult A named list containing optimization results. Typically
-    #' produced internally by `Optimizer$run()` and includes fields such as
-    #' `par`, `value`, `startValues`, `elapsed`, `convergence`, etc.
+    #' @param optimResult A named list containing optimization results.
+    #'   Typically produced internally by `Optimizer$run()` and includes fields
+    #'   such as `par`, `value`, `startValues`, `elapsed`, `convergence`, etc.
     #' @param ciResult (Optional) A named list of confidence interval results,
-    #' returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
-    #' `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
+    #'   returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
+    #'   `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
     #' @param costDetails (Optional) A named list with detailed cost metrics
-    #' computed during optimization.
+    #'   computed during optimization.
     #' @param configuration (Optional) The `PIConfiguration` object used during
-    #' parameter identification.
-    #' @param piParameters (Optional) A list of `PIParameter` objects used
-    #' in the optimization. If not provided, default parameter names will be
-    #' generated automatically.
+    #'   parameter identification.
+    #' @param piParameters (Optional) A list of `PIParameter` objects used in
+    #'   the optimization. If not provided, default parameter names will be
+    #'   generated automatically.
     #'
     #' @return A `PIResult` object containing optimization results, confidence
-    #' interval estimates (if available), parameter metadata (if available), and
-    #' configuration.
+    #'   interval estimates (if available), parameter metadata (if available),
+    #'   and configuration.
     #'
     #' @keywords internal
     #
@@ -167,7 +167,7 @@ PIResult <- R6::R6Class(
         costDetails = private$.costDetails
       ))
     },
-    #' @description Prints a summary of PIResult
+    #' @description Prints a summary of `PIResult`
     print = function() {
       ospsuite.utils::ospPrintClass(self)
 

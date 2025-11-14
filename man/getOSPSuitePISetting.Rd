@@ -10,7 +10,8 @@ getOSPSuitePISetting(settingName)
 \item{settingName}{String name of the setting}
 }
 \value{
-Value of the setting stored in piEnv. If the setting does not exist, an error is thrown.
+Value of the setting stored in \code{piEnv}. If the setting does not exist,
+an error is thrown.
 }
 \description{
 Get the value of a global ospsuite.parameteridentification setting.

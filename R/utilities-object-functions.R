@@ -1,33 +1,32 @@
 #' @title Calculate Cost Metrics for Model Evaluation
 #'
-#' @description
-#' Internal utility to calculate residual-based cost metrics for model fit assessment.
-#' Used within parameter estimation routines.
+#' @description Internal utility to calculate residual-based cost metrics for
+#' model fit assessment. Used within parameter estimation routines.
 #'
 #' @param df A dataframe containing the combined data for simulation and
-#' observation. Supports dataframes created from a `DataCombined` object via
-#' `DataCombined$toDataFrame()`. Must include columns for `dataType`, `xValues`,
-#' `yValues`, and optionally `yErrorValues` and `yErrorType` if
-#' `residualWeightingMethod = "error"`. The error type must be one of
-#' `ArithmeticStdDev`, `GeometricStdDev`.
-#' @param objectiveFunctionType A string indicating the objective function type for
-#' calculating model cost. Options include "lsq" (least squares, default) and "m3"
-#' for handling censored data.
+#'   observation. Supports dataframes created from a `DataCombined` object via
+#'   `$toDataFrame()`. Must include columns for `dataType`, `xValues`,
+#'   `yValues`, and optionally `yErrorValues` and `yErrorType` if
+#'   `residualWeightingMethod = "error"`. The error type must be one of
+#'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
+#' @param objectiveFunctionType A string indicating the objective function type
+#'   for calculating model cost. Options include `"lsq"` (least squares,
+#'   default) and `"m3"` for handling censored data.
 #' @param residualWeightingMethod A string indicating the method to weight the
-#' residuals. Options include "none" (default), "std", "mean", and "error".
-#' @param robustMethod A string indicating the robust method to apply to the residuals.
-#' Options include "none" (default), "huber", and "bisquare".
-#' @param scaleVar A boolean indicating whether to scale residuals by the
-#' number of observations. Defaults to `FALSE`.
+#'   residuals. Options include `"none"` (default), `"std"`, `"mean"`, and
+#'   `"error"`.
+#' @param robustMethod A string indicating the robust method to apply to the
+#'   residuals. Options include `"none"` (default), `"huber"`, and `"bisquare"`.
+#' @param scaleVar A boolean indicating whether to scale residuals by the number
+#'   of observations. Defaults to `FALSE`.
 #' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#' including 'scaling', 'linScaleCV', and 'logScaleSD'.
+#'   including `scaling`, `linScaleCV`, and `logScaleSD`.
 #'
-#' @details
-#' The function calculates the residuals between the simulated and observed
-#' values, applies the specified weighting method, and computes the cost metrics.
+#' @details The function calculates the residuals between the simulated and
+#' observed values, applies the specified weighting method, and computes the
+#' cost metrics.
 #'
-#' @return
-#' A cost metrics summary list containing the following fields:
+#' @return A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
 #' - `costDetails`: A dataframe with details on the cost calculations.
@@ -214,7 +213,7 @@
 #' @param yValues Vector of y-values, required for conversion
 #' @param yErrorValues Vector of y-value errors
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
-#' `GeometricStdDev`)
+#'   `GeometricStdDev`)
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
@@ -253,7 +252,8 @@
 #' from a `modelCost` object.
 #'
 #' @param x A `modelCost` object containing residuals to plot.
-#' @param legpos Position of the legend; default is "topright". Use NA to omit the legend.
+#' @param legpos Position of the legend; default is "topright". Use NA to omit
+#'   the legend.
 #' @param ... Additional arguments passed to the plot function.
 #' @return Generates a plot.
 #' @examples
@@ -324,11 +324,11 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' failures) or zeros (for objective function failures).
 #'
 #' @param infinite Logical flag indicating if the structure should contain
-#' infinite values (TRUE) or zeros (FALSE).
+#'   infinite values (TRUE) or zeros (FALSE).
 #' @return A model cost summary structured identically to the output of
-#' `.calculateCostMetrics`, with fields for model cost, minimum log probability,
-#' statistical measures, and detailed residuals, tailored for failure scenarios
-#' or initial setup.
+#'   `.calculateCostMetrics`, with fields for model cost, minimum log
+#'   probability, statistical measures, and detailed residuals, tailored for
+#'   failure scenarios or initial setup.
 #' @keywords internal
 .createErrorCostStructure <- function(infinite = FALSE) {
   if (infinite) {
@@ -370,13 +370,15 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Apply Log Transformation to Data Frame
 #'
-#' Transforms the `yValues` and `lloq` columns in the given data frame using a log
-#' transformation. Currently, this function only supports `obsVsPredDf` data frames,
-#' which must contain `yDimension`, `yUnit`, `yValues`, and `lloq` columns.
+#' Transforms the `yValues` and `lloq` columns in the given data frame using a
+#' log transformation. Currently, this function only supports `obsVsPredDf` data
+#' frames, which must contain `yDimension`, `yUnit`, `yValues`, and `lloq`
+#' columns.
 #'
-#' @param df A `tbl_df` representing the observed vs predicted data frame (`obsVsPredDf`).
+#' @param df A `tbl_df` representing the observed vs predicted data frame
+#'   (`obsVsPredDf`).
 #' @param base A positive numeric value specifying the logarithm base. Defaults
-#' to natural logarithm (`exp(1)`).
+#'   to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
 #' @keywords internal
@@ -416,25 +418,25 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #'
 #' Evaluates the impact of censored data (below quantification limit, BQL) on
-#' model cost, employing maximum likelihood estimation to integrate BQL observations
-#' effectively. By acknowledging BQL data as censored observations, this method
-#' ensures such data contribute to model accuracy without misrepresenting actual
-#' concentrations. It applies linear or logarithmic scaling to calculate standard
-#' deviations for censored probabilities, enhancing overall model cost assessment
-#' with respect to detection limits.
+#' model cost, employing maximum likelihood estimation to integrate BQL
+#' observations effectively. By acknowledging BQL data as censored observations,
+#' this method ensures such data contribute to model accuracy without
+#' misrepresenting actual concentrations. It applies linear or logarithmic
+#' scaling to calculate standard deviations for censored probabilities,
+#' enhancing overall model cost assessment with respect to detection limits.
 #'
 #' @param observed Data frame containing observed data, must include 'lloq',
-#' 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
-#' @param simulated Data frame containing simulated data, must include 'xValues',
-#' 'xUnit', 'xDimension', and 'yValues' columns.
+#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param simulated Data frame containing simulated data, must include
+#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
 #' @param scaling Character string specifying the scaling method; should be one
-#' of the predefined scaling options.
+#'   of the predefined scaling options.
 #' @param linScaleCV Numeric, coefficient used to calculate standard deviation
-#' for linear scaling, applied to 'lloq' values.
-#' @param logScaleSD Numeric, standard deviation for logarithmic scaling, applied
-#' uniformly to all censored observations.
+#'   for linear scaling, applied to 'lloq' values.
+#' @param logScaleSD Numeric, standard deviation for logarithmic scaling,
+#'   applied uniformly to all censored observations.
 #' @return Numeric value representing the sum of squared errors for censored
-#' observations, contributing to the model's total cost.
+#'   observations, contributing to the model's total cost.
 #' @keywords internal
 #' @examples
 #' \dontrun{
@@ -488,20 +490,21 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Summarize Cost Lists
 #'
-#' This function takes two lists, each being the output of the `.calculateCostMetrics`
-#' function, and summarizes them. It aggregates model costs and min log probabilities,
-#' and combines cost and residual details by row-binding.
+#' This function takes two lists, each being the output of the
+#' `.calculateCostMetrics` function, and summarizes them. It aggregates model
+#' costs and min log probabilities, and combines cost and residual details by
+#' row-binding.
 #'
-#' @param list1 The first list, containing the output of the `.calculateCostMetrics`
-#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
-#' and `residualDetails`.
-#' @param list2 The second list, containing the output of the `.calculateCostMetrics`
-#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
-#' and `residualDetails`.
+#' @param list1 The first list, containing the output of the
+#'   `.calculateCostMetrics` function, which includes `modelCost`,
+#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#' @param list2 The second list, containing the output of the
+#'   `.calculateCostMetrics` function, which includes `modelCost`,
+#'   `minLogProbability`, `costVariables`, and `residualDetails`.
 #'
 #' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#' `minLogProbabilities`, a row-bound combination of `costVariables`, and a
-#' row-bound combination of `residualDetails`.
+#'   `minLogProbabilities`, a row-bound combination of `costVariables`, and a
+#'   row-bound combination of `residualDetails`.
 #'
 #' @keywords internal
 .summarizeCostLists <- function(list1, list2) {
