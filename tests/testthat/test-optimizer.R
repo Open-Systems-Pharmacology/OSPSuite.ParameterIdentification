@@ -155,7 +155,7 @@ test_that("Optimizer output has correct structure and values for DEoptim", {
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "DEoptim"
   optimizer <- Optimizer$new(piConfig)
-  tmp <- capture.output(
+  tmp <- utils::capture.output(
     expect_message(
       expect_no_error(
         optResult <- optimizer$run(

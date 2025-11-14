@@ -7,8 +7,11 @@
 # - CI method: Hessian-based
 # -------------------------------------------------------------------------
 
+devtools::load_all(".")
+
+
 simulation <- loadSimulation(
-  getTestDataFilePath("Smith1981 iv 5mg Midazolam.pkml")
+  getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml")
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -96,7 +99,7 @@ test_that("Hessian-based standard deviations equal expected values", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  getTestDataFilePath("Smith1981 iv 5mg Midazolam.pkml")
+  getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml")
 )
 
 piConfiguration <- PIConfiguration$new()

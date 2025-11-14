@@ -140,7 +140,7 @@ messages$errorSimulationIdMissing <- function(
   piParamIds,
   outputMappingIds
 ) {
-  message <- capture.output(cat(
+  message <- utils::capture.output(cat(
     "Mismatch or missing ID detected.\n",
     "Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs.\n",
     "Simulation IDs: ",

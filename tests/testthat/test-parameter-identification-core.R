@@ -48,7 +48,7 @@ test_that("ParameterIdentification instance prints expected output", {
 
   expect_no_error(print(piTask))
 
-  out <- capture.output(print(piTask))
+  out <- utils::capture.output(print(piTask))
   expect_true(any(grepl("^<ParameterIdentification>$", out)))
   expect_true(any(grepl("Number of parameters:\\s*1", out)))
   expect_true(any(grepl("^Simulations:$", out)))

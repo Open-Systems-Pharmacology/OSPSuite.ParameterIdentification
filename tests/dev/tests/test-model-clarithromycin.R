@@ -7,39 +7,42 @@
 # - CI method: Hessian-based
 # -------------------------------------------------------------------------
 
+devtools::load_all(".")
+
+
 simulations <- c(
   "IV250" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1992 iv 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1992_iv_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250MD" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg md Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg_md.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500MD" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg md Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg_md.pkml",
       package = "ospsuite.parameteridentification"
     )
   )
@@ -178,35 +181,35 @@ simulations <- c(
   "IV250" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1992 iv 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1992_iv_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250MD" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg md Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg_md.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500MD" = loadSimulation(
     system.file(
       "extdata",
-      "Chu1993 po 250mg md Clarithromycin.pkml",
+      "Clarithromycin_Chu_1993_po_250mg_md.pkml",
       package = "ospsuite.parameteridentification"
     )
   )

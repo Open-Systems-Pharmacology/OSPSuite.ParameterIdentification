@@ -130,7 +130,7 @@
 
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedXVal)) > 1) {
-    simulatedYValApprox <- approx(
+    simulatedYValApprox <- stats::approx(
       simulatedXVal,
       simulatedYVal,
       xout = observedXVal
@@ -164,7 +164,7 @@
         if (length(unique(observedYVal)) == 1) {
           sqrt(.Machine$double.eps)
         } else {
-          sd(observedYVal, na.rm = TRUE)
+          stats::sd(observedYVal, na.rm = TRUE)
         }
       },
       "mean" = {
@@ -275,8 +275,8 @@
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
   if (length(idx) > 0) {
     # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
-    sd <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
-    weights[idx] <- 1 / sd
+    stDev <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
+    weights[idx] <- 1 / stDev
   }
 
   return(weights)
@@ -324,7 +324,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   # Add weightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
-    points(
+    graphics::points(
       residualsData$x,
       residualsData$weightedResiduals,
       pch = 17,
@@ -335,7 +335,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   # Add robustWeightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
-    points(
+    graphics::points(
       residualsData$x,
       residualsData$robustWeightedResiduals,
       pch = 18,
@@ -362,7 +362,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (!is.na(legpos)) {
-    legend(legpos, legend = legends, col = colors, pch = pch_values)
+    graphics::legend(legpos, legend = legends, col = colors, pch = pch_values)
   }
 }
 
@@ -505,7 +505,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
 
-  lloq <- unique(na.omit(observed$lloq))
+  lloq <- unique(stats::na.omit(observed$lloq))
   ospsuite.utils::validateIsNumeric(lloq)
 
   if (length(lloq) == 0) {
@@ -536,15 +536,15 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (scaling == "lin" && !is.null(linScaleCV)) {
-    sd <- abs(linScaleCV * lloq)
+    stDev <- abs(linScaleCV * lloq)
   } else if (scaling == "log" && !is.null(logScaleSD)) {
-    sd <- logScaleSD
+    stDev <- logScaleSD
   } else {
     stop("Scaling method and scaling parameters are not compatible.")
   }
 
-  censoredProbabilities <- pnorm(
-    (observedCensored$lloq - simulatedCensored$yValues) / sd
+  censoredProbabilities <- stats::pnorm(
+    (observedCensored$lloq - simulatedCensored$yValues) / stDev
   )
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
   censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)

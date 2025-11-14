@@ -545,7 +545,7 @@
 #' @keywords internal
 #' @noRd
 .fitKm <- function(xValues, logY, noiseVar, kernelType) {
-  invisible(capture.output(
+  invisible(utils::capture.output(
     result <- DiceKriging::km(
       formula = ~1,
       design = data.frame(time = xValues),

@@ -7,6 +7,9 @@
 # - CI estimation: Hessian-based
 # -------------------------------------------------------------------------
 
+devtools::load_all(".")
+
+
 simulation <- loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )

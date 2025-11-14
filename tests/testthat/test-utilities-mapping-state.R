@@ -17,20 +17,29 @@ createModifiedMappingState <- function(outputMappingState) {
 test_that(".extractOutputMappingState works for single mapping with one dataset", {
   mapping <- testOutputMapping()
   mappingState <- .extractOutputMappingState(mapping)
-  expect_snapshot_value(capture.output(str(mappingState)), style = "deparse")
+  expect_snapshot_value(
+    utils::capture.output(str(mappingState)),
+    style = "deparse"
+  )
 })
 
 test_that(".extractOutputMappingState works for single mapping with multiple datasets", {
   mapping <- PIOutputMapping$new(quantity = testQuantity())
   mapping$addObservedDataSets(testObservedDataMultiple())
   mappingState <- .extractOutputMappingState(list(mapping))
-  expect_snapshot_value(capture.output(str(mappingState)), style = "deparse")
+  expect_snapshot_value(
+    utils::capture.output(str(mappingState)),
+    style = "deparse"
+  )
 })
 
 test_that(".extractOutputMappingState works for multiple mappings with single dataset", {
   mappingMultiple <- list(outputMapping_250mg, outputMapping_500mg)
   mappingState <- .extractOutputMappingState(mappingMultiple)
-  expect_snapshot_value(capture.output(str(mappingState)), style = "deparse")
+  expect_snapshot_value(
+    utils::capture.output(str(mappingState)),
+    style = "deparse"
+  )
 })
 
 test_that(".applyOutputMappingState correctly updates mapping state [single/multiple]", {

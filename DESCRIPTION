@@ -49,6 +49,7 @@ Suggests:
     knitr,
     mockthat,
     rmarkdown,
+    readr,
     showtext,
     sysfonts,
     testthat (>= 3.0.0),
