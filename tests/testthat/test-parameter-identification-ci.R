@@ -30,11 +30,13 @@ test_that("estimateCI() works as expected using Hessian", {
 
   expect_snapshot_value(
     piResult$toList()$ciDetails,
-    style = "deparse", tolerance = 1e-3
+    style = "deparse",
+    tolerance = 1e-3
   )
   expect_snapshot_value(
     piResult$toDataFrame(),
-    style = "deparse", tolerance = 1e-3
+    style = "deparse",
+    tolerance = 1e-3
   )
 })
 
@@ -66,7 +68,8 @@ test_that("estimateCI() works with bootstrap and individual data", {
 
   expect_snapshot_value(
     piResult$toDataFrame(),
-    style = "deparse", tolerance = 1e-3
+    style = "deparse",
+    tolerance = 1e-3
   )
 
   # Test initial OutputMapping weights are restored
@@ -97,7 +100,8 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
 
   expect_snapshot_value(
     piResult$toDataFrame(),
-    style = "deparse", tolerance = 1e-3
+    style = "deparse",
+    tolerance = 1e-3
   )
 
   # Test initial OutputMapping yValues are restored
@@ -135,14 +139,18 @@ test_that("estimateCI() applies bootstrap resampling to individual data", {
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 1)
   )
-  piTaskResample$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTaskResample$configuration$algorithmOptions <- list(
+    itermax = 3,
+    trace = FALSE
+  )
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
   suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
-    style = "deparse", tolerance = 0
+    style = "deparse",
+    tolerance = 0
   )
 })
 
@@ -157,14 +165,18 @@ test_that("estimateCI() applies bootstrap resampling to individual data with ini
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 1)
   )
-  piTaskResample$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTaskResample$configuration$algorithmOptions <- list(
+    itermax = 3,
+    trace = FALSE
+  )
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
   suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
-    style = "deparse", tolerance = 0
+    style = "deparse",
+    tolerance = 0
   )
 })
 
@@ -182,17 +194,26 @@ test_that("estimateCI() applies bootstrap resampling to mixed data (individual a
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 2)
   )
-  piTaskResample$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTaskResample$configuration$algorithmOptions <- list(
+    itermax = 3,
+    trace = FALSE
+  )
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
   suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
-    style = "deparse", tolerance = 0
+    style = "deparse",
+    tolerance = 0
   )
   expect_snapshot_value(
-    lapply(piTaskResample$outputMappings[[1]]$observedDataSets, "[[", "yValues"),
-    style = "deparse", tolerance = 1e-6
+    lapply(
+      piTaskResample$outputMappings[[1]]$observedDataSets,
+      "[[",
+      "yValues"
+    ),
+    style = "deparse",
+    tolerance = 1e-6
   )
 })

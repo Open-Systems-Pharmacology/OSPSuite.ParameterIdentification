@@ -49,7 +49,8 @@ PIConfiguration <- R6::R6Class(
         private$.simulationRunOptions
       } else {
         ospsuite.utils::validateIsOfType(
-          value, "SimulationRunOptions",
+          value,
+          "SimulationRunOptions",
           nullAllowed = TRUE
         )
         private$.simulationRunOptions <- value

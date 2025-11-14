@@ -39,8 +39,10 @@
   mappings <- ospsuite.utils::toList(object)
 
   for (mapping in mappings) {
-    if (inherits(mapping, "PIOutputMapping") &&
-      length(mapping$observedDataSets) == 0) {
+    if (
+      inherits(mapping, "PIOutputMapping") &&
+        length(mapping$observedDataSets) == 0
+    ) {
       quantityPath <- mapping$quantity$fullPath
       rootContainer <- mapping$quantity$call("get_RootContainer")
       rootContainerName <- rootContainer$call("get_Name")
@@ -48,7 +50,9 @@
       caller <- deparse(sys.call(-1)[[1]])
       stop(
         messages$errorObservedDataNotFound(
-          caller, quantityPath, rootContainerName
+          caller,
+          quantityPath,
+          rootContainerName
         )
       )
     }

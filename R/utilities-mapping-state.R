@@ -124,8 +124,14 @@
 #' @keywords internal
 #' @noRd
 .applyOutputMappingState <- function(outputMappings, mappingState) {
-  outputMappings <- .applyMappingWeights(outputMappings, mappingState$dataSetWeights)
-  outputMappings <- .applyMappingValues(outputMappings, mappingState$dataSetValues)
+  outputMappings <- .applyMappingWeights(
+    outputMappings,
+    mappingState$dataSetWeights
+  )
+  outputMappings <- .applyMappingValues(
+    outputMappings,
+    mappingState$dataSetValues
+  )
 
   return(outputMappings)
 }

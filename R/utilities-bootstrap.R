@@ -23,9 +23,13 @@
 #' @keywords internal
 #' @noRd
 .hasAggregatedData <- function(outputMappings) {
-  any(vapply(outputMappings, function(mapping) {
-    any(vapply(mapping$observedDataSets, .isAggregated, logical(1)))
-  }, logical(1)))
+  any(vapply(
+    outputMappings,
+    function(mapping) {
+      any(vapply(mapping$observedDataSets, .isAggregated, logical(1)))
+    },
+    logical(1)
+  ))
 }
 
 #' Classify Observed Datasets for Bootstrap
@@ -70,9 +74,20 @@
 #' @return Updated outputMappings list.
 #' @keywords internal
 #' @noRd
-.resampleAndApplyMappingState <- function(outputMappings, mappingState, gprModels, seed) {
-  ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetWeights)
-  ospsuite.utils::validateIsSameLength(outputMappings, mappingState$dataSetValues)
+.resampleAndApplyMappingState <- function(
+  outputMappings,
+  mappingState,
+  gprModels,
+  seed
+) {
+  ospsuite.utils::validateIsSameLength(
+    outputMappings,
+    mappingState$dataSetWeights
+  )
+  ospsuite.utils::validateIsSameLength(
+    outputMappings,
+    mappingState$dataSetValues
+  )
   ospsuite.utils::validateIsSameLength(outputMappings, gprModels)
 
   # Resample and apply new dataset weights for all mappings.
@@ -111,8 +126,16 @@
 #' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
-.resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights, seed) {
-  resampledMappingWeights <- .resampleMappingWeights(outputMappings, mappingWeights, seed)
+.resampleAndApplyMappingWeights <- function(
+  outputMappings,
+  mappingWeights,
+  seed
+) {
+  resampledMappingWeights <- .resampleMappingWeights(
+    outputMappings,
+    mappingWeights,
+    seed
+  )
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
 
@@ -129,8 +152,18 @@
 #' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
-.resampleAndApplyMappingValues <- function(outputMappings, mappingValues, gprModels, seed) {
-  resampledMappingValues <- .resampleMappingValues(outputMappings, mappingValues, gprModels, seed)
+.resampleAndApplyMappingValues <- function(
+  outputMappings,
+  mappingValues,
+  gprModels,
+  seed
+) {
+  resampledMappingValues <- .resampleMappingValues(
+    outputMappings,
+    mappingValues,
+    gprModels,
+    seed
+  )
   .applyMappingValues(outputMappings, resampledMappingValues)
 }
 
@@ -161,13 +194,19 @@
 
     if (
       !ospsuite.utils::isSameLength(dataSetWeights, mapping$observedDataSets) ||
-        !ospsuite.utils::isIncluded(names(dataSetWeights), names(mapping$observedDataSets))
+        !ospsuite.utils::isIncluded(
+          names(dataSetWeights),
+          names(mapping$observedDataSets)
+        )
     ) {
       stop(messages$errorDataSetWeightsMismatch())
     }
 
     # All datasets are resampled equally using a single strategy
-    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(dataSetWeights, seed)
+    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(
+      dataSetWeights,
+      seed
+    )
   }
 
   return(resampledMappingWeights)
@@ -215,13 +254,19 @@
   # Resample dataset-level weights, then recombine with point-level weights
   weightsPool <- unlist(
     mapply(
-      rep, names(weightsSummary), lapply(weightsSummary, `[[`, "datasetWeight")
+      rep,
+      names(weightsSummary),
+      lapply(weightsSummary, `[[`, "datasetWeight")
     ),
     use.names = FALSE
   )
 
   set.seed(seed)
-  resampledNames <- sample(weightsPool, size = length(weightsPool), replace = TRUE)
+  resampledNames <- sample(
+    weightsPool,
+    size = length(weightsPool),
+    replace = TRUE
+  )
   datasetCounts <- table(resampledNames)
 
   resampledDataSetWeights <- vector("list", length(dataSetWeights))
@@ -254,7 +299,12 @@
 #' @return A list of resampled dataset value lists, one per output mapping.
 #' @keywords internal
 #' @noRd
-.resampleMappingValues <- function(outputMappings, mappingValues, gprModelMappings, seed) {
+.resampleMappingValues <- function(
+  outputMappings,
+  mappingValues,
+  gprModelMappings,
+  seed
+) {
   resampledMappingValues <- vector("list", length(outputMappings))
 
   for (idx in seq_along(outputMappings)) {
@@ -270,7 +320,10 @@
     if (
       !ospsuite.utils::isSameLength(dataSetValues, observedDataSets) ||
         !ospsuite.utils::isSameLength(gprModels, observedDataSetsAggr) ||
-        !ospsuite.utils::isIncluded(names(observedDataSets), names(dataSetValues)) ||
+        !ospsuite.utils::isIncluded(
+          names(observedDataSets),
+          names(dataSetValues)
+        ) ||
         !ospsuite.utils::isIncluded(names(gprModels), names(observedDataSets))
     ) {
       stop(messages$errorDataSetValuesMismatch())
@@ -278,7 +331,9 @@
 
     #
     resampledMappingValues[[idx]] <- .resampleDataSetValues(
-      dataSetValues, gprModels, seed
+      dataSetValues,
+      gprModels,
+      seed
     )
   }
 
@@ -418,15 +473,22 @@
 #' @return A fitted `DiceKriging::km` object.
 #' @keywords internal
 #' @noRd
-.fitGPRModel <- function(xValues, yValues, yErrorValues, yErrorType,
-                         kernelType = "matern5_2", minProb = 0.5) {
+.fitGPRModel <- function(
+  xValues,
+  yValues,
+  yErrorValues,
+  yErrorType,
+  kernelType = "matern5_2",
+  minProb = 0.5
+) {
   ospsuite.utils::validateIsSameLength(xValues, yValues)
   ospsuite.utils::validateIsSameLength(yValues, yErrorValues)
 
   xValues[xValues < 0] <- 0
 
   # Compute noise variance in log-space based on error type
-  noiseVar <- switch(yErrorType,
+  noiseVar <- switch(
+    yErrorType,
     ArithmeticStdDev = {
       # For arithmetic SD: Var[log(y)] ≈ (σ / y)^2 using the delta method
       # Missing or non-finite relative errors are imputed using the mean

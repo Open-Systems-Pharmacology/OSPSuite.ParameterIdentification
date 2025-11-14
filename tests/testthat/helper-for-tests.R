@@ -24,7 +24,8 @@ getTestParameters <- function() {
       parameters <- list()
       for (parameterPath in parameterPaths) {
         param <- ospsuite::getParameter(
-          path = parameterPath, container = simulation
+          path = parameterPath,
+          container = simulation
         )
         piParameter <- PIParameters$new(parameters = list(param))
         piParameter$minValue <- -10
@@ -74,7 +75,9 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
 }
 
 testOutputMapping <- getTestOutputMapping()
-testOutputMappingWithoutObsData <- getTestOutputMapping(includeObservedData = FALSE)
+testOutputMappingWithoutObsData <- getTestOutputMapping(
+  includeObservedData = FALSE
+)
 
 
 createPiTask <- function() {
@@ -217,9 +220,11 @@ testModifiedTask <- function() {
   )
   mapping$addObservedDataSets(testObservedData())
 
-  params <- PIParameters$new(parameters = list(
-    getParameter("Aciclovir|Lipophilicity", container = sim)
-  ))
+  params <- PIParameters$new(
+    parameters = list(
+      getParameter("Aciclovir|Lipophilicity", container = sim)
+    )
+  )
 
   ParameterIdentification$new(
     simulations = sim,
@@ -240,11 +245,16 @@ getSimulationFilePath <- function(simulationName) {
   getTestDataFilePath(paste0(simulationName, ".pkml"))
 }
 
-loadTestSimulation <- function(simulationName, loadFromCache = FALSE, addToCache = TRUE) {
+loadTestSimulation <- function(
+  simulationName,
+  loadFromCache = FALSE,
+  addToCache = TRUE
+) {
   simFile <- getSimulationFilePath(simulationName)
   sim <- ospsuite::loadSimulation(
     simFile,
-    loadFromCache = loadFromCache, addToCache = addToCache
+    loadFromCache = loadFromCache,
+    addToCache = addToCache
   )
 }
 
@@ -264,13 +274,17 @@ sim_500mg <- loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
 
-piParameterLipo <- PIParameters$new(parameters = list(
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
-))
-piParameterLipo_250mg <- PIParameters$new(parameters = list(
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg)
-))
+piParameterLipo <- PIParameters$new(
+  parameters = list(
+    getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+    getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+  )
+)
+piParameterLipo_250mg <- PIParameters$new(
+  parameters = list(
+    getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg)
+  )
+)
 piParameterCl_250mg <- PIParameters$new(
   parameters = getParameter(
     path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",

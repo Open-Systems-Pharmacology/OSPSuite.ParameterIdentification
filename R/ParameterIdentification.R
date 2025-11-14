@@ -153,7 +153,10 @@ ParameterIdentification <- R6::R6Class(
           simId <- outputMapping$simId
           simulation <- private$.simulations[[simId]]
           # Add the quantity to the outputs of the simulations.
-          ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
+          ospsuite::addOutputs(
+            quantitiesOrPaths = outputMapping$quantity,
+            simulation = simulation
+          )
           # Add time points present in the observed data of this mapping.
           for (dataset in outputMapping$observedDataSets) {
             # Time values can be stored in units different from the base unit
@@ -167,7 +170,8 @@ ParameterIdentification <- R6::R6Class(
             if (length(xOffset) != 1) {
               xOffset <- xOffset[[label]]
             }
-            xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+            xVals <- ospsuite::toBaseUnit(
+              ospsuite::ospDimensions$Time,
               values = (dataset$xValues + xOffset) * xFactor,
               unit = dataset$xUnit
             )
@@ -181,7 +185,9 @@ ParameterIdentification <- R6::R6Class(
             simId <- .getSimulationContainer(parameter)$id
             # Set the current value of this parameter to the start value of the
             # PIParameter.
-            private$.variableParameters[[simId]][[parameter$path]] <- piParameter$startValue
+            private$.variableParameters[[simId]][[
+              parameter$path
+            ]] <- piParameter$startValue
           }
         }
 
@@ -265,8 +271,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Trigger resampling only if the seed has changed
-      if (is.null(private$.activeBootstrapSeed) ||
-        private$.activeBootstrapSeed != bootstrapSeed) {
+      if (
+        is.null(private$.activeBootstrapSeed) ||
+          private$.activeBootstrapSeed != bootstrapSeed
+      ) {
         private$.activeBootstrapSeed <- bootstrapSeed
         private$.outputMappings <- .resampleAndApplyMappingState(
           private$.outputMappings,
@@ -331,7 +339,8 @@ ParameterIdentification <- R6::R6Class(
 
       if (length(obsVsPredList) != length(outputMappings)) {
         stop(messages$errorObsVsPredListLengthMismatch(
-          length(outputMappings), length(obsVsPredList)
+          length(outputMappings),
+          length(obsVsPredList)
         ))
       }
 
@@ -339,14 +348,22 @@ ParameterIdentification <- R6::R6Class(
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
         # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[
+          idx
+        ]]$toDataFrame())
         # Apply LLOQ handling for LSQ
-        if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
+        if (
+          private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
+            "lsq"
+        ) {
           # replace values < LLOQ with LLOQ/2 in simulated data
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
-              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+            obsVsPredDf[
+              (obsVsPredDf$dataType == "simulated" &
+                obsVsPredDf$yValues < lloq),
+              "yValues"
+            ] <- lloq / 2
           }
         }
 
@@ -360,7 +377,9 @@ ParameterIdentification <- R6::R6Class(
         if (!is.null(outputMappings[[idx]]$dataWeights)) {
           weights <- outputMappings[[idx]]$dataWeights
           for (dataset in names(weights)) {
-            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[dataset]]
+            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[
+              dataset
+            ]]
           }
         }
 
@@ -394,7 +413,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Evaluate running cost
       costField <- private$.configuration$modelCostField
-      currCost  <- runningCost[[costField]]
+      currCost <- runningCost[[costField]]
       bestCost <- if (is.null(private$.bestCostSummary)) {
         Inf
       } else {
@@ -410,7 +429,8 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$printEvaluationFeedback) {
         cat(
           messages$evaluationFeedback(
-            private$.fnEvaluations, currVals,
+            private$.fnEvaluations,
+            currVals,
             runningCost[[private$.configuration$modelCostField]]
           )
         )
@@ -455,7 +475,9 @@ ParameterIdentification <- R6::R6Class(
         # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[idx]]
+          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[
+            idx
+          ]]
         }
       }
 
@@ -483,8 +505,14 @@ ParameterIdentification <- R6::R6Class(
       for (simId in names(private$.simulationBatches)) {
         simBatch <- private$.simulationBatches[[simId]]
         resultsId <- simBatch$addRunValues(
-          parameterValues = unlist(private$.variableParameters[[simId]], use.names = FALSE),
-          initialValues = unlist(private$.variableMolecules[[simId]], use.names = FALSE)
+          parameterValues = unlist(
+            private$.variableParameters[[simId]],
+            use.names = FALSE
+          ),
+          initialValues = unlist(
+            private$.variableMolecules[[simId]],
+            use.names = FALSE
+          )
         )
       }
       # Run simulation batches
@@ -506,12 +534,17 @@ ParameterIdentification <- R6::R6Class(
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
         resultId <- names(simulationResults[[simBatch$id]])[[1]]
-        obsVsPred$addSimulationResults(resultObject,
+        obsVsPred$addSimulationResults(
+          resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = resultId, groups = groupName
+          names = resultId,
+          groups = groupName
         )
 
-        obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
+        obsVsPred$addDataSets(
+          currOutputMapping$observedDataSets,
+          groups = groupName
+        )
         # apply data transformations stored in corresponding `outputMapping`
         obsVsPred$setDataTransformations(
           forNames = names(outputMappings[[idx]]$observedDataSets),
@@ -576,11 +609,20 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @return A `ParameterIdentification` object ready to run parameter
     #'   estimation.
-    initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
+    initialize = function(
+      simulations,
+      parameters,
+      outputMappings,
+      configuration = NULL
+    ) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
-      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
+      ospsuite.utils::validateIsOfType(
+        configuration,
+        "PIConfiguration",
+        nullAllowed = TRUE
+      )
 
       private$.configuration <- configuration %||% PIConfiguration$new()
 
@@ -610,13 +652,13 @@ ParameterIdentification <- R6::R6Class(
 
       private$.variableMolecules <-
         private$.variableParameters <-
-        private$.simulationBatches <-
-        private$.steadyStateBatches <- vector("list", length(simulations))
+          private$.simulationBatches <-
+            private$.steadyStateBatches <- vector("list", length(simulations))
 
       names(private$.variableMolecules) <-
         names(private$.variableParameters) <-
-        names(private$.simulationBatches) <-
-        names(private$.steadyStateBatches) <- ids
+          names(private$.simulationBatches) <-
+            names(private$.steadyStateBatches) <- ids
     },
 
     #' Executes Parameter Identification
@@ -630,7 +672,9 @@ ParameterIdentification <- R6::R6Class(
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
-      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
       # Every time the user starts an optimization run, new batches should be
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
@@ -647,7 +691,10 @@ ParameterIdentification <- R6::R6Class(
       optimResult <- private$.runAlgorithm()
       private$.lastOptimResult <- optimResult
       # Reset simulation output intervals and output selections
-      .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      .restoreSimulationState(
+        private$.simulations,
+        private$.savedSimulationState
+      )
 
       # Apply identified values to the parameter objects. Should be an option?
       private$.applyFinalValues(values = optimResult$par)
@@ -693,7 +740,9 @@ ParameterIdentification <- R6::R6Class(
 
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
-      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
       # Initialize batches
       private$.batchInitialization()
       # Reset function evaluations counter
@@ -705,8 +754,10 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      if (private$.configuration$ciMethod == "bootstrap" &&
-        is.null(private$.activeBootstrapSeed)) {
+      if (
+        private$.configuration$ciMethod == "bootstrap" &&
+          is.null(private$.activeBootstrapSeed)
+      ) {
         .classifyObservedData(private$.outputMappings)
         private$.gprModels <- .prepareGPRModels(private$.outputMappings)
       }
@@ -721,7 +772,10 @@ ParameterIdentification <- R6::R6Class(
       )
 
       if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+        .restoreSimulationState(
+          private$.simulations,
+          private$.savedSimulationState
+        )
       }
 
       # Trigger .NET gc
@@ -758,9 +812,12 @@ ParameterIdentification <- R6::R6Class(
 
       # Run evaluate once. If the input argument is missing, run with current
       # values. Otherwise, use the supplied values
-      parValues <- unlist(lapply(self$parameters, function(x) {
-        x$currValue
-      }), use.names = FALSE)
+      parValues <- unlist(
+        lapply(self$parameters, function(x) {
+          x$currValue
+        }),
+        use.names = FALSE
+      )
       if (!is.null(par)) {
         parValues <- par
       }
@@ -772,20 +829,36 @@ ParameterIdentification <- R6::R6Class(
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotConfiguration$legendPosition <- "none"
         plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- ospsuite::plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        obsVsSim <- ospsuite::plotObservedVsSimulated(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- ospsuite::plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        resVsTime <- ospsuite::plotResidualsVsTime(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
-        plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
+        plotGridConfiguration$addPlots(list(
+          indivTimeProfile,
+          obsVsSim,
+          resVsTime
+        ))
         return(ospsuite::plotGrid(plotGridConfiguration))
       })
 
       if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+        .restoreSimulationState(
+          private$.simulations,
+          private$.savedSimulationState
+        )
       }
 
       return(multiPlot)
@@ -813,8 +886,13 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @return A tibble where each row is a parameter combination and the
     #'   corresponding objective function value (`ofv`).
-    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
-                          totalEvaluations = 50, setStartValue = FALSE) {
+    gridSearch = function(
+      lower = NULL,
+      upper = NULL,
+      logScaleFlag = FALSE,
+      totalEvaluations = 50,
+      setStartValue = FALSE
+    ) {
       ospsuite.utils::validateIsNumeric(lower, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(upper, nullAllowed = TRUE)
       ospsuite.utils::validateIsLogical(logScaleFlag)
@@ -846,7 +924,8 @@ ParameterIdentification <- R6::R6Class(
       gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
       parameterGrid <- vector("list", length(private$.piParameters))
       names(parameterGrid) <- sapply(
-        private$.piParameters, function(x) x$parameters[[1]]$path
+        private$.piParameters,
+        function(x) x$parameters[[1]]$path
       )
 
       for (idx in seq_along(private$.piParameters)) {
@@ -863,7 +942,8 @@ ParameterIdentification <- R6::R6Class(
         } else {
           # Linear scaling
           parameterGrid[[idx]] <- seq(
-            lower[idx], upper[idx],
+            lower[idx],
+            upper[idx],
             length.out = gridSize
           )
         }
@@ -872,15 +952,20 @@ ParameterIdentification <- R6::R6Class(
       ofvGrid <- expand.grid(parameterGrid)
 
       # Calculate OFV
-      ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
-        ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
-        ofv[[private$.configuration$modelCostField]]
-      }, numeric(1))
+      ofvGrid[["ofv"]] <- vapply(
+        1:nrow(ofvGrid),
+        function(i) {
+          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+          ofv[[private$.configuration$modelCostField]]
+        },
+        numeric(1)
+      )
 
       # Restore simulation state if applicable
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(
-          private$.simulations, private$.savedSimulationState
+          private$.simulations,
+          private$.savedSimulationState
         )
       }
 
@@ -912,7 +997,11 @@ ParameterIdentification <- R6::R6Class(
     #' @return A list of tibbles, one for each parameter, showing how the
     #'   objective function value (OFV) changes when varying that parameter
     #'   while keeping the others fixed.
-    calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
+    calculateOFVProfiles = function(
+      par = NULL,
+      boundFactor = 0.1,
+      totalEvaluations = 20
+    ) {
       ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
@@ -931,10 +1020,13 @@ ParameterIdentification <- R6::R6Class(
 
       # Create default grid with constant values for each parameter
       parameterNames <- sapply(
-        private$.piParameters, function(x) x$parameters[[1]]$path
+        private$.piParameters,
+        function(x) x$parameters[[1]]$path
       )
-      defaultGrid <- matrix(par,
-        nrow = totalEvaluations, ncol = nrOfParameters,
+      defaultGrid <- matrix(
+        par,
+        nrow = totalEvaluations,
+        ncol = nrOfParameters,
         byrow = TRUE
       )
       colnames(defaultGrid) <- parameterNames
@@ -969,7 +1061,8 @@ ParameterIdentification <- R6::R6Class(
       # Restore simulation state if applicable
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(
-          private$.simulations, private$.savedSimulationState
+          private$.simulations,
+          private$.savedSimulationState
         )
       }
 
@@ -982,9 +1075,15 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::ospPrintItems(list(
         "Number of parameters" = length(private$.piParameters)
       ))
-      ospsuite.utils::ospPrintItems(unlist(lapply(private$.simulations, function(x) {
-        x$sourceFile
-      }), use.names = FALSE), title = "Simulations")
+      ospsuite.utils::ospPrintItems(
+        unlist(
+          lapply(private$.simulations, function(x) {
+            x$sourceFile
+          }),
+          use.names = FALSE
+        ),
+        title = "Simulations"
+      )
       # private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       # private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
     }

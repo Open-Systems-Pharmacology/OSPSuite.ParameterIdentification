@@ -16,7 +16,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation
+  path = parameterPaths[[1]],
+  container = simulation
 ))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
@@ -66,12 +67,20 @@ ofvProfiles <- task$calculateOFVProfiles()
 
 test_that("Grid search objective function values equal expected values", {
   expect_equal(gridSearch$ofv[1], 5709.412, tolerance = 0.01)
-  expect_equal(gridSearch$ofv[length(gridSearch$ofv)], 870.813, tolerance = 0.01)
+  expect_equal(
+    gridSearch$ofv[length(gridSearch$ofv)],
+    870.813,
+    tolerance = 0.01
+  )
 })
 
 test_that("Objective function profiles equal expected values", {
   expect_equal(ofvProfiles[[1]]$ofv[1], 162.067, tolerance = 0.01)
-  expect_equal(ofvProfiles[[1]]$ofv[nrow(ofvProfiles[[1]])], 163.121, tolerance = 0.01)
+  expect_equal(
+    ofvProfiles[[1]]$ofv[nrow(ofvProfiles[[1]])],
+    163.121,
+    tolerance = 0.01
+  )
 })
 
 
@@ -93,7 +102,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation
+  path = parameterPaths[[1]],
+  container = simulation
 ))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
@@ -158,7 +168,8 @@ piConfiguration$printEvaluationFeedback <- TRUE
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation
+  path = parameterPaths[[1]],
+  container = simulation
 ))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
@@ -222,7 +233,8 @@ piConfiguration$ciMethod <- "bootstrap"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation
+  path = parameterPaths[[1]],
+  container = simulation
 ))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10
@@ -291,7 +303,8 @@ piConfiguration$ciMethod <- "bootstrap"
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
-  path = parameterPaths[[1]], container = simulation
+  path = parameterPaths[[1]],
+  container = simulation
 ))
 parameters <- c(PIParameters$new(parameters = modelParams))
 parameters[[1]]$minValue <- -10

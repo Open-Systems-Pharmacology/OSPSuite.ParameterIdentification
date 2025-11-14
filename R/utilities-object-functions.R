@@ -48,14 +48,28 @@
 #'
 #' @keywords internal
 #' @noRd
-.calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
-                                  robustMethod = "none", scaleVar = FALSE, ...) {
+.calculateCostMetrics <- function(
+  df,
+  objectiveFunctionType = "lsq",
+  residualWeightingMethod = "none",
+  robustMethod = "none",
+  scaleVar = FALSE,
+  ...
+) {
   additionalArgs <- list(...)
 
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
-    c("dataType", "xDimension", "yDimension", "xValues", "yValues", "xUnit", "yUnit"),
+    c(
+      "dataType",
+      "xDimension",
+      "yDimension",
+      "xValues",
+      "yValues",
+      "xUnit",
+      "yUnit"
+    ),
     colnames(df)
   )
   ospsuite.utils::validateIsOfLength(unique(df$xUnit), 1)
@@ -63,10 +77,14 @@
   ospsuite.utils::validateIsIncluded(unique(df$xDimension), "Time")
 
   # Ensure methods are recognized
-  ospsuite.utils::validateEnumValue(residualWeightingMethod, residualWeightingOptions)
+  ospsuite.utils::validateEnumValue(
+    residualWeightingMethod,
+    residualWeightingOptions
+  )
   if (residualWeightingMethod == "error") {
     ospsuite.utils::validateIsIncluded(
-      c("yErrorValues", "yErrorUnit", "yErrorType"), colnames(df)
+      c("yErrorValues", "yErrorUnit", "yErrorType"),
+      colnames(df)
     )
   }
   ospsuite.utils::validateEnumValue(robustMethod, robustMethodOptions)
@@ -77,7 +95,6 @@
   df$xValues[df$xValues < 0] <- NA
   idx <- is.na(df$xValues) | is.na(df$yValues)
   df <- df[!idx, ]
-
 
   # Splitting dataframe into simulated and observed data
   simulatedData <- df[df$dataType == "simulated", ]
@@ -113,7 +130,11 @@
 
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedXVal)) > 1) {
-    simulatedYValApprox <- approx(simulatedXVal, simulatedYVal, xout = observedXVal)$y
+    simulatedYValApprox <- approx(
+      simulatedXVal,
+      simulatedYVal,
+      xout = observedXVal
+    )$y
   } else {
     simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
   }
@@ -131,7 +152,8 @@
 
   # Determining the method for residual weighting
   errorWeights <-
-    switch(residualWeightingMethod,
+    switch(
+      residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
         yValues = observedData[["yValues"]],
@@ -152,7 +174,8 @@
     )
 
   # Calculate robust weights based on the specified robust method
-  robustWeights <- switch(robustMethod,
+  robustWeights <- switch(
+    robustMethod,
     "huber" = .calculateHuberWeights(normalizedResiduals),
     "bisquare" = .calculateBisquareWeights(normalizedResiduals),
     rep(1, length(normalizedResiduals))
@@ -186,9 +209,14 @@
   )
 
   # Calculating log probability to evaluate model fit
-  logProbability <- -sum(log(pmax(0, dnorm(
-    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$totalWeights
-  ))))
+  logProbability <- -sum(log(pmax(
+    0,
+    dnorm(
+      residualsData$ySimulated,
+      residualsData$yObserved,
+      1 / residualsData$totalWeights
+    )
+  )))
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
@@ -200,7 +228,9 @@
 
   # Ensure that the modelCost calculation does not result in NA
   if (is.na(modelCost$modelCost)) {
-    warning("Invalid model cost detected (NA). Returning infinite error cost structure.")
+    warning(
+      "Invalid model cost detected (NA). Returning infinite error cost structure."
+    )
     return(.createErrorCostStructure(infinite = TRUE))
   } else {
     class(modelCost) <- "modelCost"
@@ -219,8 +249,12 @@
 #'
 #' @keywords internal
 #' @noRd
-.computeErrorWeights <- function(yValues, yErrorValues, yErrorType,
-                                 defaultWeight = 1) {
+.computeErrorWeights <- function(
+  yValues,
+  yErrorValues,
+  yErrorType,
+  defaultWeight = 1
+) {
   ospsuite.utils::validateIsNumeric(yValues)
   ospsuite.utils::validateIsNumeric(yErrorValues)
   ospsuite.utils::validateIsCharacter(yErrorType)
@@ -231,7 +265,9 @@
 
   weights <- rep(defaultWeight, length(yValues))
 
-  idx <- which(yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0)
+  idx <- which(
+    yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
+  )
   if (length(idx) > 0) {
     weights[idx] <- 1 / yErrorValues[idx]
   }
@@ -276,22 +312,35 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   residualsData <- x$residualDetails
 
   # Setup base plot
-  plot(residualsData$x, residualsData$residuals,
-    xlab = "x", ylab = "Residuals",
-    pch = 16, col = "black", ...
+  plot(
+    residualsData$x,
+    residualsData$residuals,
+    xlab = "x",
+    ylab = "Residuals",
+    pch = 16,
+    col = "black",
+    ...
   )
 
   # Add weightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
-    points(residualsData$x, residualsData$weightedResiduals,
-      pch = 17, col = "red", ...
+    points(
+      residualsData$x,
+      residualsData$weightedResiduals,
+      pch = 17,
+      col = "red",
+      ...
     )
   }
 
   # Add robustWeightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
-    points(residualsData$x, residualsData$robustWeightedResiduals,
-      pch = 18, col = "blue", ...
+    points(
+      residualsData$x,
+      residualsData$robustWeightedResiduals,
+      pch = 18,
+      col = "blue",
+      ...
     )
   }
 
@@ -392,7 +441,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsNumeric(base)
   ospsuite.utils::validateIsIncluded(
-    c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
+    c("yDimension", "yUnit", "yValues", "lloq"),
+    colnames(df)
   )
 
   UNITS_EPSILON <- ospsuite::toUnit(
@@ -404,11 +454,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
-    epsilon = UNITS_EPSILON, base = base
+    epsilon = UNITS_EPSILON,
+    base = base
   )
   df$lloq <- ospsuite.utils::logSafe(
     df$lloq,
-    epsilon = UNITS_EPSILON, base = base
+    epsilon = UNITS_EPSILON,
+    base = base
   )
 
   return(df)
@@ -442,8 +494,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' \dontrun{
 #' .calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
 #' }
-.calculateCensoredContribution <- function(observed, simulated, scaling,
-                                           linScaleCV = NULL, logScaleSD = NULL) {
+.calculateCensoredContribution <- function(
+  observed,
+  simulated,
+  scaling,
+  linScaleCV = NULL,
+  logScaleSD = NULL
+) {
   ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
   ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
@@ -458,13 +515,19 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   # Identify censored and uncensored observations based on LLOQ
-  observedUncensored <- observed[is.na(observed$lloq) |
-    (observed$yValues > observed$lloq), ]
-  observedCensored <- observed[!is.na(observed$lloq) &
-    (observed$yValues <= observed$lloq), ]
+  observedUncensored <- observed[
+    is.na(observed$lloq) |
+      (observed$yValues > observed$lloq),
+  ]
+  observedCensored <- observed[
+    !is.na(observed$lloq) &
+      (observed$yValues <= observed$lloq),
+  ]
   simulatedCensored <- merge(
-    observedCensored[c("xValues", "xUnit", "xDimension")], simulated,
-    by = c("xValues", "xUnit", "xDimension"), all.x = TRUE
+    observedCensored[c("xValues", "xUnit", "xDimension")],
+    simulated,
+    by = c("xValues", "xUnit", "xDimension"),
+    all.x = TRUE
   )
 
   # No censored data to process
@@ -480,7 +543,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     stop("Scaling method and scaling parameters are not compatible.")
   }
 
-  censoredProbabilities <- pnorm((observedCensored$lloq - simulatedCensored$yValues) / sd)
+  censoredProbabilities <- pnorm(
+    (observedCensored$lloq - simulatedCensored$yValues) / sd
+  )
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
   censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
   censoredErrorVector <- sqrt(censoredErrorVector)
@@ -533,7 +598,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Scale residuals
   standardizedResiduals <- residuals / (k * mad)
   # Huber weights
-  weights <- ifelse(abs(standardizedResiduals) <= 1, 1,
+  weights <- ifelse(
+    abs(standardizedResiduals) <= 1,
+    1,
     1 / abs(standardizedResiduals)
   )
   return(weights)
@@ -554,8 +621,10 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Scale residuals
   standardizedResiduals <- residuals / (c * mad)
   # Bisquare weights
-  weights <- ifelse(abs(standardizedResiduals) < 1,
-    (1 - standardizedResiduals^2)^2, 0
+  weights <- ifelse(
+    abs(standardizedResiduals) < 1,
+    (1 - standardizedResiduals^2)^2,
+    0
   )
   return(weights)
 }

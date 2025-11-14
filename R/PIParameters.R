@@ -29,7 +29,10 @@ PIParameters <- R6::R6Class(
           targetUnit = private$.unit
         )
       } else {
-        stop(messages$errorPropertyReadOnly("currValue", optionalMessage = "Use $setValue() to change the value."))
+        stop(messages$errorPropertyReadOnly(
+          "currValue",
+          optionalMessage = "Use $setValue() to change the value."
+        ))
       }
     },
 
@@ -50,8 +53,13 @@ PIParameters <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsNumeric(value)
         if (value > private$.startValue) {
-          stop(paste0("The minimal value cannot be greater than the start value!
-          Provided minimal value: ", value, ". Current start value: ", private$.startValue))
+          stop(paste0(
+            "The minimal value cannot be greater than the start value!
+          Provided minimal value: ",
+            value,
+            ". Current start value: ",
+            private$.startValue
+          ))
         }
 
         private$.minValue <- value
@@ -65,8 +73,13 @@ PIParameters <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsNumeric(value)
         if (value < private$.startValue) {
-          stop(paste0("The maximal value cannot be smaller than the start value!
-          Provided maximal value: ", value, ". Current start value: ", private$.startValue))
+          stop(paste0(
+            "The maximal value cannot be smaller than the start value!
+          Provided maximal value: ",
+            value,
+            ". Current start value: ",
+            private$.startValue
+          ))
         }
 
         private$.maxValue <- value
@@ -79,7 +92,10 @@ PIParameters <- R6::R6Class(
       if (missing(value)) {
         private$.unit
       } else {
-        ospsuite::validateUnit(unit = value, dimension = private$.parameters[[1]]$dimension)
+        ospsuite::validateUnit(
+          unit = value,
+          dimension = private$.parameters[[1]]$dimension
+        )
         private$.unit <- value
       }
     }

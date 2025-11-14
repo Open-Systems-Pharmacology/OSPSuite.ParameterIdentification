@@ -68,8 +68,13 @@ PIResult <- R6::R6Class(
     # - ciElapsed: numeric
     # - ciError: error object or NULL
     # - ciDetails: list (e.g. covariance matrix, bootstrap samples)
-    initialize = function(optimResult, ciResult = NULL, costDetails = NULL,
-                          configuration = NULL, piParameters = NULL) {
+    initialize = function(
+      optimResult,
+      ciResult = NULL,
+      costDetails = NULL,
+      configuration = NULL,
+      piParameters = NULL
+    ) {
       private$.configuration <- configuration
       private$.costDetails <- costDetails
 
@@ -77,9 +82,12 @@ PIResult <- R6::R6Class(
       private$.parameters <- tryCatch(
         {
           if (!is.null(piParameters)) {
-            do.call(rbind, lapply(seq_along(piParameters), function(i) {
-              piParameters[[i]]$toDataFrame(group = as.character(i))
-            }))
+            do.call(
+              rbind,
+              lapply(seq_along(piParameters), function(i) {
+                piParameters[[i]]$toDataFrame(group = as.character(i))
+              })
+            )
           } else {
             NULL
           }
@@ -111,7 +119,11 @@ PIResult <- R6::R6Class(
         finalParameters = optimResult$par,
         objectiveValue = optimResult$value,
         initialParameters = optimResult$startValues,
-        convergence = if (!is.finite(optimResult$value)) FALSE else optimResult$convergence,
+        convergence = if (!is.finite(optimResult$value)) {
+          FALSE
+        } else {
+          optimResult$convergence
+        },
         algorithm = optimResult$algorithm,
         elapsed = optimResult$elapsed,
         iterations = optimResult$iterations,
@@ -124,7 +136,8 @@ PIResult <- R6::R6Class(
         cv = ciResult$cv %||% rep(NA_real_, length(optimResult$par)),
         lowerCI = ciResult$lowerCI %||% rep(NA_real_, length(optimResult$par)),
         upperCI = ciResult$upperCI %||% rep(NA_real_, length(optimResult$par)),
-        ciType = ciResult$ciType %||% rep(NA_character_, length(optimResult$par)),
+        ciType = ciResult$ciType %||%
+          rep(NA_character_, length(optimResult$par)),
         paramNames = paramNames
       )
     },
@@ -163,9 +176,12 @@ PIResult <- R6::R6Class(
     #' @description Returns the full internal result list.
     #' @return A named list containing all result values.
     toList = function() {
-      c(private$.result, list(
-        costDetails = private$.costDetails
-      ))
+      c(
+        private$.result,
+        list(
+          costDetails = private$.costDetails
+        )
+      )
     },
     #' @description Prints a summary of `PIResult`
     print = function() {
@@ -193,16 +209,28 @@ PIResult <- R6::R6Class(
       # Parameters table
       paramSummaries <- lapply(seq_along(x$paramNames), function(i) {
         paste0(
-          "Estimate = ", .formatValues(x$finalParameters[i]), ", ",
-          "SD = ", .formatValues(x$sd[i]), ", ",
-          "CV = ", .formatValues(x$cv[i]), ", ",
-          "CI = [", .formatValues(x$lowerCI[i]), ", ",
-          .formatValues(x$upperCI[i]), "]"
+          "Estimate = ",
+          .formatValues(x$finalParameters[i]),
+          ", ",
+          "SD = ",
+          .formatValues(x$sd[i]),
+          ", ",
+          "CV = ",
+          .formatValues(x$cv[i]),
+          ", ",
+          "CI = [",
+          .formatValues(x$lowerCI[i]),
+          ", ",
+          .formatValues(x$upperCI[i]),
+          "]"
         )
       })
       names(paramSummaries) <- x$paramNames
 
-      ospsuite.utils::ospPrintItems(paramSummaries, title = "Parameter Estimates")
+      ospsuite.utils::ospPrintItems(
+        paramSummaries,
+        title = "Parameter Estimates"
+      )
     }
   )
 )

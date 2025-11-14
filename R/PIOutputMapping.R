@@ -25,7 +25,10 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.dataTransformations
       } else {
-        stop(messages$errorPropertyReadOnly("dataTransformations", optionalMessage = "Use $setDataTransformations() to change the value."))
+        stop(messages$errorPropertyReadOnly(
+          "dataTransformations",
+          optionalMessage = "Use $setDataTransformations() to change the value."
+        ))
       }
     },
 
@@ -34,7 +37,10 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.dataWeights
       } else {
-        stop(messages$errorPropertyReadOnly("dataWeights", optionalMessage = "Use $setDataWeights() to change the value."))
+        stop(messages$errorPropertyReadOnly(
+          "dataWeights",
+          optionalMessage = "Use $setDataWeights() to change the value."
+        ))
       }
     },
 
@@ -103,7 +109,12 @@ PIOutputMapping <- R6::R6Class(
       private$.quantity <- quantity
       private$.simId <- .getSimulationContainer(quantity)$id
       private$.observedDataSets <- list()
-      private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+      private$.dataTransformations <- list(
+        xOffsets = 0,
+        yOffsets = 0,
+        xFactors = 1,
+        yFactors = 1
+      )
       private$.scaling <- "lin"
     },
 
@@ -154,7 +165,8 @@ PIOutputMapping <- R6::R6Class(
 
           if (inherits(result, "try-error")) {
             stop(messages$errorUnitConversion(
-              private$.quantity$name, data[[idx]]$name
+              private$.quantity$name,
+              data[[idx]]$name
             ))
           }
         }
@@ -184,11 +196,13 @@ PIOutputMapping <- R6::R6Class(
     #' @param yOffsets Numeric list/value for Y-offset adjustments.
     #' @param xFactors Numeric list/value for X-scaling factors.
     #' @param yFactors Numeric list/value for Y-scaling factors.
-    setDataTransformations = function(labels = NULL,
-                                      xOffsets = 0,
-                                      yOffsets = 0,
-                                      xFactors = 1,
-                                      yFactors = 1) {
+    setDataTransformations = function(
+      labels = NULL,
+      xOffsets = 0,
+      yOffsets = 0,
+      xFactors = 1,
+      yFactors = 1
+    ) {
       ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
@@ -218,10 +232,18 @@ PIOutputMapping <- R6::R6Class(
         if (length(yOffsets) == 1) {
           yOffsets <- rep(yOffsets, length(labels))
         }
-        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[idx]]
-        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[idx]]
-        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[idx]]
-        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[idx]]
+        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[
+          idx
+        ]]
+        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[
+          idx
+        ]]
+        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[
+          idx
+        ]]
+        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[
+          idx
+        ]]
       }
       invisible(self)
     },
@@ -250,7 +272,9 @@ PIOutputMapping <- R6::R6Class(
       lapply(weights, ospsuite.utils::validateIsNumeric, FALSE)
 
       labels <- names(weights)
-      if (is.null(labels) || any(!labels %in% names(private$.observedDataSets))) {
+      if (
+        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
+      ) {
         stop(messages$errorWeightsNames())
       }
 
@@ -264,7 +288,9 @@ PIOutputMapping <- R6::R6Class(
 
         if (length(weightsVec) != yLength) {
           stop(messages$errorWeightsVectorLengthMismatch(
-            label, yLength, length(weightsVec)
+            label,
+            yLength,
+            length(weightsVec)
           ))
         }
 

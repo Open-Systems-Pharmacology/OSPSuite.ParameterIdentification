@@ -10,31 +10,36 @@
 simulations <- c(
   "IV250" = loadSimulation(
     system.file(
-      "extdata", "Chu1992 iv 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1992 iv 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250MD" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg md Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg md Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500MD" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg md Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg md Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   )
@@ -43,7 +48,8 @@ simulations <- c(
 setParameterValuesByPath(
   "Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose",
   simulation = simulations$PO500,
-  values = 500, units = "mg"
+  values = 500,
+  units = "mg"
 )
 
 # Get all `Dose` parameters for the MD simulation
@@ -53,7 +59,8 @@ doseParams <- getAllParametersMatching(
 )
 
 setParameterValues(
-  parameters = doseParams, values = rep(500, length(doseParams)),
+  parameters = doseParams,
+  values = rep(500, length(doseParams)),
   units = rep("mg", length(doseParams))
 )
 
@@ -67,11 +74,15 @@ parameterInputData <- list(
       "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-",
       "fitted|Specific clearance"
     ),
-    min = 0, max = 100, start = 10
+    min = 0,
+    max = 100,
+    start = 10
   ),
   list(
     path = "Clarithromycin|Specific intestinal permeability (transcellular)",
-    min = 0, max = 1, start = 0.01
+    min = 0,
+    max = 1,
+    start = 0.01
   )
 )
 
@@ -98,7 +109,8 @@ for (idx in seq_along(parameterInputData)) {
 # Observed data is loaded from two different files because IV data is reported
 # in µmol/L, and PO data is reported in µg/ml
 filePath <- system.file(
-  "extdata", "Clarithromycin_Profiles.xlsx",
+  "extdata",
+  "Clarithromycin_Profiles.xlsx",
   package = "ospsuite.parameteridentification"
 )
 
@@ -107,7 +119,8 @@ dataConfiguration$sheets <- c("IV250", "PO250", "PO250MD", "PO500", "PO500MD")
 dataConfiguration$namingPattern <- "{Sheet}"
 
 observedData <- loadDataSetsFromExcel(
-  xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration
+  xlsFilePath = filePath,
+  importerConfigurationOrPath = dataConfiguration
 )
 
 # The code below assumes each simulation is matched against one sheet in
@@ -137,7 +150,8 @@ piResult <- task$run()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    piResult$toList()$finalParameters, c(14.024, 6.244, 1.3e-6),
+    piResult$toList()$finalParameters,
+    c(14.024, 6.244, 1.3e-6),
     tolerance = 0.01
   )
 })
@@ -163,31 +177,36 @@ test_that("Hessian CI estimation returns expected error message", {
 simulations <- c(
   "IV250" = loadSimulation(
     system.file(
-      "extdata", "Chu1992 iv 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1992 iv 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO250MD" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg md Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg md Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   ),
   "PO500MD" = loadSimulation(
     system.file(
-      "extdata", "Chu1993 po 250mg md Clarithromycin.pkml",
+      "extdata",
+      "Chu1993 po 250mg md Clarithromycin.pkml",
       package = "ospsuite.parameteridentification"
     )
   )
@@ -196,7 +215,8 @@ simulations <- c(
 setParameterValuesByPath(
   "Applications|Clarithromycin po, Chu 1993, 250mg|Tablet Clarithromycin|Application_1|ProtocolSchemaItem|Dose",
   simulation = simulations$PO500,
-  values = 500, units = "mg"
+  values = 500,
+  units = "mg"
 )
 
 # Get all `Dose` parameters for the MD simulation
@@ -206,7 +226,8 @@ doseParams <- getAllParametersMatching(
 )
 
 setParameterValues(
-  parameters = doseParams, values = rep(500, length(doseParams)),
+  parameters = doseParams,
+  values = rep(500, length(doseParams)),
   units = rep("mg", length(doseParams))
 )
 
@@ -220,11 +241,15 @@ parameterInputData <- list(
       "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|Renal Clearances-",
       "fitted|Specific clearance"
     ),
-    min = 0, max = 100, start = 10
+    min = 0,
+    max = 100,
+    start = 10
   ),
   list(
     path = "Clarithromycin|Specific intestinal permeability (transcellular)",
-    min = 0, max = 1, start = 0.01
+    min = 0,
+    max = 1,
+    start = 0.01
   )
 )
 
@@ -251,7 +276,8 @@ for (idx in seq_along(parameterInputData)) {
 # Observed data is loaded from two different files because IV data is reported
 # in µmol/L, and PO data is reported in µg/ml
 filePath <- system.file(
-  "extdata", "Clarithromycin_Profiles.xlsx",
+  "extdata",
+  "Clarithromycin_Profiles.xlsx",
   package = "ospsuite.parameteridentification"
 )
 
@@ -260,7 +286,8 @@ dataConfiguration$sheets <- c("IV250", "PO250", "PO250MD", "PO500", "PO500MD")
 dataConfiguration$namingPattern <- "{Sheet}"
 
 observedData <- loadDataSetsFromExcel(
-  xlsFilePath = filePath, importerConfigurationOrPath = dataConfiguration
+  xlsFilePath = filePath,
+  importerConfigurationOrPath = dataConfiguration
 )
 
 # The code below assumes each simulation is matched against one sheet in
@@ -290,7 +317,8 @@ piResult <- task$run()
 
 test_that("Estimated parameters equal expected values", {
   expect_equal(
-    piResult$toList()$finalParameters, c(8.420, 5.373, 0.011),
+    piResult$toList()$finalParameters,
+    c(8.420, 5.373, 0.011),
     tolerance = 0.01
   )
 })

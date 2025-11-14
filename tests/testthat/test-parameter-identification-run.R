@@ -42,7 +42,11 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
     )
   )
   piResults$.__enclos_env__$private$.result$elapsed <- 0
-  expect_snapshot_value(piResults$toDataFrame(), style = "deparse", tolerance = 1e-03)
+  expect_snapshot_value(
+    piResults$toDataFrame(),
+    style = "deparse",
+    tolerance = 1e-03
+  )
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {

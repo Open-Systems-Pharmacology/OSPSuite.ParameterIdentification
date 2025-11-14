@@ -2,12 +2,14 @@
 
 test_that("ParameterIdentification is created successfully", {
   piConfiguration <- PIConfiguration$new()
-  expect_silent(piTask <- ParameterIdentification$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = testOutputMapping(),
-    configuration = piConfiguration
-  ))
+  expect_silent(
+    piTask <- ParameterIdentification$new(
+      simulations = testSimulation(),
+      parameters = testParameters(),
+      outputMappings = testOutputMapping(),
+      configuration = piConfiguration
+    )
+  )
   expect_s3_class(piTask, class = c("ParameterIdentification", "R6"))
 })
 
@@ -28,9 +30,16 @@ test_that("ParameterIdentification configuration can be modified without errors"
   expect_false(piTask$configuration$autoEstimateCI)
   expect_no_error(piTask$configuration$algorithmOptions <- list(maxeval = 3))
   expect_equal(piTask$configuration$algorithmOptions$maxeval, 3)
-  expect_no_error(piTask$configuration$objectiveFunctionOptions$robustMethod <- "huber")
-  expect_equal(piTask$configuration$objectiveFunctionOptions$robustMethod, "huber")
-  expect_no_error(piTask$configuration$objectiveFunctionOptions$linScaleCV <- 0.3)
+  expect_no_error(
+    piTask$configuration$objectiveFunctionOptions$robustMethod <- "huber"
+  )
+  expect_equal(
+    piTask$configuration$objectiveFunctionOptions$robustMethod,
+    "huber"
+  )
+  expect_no_error(
+    piTask$configuration$objectiveFunctionOptions$linScaleCV <- 0.3
+  )
   expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
 })
 
@@ -78,7 +87,11 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
   expect_no_error(
     ParameterIdentification$new(
       simulations = list(sim_250mg, sim_500mg),
-      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      parameters = list(
+        piParameterLipo,
+        piParameterCl_250mg,
+        piParameterCl_500mg
+      ),
       outputMappings = list(outputMapping_250mg, outputMapping_500mg),
       configuration = NULL
     )
@@ -88,7 +101,11 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
   expect_error(
     ParameterIdentification$new(
       simulations = list(sim_250mg),
-      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      parameters = list(
+        piParameterLipo,
+        piParameterCl_250mg,
+        piParameterCl_500mg
+      ),
       outputMappings = list(outputMapping_250mg, outputMapping_500mg)
     ),
     "Mismatch or missing ID detected"
@@ -106,7 +123,11 @@ test_that("ParameterIdentification verifies IDs with multiple simulations and pa
   expect_error(
     ParameterIdentification$new(
       simulations = list(sim_250mg, sim_500mg),
-      parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
+      parameters = list(
+        piParameterLipo,
+        piParameterCl_250mg,
+        piParameterCl_500mg
+      ),
       outputMappings = list(outputMapping_500mg)
     ),
     "Mismatch or missing ID detected"
@@ -133,7 +154,6 @@ test_that("ParameterIdentification returns infinite value if simulation fails", 
   expect_false(piResult$convergence)
   expect_true(is.na(piResult$sd))
 })
-
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
 # sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))

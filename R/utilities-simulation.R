@@ -31,7 +31,11 @@
 #' @return TRUE if all IDs match accordingly, otherwise throws an error
 #'   detailing the mismatch or absence of IDs.
 #' @keywords internal
-.validateSimulationIds <- function(simulationIds, piParameters, outputMappings) {
+.validateSimulationIds <- function(
+  simulationIds,
+  piParameters,
+  outputMappings
+) {
   # Extract unique IDs from piParameters assuming up to two levels of list depth
   piParamIds <- lapply(piParameters, function(param) {
     if (is.list(param$parameters)) {
@@ -56,10 +60,18 @@
   outputMappingIds <- sort(outputMappingIds)
 
   # Validate that simulationId is identical with piParamIds and outputMappingIds
-  if (!identical(simulationIds, piParamIds) || !identical(simulationIds, outputMappingIds)) {
-    stop(messages$errorSimulationIdMissing(
-      simulationIds, piParamIds, outputMappingIds
-    ), call. = TRUE)
+  if (
+    !identical(simulationIds, piParamIds) ||
+      !identical(simulationIds, outputMappingIds)
+  ) {
+    stop(
+      messages$errorSimulationIdMissing(
+        simulationIds,
+        piParamIds,
+        outputMappingIds
+      ),
+      call. = TRUE
+    )
   }
 
   return()
@@ -83,8 +95,8 @@
   # simulations.
   oldOutputIntervals <-
     oldTimePoints <-
-    oldOutputSelections <-
-    ids <- vector("list", length(simulations))
+      oldOutputSelections <-
+        ids <- vector("list", length(simulations))
 
   for (idx in seq_along(simulations)) {
     simulation <- simulations[[idx]]
@@ -97,7 +109,7 @@
   }
   names(oldOutputIntervals) <-
     names(oldTimePoints) <-
-    names(oldOutputSelections) <- ids
+      names(oldOutputSelections) <- ids
 
   return(list(
     outputIntervals = oldOutputIntervals,
@@ -134,7 +146,10 @@
     # Reset output selections
     ospsuite::clearOutputs(simulation)
     for (outputSelection in simStateList$outputSelections[[simId]]) {
-      ospsuite::addOutputs(quantitiesOrPaths = outputSelection$path, simulation = simulation)
+      ospsuite::addOutputs(
+        quantitiesOrPaths = outputSelection$path,
+        simulation = simulation
+      )
     }
   }
 }

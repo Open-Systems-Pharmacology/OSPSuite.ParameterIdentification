@@ -1,6 +1,7 @@
 # .calculateCensoredContribution
 
-obsVsPredDf <- readr::read_csv(getTestDataFilePath("Aciclovir_obsVsPredDf.csv"),
+obsVsPredDf <- readr::read_csv(
+  getTestDataFilePath("Aciclovir_obsVsPredDf.csv"),
   show_col_types = FALSE
 )
 
@@ -10,8 +11,10 @@ predDf <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
 test_that(".calculateCensoredContribution correctly calculates result with linear scaling", {
   obsDf$lloq <- 2.5
   result <- .calculateCensoredContribution(
-    observed = obsDf, simulated = predDf,
-    scaling = "lin", linScaleCV = 0.25
+    observed = obsDf,
+    simulated = predDf,
+    scaling = "lin",
+    linScaleCV = 0.25
   )
   expect_equal(result, 0.545702, tolerance = 1e-4)
 })
@@ -22,8 +25,10 @@ test_that(".calculateCensoredContribution correctly calculates result with logar
   obsDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "observed", ]
   predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
   result <- .calculateCensoredContribution(
-    observed = obsDfLog, simulated = predDfLog,
-    scaling = "log", logScaleSD = 0.086
+    observed = obsDfLog,
+    simulated = predDfLog,
+    scaling = "log",
+    logScaleSD = 0.086
   )
   expect_equal(result, 0.437086, tolerance = 1e-4)
 })
@@ -33,8 +38,10 @@ test_that(".calculateCensoredContribution can handle a minimal dataset with a si
   obsDfSingle <- obsDf[1, , drop = FALSE]
   predDfSingle <- predDf[1, , drop = FALSE]
   result <- .calculateCensoredContribution(
-    observed = obsDfSingle, simulated = predDfSingle,
-    scaling = "lin", linScaleCV = 0.2
+    observed = obsDfSingle,
+    simulated = predDfSingle,
+    scaling = "lin",
+    linScaleCV = 0.2
   )
   expect_equal(result, 0, tolerance = 1e-4)
 })
@@ -43,15 +50,19 @@ test_that(".calculateCensoredContribution throws an error when LLOQ values are m
   obsDf$lloq <- NA
   expect_error(
     result <- .calculateCensoredContribution(
-      observed = obsDf, simulated = predDf,
-      scaling = "lin", linScaleCV = 0.2
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "lin",
+      linScaleCV = 0.2
     )
   )
   obsDf$lloq <- NULL
   expect_error(
     result <- .calculateCensoredContribution(
-      observed = obsDf, simulated = predDf,
-      scaling = "lin", linScaleCV = 0.2
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "lin",
+      linScaleCV = 0.2
     )
   )
 })
@@ -60,20 +71,26 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
   obsDf$lloq <- 2.5
   expect_error(
     result <- .calculateCensoredContribution(
-      observed = obsDf, simulated = predDf,
-      scaling = "invalidOption", linScaleCV = 0.2
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "invalidOption",
+      linScaleCV = 0.2
     )
   )
   expect_error(
     result <- .calculateCensoredContribution(
-      observed = obsDf, simulated = predDf,
-      scaling = "lin", logScaleSD = 0.086
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "lin",
+      logScaleSD = 0.086
     )
   )
   expect_error(
     result <- .calculateCensoredContribution(
-      observed = obsDf, simulated = predDf,
-      scaling = "log", linScaleCV = 0.2
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "log",
+      linScaleCV = 0.2
     )
   )
 })
@@ -82,8 +99,16 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
 
 test_that(".applyLogTransformation correctly log-transforms `yValues` and `lloq`", {
   obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
-  expect_snapshot_value(obsVsPredDfLog$yValues, style = "deparse", tolerance = 1e-5)
-  expect_snapshot_value(obsVsPredDfLog$lloq, style = "deparse", tolerance = 1e-5)
+  expect_snapshot_value(
+    obsVsPredDfLog$yValues,
+    style = "deparse",
+    tolerance = 1e-5
+  )
+  expect_snapshot_value(
+    obsVsPredDfLog$lloq,
+    style = "deparse",
+    tolerance = 1e-5
+  )
 })
 
 # .calculateHuberWeights
@@ -125,7 +150,10 @@ test_that(".calculateBisquareWeights returns empty vector for empty residuals", 
 test_that("calculateCostMetrics returns expected cost metrics for valid input data and default parameters", {
   result <- .calculateCostMetrics(obsVsPredDf)
   expect_s3_class(result, "modelCost")
-  expect_true(all(c("modelCost", "minLogProbability", "costVariables", "residualDetails") %in% names(result)))
+  expect_true(all(
+    c("modelCost", "minLogProbability", "costVariables", "residualDetails") %in%
+      names(result)
+  ))
 })
 
 test_that("calculateCostMetrics returns correct cost metric values for default parameters", {
@@ -151,30 +179,44 @@ test_that("calculateCostMetrics with residualWeightingMethod `mean` returns expe
 
 test_that("calculateCostMetrics with residualWeightingMethod `error` returns expected results", {
   # ArithmeticStdDev
-  resultArith <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "error")
+  resultArith <- .calculateCostMetrics(
+    obsVsPredDf,
+    residualWeightingMethod = "error"
+  )
   expect_snapshot_value(resultArith$modelCost, tolerance = 1e-3)
 
   # GeometricStdDev
   obsVsPredDfGeom <- obsVsPredDf
   obsVsPredDfGeom$yErrorValues[14:16] <- c(1.083, 1.083, 1.162)
   obsVsPredDfGeom$yErrorType <- "GeometricStdDev"
-  resultGeom <- .calculateCostMetrics(obsVsPredDfGeom, residualWeightingMethod = "error")
+  resultGeom <- .calculateCostMetrics(
+    obsVsPredDfGeom,
+    residualWeightingMethod = "error"
+  )
   expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-2)
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
   resultHuber <- .calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
-  resultBisquare <- .calculateCostMetrics(obsVsPredDf, robustMethod = "bisquare")
+  resultBisquare <- .calculateCostMetrics(
+    obsVsPredDf,
+    robustMethod = "bisquare"
+  )
   expect_equal(resultHuber$modelCost, 8.94396, tolerance = 1e-4)
   expect_equal(resultBisquare$modelCost, 4.929464, tolerance = 1e-4)
 })
 
 test_that("least squares and M3 methods produce different model costs", {
   obsVsPredDf$lloq <- 2.5
-  result_lsq <- .calculateCostMetrics(obsVsPredDf, objectiveFunctionType = "lsq")
-  result_m3 <- .calculateCostMetrics(obsVsPredDf,
+  result_lsq <- .calculateCostMetrics(
+    obsVsPredDf,
+    objectiveFunctionType = "lsq"
+  )
+  result_m3 <- .calculateCostMetrics(
+    obsVsPredDf,
     objectiveFunctionType = "m3",
-    scaling = "lin", linScaleCV = 0.2
+    scaling = "lin",
+    linScaleCV = 0.2
   )
   expect_true(result_lsq$modelCost != result_m3$modelCost)
 })

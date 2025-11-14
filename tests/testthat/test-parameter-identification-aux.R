@@ -72,7 +72,10 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   )
   suppressMessages(suppressWarnings(
     expect_warning(
-      gridSearchResults <- piTask$gridSearch(lower = c(0, -0.5), totalEvaluations = 5)
+      gridSearchResults <- piTask$gridSearch(
+        lower = c(0, -0.5),
+        totalEvaluations = 5
+      )
     )
   ))
   expect_snapshot(gridSearchResults$ofv)
@@ -102,7 +105,10 @@ test_that("calculateOFVProfiles() returns `Inf` on simulation failure", {
 
   suppressMessages(suppressWarnings(
     expect_warning(
-      ofvProfiles <- piTask$calculateOFVProfiles(par = c(0, -0.25), totalEvaluations = 3)
+      ofvProfiles <- piTask$calculateOFVProfiles(
+        par = c(0, -0.25),
+        totalEvaluations = 3
+      )
     )
   ))
   expect_snapshot(ofvProfiles[[2]]$ofv)
