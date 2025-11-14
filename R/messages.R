@@ -224,7 +224,7 @@ messages$statusObservedDataClassification <- function(
 
 messages$warningLowIndividualData <- function(n = 3) {
   sprintf(
-    "Less than %d individual datasets detected — bootstrap CI may be unreliable.",
+    "Less than %d individual datasets detected - bootstrap CI may be unreliable.",
     n
   )
 }
