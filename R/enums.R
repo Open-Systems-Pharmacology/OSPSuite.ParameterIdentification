@@ -10,10 +10,11 @@
 #' - **`HJKB`** – Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
 #' - **`BOBYQA`** – BOBYQA algorithm from the \pkg{nloptr} package.
 #' - **`DEoptim`** – Differential evolution algorithm from the \pkg{DEoptim}
-#' package, suitable for stochastic global optimization.
+#'   package, suitable for stochastic global optimization.
 #'
-#' These algorithms can be specified and configured within the `PIConfiguration`
-#' class to tailor the parameter identification process to specific needs.
+#'   These algorithms can be specified and configured within the
+#'   `PIConfiguration` class to tailor the parameter identification process to
+#'   specific needs.
 Algorithms <- ospsuite.utils::enum(c(
   "HJKB",
   "BOBYQA",
@@ -25,24 +26,25 @@ Algorithms <- ospsuite.utils::enum(c(
 #' Default options for various optimization algorithms used within the package.
 #' These algorithms are configured via the `PIConfiguration` class.
 #'
-#' @section AlgorithmOptions_HJKB:
-#' Default options for the `HJKB` algorithm. See [dfoptim::hjkb()] for more details
-#' on the options.
+#' @section AlgorithmOptions_HJKB: Default options for the `HJKB` algorithm. See
+#'   [dfoptim::hjkb()] for more details on the options.
 #'
-#' @section AlgorithmOptions_BOBYQA:
-#' Default options for the `BOBYQA` algorithm. See [nloptr::nl.opts()] for more
-#' details on the options.
+#' @section AlgorithmOptions_BOBYQA: Default options for the `BOBYQA` algorithm.
+#'   See [nloptr::nl.opts()] for more details on the options.
 #'
-#' @section AlgorithmOptions_DEoptim:
-#' Default options for the `DEoptim` algorithm. See [DEoptim::DEoptim.control()]
-#' for more details on the options.
+#' @section AlgorithmOptions_DEoptim: Default options for the `DEoptim`
+#'   algorithm. See [DEoptim::DEoptim.control()] for more details on the
+#'   options.
 #'
 #' @name AlgorithmOptions
 #' @rdname AlgorithmOptions
 #' @export
 AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
-  tol = 1e-06, maxfeval = Inf, maximize = FALSE,
-  target = Inf, info = FALSE
+  tol = 1e-06,
+  maxfeval = Inf,
+  maximize = FALSE,
+  target = Inf,
+  info = FALSE
 ))
 
 #' @rdname AlgorithmOptions
@@ -70,8 +72,9 @@ AlgorithmDefaults <- list(
 
 #' Confidence Interval Estimation Methods
 #'
-#' Confidence interval estimation methods supported in the `ParameterIdentification`
-#' class. These methods are configured via the `PIConfiguration` class.
+#' Confidence interval estimation methods supported in the
+#' `ParameterIdentification` class. These methods are configured via the
+#' `PIConfiguration` class.
 #'
 #' @export
 #' @name CIMethods
@@ -80,8 +83,8 @@ AlgorithmDefaults <- list(
 #' - **`PL`** – Profile likelihood estimation, iterating over each parameter.
 #' - **`bootstrap`** – Bootstrap resampling to estimate parameter uncertainty.
 #'
-#' These methods can be specified and configured within the `PIConfiguration`
-#' class to customize confidence interval estimation.
+#'   These methods can be specified and configured within the `PIConfiguration`
+#'   class to customize confidence interval estimation.
 CIMethods <- ospsuite.utils::enum(c(
   "hessian",
   "PL",
@@ -90,36 +93,35 @@ CIMethods <- ospsuite.utils::enum(c(
 
 #' Confidence Interval Estimation Options
 #'
-#' Default options for various confidence interval estimation methods used within
-#' the package. These methods are configured via the `PIConfiguration` class.
+#' Default options for various confidence interval estimation methods used
+#' within the package. These methods are configured via the `PIConfiguration`
+#' class.
 #'
 #' @format A list containing default settings for confidence interval estimation
-#' methods.
+#'   methods.
 #'
-#' @section CIOptions_Hessian:
-#' Default options for the **`hessian`** method.
+#' @section CIOptions_Hessian: Default options for the **`hessian`** method.
 #'
 #' - **`epsilon`**: Numerical step size for numerical differentiation. Default
-#' is `NULL`, which applies an adaptive step size.
+#'   is `NULL`, which applies an adaptive step size.
 #' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
-#' (95% confidence intervals).
+#'   (95% confidence intervals).
 #'
-#' @section CIOptions_PL:
-#' Default options for the **`PL`** (Profile Likelihood) method.
+#' @section CIOptions_PL: Default options for the **`PL`** (Profile Likelihood)
+#'   method.
 #'
 #' - **`epsilon`**: Numerical step size for profile likelihood adjustments.
-#' Default is `NULL`, which applies an adaptive step size.
+#'   Default is `NULL`, which applies an adaptive step size.
 #' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
-#' (95% confidence intervals).
+#'   (95% confidence intervals).
 #' - **`maxIter`**: Maximum number of iterations for likelihood profiling.
-#' Default is `100`.
+#'   Default is `100`.
 #'
-#' @section CIOptions_Bootstrap:
-#' Default options for the **`bootstrap`** method.
+#' @section CIOptions_Bootstrap: Default options for the **`bootstrap`** method.
 #'
 #' - **`nSamples`**: Number of bootstrap resampling iterations. Default is `1000`.
 #' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
-#' (95% confidence intervals).
+#'   (95% confidence intervals).
 #' - **`seed`**: Random seed for reproducibility. Default is `NULL`.
 #'
 #' @name CIOptions
@@ -165,18 +167,18 @@ CIDefaults <- list(
 #' @name ObjectiveFunctionOptions
 #' @details Settings include:
 #' - **`objectiveFunctionType`** – Type of objective function used. Default is
-#' `lsq` (least squares), influencing error calculation.
+#'   `lsq` (least squares), influencing error calculation.
 #' - **`residualWeightingMethod`** – Method for residual weighting. Default is
-#' `none`.
+#'   `none`.
 #' - **`robustMethod`** – Method for robust outlier handling. Default is `none`
-#' (standard analysis).
+#'   (standard analysis).
 #' - **`scaleVar`** – Whether residual scaling is applied. Default is `FALSE`.
 #' - **`linScaleCV`** – Coefficient of variation for linear scaling. Default is
-#' `0.2`.
+#'   `0.2`.
 #' - **`logScaleSD`** – Standard deviation for log scaling. Default is `NULL`.
 #'
-#' These options are configurable in `PIConfiguration`, directly influencing the
-#' `calculateCostMetrics` functionality for detailed model fit assessment.
+#'   These options are configurable in `PIConfiguration`, directly influencing
+#'   the `calculateCostMetrics` functionality for detailed model fit assessment.
 ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   objectiveFunctionType = "lsq",
   residualWeightingMethod = "none",
@@ -202,20 +204,21 @@ CIOptions <- ospsuite.utils::enum(list(
 #' @name ObjectiveFunctionSpecs
 #' @details Includes:
 #' - **`objectiveFunctionType`** – Type of error calculation. Allowed values:
-#' `lsq` (least squares), `m3"` (M3 method).
+#'   `lsq` (least squares), `m3"` (M3 method).
 #' - **`residualWeightingMethod`** – Method for weighting residuals. Allowed values:
-#' `none`, `std`, `mean`, `error`.
+#'   `none`, `std`, `mean`, `error`.
 #' - **`robustMethod`** – Approach for robust outlier handling. Allowed values:
-#' `none`, `huber`, `bisquare`.
+#'   `none`, `huber`, `bisquare`.
 #' - **`scaleVar`** – Boolean for variance scaling. Allowed values: `TRUE`, `FALSE`.
 #' - **`scaling`** – Scaling type. Allowed values: `lin` (linear), `log` (logarithmic).
 #' - **`linScaleCV`** – Coefficient of variation for linear scaling. Numeric
-#' range: `1e-9` to `1`.
+#'   range: `1e-9` to `1`.
 #' - **`logScaleSD`** – Standard deviation for log scaling. Numeric range: `1e-9`
-#' to `Inf`.
+#'   to `Inf`.
 #'
-#' These options directly influence the optimization process by defining how
-#' discrepancies between simulated and observed data are quantified and managed.
+#'   These options directly influence the optimization process by defining how
+#'   discrepancies between simulated and observed data are quantified and
+#'   managed.
 ObjectiveFunctionSpecs <- list(
   objectiveFunctionType = list(
     type = "character",
@@ -245,7 +248,7 @@ ObjectiveFunctionSpecs <- list(
 #' @details Available scaling options:
 #' - **`lin`** – Linear scaling (default).
 #' - **`log`** – Logarithmic scaling, used when data spans several orders of
-#' magnitude.
+#'   magnitude.
 ScalingOptions <- ospsuite.utils::enum(c(
   "lin",
   "log"
@@ -261,11 +264,11 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' @details The methods include:
 #' - **`none`** – No weighting applied, treating all residuals equally.
 #' - **`error`** – Weights based on error estimates for the dependent variable
-#' in observed data.
+#'   in observed data.
 #' - **`std`** – Weights equal to the reciprocal of the standard deviation of
-#' the observed data.
+#'   the observed data.
 #' - **`mean`** – Weights based on the reciprocal of the mean of the absolute
-#' values of the observed data, useful for relative error scaling.
+#'   values of the observed data, useful for relative error scaling.
 residualWeightingOptions <- ospsuite.utils::enum(c(
   "none",
   "error",
@@ -292,13 +295,13 @@ robustMethodOptions <- ospsuite.utils::enum(c(
 
 #' Model Cost Fields for Optimization
 #'
-#' Available cost fields that can be used as optimization targets
-#' in parameter estimation.
+#' Available cost fields that can be used as optimization targets in parameter
+#' estimation.
 #'
 #' @name ModelCostFields
 #' @details The available field is:
 #' - **`modelCost`** – Accesses the RSS-based model cost value (currently the
-#' only supported option).
+#'   only supported option).
 #'
 #' @keywords internal
 #' @noRd

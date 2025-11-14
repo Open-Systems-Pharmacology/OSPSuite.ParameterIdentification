@@ -30,9 +30,10 @@ Includes:
 range: \code{1e-9} to \code{1}.
 \item \strong{\code{logScaleSD}} – Standard deviation for log scaling. Numeric range: \code{1e-9}
 to \code{Inf}.
-}
 
 These options directly influence the optimization process by defining how
-discrepancies between simulated and observed data are quantified and managed.
+discrepancies between simulated and observed data are quantified and
+managed.
+}
 }
 \keyword{datasets}

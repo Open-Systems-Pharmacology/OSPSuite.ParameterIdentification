@@ -1,7 +1,6 @@
 #' @title ParameterIdentification
 #' @docType class
-#' @description
-#' Performs parameter estimation by fitting model simulations to
+#' @description Performs parameter estimation by fitting model simulations to
 #' observed data. Supports customizable optimization and confidence interval
 #' methods.
 #' @export
@@ -11,7 +10,7 @@ ParameterIdentification <- R6::R6Class(
   cloneable = FALSE,
   active = list(
     #' @field simulations A named list of `Simulation` objects, keyed by the IDs
-    #' of their root containers.
+    #'   of their root containers.
     simulations = function(value) {
       if (missing(value)) {
         as.list(private$.simulations)
@@ -21,7 +20,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     #' @field parameters A list of `PIParameters`, each representing a grouped
-    #' set of model parameters to be optimized (read-only).
+    #'   set of model parameters to be optimized (read-only).
     parameters = function(value) {
       if (missing(value)) {
         private$.piParameters
@@ -30,8 +29,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field configuration A `PIConfiguration` object controlling algorithm,
-    #' CI estimation, and objective function options.
+    #' @field configuration A `PIConfiguration` object controlling algorithm, CI
+    #'   estimation, and objective function options.
     configuration = function(value) {
       if (missing(value)) {
         private$.configuration
@@ -41,8 +40,8 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    #' @field outputMappings A list of `PIOutputMapping` objects mapping observed
-    #' datasets to simulated outputs.
+    #' @field outputMappings A list of `PIOutputMapping` objects mapping
+    #'   observed datasets to simulated outputs.
     outputMappings = function(value) {
       if (missing(value)) {
         private$.outputMappings
@@ -56,11 +55,14 @@ ParameterIdentification <- R6::R6Class(
     .simulations = NULL,
     # Batches for result calculations, named by root container IDs
     .simulationBatches = NULL,
-    # For steady state calculations, with different outputs and times, named by root container IDs
+    # For steady state calculations, with different outputs and times, named by
+    # root container IDs
     .steadyStateBatches = NULL,
-    # Named list by simulation IDs, with paths and start values for variable molecules
+    # Named list by simulation IDs, with paths and start values for variable
+    # molecules
     .variableMolecules = NULL,
-    # Named list by simulation IDs, detailing paths and start values for variable parameters
+    # Named list by simulation IDs, detailing paths and start values for
+    # variable parameters
     .variableParameters = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
@@ -86,18 +88,20 @@ ParameterIdentification <- R6::R6Class(
     .activeBootstrapSeed = NULL,
     # Cached original weights and values of all datasets before bootstrap
     .initialOutputMappingState = NULL,
-    # Fitted GPR models for aggregated datasets, used during bootstrap resampling
+    # Fitted GPR models for aggregated datasets, used during bootstrap
+    # resampling
     .gprModels = NULL,
 
     # Batch Initialization for Simulations
     #
-    # Initializes simulation batches, preparing them for parameter identification
-    # by clearing outputs, updating schemas with observed data, and setting
-    # variable parameters. Optimizes repeated calls by checking initialization
-    # necessity.
+    # Initializes simulation batches, preparing them for parameter
+    # identification by clearing outputs, updating schemas with observed data,
+    # and setting variable parameters. Optimizes repeated calls by checking
+    # initialization necessity.
     .batchInitialization = function() {
-      # If the flag is already set to FALSE, short-cuts the execution of the function
-      # This way, the function call be called repeatedly with minimal overhead
+      # If the flag is already set to FALSE, short-cuts the execution of the
+      # function. This way, the function call be called repeatedly with minimal
+      # overhead
       if (private$.needBatchInitialization) {
         .savedSimulationState <- .storeSimulationState(private$.simulations)
 
@@ -142,14 +146,17 @@ ParameterIdentification <- R6::R6Class(
           ospsuite::clearOutputs(simulation)
         }
 
-        # Add time points to the output schema that are present in the observed data.
-        # Also add output quantities.
+        # Add time points to the output schema that are present in the observed
+        # data. Also add output quantities.
         for (outputMapping in private$.outputMappings) {
           # ID of the and the parent simulation of the quantity of the mapping.
           simId <- outputMapping$simId
           simulation <- private$.simulations[[simId]]
           # Add the quantity to the outputs of the simulations.
-          ospsuite::addOutputs(quantitiesOrPaths = outputMapping$quantity, simulation = simulation)
+          ospsuite::addOutputs(
+            quantitiesOrPaths = outputMapping$quantity,
+            simulation = simulation
+          )
           # Add time points present in the observed data of this mapping.
           for (dataset in outputMapping$observedDataSets) {
             # Time values can be stored in units different from the base unit
@@ -163,7 +170,8 @@ ParameterIdentification <- R6::R6Class(
             if (length(xOffset) != 1) {
               xOffset <- xOffset[[label]]
             }
-            xVals <- ospsuite::toBaseUnit(ospsuite::ospDimensions$Time,
+            xVals <- ospsuite::toBaseUnit(
+              ospsuite::ospDimensions$Time,
               values = (dataset$xValues + xOffset) * xFactor,
               unit = dataset$xUnit
             )
@@ -171,20 +179,23 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Add parameters that will be optimized to the list of variable parameters
+        # Add parameters that will be optimized to variable parameters
         for (piParameter in private$.piParameters) {
           for (parameter in piParameter$parameters) {
             simId <- .getSimulationContainer(parameter)$id
             # Set the current value of this parameter to the start value of the
             # PIParameter.
-            private$.variableParameters[[simId]][[parameter$path]] <- piParameter$startValue
+            private$.variableParameters[[simId]][[
+              parameter$path
+            ]] <- piParameter$startValue
           }
         }
 
         # Create simulation batches for identification runs
         for (simulation in private$.simulations) {
           simId <- simulation$root$id
-          # Parameters and molecules defined in the previous steps will be variable.
+          # Parameters and molecules defined in the previous steps will be
+          # variable.
           simBatch <- ospsuite::createSimulationBatch(
             simulation = simulation,
             parametersOrPaths = names(private$.variableParameters[[simId]]),
@@ -260,8 +271,10 @@ ParameterIdentification <- R6::R6Class(
       }
 
       # Trigger resampling only if the seed has changed
-      if (is.null(private$.activeBootstrapSeed) ||
-        private$.activeBootstrapSeed != bootstrapSeed) {
+      if (
+        is.null(private$.activeBootstrapSeed) ||
+          private$.activeBootstrapSeed != bootstrapSeed
+      ) {
         private$.activeBootstrapSeed <- bootstrapSeed
         private$.outputMappings <- .resampleAndApplyMappingState(
           private$.outputMappings,
@@ -276,8 +289,9 @@ ParameterIdentification <- R6::R6Class(
 
     # Restore Output Mapping State
     #
-    # Restores `outputMappings` to their original state before bootstrap resampling,
-    # including both dataset weights and y-values. Clears bootstrap-related state.
+    # Restores `outputMappings` to their original state before bootstrap
+    # resampling, including both dataset weights and y-values. Clears
+    # bootstrap-related state.
     .restoreOutputMappingsState = function() {
       if (!is.null(private$.initialOutputMappingState)) {
         private$.outputMappings <- .applyOutputMappingState(
@@ -292,9 +306,9 @@ ParameterIdentification <- R6::R6Class(
 
     # Aggregate Model Cost Calculation
     #
-    # Calculates and aggregates the model cost across all output
-    # mappings for parameter estimation. Adjusts the evaluations counter, processes
-    # each output mapping's cost via `.calculateCostMetrics`, and aggregates the
+    # Calculates and aggregates the model cost across all output mappings for
+    # parameter estimation. Adjusts the evaluations counter, processes each
+    # output mapping's cost via `.calculateCostMetrics`, and aggregates the
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
@@ -325,7 +339,8 @@ ParameterIdentification <- R6::R6Class(
 
       if (length(obsVsPredList) != length(outputMappings)) {
         stop(messages$errorObsVsPredListLengthMismatch(
-          length(outputMappings), length(obsVsPredList)
+          length(outputMappings),
+          length(obsVsPredList)
         ))
       }
 
@@ -333,14 +348,22 @@ ParameterIdentification <- R6::R6Class(
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
         # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[idx]]$toDataFrame())
+        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[
+          idx
+        ]]$toDataFrame())
         # Apply LLOQ handling for LSQ
-        if (private$.configuration$objectiveFunctionOptions$objectiveFunctionType == "lsq") {
+        if (
+          private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
+            "lsq"
+        ) {
           # replace values < LLOQ with LLOQ/2 in simulated data
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[(obsVsPredDf$dataType == "simulated" &
-              obsVsPredDf$yValues < lloq), "yValues"] <- lloq / 2
+            obsVsPredDf[
+              (obsVsPredDf$dataType == "simulated" &
+                obsVsPredDf$yValues < lloq),
+              "yValues"
+            ] <- lloq / 2
           }
         }
 
@@ -354,7 +377,9 @@ ParameterIdentification <- R6::R6Class(
         if (!is.null(outputMappings[[idx]]$dataWeights)) {
           weights <- outputMappings[[idx]]$dataWeights
           for (dataset in names(weights)) {
-            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[dataset]]
+            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[
+              dataset
+            ]]
           }
         }
 
@@ -388,7 +413,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Evaluate running cost
       costField <- private$.configuration$modelCostField
-      currCost  <- runningCost[[costField]]
+      currCost <- runningCost[[costField]]
       bestCost <- if (is.null(private$.bestCostSummary)) {
         Inf
       } else {
@@ -404,7 +429,8 @@ ParameterIdentification <- R6::R6Class(
       if (private$.configuration$printEvaluationFeedback) {
         cat(
           messages$evaluationFeedback(
-            private$.fnEvaluations, currVals,
+            private$.fnEvaluations,
+            currVals,
             runningCost[[private$.configuration$modelCostField]]
           )
         )
@@ -416,18 +442,14 @@ ParameterIdentification <- R6::R6Class(
     # Apply Identified Parameter Values
     #
     # Assigns the final optimized parameter values back to the respective
-    # `PIParameters` objects within the simulation, aligning with their order
-    # in the `$parameters` list.
+    # `PIParameters` objects within the simulation, aligning with their order in
+    # the `$parameters` list.
     #
     # @param values Optimized parameter values to be applied.
     .applyFinalValues = function(values) {
-      # Iterate through PIParameters
-
-      # THE LOGIC WOULD PROBABLY DEPEND ON THE TYPE OF RESULTS OUTPUT RETURNED
-      # BY THE SELECTED METHOD, UNLESS WE USE OUR OWN CONSISTENT RESULTS STRUCTURE
       for (idx in seq_along(values)) {
         # The order of the values corresponds to the order of PIParameters in
-        # $parameters list
+        # `$parameters` list
         piParameter <- private$.piParameters[[idx]]
         piParameter$setValue(values[[idx]])
       }
@@ -447,13 +469,15 @@ ParameterIdentification <- R6::R6Class(
       obsVsPredList <- vector("list", length(outputMappings))
       # Iterate through the values and update current parameter values
       for (idx in seq_along(currVals)) {
-        # The order of the values corresponds to the order of PIParameters in
+        # The order of the values corresponds to the order of `PIParameters` in
         # parameters list
         piParameter <- private$.piParameters[[idx]]
         # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[idx]]
+          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[
+            idx
+          ]]
         }
       }
 
@@ -481,8 +505,14 @@ ParameterIdentification <- R6::R6Class(
       for (simId in names(private$.simulationBatches)) {
         simBatch <- private$.simulationBatches[[simId]]
         resultsId <- simBatch$addRunValues(
-          parameterValues = unlist(private$.variableParameters[[simId]], use.names = FALSE),
-          initialValues = unlist(private$.variableMolecules[[simId]], use.names = FALSE)
+          parameterValues = unlist(
+            private$.variableParameters[[simId]],
+            use.names = FALSE
+          ),
+          initialValues = unlist(
+            private$.variableMolecules[[simId]],
+            use.names = FALSE
+          )
         )
       }
       # Run simulation batches
@@ -504,13 +534,18 @@ ParameterIdentification <- R6::R6Class(
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
         resultId <- names(simulationResults[[simBatch$id]])[[1]]
-        obsVsPred$addSimulationResults(resultObject,
+        obsVsPred$addSimulationResults(
+          resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = resultId, groups = groupName
+          names = resultId,
+          groups = groupName
         )
 
-        obsVsPred$addDataSets(currOutputMapping$observedDataSets, groups = groupName)
-        # apply data transformations stored in corresponding outputMapping
+        obsVsPred$addDataSets(
+          currOutputMapping$observedDataSets,
+          groups = groupName
+        )
+        # apply data transformations stored in corresponding `outputMapping`
         obsVsPred$setDataTransformations(
           forNames = names(outputMappings[[idx]]$observedDataSets),
           xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
@@ -531,7 +566,7 @@ ParameterIdentification <- R6::R6Class(
     # the objective function accordingly.
     #
     # @return Optimization results with parameter estimates, elapsed time, and
-    # additional metrics.
+    #   additional metrics.
     .runAlgorithm = function() {
       startValues <- sapply(private$.piParameters, `[[`, "startValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
@@ -555,28 +590,39 @@ ParameterIdentification <- R6::R6Class(
     #' @description Initializes a `ParameterIdentification` instance.
     #'
     #' @param simulations A `Simulation` or list of `Simulation` objects to be
-    #' used for parameter estimation. Each simulation must contain the model
-    #' parameters specified in `parameters`. Use [`ospsuite::loadSimulation()`]
-    #' to load simulation files.
+    #'   used for parameter estimation. Each simulation must contain the model
+    #'   parameters specified in `parameters`. Use
+    #'   [`ospsuite::loadSimulation()`] to load simulation files.
     #' @param parameters A `PIParameters` or list of `PIParameters` objects
-    #' specifying the model parameters to optimize. Each `PIParameters` object
-    #' may group one or more underlying model parameters. See
-    #' [`ospsuite.parameteridentification::PIParameters`] for details.
+    #'   specifying the model parameters to optimize. Each `PIParameters` object
+    #'   may group one or more underlying model parameters. See
+    #'   [`ospsuite.parameteridentification::PIParameters`] for details.
     #' @param configuration (Optional) A `PIConfiguration` object specifying
-    #' algorithm, CI method, and objective function settings. Defaults to a new
-    #' configuration if omitted. See [`ospsuite.parameteridentification::PIConfiguration`]
-    #' for configuration options.
+    #'   algorithm, CI method, and objective function settings. Defaults to a
+    #'   new configuration if omitted. See
+    #'   [`ospsuite.parameteridentification::PIConfiguration`] for configuration
+    #'   options.
     #' @param outputMappings A `PIOutputMapping` or list of `PIOutputMapping`
-    #' objects mapping model outputs (represented by `Quantity` objects) to
-    #' observed data. #' See [`ospsuite.parameteridentification::PIOutputMapping`]
-    #' for details.
+    #'   objects mapping model outputs (represented by `Quantity` objects) to
+    #'   observed data. #' See
+    #'   [`ospsuite.parameteridentification::PIOutputMapping`] for details.
     #'
-    #' @return A `ParameterIdentification` object ready to run parameter estimation.
-    initialize = function(simulations, parameters, outputMappings, configuration = NULL) {
+    #' @return A `ParameterIdentification` object ready to run parameter
+    #'   estimation.
+    initialize = function(
+      simulations,
+      parameters,
+      outputMappings,
+      configuration = NULL
+    ) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
-      ospsuite.utils::validateIsOfType(configuration, "PIConfiguration", nullAllowed = TRUE)
+      ospsuite.utils::validateIsOfType(
+        configuration,
+        "PIConfiguration",
+        nullAllowed = TRUE
+      )
 
       private$.configuration <- configuration %||% PIConfiguration$new()
 
@@ -606,26 +652,29 @@ ParameterIdentification <- R6::R6Class(
 
       private$.variableMolecules <-
         private$.variableParameters <-
-        private$.simulationBatches <-
-        private$.steadyStateBatches <- vector("list", length(simulations))
+          private$.simulationBatches <-
+            private$.steadyStateBatches <- vector("list", length(simulations))
 
       names(private$.variableMolecules) <-
         names(private$.variableParameters) <-
-        names(private$.simulationBatches) <-
-        names(private$.steadyStateBatches) <- ids
+          names(private$.simulationBatches) <-
+            names(private$.steadyStateBatches) <- ids
     },
 
     #' Executes Parameter Identification
     #'
-    #' @description Runs parameter identification using the configured optimization
-    #' algorithm. Returns a structured `piResults`object containing estimated
-    #' parameters, diagnostics, and (optionally) confidence intervals.
+    #' @description Runs parameter identification using the configured
+    #'   optimization algorithm. Returns a structured `piResults`object
+    #'   containing estimated parameters, diagnostics, and (optionally)
+    #'   confidence intervals.
     #'
     #' @return A [`PIResult`] object containing the optimization results.
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
-      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
       # Every time the user starts an optimization run, new batches should be
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
@@ -642,7 +691,10 @@ ParameterIdentification <- R6::R6Class(
       optimResult <- private$.runAlgorithm()
       private$.lastOptimResult <- optimResult
       # Reset simulation output intervals and output selections
-      .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+      .restoreSimulationState(
+        private$.simulations,
+        private$.savedSimulationState
+      )
 
       # Apply identified values to the parameter objects. Should be an option?
       private$.applyFinalValues(values = optimResult$par)
@@ -674,12 +726,12 @@ ParameterIdentification <- R6::R6Class(
     #' Estimate Confidence Intervals
     #'
     #' @description Computes confidence intervals for the optimized parameters
-    #' using the method defined in the associated `PIConfiguration`. Intended
-    #' for advanced use when `autoEstimateCI` was set to `FALSE` during the
-    #' initial run.
+    #'   using the method defined in the associated `PIConfiguration`. Intended
+    #'   for advanced use when `autoEstimateCI` was set to `FALSE` during the
+    #'   initial run.
     #'
     #' @return The same [`PIResult`] object returned by the `run()` method,
-    #' updated to include confidence interval estimates.
+    #'   updated to include confidence interval estimates.
     estimateCI = function() {
       # Stop if executed before optimization
       if (is.null(private$.lastOptimResult)) {
@@ -688,7 +740,9 @@ ParameterIdentification <- R6::R6Class(
 
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
-      private$.savedSimulationState <- .storeSimulationState(private$.simulations)
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
       # Initialize batches
       private$.batchInitialization()
       # Reset function evaluations counter
@@ -700,8 +754,10 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      if (private$.configuration$ciMethod == "bootstrap" &&
-        is.null(private$.activeBootstrapSeed)) {
+      if (
+        private$.configuration$ciMethod == "bootstrap" &&
+          is.null(private$.activeBootstrapSeed)
+      ) {
         .classifyObservedData(private$.outputMappings)
         private$.gprModels <- .prepareGPRModels(private$.outputMappings)
       }
@@ -716,7 +772,10 @@ ParameterIdentification <- R6::R6Class(
       )
 
       if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+        .restoreSimulationState(
+          private$.simulations,
+          private$.savedSimulationState
+        )
       }
 
       # Trigger .NET gc
@@ -736,11 +795,11 @@ ParameterIdentification <- R6::R6Class(
     #' Plot Parameter Estimation Results
     #'
     #' @description Re-runs model simulations using the current or specified
-    #' parameter values and generates plots comparing predictions to observed
-    #' data.
+    #'   parameter values and generates plots comparing predictions to observed
+    #'   data.
     #'
     #' @param par Optional parameter values for simulations, in the order of
-    #' `ParameterIdentification$parameters`. Use current values if `NULL`.
+    #'   `ParameterIdentification$parameters`. Use current values if `NULL`.
     #' @return A list of `ggplot2` plots (one per output mapping), showing:
     #' - Individual time profiles
     #' - Observed vs. simulated values
@@ -751,11 +810,14 @@ ParameterIdentification <- R6::R6Class(
       # performed), this must be done prior to plotting
       private$.batchInitialization()
 
-      # Run evaluate once. If the input argument is missing, run with current values.
-      # Otherwise, use the supplied values.
-      parValues <- unlist(lapply(self$parameters, function(x) {
-        x$currValue
-      }), use.names = FALSE)
+      # Run evaluate once. If the input argument is missing, run with current
+      # values. Otherwise, use the supplied values
+      parValues <- unlist(
+        lapply(self$parameters, function(x) {
+          x$currValue
+        }),
+        use.names = FALSE
+      )
       if (!is.null(par)) {
         parValues <- par
       }
@@ -767,20 +829,36 @@ ParameterIdentification <- R6::R6Class(
         scaling <- private$.outputMappings[[idx]]$scaling
         plotConfiguration$yAxisScale <- scaling
         plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(dataCombined[[idx]], plotConfiguration)
+        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotConfiguration$legendPosition <- "none"
         plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- ospsuite::plotObservedVsSimulated(dataCombined[[idx]], plotConfiguration)
+        obsVsSim <- ospsuite::plotObservedVsSimulated(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotConfiguration$xAxisScale <- "lin"
         plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- ospsuite::plotResidualsVsTime(dataCombined[[idx]], plotConfiguration)
+        resVsTime <- ospsuite::plotResidualsVsTime(
+          dataCombined[[idx]],
+          plotConfiguration
+        )
         plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
-        plotGridConfiguration$addPlots(list(indivTimeProfile, obsVsSim, resVsTime))
+        plotGridConfiguration$addPlots(list(
+          indivTimeProfile,
+          obsVsSim,
+          resVsTime
+        ))
         return(ospsuite::plotGrid(plotGridConfiguration))
       })
 
       if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(private$.simulations, private$.savedSimulationState)
+        .restoreSimulationState(
+          private$.simulations,
+          private$.savedSimulationState
+        )
       }
 
       return(multiPlot)
@@ -789,27 +867,32 @@ ParameterIdentification <- R6::R6Class(
     #' Perform a Parameter Grid Search
     #'
     #' Generates a grid of parameter combinations, computes the OFV for each,
-    #' and optionally sets the best result as the starting point for s subsequent
-    #' optimization.
+    #' and optionally sets the best result as the starting point for s
+    #' subsequent optimization.
     #'
     #' Note: The resulting grid can be used to explore the parameter space or
     #' initialize better starting values.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
-    #' `PIParameter` minimum values.
+    #'   `PIParameter` minimum values.
     #' @param upper Numeric vector of parameter upper bounds, defaulting to
-    #' `PIParameter` maximum values.
+    #'   `PIParameter` maximum values.
     #' @param logScaleFlag Logical scalar or vector; determines if grid points
-    #' are spaced logarithmically. Default is `FALSE`.
+    #'   are spaced logarithmically. Default is `FALSE`.
     #' @param totalEvaluations Integer specifying the total grid points. Default
-    #' is 50.
+    #'   is 50.
     #' @param setStartValue Logical. If `TRUE`, updates `PIParameter` starting
-    #' values to the best grid point. Default is `FALSE`.
+    #'   values to the best grid point. Default is `FALSE`.
     #'
     #' @return A tibble where each row is a parameter combination and the
-    #' corresponding objective function value (`ofv`).
-    gridSearch = function(lower = NULL, upper = NULL, logScaleFlag = FALSE,
-                          totalEvaluations = 50, setStartValue = FALSE) {
+    #'   corresponding objective function value (`ofv`).
+    gridSearch = function(
+      lower = NULL,
+      upper = NULL,
+      logScaleFlag = FALSE,
+      totalEvaluations = 50,
+      setStartValue = FALSE
+    ) {
       ospsuite.utils::validateIsNumeric(lower, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(upper, nullAllowed = TRUE)
       ospsuite.utils::validateIsLogical(logScaleFlag)
@@ -841,7 +924,8 @@ ParameterIdentification <- R6::R6Class(
       gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
       parameterGrid <- vector("list", length(private$.piParameters))
       names(parameterGrid) <- sapply(
-        private$.piParameters, function(x) x$parameters[[1]]$path
+        private$.piParameters,
+        function(x) x$parameters[[1]]$path
       )
 
       for (idx in seq_along(private$.piParameters)) {
@@ -858,7 +942,8 @@ ParameterIdentification <- R6::R6Class(
         } else {
           # Linear scaling
           parameterGrid[[idx]] <- seq(
-            lower[idx], upper[idx],
+            lower[idx],
+            upper[idx],
             length.out = gridSize
           )
         }
@@ -867,15 +952,20 @@ ParameterIdentification <- R6::R6Class(
       ofvGrid <- expand.grid(parameterGrid)
 
       # Calculate OFV
-      ofvGrid[["ofv"]] <- vapply(1:nrow(ofvGrid), function(i) {
-        ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
-        ofv[[private$.configuration$modelCostField]]
-      }, numeric(1))
+      ofvGrid[["ofv"]] <- vapply(
+        1:nrow(ofvGrid),
+        function(i) {
+          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+          ofv[[private$.configuration$modelCostField]]
+        },
+        numeric(1)
+      )
 
       # Restore simulation state if applicable
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(
-          private$.simulations, private$.savedSimulationState
+          private$.simulations,
+          private$.savedSimulationState
         )
       }
 
@@ -898,16 +988,20 @@ ParameterIdentification <- R6::R6Class(
     #' holding others constant.
     #'
     #' @param par Numeric vector of parameter values, one for each parameter.
-    #' Defaults to current parameter values if `NULL`, invalid or mismatched.
+    #'   Defaults to current parameter values if `NULL`, invalid or mismatched.
     #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10%
-    #' below `par` and `upper` is 10% above `par`. Default is `0.1`.
+    #'   below `par` and `upper` is 10% above `par`. Default is `0.1`.
     #' @param totalEvaluations Integer specifying the total number of grid
-    #' points across each parameter profile. Default is 20.
+    #'   points across each parameter profile. Default is 20.
     #'
     #' @return A list of tibbles, one for each parameter, showing how the
-    #' objective function value (OFV) changes when varying that parameter while
-    #' keeping the others fixed.
-    calculateOFVProfiles = function(par = NULL, boundFactor = 0.1, totalEvaluations = 20) {
+    #'   objective function value (OFV) changes when varying that parameter
+    #'   while keeping the others fixed.
+    calculateOFVProfiles = function(
+      par = NULL,
+      boundFactor = 0.1,
+      totalEvaluations = 20
+    ) {
       ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
@@ -926,10 +1020,13 @@ ParameterIdentification <- R6::R6Class(
 
       # Create default grid with constant values for each parameter
       parameterNames <- sapply(
-        private$.piParameters, function(x) x$parameters[[1]]$path
+        private$.piParameters,
+        function(x) x$parameters[[1]]$path
       )
-      defaultGrid <- matrix(par,
-        nrow = totalEvaluations, ncol = nrOfParameters,
+      defaultGrid <- matrix(
+        par,
+        nrow = totalEvaluations,
+        ncol = nrOfParameters,
         byrow = TRUE
       )
       colnames(defaultGrid) <- parameterNames
@@ -964,22 +1061,29 @@ ParameterIdentification <- R6::R6Class(
       # Restore simulation state if applicable
       if (!is.null(private$.savedSimulationState)) {
         .restoreSimulationState(
-          private$.simulations, private$.savedSimulationState
+          private$.simulations,
+          private$.savedSimulationState
         )
       }
 
       return(profileList)
     },
 
-    #' @description Prints a summary of ParameterIdentification instance.
+    #' @description Prints a summary of `ParameterIdentification` instance.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
       ospsuite.utils::ospPrintItems(list(
         "Number of parameters" = length(private$.piParameters)
       ))
-      ospsuite.utils::ospPrintItems(unlist(lapply(private$.simulations, function(x) {
-        x$sourceFile
-      }), use.names = FALSE), title = "Simulations")
+      ospsuite.utils::ospPrintItems(
+        unlist(
+          lapply(private$.simulations, function(x) {
+            x$sourceFile
+          }),
+          use.names = FALSE
+        ),
+        title = "Simulations"
+      )
       # private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
       # private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
     }

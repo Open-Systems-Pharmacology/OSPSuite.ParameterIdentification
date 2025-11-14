@@ -3,7 +3,10 @@ xVals <- seq(1, 10, length.out = 10)
 trueParams <- c(5, 0.3, 0.5)
 
 set.seed(2203)
-yObs <- trueParams[1] * exp(-trueParams[2] * xVals) + trueParams[3] + rnorm(length(xVals), mean = 0, sd = 0.2)
+yObs <- trueParams[1] *
+  exp(-trueParams[2] * xVals) +
+  trueParams[3] +
+  rnorm(length(xVals), mean = 0, sd = 0.2)
 
 # Function to simulate y from parameters
 fnSimulate <- function(p) {
@@ -90,7 +93,10 @@ test_that("Optimizer fails when objective function output lacks modelCost", {
   suppressMessages(
     expect_error(
       optimizer$run(
-        par = parTest, fn = fnObjectiveWrong, lower = lowerTest, upper = upperTest
+        par = parTest,
+        fn = fnObjectiveWrong,
+        lower = lowerTest,
+        upper = upperTest
       ),
       messages$objectiveFnOutputError("modelCost")
     )
@@ -109,7 +115,10 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
       )
     ),
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
@@ -128,7 +137,10 @@ test_that("Optimizer output has correct structure and values for HJKB", {
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
       )
     ),
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
@@ -143,11 +155,14 @@ test_that("Optimizer output has correct structure and values for DEoptim", {
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "DEoptim"
   optimizer <- Optimizer$new(piConfig)
-  tmp <- capture.output(
+  tmp <- utils::capture.output(
     expect_message(
       expect_no_error(
         optResult <- optimizer$run(
-          par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+          par = parTest,
+          fn = fnObjective,
+          lower = lowerTest,
+          upper = upperTest
         )
       ),
       messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
@@ -170,7 +185,10 @@ test_that("Optimizer works when objective function returns numeric cost", {
   expect_message(
     expect_no_error(
       optResult <- optimizer$run(
-        par = parTest, fn = fnObjectiveNumeric, lower = lowerTest, upper = upperTest
+        par = parTest,
+        fn = fnObjectiveNumeric,
+        lower = lowerTest,
+        upper = upperTest
       )
     )
   )
@@ -184,7 +202,10 @@ test_that("Optimizer works with fixed parameter", {
   suppressMessages(
     expect_no_error(
       optResult <- optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest,
         fixedParams = fixedPar
       )
     )
@@ -199,7 +220,10 @@ test_that("Optimizer works with two fixed parameters", {
   suppressMessages(
     expect_no_error(
       optResult <- optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest,
         fixedParams = fixedPar
       )
     )
@@ -214,7 +238,10 @@ test_that("Optimizer fails when idx and values length mismatch", {
   suppressMessages(
     expect_error(
       optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest,
         fixedParams = fixedPar
       ),
       messages$fixedParamError(error = "length"),
@@ -230,7 +257,10 @@ test_that("Optimizer fails when idx is larger than parameter length", {
   suppressMessages(
     expect_error(
       optimizer$run(
-        par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest,
         fixedParams = fixedPar
       ),
       messages$fixedParamError(error = "fixed")
@@ -282,13 +312,19 @@ test_that("Optimizer estimates confidence intervals using Hessian", {
   optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     optResult <- optimizer$run(
-      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
     )
   )
   expect_message(
     expect_no_error(
       ciResult <- optimizer$estimateCI(
-        par = optResult$par, fn = fnObjective, lower = lowerTest, upper = upperTest
+        par = optResult$par,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
       )
     ),
     messages$ciMethod(piConfig$ciMethod, optResult$par),
@@ -306,14 +342,20 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
   optimizer <- Optimizer$new(piConfig)
   suppressMessages(
     optResult <- optimizer$run(
-      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
     )
   )
   suppressMessages(
     expect_message(
       expect_no_error(
         ciResult <- optimizer$estimateCI(
-          par = optResult$par, fn = fnObjective, lower = lowerTest, upper = upperTest
+          par = optResult$par,
+          fn = fnObjective,
+          lower = lowerTest,
+          upper = upperTest
         )
       ),
       messages$ciMethod(piConfig$ciMethod, optResult$par),
@@ -366,14 +408,20 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
 
   suppressMessages(
     optResult <- optimizer$run(
-      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
     )
   )
   suppressMessages(
     expect_message(
       expect_no_error(
         ciResult <- optimizer$estimateCI(
-          par = optResult$par, fn = fnObjectiveBootstrap, lower = lowerTest, upper = upperTest
+          par = optResult$par,
+          fn = fnObjectiveBootstrap,
+          lower = lowerTest,
+          upper = upperTest
         )
       ),
       messages$ciMethod(piConfig$ciMethod, optResult$par),
@@ -408,14 +456,20 @@ test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
 
   suppressMessages(
     optResult <- optimizer$run(
-      par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
     )
   )
   suppressMessages(
     expect_message(
       expect_no_error(
         ciResult <- optimizer$estimateCI(
-          par = optResult$par, fn = fnObjectiveBootstrap, lower = lowerTest, upper = upperTest
+          par = optResult$par,
+          fn = fnObjectiveBootstrap,
+          lower = lowerTest,
+          upper = upperTest
         )
       ),
       messages$ciMethod(piConfig$ciMethod, optResult$par),

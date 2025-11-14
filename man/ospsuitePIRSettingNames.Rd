@@ -3,7 +3,8 @@
 \docType{data}
 \name{ospsuitePIRSettingNames}
 \alias{ospsuitePIRSettingNames}
-\title{Names of the settings stored in piEnv Can be used with \code{getOSPSuitePISetting()}}
+\title{Names of the settings stored in piEnv Can be used with
+\code{getOSPSuitePISetting()}}
 \format{
 An object of class \code{list} of length 2.
 }
@@ -11,6 +12,7 @@ An object of class \code{list} of length 2.
 ospsuitePIRSettingNames
 }
 \description{
-Names of the settings stored in piEnv Can be used with \code{getOSPSuitePISetting()}
+Names of the settings stored in piEnv Can be used with
+\code{getOSPSuitePISetting()}
 }
 \keyword{datasets}

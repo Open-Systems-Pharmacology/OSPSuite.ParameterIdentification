@@ -1,8 +1,8 @@
 #' @title PIOutputMapping
 #' @docType class
-#' @description Establishes connections between simulated quantities and corresponding
-#' observed data sets. Utilized within `ParameterIdentification` instances to align
-#' and compare simulation outputs with empirical data.
+#' @description Establishes connections between simulated quantities and
+#'   corresponding observed data sets. Utilized within `ParameterIdentification`
+#'   instances to align and compare simulation outputs with empirical data.
 #' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
@@ -10,8 +10,8 @@ PIOutputMapping <- R6::R6Class(
   "PIOutputMapping",
   cloneable = TRUE,
   active = list(
-    #' @field observedDataSets A named list containing `DataSet` objects for comparison
-    #' with simulation outcomes.
+    #' @field observedDataSets A named list containing `DataSet` objects for
+    #'   comparison with simulation outcomes.
     observedDataSets = function(value) {
       if (missing(value)) {
         as.list(private$.observedDataSets)
@@ -25,7 +25,10 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.dataTransformations
       } else {
-        stop(messages$errorPropertyReadOnly("dataTransformations", optionalMessage = "Use $setDataTransformations() to change the value."))
+        stop(messages$errorPropertyReadOnly(
+          "dataTransformations",
+          optionalMessage = "Use $setDataTransformations() to change the value."
+        ))
       }
     },
 
@@ -34,11 +37,15 @@ PIOutputMapping <- R6::R6Class(
       if (missing(value)) {
         private$.dataWeights
       } else {
-        stop(messages$errorPropertyReadOnly("dataWeights", optionalMessage = "Use $setDataWeights() to change the value."))
+        stop(messages$errorPropertyReadOnly(
+          "dataWeights",
+          optionalMessage = "Use $setDataWeights() to change the value."
+        ))
       }
     },
 
-    #' @field quantity Simulation quantities to be aligned with observed data values.
+    #' @field quantity Simulation quantities to be aligned with observed data
+    #'   values.
     quantity = function(value) {
       if (missing(value)) {
         private$.quantity
@@ -47,7 +54,8 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field simId Identifier of the simulation associated with the mapped quantity.
+    #' @field simId Identifier of the simulation associated with the mapped
+    #'   quantity.
     simId = function(value) {
       if (missing(value)) {
         private$.simId
@@ -56,7 +64,8 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field scaling Specifies scaling for output mapping: linear (default) or logarithmic.
+    #' @field scaling Specifies scaling for output mapping: linear (default) or
+    #'   logarithmic.
     scaling = function(value) {
       if (missing(value)) {
         private$.scaling
@@ -67,10 +76,10 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field transformResultsFunction A function to preprocess simulated results
-    #' (time and observation values) before residual calculation. It takes
-    #' numeric vectors 'xVals' and 'yVals', and returns a named list with keys
-    #' 'xVals' and 'yVals'.
+    #' @field transformResultsFunction A function to preprocess simulated
+    #'   results (time and observation values) before residual calculation. It
+    #'   takes numeric vectors `xVals` and `yVals`, and returns a named list
+    #'   with keys `xVals` and `yVals`.
     transformResultsFunction = function(value) {
       if (missing(value)) {
         private$.transformResultsFunction
@@ -100,16 +109,21 @@ PIOutputMapping <- R6::R6Class(
       private$.quantity <- quantity
       private$.simId <- .getSimulationContainer(quantity)$id
       private$.observedDataSets <- list()
-      private$.dataTransformations <- list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+      private$.dataTransformations <- list(
+        xOffsets = 0,
+        yOffsets = 0,
+        xFactors = 1,
+        yFactors = 1
+      )
       private$.scaling <- "lin"
     },
 
     #' Adds or updates observed data using `DataSet` objects.
-    #' @details Replaces any existing data set with the same label.
+    #' @details Replaces any existing dataset with the same label.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
-    #' quantity dimensions.
-    #' @param weights A named list of numeric values or numeric vectors. The names
-    #' must match the names of the observed datasets.
+    #'   quantity dimensions.
+    #' @param weights A named list of numeric values or numeric vectors. The
+    #'   names must match the names of the observed datasets.
     #'
     #' @export
     addObservedDataSets = function(data, weights = NULL) {
@@ -125,8 +139,8 @@ PIOutputMapping <- R6::R6Class(
       }
 
       for (idx in seq_along(data)) {
-        # Verify if the data's dimension can match the quantity's dimension
-        # in this Output Mapping
+        # Verify if the data's dimension can match the quantity's dimension in
+        # this `OUtputMapping`
         tryConvert <- function() {
           ospsuite::toBaseUnit(
             quantityOrDimension = private$.quantity,
@@ -151,7 +165,8 @@ PIOutputMapping <- R6::R6Class(
 
           if (inherits(result, "try-error")) {
             stop(messages$errorUnitConversion(
-              private$.quantity$name, data[[idx]]$name
+              private$.quantity$name,
+              data[[idx]]$name
             ))
           }
         }
@@ -174,18 +189,20 @@ PIOutputMapping <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Configures transformations for dataset(s).
+    #' @description Configures transformations for datasets.
     #' @param labels List of dataset labels for targeted transformations.
-    #' Absence of labels applies transformations globally.
+    #'   Absence of labels applies transformations globally.
     #' @param xOffsets Numeric list/value for X-offset adjustments.
     #' @param yOffsets Numeric list/value for Y-offset adjustments.
     #' @param xFactors Numeric list/value for X-scaling factors.
     #' @param yFactors Numeric list/value for Y-scaling factors.
-    setDataTransformations = function(labels = NULL,
-                                      xOffsets = 0,
-                                      yOffsets = 0,
-                                      xFactors = 1,
-                                      yFactors = 1) {
+    setDataTransformations = function(
+      labels = NULL,
+      xOffsets = 0,
+      yOffsets = 0,
+      xFactors = 1,
+      yFactors = 1
+    ) {
       ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
@@ -193,7 +210,7 @@ PIOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
 
       if (missing(labels)) {
-        # if no labels are given to the function, the same parameters will be used across datasets
+        # If no labels are given, reuse parameters across datasets
         private$.dataTransformations$xFactors <- xFactors
         private$.dataTransformations$yFactors <- yFactors
         private$.dataTransformations$xOffsets <- xOffsets
@@ -201,7 +218,7 @@ PIOutputMapping <- R6::R6Class(
         return(invisible(self))
       }
 
-      # otherwise, we only assign data transformations to specific labels
+      # Otherwise, apply transformations only to labeled data
       for (idx in seq_along(labels)) {
         if (length(xFactors) == 1) {
           xFactors <- rep(xFactors, length(labels))
@@ -215,27 +232,36 @@ PIOutputMapping <- R6::R6Class(
         if (length(yOffsets) == 1) {
           yOffsets <- rep(yOffsets, length(labels))
         }
-        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[idx]]
-        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[idx]]
-        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[idx]]
-        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[idx]]
+        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[
+          idx
+        ]]
+        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[
+          idx
+        ]]
+        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[
+          idx
+        ]]
+        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[
+          idx
+        ]]
       }
       invisible(self)
     },
 
     #' @description Assigns weights to observed data sets for residual weighting
-    #' during parameter identification.
+    #'   during parameter identification.
     #'
-    #' @param weights A named list of numeric values or numeric vectors. The names
-    #' must match the names of the observed datasets.
+    #' @param weights A named list of numeric values or numeric vectors. The
+    #'   names must match the names of the observed datasets.
     #'
-    #' Each element in the list can be:
-    #' - a scalar, which will be broadcast to all y-values of the corresponding
-    #' dataset,
-    #' - or a numeric vector matching the number of y-values for that dataset.
+    #'   Each element in the list can be:
+    #'   - a scalar, which will be broadcast to all y-values of the
+    #'   corresponding dataset,
+    #'   - or a numeric vector matching the number of y-values for that dataset.
     #'
-    #' To apply both dataset-level and point-level weights, multiply them beforehand
-    #' and provide the combined result as a single numeric vector per dataset.
+    #'   To apply both dataset-level and point-level weights, multiply them
+    #'   beforehand and provide the combined result as a single numeric vector
+    #'   per dataset.
     setDataWeights = function(weights) {
       # Return early if no datasets are present
       if (length(private$.observedDataSets) == 0) {
@@ -246,7 +272,9 @@ PIOutputMapping <- R6::R6Class(
       lapply(weights, ospsuite.utils::validateIsNumeric, FALSE)
 
       labels <- names(weights)
-      if (is.null(labels) || any(!labels %in% names(private$.observedDataSets))) {
+      if (
+        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
+      ) {
         stop(messages$errorWeightsNames())
       }
 
@@ -260,7 +288,9 @@ PIOutputMapping <- R6::R6Class(
 
         if (length(weightsVec) != yLength) {
           stop(messages$errorWeightsVectorLengthMismatch(
-            label, yLength, length(weightsVec)
+            label,
+            yLength,
+            length(weightsVec)
           ))
         }
 

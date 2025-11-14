@@ -30,9 +30,9 @@ Settings include:
 \item \strong{\code{linScaleCV}} – Coefficient of variation for linear scaling. Default is
 \code{0.2}.
 \item \strong{\code{logScaleSD}} – Standard deviation for log scaling. Default is \code{NULL}.
-}
 
-These options are configurable in \code{PIConfiguration}, directly influencing the
-\code{calculateCostMetrics} functionality for detailed model fit assessment.
+These options are configurable in \code{PIConfiguration}, directly influencing
+the \code{calculateCostMetrics} functionality for detailed model fit assessment.
+}
 }
 \keyword{datasets}

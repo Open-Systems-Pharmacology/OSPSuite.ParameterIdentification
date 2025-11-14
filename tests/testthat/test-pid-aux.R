@@ -1,20 +1,22 @@
 # ParameterIdentification - auxiliary exploration
 
+resetTestFactories()
+
 # Plot Results
 
 test_that("plotResults() generates expected plot before parameter estimation", {
   piTask <- createPiTask()
-  vdiffr::expect_doppelganger("before_estimation", piTask$plotResults()[[1]])
+  vdiffr::expect_doppelganger("before-estimation", piTask$plotResults()[[1]])
 })
 
 piTask <- createPiTask()
 suppressMessages(piResults <- piTask$run())
 test_that("plotResults() generates expected plot after parameter estimation", {
-  vdiffr::expect_doppelganger("after_estimation", piTask$plotResults()[[1]])
+  vdiffr::expect_doppelganger("after-estimation", piTask$plotResults()[[1]])
 })
 
 test_that("plotResults() generates expected plot with parameter input", {
-  vdiffr::expect_doppelganger("custom_parameter", piTask$plotResults(1.2)[[1]])
+  vdiffr::expect_doppelganger("custom-parameter", piTask$plotResults(1.2)[[1]])
 })
 
 
@@ -72,7 +74,10 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   )
   suppressMessages(suppressWarnings(
     expect_warning(
-      gridSearchResults <- piTask$gridSearch(lower = c(0, -0.5), totalEvaluations = 5)
+      gridSearchResults <- piTask$gridSearch(
+        lower = c(0, -0.5),
+        totalEvaluations = 5
+      )
     )
   ))
   expect_snapshot(gridSearchResults$ofv)
@@ -102,7 +107,10 @@ test_that("calculateOFVProfiles() returns `Inf` on simulation failure", {
 
   suppressMessages(suppressWarnings(
     expect_warning(
-      ofvProfiles <- piTask$calculateOFVProfiles(par = c(0, -0.25), totalEvaluations = 3)
+      ofvProfiles <- piTask$calculateOFVProfiles(
+        par = c(0, -0.25),
+        totalEvaluations = 3
+      )
     )
   ))
   expect_snapshot(ofvProfiles[[2]]$ofv)

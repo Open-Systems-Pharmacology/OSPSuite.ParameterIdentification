@@ -5,30 +5,33 @@
 \alias{PIOutputMapping}
 \title{PIOutputMapping}
 \description{
-Establishes connections between simulated quantities and corresponding
-observed data sets. Utilized within \code{ParameterIdentification} instances to align
-and compare simulation outputs with empirical data.
+Establishes connections between simulated quantities and
+corresponding observed data sets. Utilized within \code{ParameterIdentification}
+instances to align and compare simulation outputs with empirical data.
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for comparison
-with simulation outcomes.}
+\item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for
+comparison with simulation outcomes.}
 
 \item{\code{dataTransformations}}{A named list of factors and offsets.}
 
 \item{\code{dataWeights}}{A named list of y-value weights.}
 
-\item{\code{quantity}}{Simulation quantities to be aligned with observed data values.}
+\item{\code{quantity}}{Simulation quantities to be aligned with observed data
+values.}
 
-\item{\code{simId}}{Identifier of the simulation associated with the mapped quantity.}
+\item{\code{simId}}{Identifier of the simulation associated with the mapped
+quantity.}
 
-\item{\code{scaling}}{Specifies scaling for output mapping: linear (default) or logarithmic.}
+\item{\code{scaling}}{Specifies scaling for output mapping: linear (default) or
+logarithmic.}
 
-\item{\code{transformResultsFunction}}{A function to preprocess simulated results
-(time and observation values) before residual calculation. It takes
-numeric vectors 'xVals' and 'yVals', and returns a named list with keys
-'xVals' and 'yVals'.}
+\item{\code{transformResultsFunction}}{A function to preprocess simulated
+results (time and observation values) before residual calculation. It
+takes numeric vectors \code{xVals} and \code{yVals}, and returns a named list
+with keys \code{xVals} and \code{yVals}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -79,13 +82,13 @@ Adds or updates observed data using \code{DataSet} objects.
 \item{\code{data}}{A \code{DataSet} object or a list thereof, matching the simulation
 quantity dimensions.}
 
-\item{\code{weights}}{A named list of numeric values or numeric vectors. The names
-must match the names of the observed datasets.}
+\item{\code{weights}}{A named list of numeric values or numeric vectors. The
+names must match the names of the observed datasets.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Replaces any existing data set with the same label.
+Replaces any existing dataset with the same label.
 }
 
 }
@@ -110,7 +113,7 @@ Removes specified observed data series.
 \if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
 \subsection{Method \code{setDataTransformations()}}{
-Configures transformations for dataset(s).
+Configures transformations for datasets.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIOutputMapping$setDataTransformations(
   labels = NULL,
@@ -151,18 +154,19 @@ during parameter identification.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{weights}}{A named list of numeric values or numeric vectors. The names
-must match the names of the observed datasets.
+\item{\code{weights}}{A named list of numeric values or numeric vectors. The
+names must match the names of the observed datasets.
 
 Each element in the list can be:
 \itemize{
-\item a scalar, which will be broadcast to all y-values of the corresponding
-dataset,
+\item a scalar, which will be broadcast to all y-values of the
+corresponding dataset,
 \item or a numeric vector matching the number of y-values for that dataset.
 }
 
-To apply both dataset-level and point-level weights, multiply them beforehand
-and provide the combined result as a single numeric vector per dataset.}
+To apply both dataset-level and point-level weights, multiply them
+beforehand and provide the combined result as a single numeric vector
+per dataset.}
 }
 \if{html}{\out{</div>}}
 }

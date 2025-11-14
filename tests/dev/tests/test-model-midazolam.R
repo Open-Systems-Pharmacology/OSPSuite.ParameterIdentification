@@ -7,8 +7,11 @@
 # - CI method: Hessian-based
 # -------------------------------------------------------------------------
 
+devtools::load_all(".")
+
+
 simulation <- loadSimulation(
-  getTestDataFilePath("Smith1981 iv 5mg Midazolam.pkml")
+  getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml")
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -18,7 +21,9 @@ parameterInputData <- list(
   list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
   list(
     path = "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat",
-    min = 0, max = 3200, start = 320
+    min = 0,
+    max = 3200,
+    start = 320
   )
 )
 
@@ -71,7 +76,11 @@ task <- ParameterIdentification$new(
 piResult <- task$run()
 
 test_that("Estimated lipophilicity and kcat parameters equal expected values", {
-  expect_equal(piResult$toList()$finalParameters, c(3.366, 0.119), tolerance = 0.01)
+  expect_equal(
+    piResult$toList()$finalParameters,
+    c(3.366, 0.119),
+    tolerance = 0.01
+  )
 })
 
 test_that("Hessian-based standard deviations equal expected values", {
@@ -90,7 +99,7 @@ test_that("Hessian-based standard deviations equal expected values", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  getTestDataFilePath("Smith1981 iv 5mg Midazolam.pkml")
+  getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml")
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -100,7 +109,9 @@ parameterInputData <- list(
   list(path = "Midazolam|Lipophilicity", min = -10, max = 10, start = 3.9),
   list(
     path = "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat",
-    min = 0, max = 3200, start = 320
+    min = 0,
+    max = 3200,
+    start = 320
   )
 )
 
@@ -153,7 +164,11 @@ task <- ParameterIdentification$new(
 piResult <- task$run()
 
 test_that("Estimated lipophilicity and kcat parameters equal expected values", {
-  expect_equal(piResult$toList()$finalParameters, c(3.326, 0.783), tolerance = 0.01)
+  expect_equal(
+    piResult$toList()$finalParameters,
+    c(3.326, 0.783),
+    tolerance = 0.01
+  )
 })
 
 test_that("Hessian-based standard deviations equal expected values", {

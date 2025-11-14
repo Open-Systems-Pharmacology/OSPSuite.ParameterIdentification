@@ -47,7 +47,10 @@ test_that("PIOutputMapping allows scaling to be changed to predefined values", {
   expect_equal(outputMapping$scaling, "log")
   outputMapping$scaling <- "lin"
   expect_equal(outputMapping$scaling, "lin")
-  expect_error(outputMapping$scaling <- "invalidScaling", "is not a valid value")
+  expect_error(
+    outputMapping$scaling <- "invalidScaling",
+    "is not a valid value"
+  )
 })
 
 test_that("PIOutputMapping applies global x-offsets to datasets", {
@@ -82,7 +85,8 @@ test_that("PIOutputMapping sets global x-offsets and x-factors simultaneously", 
 test_that("PIOutputMapping sets x-factors in a dataset-specific manner with labels", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   outputMapping$setDataTransformations(
-    labels = c("data1", "data2"), xFactors = c(2, 3)
+    labels = c("data1", "data2"),
+    xFactors = c(2, 3)
   )
 
   expect_equal(outputMapping$dataTransformations$xFactors[["data1"]], 2)
@@ -97,7 +101,10 @@ test_that("PIOutputMapping sets x-factors in a dataset-specific manner with labe
 
 test_that("PIOutputMapping errors when non-function passed to transformResultsFunction", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  expect_error(outputMapping$transformResultsFunction("invalid"), "non-function")
+  expect_error(
+    outputMapping$transformResultsFunction("invalid"),
+    "non-function"
+  )
 })
 
 test_that("PIOutputMapping applies transformResultsFunction correctly", {
@@ -110,7 +117,8 @@ test_that("PIOutputMapping cannot set weights when no observed data is present",
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   weights <- list(c(1, 2, 3))
   expect_error(
-    outputMapping$setDataWeights(weights), messages$errorNoObservedDataSets()
+    outputMapping$setDataWeights(weights),
+    messages$errorNoObservedDataSets()
   )
 })
 
@@ -203,7 +211,8 @@ test_that("PIOutputMapping fails with unknown label in weights for multiple data
   )
 
   expect_error(
-    outputMapping$setDataWeights(weights), messages$errorWeightsNames()
+    outputMapping$setDataWeights(weights),
+    messages$errorWeightsNames()
   )
 })
 

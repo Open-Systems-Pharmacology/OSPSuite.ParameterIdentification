@@ -1,8 +1,8 @@
 #' @title PIResult
 #' @docType class
-#' @description
-#' Structured output of a parameter identification task, including optimization
-#' results, confidence intervals, parameter metadata, and configuration.
+#' @description Structured output of a parameter identification task, including
+#' optimization results, confidence intervals, parameter metadata, and
+#' configuration.
 #'
 #' @keywords internal
 #' @format NULL
@@ -16,33 +16,33 @@ PIResult <- R6::R6Class(
     .costDetails = NULL,
     # Configuration used during parameter identification
     .configuration = NULL,
-    # Flattened PIParameter metadata
+    # Flattened `PIParameters` metadata
     .parameters = NULL
   ),
   public = list(
     #' @description Initializes a `PIResult` instance. For internal use only.
     #'
-    #' This constructor is used internally by the parameter identification
-    #' workflow to store and standardize results from optimization and confidence
-    #' interval estimation.
+    #'   This constructor is used internally by the parameter identification
+    #'   workflow to store and standardize results from optimization and
+    #'   confidence interval estimation.
     #'
-    #' @param optimResult A named list containing optimization results. Typically
-    #' produced internally by `Optimizer$run()` and includes fields such as
-    #' `par`, `value`, `startValues`, `elapsed`, `convergence`, etc.
+    #' @param optimResult A named list containing optimization results.
+    #'   Typically produced internally by `Optimizer$run()` and includes fields
+    #'   such as `par`, `value`, `startValues`, `elapsed`, `convergence`, etc.
     #' @param ciResult (Optional) A named list of confidence interval results,
-    #' returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
-    #' `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
+    #'   returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
+    #'   `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
     #' @param costDetails (Optional) A named list with detailed cost metrics
-    #' computed during optimization.
+    #'   computed during optimization.
     #' @param configuration (Optional) The `PIConfiguration` object used during
-    #' parameter identification.
-    #' @param piParameters (Optional) A list of `PIParameter` objects used
-    #' in the optimization. If not provided, default parameter names will be
-    #' generated automatically.
+    #'   parameter identification.
+    #' @param piParameters (Optional) A list of `PIParameter` objects used in
+    #'   the optimization. If not provided, default parameter names will be
+    #'   generated automatically.
     #'
     #' @return A `PIResult` object containing optimization results, confidence
-    #' interval estimates (if available), parameter metadata (if available), and
-    #' configuration.
+    #'   interval estimates (if available), parameter metadata (if available),
+    #'   and configuration.
     #'
     #' @keywords internal
     #
@@ -68,8 +68,13 @@ PIResult <- R6::R6Class(
     # - ciElapsed: numeric
     # - ciError: error object or NULL
     # - ciDetails: list (e.g. covariance matrix, bootstrap samples)
-    initialize = function(optimResult, ciResult = NULL, costDetails = NULL,
-                          configuration = NULL, piParameters = NULL) {
+    initialize = function(
+      optimResult,
+      ciResult = NULL,
+      costDetails = NULL,
+      configuration = NULL,
+      piParameters = NULL
+    ) {
       private$.configuration <- configuration
       private$.costDetails <- costDetails
 
@@ -77,9 +82,12 @@ PIResult <- R6::R6Class(
       private$.parameters <- tryCatch(
         {
           if (!is.null(piParameters)) {
-            do.call(rbind, lapply(seq_along(piParameters), function(i) {
-              piParameters[[i]]$toDataFrame(group = as.character(i))
-            }))
+            do.call(
+              rbind,
+              lapply(seq_along(piParameters), function(i) {
+                piParameters[[i]]$toDataFrame(group = as.character(i))
+              })
+            )
           } else {
             NULL
           }
@@ -111,7 +119,11 @@ PIResult <- R6::R6Class(
         finalParameters = optimResult$par,
         objectiveValue = optimResult$value,
         initialParameters = optimResult$startValues,
-        convergence = if (!is.finite(optimResult$value)) FALSE else optimResult$convergence,
+        convergence = if (!is.finite(optimResult$value)) {
+          FALSE
+        } else {
+          optimResult$convergence
+        },
         algorithm = optimResult$algorithm,
         elapsed = optimResult$elapsed,
         iterations = optimResult$iterations,
@@ -124,7 +136,8 @@ PIResult <- R6::R6Class(
         cv = ciResult$cv %||% rep(NA_real_, length(optimResult$par)),
         lowerCI = ciResult$lowerCI %||% rep(NA_real_, length(optimResult$par)),
         upperCI = ciResult$upperCI %||% rep(NA_real_, length(optimResult$par)),
-        ciType = ciResult$ciType %||% rep(NA_character_, length(optimResult$par)),
+        ciType = ciResult$ciType %||%
+          rep(NA_character_, length(optimResult$par)),
         paramNames = paramNames
       )
     },
@@ -163,11 +176,14 @@ PIResult <- R6::R6Class(
     #' @description Returns the full internal result list.
     #' @return A named list containing all result values.
     toList = function() {
-      c(private$.result, list(
-        costDetails = private$.costDetails
-      ))
+      c(
+        private$.result,
+        list(
+          costDetails = private$.costDetails
+        )
+      )
     },
-    #' @description Prints a summary of PIResult
+    #' @description Prints a summary of `PIResult`
     print = function() {
       ospsuite.utils::ospPrintClass(self)
 
@@ -193,16 +209,28 @@ PIResult <- R6::R6Class(
       # Parameters table
       paramSummaries <- lapply(seq_along(x$paramNames), function(i) {
         paste0(
-          "Estimate = ", .formatValues(x$finalParameters[i]), ", ",
-          "SD = ", .formatValues(x$sd[i]), ", ",
-          "CV = ", .formatValues(x$cv[i]), ", ",
-          "CI = [", .formatValues(x$lowerCI[i]), ", ",
-          .formatValues(x$upperCI[i]), "]"
+          "Estimate = ",
+          .formatValues(x$finalParameters[i]),
+          ", ",
+          "SD = ",
+          .formatValues(x$sd[i]),
+          ", ",
+          "CV = ",
+          .formatValues(x$cv[i]),
+          ", ",
+          "CI = [",
+          .formatValues(x$lowerCI[i]),
+          ", ",
+          .formatValues(x$upperCI[i]),
+          "]"
         )
       })
       names(paramSummaries) <- x$paramNames
 
-      ospsuite.utils::ospPrintItems(paramSummaries, title = "Parameter Estimates")
+      ospsuite.utils::ospPrintItems(
+        paramSummaries,
+        title = "Parameter Estimates"
+      )
     }
   )
 )

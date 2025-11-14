@@ -6,11 +6,13 @@ template:
 authors:
   esqLABS GmbH:
     href: https://esqlabs.com/
-    html: <img src='https://esqlabs.github.io/esqlabsR/reference/figures/circles.png'
+    html:
+      <img src='https://esqlabs.github.io/esqlabsR/reference/figures/circles.png'
       style='max-width:33px'>ESQlabs
   Open-Systems-Pharmacology Community:
     href: https://www.open-systems-pharmacology.org/
-    html: <img src='https://open-systems-pharmacology.github.io/ospsuiteR/reference/figures/osp.png'
+    html:
+      <img src='https://open-systems-pharmacology.github.io/ospsuiteR/reference/figures/osp.png'
       style='max-width:33px'>Open Systems Pharmacology
   Pavel Balazki:
     href: https://github.com/PavelBal
@@ -25,42 +27,42 @@ development:
   mode: auto
 
 reference:
-- title: Parameter identification workflow
-  desc: Main classes for running parameter identification
-  contents:
-  - ParameterIdentification
-  - PIConfiguration
-  - PIOutputMapping
-  - PIParameters
-  - PIResult
-- title: Configuration options
-  contents:
-  - Algorithms
-  - contains("AlgorithmOptions")
-  - ObjectiveFunctionOptions
-  - ObjectiveFunctionSpecs
-  - residualWeightingOptions
-  - robustMethodOptions
-  - ScalingOptions
-  - CIMethods
-  - contains("CIOptions")
-- title: Internal functions
-  contents:
-  - plot.modelCost
-- title: Miscelaneous
-  contents:
-  - getOSPSuitePISetting
-  - ospsuitePIRSettingNames
+  - title: Parameter identification workflow
+    desc: Main classes for running parameter identification
+    contents:
+      - ParameterIdentification
+      - PIConfiguration
+      - PIOutputMapping
+      - PIParameters
+      - PIResult
+  - title: Configuration options
+    contents:
+      - Algorithms
+      - contains("AlgorithmOptions")
+      - ObjectiveFunctionOptions
+      - ObjectiveFunctionSpecs
+      - residualWeightingOptions
+      - robustMethodOptions
+      - ScalingOptions
+      - CIMethods
+      - contains("CIOptions")
+  - title: Internal functions
+    contents:
+      - plot.modelCost
+  - title: Miscelaneous
+    contents:
+      - getOSPSuitePISetting
+      - ospsuitePIRSettingNames
 
 articles:
-- title: Parameter identification workflow
-  navbar: Parameter identification workflow
-  contents:
-  - user-guide
-- title: Details
-  navbar: Details
-  contents:
-  - data-mapping
-  - optimization-algorithms
-  - confidence-intervals
-  - error-calculation
+  - title: Parameter identification workflow
+    navbar: Parameter identification workflow
+    contents:
+      - user-guide
+  - title: Details
+    navbar: Details
+    contents:
+      - data-mapping
+      - optimization-algorithms
+      - confidence-intervals
+      - error-calculation

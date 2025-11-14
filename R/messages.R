@@ -19,7 +19,9 @@ messages$errorWeightsNames <- function() {
 messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",
-    label, expected, actual
+    label,
+    expected,
+    actual
   )
 }
 
@@ -30,7 +32,8 @@ messages$errorDataSetWeightsMismatch <- function() {
 messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
   sprintf(
     "Number of combined data entries must be %d to match output mappings, but got %d.",
-    expected, actual
+    expected,
+    actual
   )
 }
 
@@ -60,13 +63,19 @@ messages$profilesNotSupplied <- function() {
 }
 
 messages$plotGridParameterCount <- function(count) {
-  paste0("The plotGrid() function requires a data frame with 3 columns, but ", count, " columns were supplied")
+  paste0(
+    "The plotGrid() function requires a data frame with 3 columns, but ",
+    count,
+    " columns were supplied"
+  )
 }
 
 messages$gridSearchParameterValueSet <- function(bestValues) {
   cat(
-    "Grid search completed.", "\n",
-    "Starting point for the next optimization updated to parameter values: ", "\n",
+    "Grid search completed.",
+    "\n",
+    "Starting point for the next optimization updated to parameter values: ",
+    "\n",
     paste(signif(bestValues, 4), collapse = " ")
   )
 }
@@ -80,7 +89,9 @@ messages$optimizationAlgorithm <- function(name, par, error = FALSE) {
     paste0("Unknown optimization algorithm: ", name)
   } else {
     paste0(
-      "Starting optimization using '", name, "' with initial value(s):\n  ",
+      "Starting optimization using '",
+      name,
+      "' with initial value(s):\n  ",
       paste(.formatValues(par), collapse = ", ")
     )
   }
@@ -91,7 +102,8 @@ messages$ciMethod <- function(name, par, error = FALSE) {
     paste0("Unknown CI estimation method: ", name)
   } else {
     paste0(
-      "Starting confidence interval estimation using '", name,
+      "Starting confidence interval estimation using '",
+      name,
       "' for parameter value(s):\n  ",
       paste(.formatValues(par), collapse = ", ")
     )
@@ -100,9 +112,13 @@ messages$ciMethod <- function(name, par, error = FALSE) {
 
 messages$evaluationFeedback <- function(fneval, par, objValue) {
   paste0(
-    "fneval: ", fneval,
-    " | parameters: ", paste(.formatValues(par), collapse = ", "),
-    " | objective: ", .formatValues(objValue), "\n",
+    "fneval: ",
+    fneval,
+    " | parameters: ",
+    paste(.formatValues(par), collapse = ", "),
+    " | objective: ",
+    .formatValues(objValue),
+    "\n",
     sep = ""
   )
 }
@@ -119,22 +135,37 @@ messages$errorMissingOptimizationResult <- function() {
   "No optimization result found. Ensure the optimization was run before estimating confidence intervals."
 }
 
-messages$errorSimulationIdMissing <- function(simulationIds, piParamIds, outputMappingIds) {
-  message <- capture.output(cat(
+messages$errorSimulationIdMissing <- function(
+  simulationIds,
+  piParamIds,
+  outputMappingIds
+) {
+  message <- utils::capture.output(cat(
     "Mismatch or missing ID detected.\n",
     "Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs.\n",
-    "Simulation IDs: ", paste(simulationIds, collapse = ", "), "\n",
-    "PIParameter IDs: ", paste(piParamIds, collapse = ", "), "\n",
-    "OutputMapping IDs: ", paste(outputMappingIds, collapse = ", ")
+    "Simulation IDs: ",
+    paste(simulationIds, collapse = ", "),
+    "\n",
+    "PIParameter IDs: ",
+    paste(piParamIds, collapse = ", "),
+    "\n",
+    "OutputMapping IDs: ",
+    paste(outputMappingIds, collapse = ", ")
   ))
 
   return(paste(message, collapse = "\n"))
 }
 
-messages$errorObservedDataNotFound <- function(caller, quantityPath, simulationPath) {
+messages$errorObservedDataNotFound <- function(
+  caller,
+  quantityPath,
+  simulationPath
+) {
   sprintf(
     "%s: No observed data found for quantity path: \"%s\"\nin simulation: \"%s\"",
-    caller, quantityPath, simulationPath
+    caller,
+    quantityPath,
+    simulationPath
   )
 }
 
@@ -144,8 +175,11 @@ messages$errorNoParentContainer <- function(type) {
 
 messages$errorUnitConversion <- function(quantityName, observedDataName) {
   paste0(
-    "Unit conversion failed for quantity '", quantityName,
-    "' and observed data '", observedDataName, "'."
+    "Unit conversion failed for quantity '",
+    quantityName,
+    "' and observed data '",
+    observedDataName,
+    "'."
   )
 }
 
@@ -171,12 +205,16 @@ messages$statusProfileLikelihood <- function(index, value) {
 
 messages$plMaxiterWarning <- function(index) {
   paste0(
-    "maxIter reached for parameter ", index,
+    "maxIter reached for parameter ",
+    index,
     " without meeting cost threshold. Setting CI to Inf."
   )
 }
 
-messages$statusObservedDataClassification <- function(nIndividual, nAggregated) {
+messages$statusObservedDataClassification <- function(
+  nIndividual,
+  nAggregated
+) {
   sprintf(
     "Classified observed data: %d individual, %d aggregated dataset(s).",
     nIndividual,
@@ -186,13 +224,15 @@ messages$statusObservedDataClassification <- function(nIndividual, nAggregated) 
 
 messages$warningLowIndividualData <- function(n = 3) {
   sprintf(
-    "Less than %d individual datasets detected — bootstrap CI may be unreliable.",
+    "Less than %d individual datasets detected - bootstrap CI may be unreliable.",
     n
   )
 }
 
 messages$errorUnsupportedErrorType <- function() {
-  stop("Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'.")
+  stop(
+    "Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'."
+  )
 }
 
 messages$statusBootstrap <- function(index, nTotal) {
@@ -201,13 +241,15 @@ messages$statusBootstrap <- function(index, nTotal) {
 
 messages$errorGPRModelConvergence <- function(dataSetName) {
   sprintf(
-    "GPR model failed to converge for dataset '%s'.", dataSetName
+    "GPR model failed to converge for dataset '%s'.",
+    dataSetName
   )
 }
 
 messages$statusGPRModelFitted <- function(dataSetName) {
   sprintf(
-    "GPR model fitted successfully for dataset '%s'.", dataSetName
+    "GPR model fitted successfully for dataset '%s'.",
+    dataSetName
   )
 }
 

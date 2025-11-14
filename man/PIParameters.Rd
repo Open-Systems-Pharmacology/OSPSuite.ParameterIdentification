@@ -5,16 +5,17 @@
 \alias{PIParameters}
 \title{PIParameters}
 \description{
-A parameter to be optimized in a parameter identification routine
+A parameter to be optimized in a parameter identification
+routine
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{parameters}}{A list of parameter objects.
-Adding or removing parameters is not supported.}
+\item{\code{parameters}}{A list of parameter objects. Adding or removing
+parameters is not supported.}
 
-\item{\code{currValue}}{The current parameter values for simulations,
-in units specified by \code{PIParameters$unit}.}
+\item{\code{currValue}}{The current parameter values for simulations, in units
+specified by \verb{$unit}.}
 
 \item{\code{startValue}}{Initial value used for optimization.}
 
@@ -22,7 +23,8 @@ in units specified by \code{PIParameters$unit}.}
 
 \item{\code{maxValue}}{Highest permissible parameter value.}
 
-\item{\code{unit}}{Parameter value units. Changing the unit does NOT auto-adjust min/max/start values.}
+\item{\code{unit}}{Parameter value units. Changing the unit does NOT
+automatically adjust min/max/start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -40,10 +42,10 @@ in units specified by \code{PIParameters$unit}.}
 \if{html}{\out{<a id="method-PIParameters-new"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a new instance of the class.
-The initial start value is derived from the first parameter upon creation,
-modifiable via \code{PIParameters$startValue}. All parameters are optimized
-using this unified value.
+Initialize a new instance of the class. The initial start
+value is derived from the first parameter upon creation, modifiable via
+\code{PIParameters$startValue}. All parameters are optimized using this
+unified value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIParameters$new(parameters)}\if{html}{\out{</div>}}
 }
@@ -63,8 +65,8 @@ A new \code{PIParameters} object.
 \if{html}{\out{<a id="method-PIParameters-setValue"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-setValue}{}}}
 \subsection{Method \code{setValue()}}{
-Updates parameter(s) value.
-Value is specified in units of \code{PIParameters$unit}.
+Updates parameter(s) value. Value is specified in units of
+\verb{$unit}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIParameters$setValue(value)}\if{html}{\out{</div>}}
 }
@@ -82,7 +84,8 @@ Value is specified in units of \code{PIParameters$unit}.
 \if{latex}{\out{\hypertarget{method-PIParameters-toDataFrame}{}}}
 \subsection{Method \code{toDataFrame()}}{
 Export parameter metadata and configuration to a data frame.
-Returns one row per internal model parameter wrapped by the \code{PIParameters} object.
+Returns one row per internal model parameter wrapped by the
+\code{PIParameters} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{PIParameters$toDataFrame(group = NULL)}\if{html}{\out{</div>}}
 }

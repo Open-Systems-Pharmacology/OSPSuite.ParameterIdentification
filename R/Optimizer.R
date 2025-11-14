@@ -1,8 +1,9 @@
 #' @title Optimizer Class
 #'
-#' @description Internal class for handling optimization in parameter identification.
-#' Provides a unified interface for different optimization algorithms and supports
-#' multiple methods for estimating parameter uncertainty.
+#' @description Internal class for handling optimization in parameter
+#'   identification. Provides a unified interface for different optimization
+#'   algorithms and supports multiple methods for estimating parameter
+#'   uncertainty.
 #'
 #' @keywords internal
 #' @noRd
@@ -47,7 +48,14 @@ Optimizer <- R6::R6Class(
     .verbose = NULL,
 
     # Hooke-Jeeves optimization using dfoptim::hjkb
-    .runHJKB = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
+    .runHJKB = function(
+      par,
+      fn,
+      lower,
+      upper,
+      controlOptim,
+      fixedParams = NULL
+    ) {
       dfoptim::hjkb(
         par = par,
         fn = if (!is.null(fixedParams)) {
@@ -62,7 +70,14 @@ Optimizer <- R6::R6Class(
     },
 
     # BOBYQA optimization using nloptr::bobyqa
-    .runBOBYQA = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
+    .runBOBYQA = function(
+      par,
+      fn,
+      lower,
+      upper,
+      controlOptim,
+      fixedParams = NULL
+    ) {
       nloptr::bobyqa(
         x0 = par,
         fn = if (!is.null(fixedParams)) {
@@ -77,7 +92,14 @@ Optimizer <- R6::R6Class(
     },
 
     # Differential Evolution optimization using DEoptim::DEoptim
-    .runDEoptim = function(par, fn, lower, upper, controlOptim, fixedParams = NULL) {
+    .runDEoptim = function(
+      par,
+      fn,
+      lower,
+      upper,
+      controlOptim,
+      fixedParams = NULL
+    ) {
       DEoptim::DEoptim(
         fn = if (!is.null(fixedParams)) {
           function(p) fn(private$.updateFixedParams(p, fixedParams))
@@ -104,7 +126,8 @@ Optimizer <- R6::R6Class(
         },
         error = function(e) {
           result$error <- messages$ciEstimationError(
-            "Hessian calculation", e$message
+            "Hessian calculation",
+            e$message
           )
           NULL
         }
@@ -115,11 +138,15 @@ Optimizer <- R6::R6Class(
       # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
       cost <- fn(p = par, modelCostField = NULL)
       ssr <- purrr::pluck(
-        cost, "costVariables", "weightedSSR",
+        cost,
+        "costVariables",
+        "weightedSSR",
         .default = 1
       )
       nObs <- purrr::pluck(
-        cost, "costVariables", "nObservations",
+        cost,
+        "costVariables",
+        "nObservations",
         .default = length(par) + 1
       )
       dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
@@ -134,7 +161,8 @@ Optimizer <- R6::R6Class(
           error = function(e) {
             if (is.null(result$error)) {
               result$error <- messages$ciEstimationError(
-                "Covariance matrix calculation", e$message
+                "Covariance matrix calculation",
+                e$message
               )
             }
             NULL
@@ -181,8 +209,10 @@ Optimizer <- R6::R6Class(
     .estimateCIProfileLikelihood = function(par, fn, controlCI, optimizer) {
       result <- private$.initializeCIResult()
 
-      # Calculate cost threshold based on confidence level (chi-squared criterion)
-      controlCI$costThreshold <- 0.5 * fn(par) + qchisq(controlCI$confLevel, df = 1)
+      # Calculate cost threshold based on confidence level (chi-sq criterion)
+      controlCI$costThreshold <- 0.5 *
+        fn(par) +
+        qchisq(controlCI$confLevel, df = 1)
 
       zScore <- qnorm(1 - (1 - controlCI$confLevel) / 2)
 
@@ -196,13 +226,31 @@ Optimizer <- R6::R6Class(
 
         epsilon <- controlCI$epsilon %||% pmax(1e-8, 0.01 * abs(par[p]))
 
-        lowerResult <- private$.computeProfileCI(par, fn, optimizer, p, -1, controlCI)
-        upperResult <- private$.computeProfileCI(par, fn, optimizer, p, 1, controlCI)
+        lowerResult <- private$.computeProfileCI(
+          par,
+          fn,
+          optimizer,
+          p,
+          -1,
+          controlCI
+        )
+        upperResult <- private$.computeProfileCI(
+          par,
+          fn,
+          optimizer,
+          p,
+          1,
+          controlCI
+        )
 
         lowerCI[p] <- lowerResult$ci
         upperCI[p] <- upperResult$ci
 
-        paramHistory <- rbind(paramHistory, lowerResult$paramHistory, upperResult$paramHistory)
+        paramHistory <- rbind(
+          paramHistory,
+          lowerResult$paramHistory,
+          upperResult$paramHistory
+        )
       }
 
       # Compute standard errors and CIs
@@ -217,7 +265,7 @@ Optimizer <- R6::R6Class(
       return(result)
     },
 
-    # Profile likelihood confidence interval estimation for one parameter.
+    # Profile likelihood confidence interval estimation for one parameter
     .computeProfileCI = function(par, fn, optimizer, p, direction, controlCI) {
       ci <- NA_real_
 
@@ -259,7 +307,9 @@ Optimizer <- R6::R6Class(
         ospsuite::clearMemory()
 
         # Stop when cost threshold is crossed
-        if (costNew > costThreshold) break
+        if (costNew > costThreshold) {
+          break
+        }
         ci <- newPar[p]
       }
 
@@ -276,7 +326,14 @@ Optimizer <- R6::R6Class(
     },
 
     # Estimate confidence intervals using Bootstrap method.
-    .estimateBootstrapCI = function(par, fn, lower, upper, controlCI, optimizer = NULL) {
+    .estimateBootstrapCI = function(
+      par,
+      fn,
+      lower,
+      upper,
+      controlCI,
+      optimizer = NULL
+    ) {
       result <- private$.initializeCIResult()
 
       nBootstrap <- controlCI$nBootstrap %||% 100
@@ -292,7 +349,7 @@ Optimizer <- R6::R6Class(
       for (i in seq_len(nBootstrap)) {
         message(messages$statusBootstrap(i, nBootstrap))
 
-        # Pass individual seed to obj. function to resample observed data reproducibly
+        # Pass individual seed to obj. function to resample observed data
         bootstrapFn <- function(p) fn(p, bootstrapSeed = seedVector[i])
 
         # Re-optimize with resampled data
@@ -310,7 +367,8 @@ Optimizer <- R6::R6Class(
       }
 
       bootstrapResults <- bootstrapResults[
-        stats::complete.cases(bootstrapResults), ,
+        stats::complete.cases(bootstrapResults),
+        ,
         drop = FALSE
       ]
 
@@ -320,7 +378,7 @@ Optimizer <- R6::R6Class(
       result$lowerCI <- apply(
         bootstrapResults,
         2,
-        quantile,
+        stats::quantile,
         probs = lowerLevel,
         na.rm = TRUE,
         type = 9
@@ -328,16 +386,16 @@ Optimizer <- R6::R6Class(
       result$upperCI <- apply(
         bootstrapResults,
         2,
-        quantile,
+        stats::quantile,
         probs = upperLevel,
         na.rm = TRUE,
         type = 9
       )
-      
+
       # Estimate falls outside [lower, upper], switch to a one-sided bound
       lowerConflicts <- result$lowerCI > par
       upperConflicts <- result$upperCI < par
-      
+
       result$lowerCI[lowerConflicts] <- NA_real_
       result$upperCI[upperConflicts] <- NA_real_
 
@@ -352,7 +410,7 @@ Optimizer <- R6::R6Class(
       )
 
       result$sd <- apply(bootstrapResults, 2, function(x) {
-        sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
+        stats::sd(.stabilizeBootstrapCV(x), na.rm = TRUE)
       })
       result$cv <- result$sd / abs(par)
 
@@ -383,7 +441,7 @@ Optimizer <- R6::R6Class(
     # Converts the objective function to handle fixed parameters and extract
     # modelCost with dynamic overrides
     .preprocessFn = function(fn, fixedParams) {
-      # If fn is already preprocessed, return it to prevent infinite recursion
+      # If fn is already pre-processed, return it to prevent infinite recursion
       if (inherits(fn, "preprocessedFn")) {
         return(fn)
       }
@@ -477,9 +535,9 @@ Optimizer <- R6::R6Class(
   public = list(
     #' @description Initialize an Optimizer instance for parameter estimation.
     #'
-    #' @param configuration `PIConfiguration` for additional settings. For details
-    #' on creating a `PIConfiguration` object, see
-    #' [`ospsuite.parameteridentification::PIConfiguration`].
+    #' @param configuration `PIConfiguration` for additional settings. For
+    #'   details on creating a `PIConfiguration` object, see
+    #'   [`ospsuite.parameteridentification::PIConfiguration`].
     initialize = function(configuration) {
       ospsuite.utils::validateIsOfType(configuration, "PIConfiguration")
 
@@ -493,18 +551,20 @@ Optimizer <- R6::R6Class(
     #' @param lower Numeric vector of lower parameter bounds
     #' @param upper Numeric vector of upper parameter bounds
     #' @param fixedParams Optional list with fixed parameters containing two
-    #' elements:
+    #'   elements:
     #' - **`idx`**: Numeric vector specifying indices of parameters to fix
     #' - **`values`**: Numeric vector with corresponding fixed values
     #' @return List with optimization results including parameter estimates,
-    #' cost, and residuals
+    #'   cost, and residuals
     run = function(par, fn, lower, upper, fixedParams = NULL) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
       ospsuite.utils::validateIsNumeric(upper)
       ospsuite.utils::validateIsOfType(fixedParams, "list", TRUE)
       ospsuite.utils::validateIsIncluded(
-        names(fixedParams), c("idx", "values"), TRUE
+        names(fixedParams),
+        c("idx", "values"),
+        TRUE
       )
       if (!inherits(fn, "preprocessedFn")) {
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
@@ -515,7 +575,8 @@ Optimizer <- R6::R6Class(
       algorithmOptions <- private$.configuration$algorithmOptions %||%
         AlgorithmDefaults[[algorithm]]
 
-      optimizeFn <- switch(algorithm,
+      optimizeFn <- switch(
+        algorithm,
         "HJKB" = private$.runHJKB,
         "BOBYQA" = private$.runBOBYQA,
         "DEoptim" = private$.runDEoptim,
@@ -528,35 +589,38 @@ Optimizer <- R6::R6Class(
 
       startTime <- proc.time()
       rawResult <- optimizeFn(
-        par          = par,
-        fn           = fn,
-        lower        = lower,
-        upper        = upper,
+        par = par,
+        fn = fn,
+        lower = lower,
+        upper = upper,
         controlOptim = algorithmOptions,
-        fixedParams  = fixedParams
+        fixedParams = fixedParams
       )
       elapsedTime <- proc.time() - startTime
 
       optimResult <- private$.formatOptimizationOutput(rawResult)
       optimResult$elapsed <- elapsedTime[["elapsed"]]
 
-      optimResult$par <- private$.updateFixedParams(optimResult$par, fixedParams)
+      optimResult$par <- private$.updateFixedParams(
+        optimResult$par,
+        fixedParams
+      )
 
       return(optimResult)
     },
 
     #' @description Estimate confidence intervals using the selected method
-    #' (Hessian, Profile Likelihood, Bootstrap).
+    #'   (Hessian, Profile Likelihood, Bootstrap).
     #'
     #' @param par Numeric vector of parameter values for confidence interval
-    #' estimation.
+    #'   estimation.
     #' @param fn Objective function used for parameter estimation.
     #' @param lower Numeric vector of lower parameter bounds.
     #' @param upper Numeric vector of upper parameter bounds.
     #' @param optimizer Optional instance of Optimizer used during profile
-    #' likelihood or bootstrap CI estimation.
+    #'   likelihood or bootstrap CI estimation.
     #' @return List with confidence interval results including lower and upper
-    #' bounds, standard errors, coefficient of variation, and method details.
+    #'   bounds, standard errors, coefficient of variation, and method details.
     estimateCI = function(par, fn, lower, upper, optimizer = NULL) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
@@ -573,7 +637,8 @@ Optimizer <- R6::R6Class(
       ciOptions <- private$.configuration$ciOptions %||% CIDefaults[[ciMethod]]
       optimizer <- optimizer %||% self
 
-      estimateCIFn <- switch(ciMethod,
+      estimateCIFn <- switch(
+        ciMethod,
         "hessian" = private$.estimateHessianCI,
         "PL" = private$.estimateCIProfileLikelihood,
         "bootstrap" = private$.estimateBootstrapCI,

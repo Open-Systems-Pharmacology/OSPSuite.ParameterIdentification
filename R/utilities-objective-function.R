@@ -1,33 +1,32 @@
 #' @title Calculate Cost Metrics for Model Evaluation
 #'
-#' @description
-#' Internal utility to calculate residual-based cost metrics for model fit assessment.
-#' Used within parameter estimation routines.
+#' @description Internal utility to calculate residual-based cost metrics for
+#' model fit assessment. Used within parameter estimation routines.
 #'
 #' @param df A dataframe containing the combined data for simulation and
-#' observation. Supports dataframes created from a `DataCombined` object via
-#' `DataCombined$toDataFrame()`. Must include columns for `dataType`, `xValues`,
-#' `yValues`, and optionally `yErrorValues` and `yErrorType` if
-#' `residualWeightingMethod = "error"`. The error type must be one of
-#' `ArithmeticStdDev`, `GeometricStdDev`.
-#' @param objectiveFunctionType A string indicating the objective function type for
-#' calculating model cost. Options include "lsq" (least squares, default) and "m3"
-#' for handling censored data.
+#'   observation. Supports dataframes created from a `DataCombined` object via
+#'   `$toDataFrame()`. Must include columns for `dataType`, `xValues`,
+#'   `yValues`, and optionally `yErrorValues` and `yErrorType` if
+#'   `residualWeightingMethod = "error"`. The error type must be one of
+#'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
+#' @param objectiveFunctionType A string indicating the objective function type
+#'   for calculating model cost. Options include `"lsq"` (least squares,
+#'   default) and `"m3"` for handling censored data.
 #' @param residualWeightingMethod A string indicating the method to weight the
-#' residuals. Options include "none" (default), "std", "mean", and "error".
-#' @param robustMethod A string indicating the robust method to apply to the residuals.
-#' Options include "none" (default), "huber", and "bisquare".
-#' @param scaleVar A boolean indicating whether to scale residuals by the
-#' number of observations. Defaults to `FALSE`.
+#'   residuals. Options include `"none"` (default), `"std"`, `"mean"`, and
+#'   `"error"`.
+#' @param robustMethod A string indicating the robust method to apply to the
+#'   residuals. Options include `"none"` (default), `"huber"`, and `"bisquare"`.
+#' @param scaleVar A boolean indicating whether to scale residuals by the number
+#'   of observations. Defaults to `FALSE`.
 #' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#' including 'scaling', 'linScaleCV', and 'logScaleSD'.
+#'   including `scaling`, `linScaleCV`, and `logScaleSD`.
 #'
-#' @details
-#' The function calculates the residuals between the simulated and observed
-#' values, applies the specified weighting method, and computes the cost metrics.
+#' @details The function calculates the residuals between the simulated and
+#' observed values, applies the specified weighting method, and computes the
+#' cost metrics.
 #'
-#' @return
-#' A cost metrics summary list containing the following fields:
+#' @return A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
 #' - `costDetails`: A dataframe with details on the cost calculations.
@@ -49,14 +48,28 @@
 #'
 #' @keywords internal
 #' @noRd
-.calculateCostMetrics <- function(df, objectiveFunctionType = "lsq", residualWeightingMethod = "none",
-                                  robustMethod = "none", scaleVar = FALSE, ...) {
+.calculateCostMetrics <- function(
+  df,
+  objectiveFunctionType = "lsq",
+  residualWeightingMethod = "none",
+  robustMethod = "none",
+  scaleVar = FALSE,
+  ...
+) {
   additionalArgs <- list(...)
 
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
-    c("dataType", "xDimension", "yDimension", "xValues", "yValues", "xUnit", "yUnit"),
+    c(
+      "dataType",
+      "xDimension",
+      "yDimension",
+      "xValues",
+      "yValues",
+      "xUnit",
+      "yUnit"
+    ),
     colnames(df)
   )
   ospsuite.utils::validateIsOfLength(unique(df$xUnit), 1)
@@ -64,10 +77,14 @@
   ospsuite.utils::validateIsIncluded(unique(df$xDimension), "Time")
 
   # Ensure methods are recognized
-  ospsuite.utils::validateEnumValue(residualWeightingMethod, residualWeightingOptions)
+  ospsuite.utils::validateEnumValue(
+    residualWeightingMethod,
+    residualWeightingOptions
+  )
   if (residualWeightingMethod == "error") {
     ospsuite.utils::validateIsIncluded(
-      c("yErrorValues", "yErrorUnit", "yErrorType"), colnames(df)
+      c("yErrorValues", "yErrorUnit", "yErrorType"),
+      colnames(df)
     )
   }
   ospsuite.utils::validateEnumValue(robustMethod, robustMethodOptions)
@@ -78,7 +95,6 @@
   df$xValues[df$xValues < 0] <- NA
   idx <- is.na(df$xValues) | is.na(df$yValues)
   df <- df[!idx, ]
-
 
   # Splitting dataframe into simulated and observed data
   simulatedData <- df[df$dataType == "simulated", ]
@@ -114,7 +130,11 @@
 
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedXVal)) > 1) {
-    simulatedYValApprox <- approx(simulatedXVal, simulatedYVal, xout = observedXVal)$y
+    simulatedYValApprox <- stats::approx(
+      simulatedXVal,
+      simulatedYVal,
+      xout = observedXVal
+    )$y
   } else {
     simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
   }
@@ -132,7 +152,8 @@
 
   # Determining the method for residual weighting
   errorWeights <-
-    switch(residualWeightingMethod,
+    switch(
+      residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
         yValues = observedData[["yValues"]],
@@ -143,7 +164,7 @@
         if (length(unique(observedYVal)) == 1) {
           sqrt(.Machine$double.eps)
         } else {
-          sd(observedYVal, na.rm = TRUE)
+          stats::sd(observedYVal, na.rm = TRUE)
         }
       },
       "mean" = {
@@ -153,7 +174,8 @@
     )
 
   # Calculate robust weights based on the specified robust method
-  robustWeights <- switch(robustMethod,
+  robustWeights <- switch(
+    robustMethod,
     "huber" = .calculateHuberWeights(normalizedResiduals),
     "bisquare" = .calculateBisquareWeights(normalizedResiduals),
     rep(1, length(normalizedResiduals))
@@ -187,9 +209,14 @@
   )
 
   # Calculating log probability to evaluate model fit
-  logProbability <- -sum(log(pmax(0, dnorm(
-    residualsData$ySimulated, residualsData$yObserved, 1 / residualsData$totalWeights
-  ))))
+  logProbability <- -sum(log(pmax(
+    0,
+    stats::dnorm(
+      residualsData$ySimulated,
+      residualsData$yObserved,
+      1 / residualsData$totalWeights
+    )
+  )))
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
@@ -201,7 +228,9 @@
 
   # Ensure that the modelCost calculation does not result in NA
   if (is.na(modelCost$modelCost)) {
-    warning("Invalid model cost detected (NA). Returning infinite error cost structure.")
+    warning(
+      "Invalid model cost detected (NA). Returning infinite error cost structure."
+    )
     return(.createErrorCostStructure(infinite = TRUE))
   } else {
     class(modelCost) <- "modelCost"
@@ -214,14 +243,18 @@
 #' @param yValues Vector of y-values, required for conversion
 #' @param yErrorValues Vector of y-value errors
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
-#' `GeometricStdDev`)
+#'   `GeometricStdDev`)
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
 #' @keywords internal
 #' @noRd
-.computeErrorWeights <- function(yValues, yErrorValues, yErrorType,
-                                 defaultWeight = 1) {
+.computeErrorWeights <- function(
+  yValues,
+  yErrorValues,
+  yErrorType,
+  defaultWeight = 1
+) {
   ospsuite.utils::validateIsNumeric(yValues)
   ospsuite.utils::validateIsNumeric(yErrorValues)
   ospsuite.utils::validateIsCharacter(yErrorType)
@@ -232,7 +265,9 @@
 
   weights <- rep(defaultWeight, length(yValues))
 
-  idx <- which(yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0)
+  idx <- which(
+    yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
+  )
   if (length(idx) > 0) {
     weights[idx] <- 1 / yErrorValues[idx]
   }
@@ -240,8 +275,8 @@
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
   if (length(idx) > 0) {
     # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
-    sd <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
-    weights[idx] <- 1 / sd
+    stDev <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
+    weights[idx] <- 1 / stDev
   }
 
   return(weights)
@@ -253,7 +288,8 @@
 #' from a `modelCost` object.
 #'
 #' @param x A `modelCost` object containing residuals to plot.
-#' @param legpos Position of the legend; default is "topright". Use NA to omit the legend.
+#' @param legpos Position of the legend; default is "topright". Use NA to omit
+#'   the legend.
 #' @param ... Additional arguments passed to the plot function.
 #' @return Generates a plot.
 #' @examples
@@ -276,22 +312,35 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   residualsData <- x$residualDetails
 
   # Setup base plot
-  plot(residualsData$x, residualsData$residuals,
-    xlab = "x", ylab = "Residuals",
-    pch = 16, col = "black", ...
+  plot(
+    residualsData$x,
+    residualsData$residuals,
+    xlab = "x",
+    ylab = "Residuals",
+    pch = 16,
+    col = "black",
+    ...
   )
 
   # Add weightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
-    points(residualsData$x, residualsData$weightedResiduals,
-      pch = 17, col = "red", ...
+    graphics::points(
+      residualsData$x,
+      residualsData$weightedResiduals,
+      pch = 17,
+      col = "red",
+      ...
     )
   }
 
   # Add robustWeightedResiduals if different from rawResiduals
   if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
-    points(residualsData$x, residualsData$robustWeightedResiduals,
-      pch = 18, col = "blue", ...
+    graphics::points(
+      residualsData$x,
+      residualsData$robustWeightedResiduals,
+      pch = 18,
+      col = "blue",
+      ...
     )
   }
 
@@ -313,7 +362,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (!is.na(legpos)) {
-    legend(legpos, legend = legends, col = colors, pch = pch_values)
+    graphics::legend(legpos, legend = legends, col = colors, pch = pch_values)
   }
 }
 
@@ -324,11 +373,11 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' failures) or zeros (for objective function failures).
 #'
 #' @param infinite Logical flag indicating if the structure should contain
-#' infinite values (TRUE) or zeros (FALSE).
+#'   infinite values (TRUE) or zeros (FALSE).
 #' @return A model cost summary structured identically to the output of
-#' `.calculateCostMetrics`, with fields for model cost, minimum log probability,
-#' statistical measures, and detailed residuals, tailored for failure scenarios
-#' or initial setup.
+#'   `.calculateCostMetrics`, with fields for model cost, minimum log
+#'   probability, statistical measures, and detailed residuals, tailored for
+#'   failure scenarios or initial setup.
 #' @keywords internal
 .createErrorCostStructure <- function(infinite = FALSE) {
   if (infinite) {
@@ -370,13 +419,15 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Apply Log Transformation to Data Frame
 #'
-#' Transforms the `yValues` and `lloq` columns in the given data frame using a log
-#' transformation. Currently, this function only supports `obsVsPredDf` data frames,
-#' which must contain `yDimension`, `yUnit`, `yValues`, and `lloq` columns.
+#' Transforms the `yValues` and `lloq` columns in the given data frame using a
+#' log transformation. Currently, this function only supports `obsVsPredDf` data
+#' frames, which must contain `yDimension`, `yUnit`, `yValues`, and `lloq`
+#' columns.
 #'
-#' @param df A `tbl_df` representing the observed vs predicted data frame (`obsVsPredDf`).
+#' @param df A `tbl_df` representing the observed vs predicted data frame
+#'   (`obsVsPredDf`).
 #' @param base A positive numeric value specifying the logarithm base. Defaults
-#' to natural logarithm (`exp(1)`).
+#'   to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
 #' @keywords internal
@@ -390,7 +441,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsNumeric(base)
   ospsuite.utils::validateIsIncluded(
-    c("yDimension", "yUnit", "yValues", "lloq"), colnames(df)
+    c("yDimension", "yUnit", "yValues", "lloq"),
+    colnames(df)
   )
 
   UNITS_EPSILON <- ospsuite::toUnit(
@@ -402,11 +454,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
-    epsilon = UNITS_EPSILON, base = base
+    epsilon = UNITS_EPSILON,
+    base = base
   )
   df$lloq <- ospsuite.utils::logSafe(
     df$lloq,
-    epsilon = UNITS_EPSILON, base = base
+    epsilon = UNITS_EPSILON,
+    base = base
   )
 
   return(df)
@@ -416,37 +470,42 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #'
 #' Evaluates the impact of censored data (below quantification limit, BQL) on
-#' model cost, employing maximum likelihood estimation to integrate BQL observations
-#' effectively. By acknowledging BQL data as censored observations, this method
-#' ensures such data contribute to model accuracy without misrepresenting actual
-#' concentrations. It applies linear or logarithmic scaling to calculate standard
-#' deviations for censored probabilities, enhancing overall model cost assessment
-#' with respect to detection limits.
+#' model cost, employing maximum likelihood estimation to integrate BQL
+#' observations effectively. By acknowledging BQL data as censored observations,
+#' this method ensures such data contribute to model accuracy without
+#' misrepresenting actual concentrations. It applies linear or logarithmic
+#' scaling to calculate standard deviations for censored probabilities,
+#' enhancing overall model cost assessment with respect to detection limits.
 #'
 #' @param observed Data frame containing observed data, must include 'lloq',
-#' 'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
-#' @param simulated Data frame containing simulated data, must include 'xValues',
-#' 'xUnit', 'xDimension', and 'yValues' columns.
+#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param simulated Data frame containing simulated data, must include
+#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
 #' @param scaling Character string specifying the scaling method; should be one
-#' of the predefined scaling options.
+#'   of the predefined scaling options.
 #' @param linScaleCV Numeric, coefficient used to calculate standard deviation
-#' for linear scaling, applied to 'lloq' values.
-#' @param logScaleSD Numeric, standard deviation for logarithmic scaling, applied
-#' uniformly to all censored observations.
+#'   for linear scaling, applied to 'lloq' values.
+#' @param logScaleSD Numeric, standard deviation for logarithmic scaling,
+#'   applied uniformly to all censored observations.
 #' @return Numeric value representing the sum of squared errors for censored
-#' observations, contributing to the model's total cost.
+#'   observations, contributing to the model's total cost.
 #' @keywords internal
 #' @examples
 #' \dontrun{
 #' .calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
 #' }
-.calculateCensoredContribution <- function(observed, simulated, scaling,
-                                           linScaleCV = NULL, logScaleSD = NULL) {
+.calculateCensoredContribution <- function(
+  observed,
+  simulated,
+  scaling,
+  linScaleCV = NULL,
+  logScaleSD = NULL
+) {
   ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
   ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
 
-  lloq <- unique(na.omit(observed$lloq))
+  lloq <- unique(stats::na.omit(observed$lloq))
   ospsuite.utils::validateIsNumeric(lloq)
 
   if (length(lloq) == 0) {
@@ -456,13 +515,19 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   # Identify censored and uncensored observations based on LLOQ
-  observedUncensored <- observed[is.na(observed$lloq) |
-    (observed$yValues > observed$lloq), ]
-  observedCensored <- observed[!is.na(observed$lloq) &
-    (observed$yValues <= observed$lloq), ]
+  observedUncensored <- observed[
+    is.na(observed$lloq) |
+      (observed$yValues > observed$lloq),
+  ]
+  observedCensored <- observed[
+    !is.na(observed$lloq) &
+      (observed$yValues <= observed$lloq),
+  ]
   simulatedCensored <- merge(
-    observedCensored[c("xValues", "xUnit", "xDimension")], simulated,
-    by = c("xValues", "xUnit", "xDimension"), all.x = TRUE
+    observedCensored[c("xValues", "xUnit", "xDimension")],
+    simulated,
+    by = c("xValues", "xUnit", "xDimension"),
+    all.x = TRUE
   )
 
   # No censored data to process
@@ -471,14 +536,16 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (scaling == "lin" && !is.null(linScaleCV)) {
-    sd <- abs(linScaleCV * lloq)
+    stDev <- abs(linScaleCV * lloq)
   } else if (scaling == "log" && !is.null(logScaleSD)) {
-    sd <- logScaleSD
+    stDev <- logScaleSD
   } else {
     stop("Scaling method and scaling parameters are not compatible.")
   }
 
-  censoredProbabilities <- pnorm((observedCensored$lloq - simulatedCensored$yValues) / sd)
+  censoredProbabilities <- stats::pnorm(
+    (observedCensored$lloq - simulatedCensored$yValues) / stDev
+  )
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
   censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
   censoredErrorVector <- sqrt(censoredErrorVector)
@@ -488,20 +555,21 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Summarize Cost Lists
 #'
-#' This function takes two lists, each being the output of the `.calculateCostMetrics`
-#' function, and summarizes them. It aggregates model costs and min log probabilities,
-#' and combines cost and residual details by row-binding.
+#' This function takes two lists, each being the output of the
+#' `.calculateCostMetrics` function, and summarizes them. It aggregates model
+#' costs and min log probabilities, and combines cost and residual details by
+#' row-binding.
 #'
-#' @param list1 The first list, containing the output of the `.calculateCostMetrics`
-#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
-#' and `residualDetails`.
-#' @param list2 The second list, containing the output of the `.calculateCostMetrics`
-#' function, which includes `modelCost`, `minLogProbability`, `costVariables`,
-#' and `residualDetails`.
+#' @param list1 The first list, containing the output of the
+#'   `.calculateCostMetrics` function, which includes `modelCost`,
+#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#' @param list2 The second list, containing the output of the
+#'   `.calculateCostMetrics` function, which includes `modelCost`,
+#'   `minLogProbability`, `costVariables`, and `residualDetails`.
 #'
 #' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#' `minLogProbabilities`, a row-bound combination of `costVariables`, and a
-#' row-bound combination of `residualDetails`.
+#'   `minLogProbabilities`, a row-bound combination of `costVariables`, and a
+#'   row-bound combination of `residualDetails`.
 #'
 #' @keywords internal
 .summarizeCostLists <- function(list1, list2) {
@@ -530,7 +598,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Scale residuals
   standardizedResiduals <- residuals / (k * mad)
   # Huber weights
-  weights <- ifelse(abs(standardizedResiduals) <= 1, 1,
+  weights <- ifelse(
+    abs(standardizedResiduals) <= 1,
+    1,
     1 / abs(standardizedResiduals)
   )
   return(weights)
@@ -551,8 +621,10 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Scale residuals
   standardizedResiduals <- residuals / (c * mad)
   # Bisquare weights
-  weights <- ifelse(abs(standardizedResiduals) < 1,
-    (1 - standardizedResiduals^2)^2, 0
+  weights <- ifelse(
+    abs(standardizedResiduals) < 1,
+    (1 - standardizedResiduals^2)^2,
+    0
   )
   return(weights)
 }

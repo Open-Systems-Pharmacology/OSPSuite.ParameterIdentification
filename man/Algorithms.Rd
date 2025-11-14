@@ -22,9 +22,10 @@ Supported algorithms include:
 \item \strong{\code{BOBYQA}} – BOBYQA algorithm from the \pkg{nloptr} package.
 \item \strong{\code{DEoptim}} – Differential evolution algorithm from the \pkg{DEoptim}
 package, suitable for stochastic global optimization.
-}
 
-These algorithms can be specified and configured within the \code{PIConfiguration}
-class to tailor the parameter identification process to specific needs.
+These algorithms can be specified and configured within the
+\code{PIConfiguration} class to tailor the parameter identification process to
+specific needs.
+}
 }
 \keyword{datasets}

@@ -1,3 +1,11 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^tests/dev$
+^wip$
+^scripts$
+^\.github$
+^_pkgdown\.yml$
+^\.lintr$
+^air\.toml$
+^NEWS\.md$

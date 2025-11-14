@@ -18,11 +18,11 @@ of their root containers.}
 \item{\code{parameters}}{A list of \code{PIParameters}, each representing a grouped
 set of model parameters to be optimized (read-only).}
 
-\item{\code{configuration}}{A \code{PIConfiguration} object controlling algorithm,
-CI estimation, and objective function options.}
+\item{\code{configuration}}{A \code{PIConfiguration} object controlling algorithm, CI
+estimation, and objective function options.}
 
-\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping observed
-datasets to simulated outputs.}
+\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping
+observed datasets to simulated outputs.}
 }
 \if{html}{\out{</div>}}
 }
@@ -57,8 +57,8 @@ Initializes a \code{ParameterIdentification} instance.
 \describe{
 \item{\code{simulations}}{A \code{Simulation} or list of \code{Simulation} objects to be
 used for parameter estimation. Each simulation must contain the model
-parameters specified in \code{parameters}. Use \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}}
-to load simulation files.}
+parameters specified in \code{parameters}. Use
+\code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}} to load simulation files.}
 
 \item{\code{parameters}}{A \code{PIParameters} or list of \code{PIParameters} objects
 specifying the model parameters to optimize. Each \code{PIParameters} object
@@ -67,18 +67,20 @@ may group one or more underlying model parameters. See
 
 \item{\code{outputMappings}}{A \code{PIOutputMapping} or list of \code{PIOutputMapping}
 objects mapping model outputs (represented by \code{Quantity} objects) to
-observed data. #' See \code{\link{PIOutputMapping}}
-for details.}
+observed data. #' See
+\code{\link{PIOutputMapping}} for details.}
 
 \item{\code{configuration}}{(Optional) A \code{PIConfiguration} object specifying
-algorithm, CI method, and objective function settings. Defaults to a new
-configuration if omitted. See \code{\link{PIConfiguration}}
-for configuration options.}
+algorithm, CI method, and objective function settings. Defaults to a
+new configuration if omitted. See
+\code{\link{PIConfiguration}} for configuration
+options.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A \code{ParameterIdentification} object ready to run parameter estimation.
+A \code{ParameterIdentification} object ready to run parameter
+estimation.
 Executes Parameter Identification
 }
 }
@@ -86,9 +88,10 @@ Executes Parameter Identification
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
 \subsection{Method \code{run()}}{
-Runs parameter identification using the configured optimization
-algorithm. Returns a structured \code{piResults}object containing estimated
-parameters, diagnostics, and (optionally) confidence intervals.
+Runs parameter identification using the configured
+optimization algorithm. Returns a structured \code{piResults}object
+containing estimated parameters, diagnostics, and (optionally)
+confidence intervals.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$run()}\if{html}{\out{</div>}}
 }
@@ -145,8 +148,8 @@ Perform a Parameter Grid Search
 }
 
 Generates a grid of parameter combinations, computes the OFV for each,
-and optionally sets the best result as the starting point for s subsequent
-optimization.
+and optionally sets the best result as the starting point for s
+subsequent optimization.
 
 Note: The resulting grid can be used to explore the parameter space or
 initialize better starting values.
@@ -223,15 +226,15 @@ points across each parameter profile. Default is 20.}
 }
 \subsection{Returns}{
 A list of tibbles, one for each parameter, showing how the
-objective function value (OFV) changes when varying that parameter while
-keeping the others fixed.
+objective function value (OFV) changes when varying that parameter
+while keeping the others fixed.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-print}{}}}
 \subsection{Method \code{print()}}{
-Prints a summary of ParameterIdentification instance.
+Prints a summary of \code{ParameterIdentification} instance.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$print()}\if{html}{\out{</div>}}
 }

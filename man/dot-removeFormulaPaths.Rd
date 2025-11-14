@@ -11,8 +11,8 @@
 
 \item{simulation}{A \code{Simulation} object containing the quantities}
 
-\item{stopIfNotFound}{Boolean. If \code{TRUE} (default), an error is thrown when
-a path is not found in the simulation.}
+\item{stopIfNotFound}{Boolean. If \code{TRUE} (default), an error is thrown when a
+path is not found in the simulation.}
 }
 \value{
 List of quantity paths that are not defined by explicit formula.
