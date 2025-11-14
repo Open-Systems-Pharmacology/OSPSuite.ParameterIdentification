@@ -1,5 +1,7 @@
 # ParameterIdentification - run()
 
+resetTestFactories()
+
 test_that("run() errors if initial simulation fails", {
   modPiTask <- testModifiedTask()
   suppressMessages(suppressWarnings(

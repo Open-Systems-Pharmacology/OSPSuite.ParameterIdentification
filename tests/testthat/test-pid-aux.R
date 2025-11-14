@@ -1,20 +1,22 @@
 # ParameterIdentification - auxiliary exploration
 
+resetTestFactories()
+
 # Plot Results
 
 test_that("plotResults() generates expected plot before parameter estimation", {
   piTask <- createPiTask()
-  vdiffr::expect_doppelganger("before_estimation", piTask$plotResults()[[1]])
+  vdiffr::expect_doppelganger("before-estimation", piTask$plotResults()[[1]])
 })
 
 piTask <- createPiTask()
 suppressMessages(piResults <- piTask$run())
 test_that("plotResults() generates expected plot after parameter estimation", {
-  vdiffr::expect_doppelganger("after_estimation", piTask$plotResults()[[1]])
+  vdiffr::expect_doppelganger("after-estimation", piTask$plotResults()[[1]])
 })
 
 test_that("plotResults() generates expected plot with parameter input", {
-  vdiffr::expect_doppelganger("custom_parameter", piTask$plotResults(1.2)[[1]])
+  vdiffr::expect_doppelganger("custom-parameter", piTask$plotResults(1.2)[[1]])
 })
 
 

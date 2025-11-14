@@ -1,5 +1,7 @@
 # ParameterIdentification - Core
 
+resetTestFactories()
+
 test_that("ParameterIdentification is created successfully", {
   piConfiguration <- PIConfiguration$new()
   expect_silent(

@@ -1,5 +1,7 @@
 # ParameterIdentification - confidence interval
 
+resetTestFactories()
+
 # Hessian CI Method
 
 test_that("estimateCI() throws error if optimization has not been executed", {
