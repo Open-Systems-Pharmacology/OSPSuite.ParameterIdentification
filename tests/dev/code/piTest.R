@@ -21,7 +21,7 @@ dataSets <- ospsuite::loadDataSetsFromExcel(
 )
 
 ####### LOAD SIMULATIONS and put them in a named list######
-simNames <- c("Vehicle.pkml", "0.75 mg_kg.pkml", "2.5 mg_kg.pkml")
+simNames <- c("Vehicle.pkml", "0_75_mg_kg.pkml", "2_5_mg_kg.pkml")
 simulations <- lapply(simNames, function(x) {
   ospsuite::loadSimulation(file.path(modelFolder, x))
 })
@@ -53,15 +53,21 @@ piOutputMapping$addObservedDataSets(dataSets$`________IV_Vehicle`)
 # Add the mapping to the list of all mappings
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
-  container = simulations$`0.75 mg_kg.pkml`
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|Tumor|Weight (tissue)",
+    container = simulations$`0_75_mg_kg.pkml`
+  )
+)
 piOutputMapping$addObservedDataSets(dataSets$`________IV_0.75mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
-  container = simulations$`2.5 mg_kg.pkml`
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|Tumor|Weight (tissue)",
+    container = simulations$`2_5_mg_kg.pkml`
+  )
+)
 piOutputMapping$addObservedDataSets(dataSets$`________IV_2.50mgKg_ADC`)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
@@ -70,12 +76,14 @@ piOutputMappings <- append(piOutputMappings, piOutputMapping)
 # CREATED ABOVE AND PASS ALL THREE SIMULATIONS AND MAPPINGS
 
 parameters <- lapply(parameterPaths, function(x) {
-  modelParams <- getParameter(path = x, container = simulations$`2.5 mg_kg.pkml`)
+  modelParams <- getParameter(path = x, container = simulations$`2_5_mg_kg.pkml`)
   piParameters <- PIParameters$new(parameters = modelParams)
 })
 
 pi <- ParameterIdentification$new(
-  simulations = simulations$`2.5 mg_kg.pkml`, parameters = parameters, outputMappings = piOutputMappings[[3]],
+  simulations = simulations$`2_5_mg_kg.pkml`,
+  parameters = parameters,
+  outputMappings = piOutputMappings[[3]],
   configuration = piConfiguration
 )
 pi$plotResults()
