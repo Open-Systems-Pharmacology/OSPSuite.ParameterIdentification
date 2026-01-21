@@ -160,7 +160,7 @@ bootstrapPiConfiguration <- function(iter = 2, nBootstrap = 3) {
   options <- AlgorithmOptions_BOBYQA
   options$maxeval <- iter
 
-  ciOptions <- CIOptions_Bootstrap
+  ciOptions <- CIOptions_bootstrap
   ciOptions$seed <- 2203
   ciOptions$nBootstrap <- nBootstrap
 
