@@ -100,7 +100,7 @@ CIMethods <- ospsuite.utils::enum(c(
 #' @format A list containing default settings for confidence interval estimation
 #'   methods.
 #'
-#' @section CIOptions_Hessian: Default options for the **`hessian`** method.
+#' @section CIOptions_hessian: Default options for the **`hessian`** method.
 #'
 #' - **`epsilon`**: Numerical step size for numerical differentiation. Default
 #'   is `NULL`, which applies an adaptive step size.
@@ -117,7 +117,7 @@ CIMethods <- ospsuite.utils::enum(c(
 #' - **`maxIter`**: Maximum number of iterations for likelihood profiling.
 #'   Default is `100`.
 #'
-#' @section CIOptions_Bootstrap: Default options for the **`bootstrap`** method.
+#' @section CIOptions_bootstrap: Default options for the **`bootstrap`** method.
 #'
 #' - **`nSamples`**: Number of bootstrap resampling iterations. Default is `1000`.
 #' - **`confLevel`**: Confidence level for interval estimation. Default is `0.95`
@@ -127,7 +127,7 @@ CIMethods <- ospsuite.utils::enum(c(
 #' @name CIOptions
 #' @rdname CIOptions
 #' @export
-CIOptions_Hessian <- ospsuite.utils::enum(list(
+CIOptions_hessian <- ospsuite.utils::enum(list(
   epsilon = NULL,
   confLevel = 0.95
 ))
@@ -142,7 +142,7 @@ CIOptions_PL <- ospsuite.utils::enum(list(
 
 #' @rdname CIOptions
 #' @export
-CIOptions_Bootstrap <- ospsuite.utils::enum(list(
+CIOptions_bootstrap <- ospsuite.utils::enum(list(
   nBootstrap = 100,
   confLevel = 0.95,
   seed = NULL
@@ -150,9 +150,9 @@ CIOptions_Bootstrap <- ospsuite.utils::enum(list(
 
 #' @noRd
 CIDefaults <- list(
-  hessian = CIOptions_Hessian,
+  hessian = CIOptions_hessian,
   PL = CIOptions_PL,
-  bootstrap = CIOptions_Bootstrap
+  bootstrap = CIOptions_bootstrap
 )
 
 #' Objective Function Options for Model Fit Assessment

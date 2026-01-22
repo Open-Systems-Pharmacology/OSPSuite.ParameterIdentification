@@ -3,9 +3,9 @@
 \docType{data}
 \name{CIOptions}
 \alias{CIOptions}
-\alias{CIOptions_Hessian}
+\alias{CIOptions_hessian}
 \alias{CIOptions_PL}
-\alias{CIOptions_Bootstrap}
+\alias{CIOptions_bootstrap}
 \title{Confidence Interval Estimation Options}
 \format{
 A list containing default settings for confidence interval estimation
@@ -16,18 +16,18 @@ An object of class \code{list} of length 3.
 An object of class \code{list} of length 3.
 }
 \usage{
-CIOptions_Hessian
+CIOptions_hessian
 
 CIOptions_PL
 
-CIOptions_Bootstrap
+CIOptions_bootstrap
 }
 \description{
 Default options for various confidence interval estimation methods used
 within the package. These methods are configured via the \code{PIConfiguration}
 class.
 }
-\section{CIOptions_Hessian}{
+\section{CIOptions_hessian}{
  Default options for the \strong{\code{hessian}} method.
 \itemize{
 \item \strong{\code{epsilon}}: Numerical step size for numerical differentiation. Default
@@ -50,7 +50,7 @@ Default is \code{100}.
 }
 }
 
-\section{CIOptions_Bootstrap}{
+\section{CIOptions_bootstrap}{
  Default options for the \strong{\code{bootstrap}} method.
 \itemize{
 \item \strong{\code{nSamples}}: Number of bootstrap resampling iterations. Default is \code{1000}.
