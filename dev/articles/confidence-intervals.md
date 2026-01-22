@@ -49,7 +49,7 @@ inspect the results.
 
 Each confidence interval method provides a predefined set of default
 options. These defaults are available through the helper objects
-`CIOptions_Hessian`, `CIOptions_PL`, and `CIOptions_Bootstrap`.  
+`CIOptions_hessian`, `CIOptions_PL`, and `CIOptions_bootstrap`.  
 The corresponding object is assigned to `piConfiguration$ciOptions` and
 individual fields can then be modified as required.
 
@@ -85,7 +85,7 @@ piConfiguration <- PIConfiguration$new()
 piConfiguration$ciMethod <- "hessian"
 
 # assign default options and adjust if necessary
-piConfiguration$ciOptions <- CIOptions_Hessian
+piConfiguration$ciOptions <- CIOptions_hessian
 piConfiguration$ciOptions$confLevel <- 0.95
 ```
 

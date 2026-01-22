@@ -11,7 +11,7 @@ class."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,11 +57,11 @@ class.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">CIOptions_Hessian</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="va">CIOptions_hessian</span></span>
 <span></span>
 <span><span class="va">CIOptions_PL</span></span>
 <span></span>
-<span><span class="va">CIOptions_Bootstrap</span></span></code></pre></div>
+<span><span class="va">CIOptions_bootstrap</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -72,7 +72,7 @@ methods.</p>
 <p>An object of class <code>list</code> of length 3.</p>
     </div>
     <div class="section level2">
-    <h2 id="cioptions-hessian">CIOptions_Hessian<a class="anchor" aria-label="anchor" href="#cioptions-hessian"></a></h2>
+    <h2 id="cioptions-hessian">CIOptions_hessian<a class="anchor" aria-label="anchor" href="#cioptions-hessian"></a></h2>
     <p>Default options for the <strong><code>hessian</code></strong> method.</p><ul><li><p><strong><code>epsilon</code></strong>: Numerical step size for numerical differentiation. Default
 is <code>NULL</code>, which applies an adaptive step size.</p></li>
 <li><p><strong><code>confLevel</code></strong>: Confidence level for interval estimation. Default is <code>0.95</code>
@@ -89,7 +89,7 @@ Default is <code>NULL</code>, which applies an adaptive step size.</p></li>
 Default is <code>100</code>.</p></li>
 </ul></div>
     <div class="section level2">
-    <h2 id="cioptions-bootstrap">CIOptions_Bootstrap<a class="anchor" aria-label="anchor" href="#cioptions-bootstrap"></a></h2>
+    <h2 id="cioptions-bootstrap">CIOptions_bootstrap<a class="anchor" aria-label="anchor" href="#cioptions-bootstrap"></a></h2>
     <p>Default options for the <strong><code>bootstrap</code></strong> method.</p><ul><li><p><strong><code>nSamples</code></strong>: Number of bootstrap resampling iterations. Default is <code>1000</code>.</p></li>
 <li><p><strong><code>confLevel</code></strong>: Confidence level for interval estimation. Default is <code>0.95</code>
 (95% confidence intervals).</p></li>

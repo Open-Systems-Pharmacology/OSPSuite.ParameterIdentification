@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,8 +130,8 @@ intervals, <code>ciType</code> is <code>"two-sided"</code>.</p>
 </h2>
 <p>Each confidence interval method provides a predefined set of default
 options. These defaults are available through the helper objects
-<code>CIOptions_Hessian</code>, <code>CIOptions_PL</code>, and
-<code>CIOptions_Bootstrap</code>.<br>
+<code>CIOptions_hessian</code>, <code>CIOptions_PL</code>, and
+<code>CIOptions_bootstrap</code>.<br>
 The corresponding object is assigned to
 <code>piConfiguration$ciOptions</code> and individual fields can then be
 modified as required.</p>
@@ -166,7 +166,7 @@ default options adjusted:</p>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciMethod</span> <span class="op">&lt;-</span> <span class="st">"hessian"</span></span>
 <span></span>
 <span><span class="co"># assign default options and adjust if necessary</span></span>
-<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span> <span class="op">&lt;-</span> <span class="va">CIOptions_Hessian</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span> <span class="op">&lt;-</span> <span class="va">CIOptions_hessian</span></span>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span><span class="op">$</span><span class="va">confLevel</span> <span class="op">&lt;-</span> <span class="fl">0.95</span></span></code></pre></div>
 <p>By default, confidence intervals are estimated immediately after each
 optimization run (<code>autoEstimateCI = TRUE</code>). To disable this

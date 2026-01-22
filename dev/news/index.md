@@ -2,11 +2,17 @@
 
 ## ospsuite.parameteridentification (development version)
 
+### Breaking Changes
+
+- Default CI options lists were renamed to `CIOptions_hessian` and
+  `CIOptions_bootstrap` for consistency
+  ([\#220](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/220)).
+
 ### Minor improvements and bug fixes
 
 - Automatically report one-sided confidence intervals when parameter
   estimate falls outside the bootstrap CI in skewed distributions. In
-  the result, the opposite bound is set to `NA`and `ciType` is set to
+  the result, the opposite bound is set to `NA` and `ciType` is set to
   `one-sided`
   ([\#217](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/217)).
 
@@ -96,12 +102,12 @@
 
 - `ParameterIdentification` will validate observed data availability in
   `PIOutputMapping` during initialization
-  ([\#145](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/145)).  
+  ([\#145](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/145)).
 - Cache Simulation ID in
   `PIOutputMapping`([\#146](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/146)).
 - `PIOutputMapping` will attempt to retrieve the molecular weight for
   unit conversion when adding observed data
-  ([\#147](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/147)).  
+  ([\#147](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/147)).
 - `ParameterIdentification` now differentiates between simulation
   failures during the first iteration (stopping optimization) and
   subsequent iterations (returning infinite cost structure)

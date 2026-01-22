@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,8 +47,12 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="ospsuiteparameteridentification-development-version">ospsuite.parameteridentification (development version)<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-development-version"></a></h2>
 <div class="section level3">
+<h3 id="breaking-changes-development-version">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
+<ul><li>Default CI options lists were renamed to <code>CIOptions_hessian</code> and <code>CIOptions_bootstrap</code> for consistency (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/220" class="external-link">#220</a>).</li>
+</ul></div>
+<div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
-<ul><li>Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to <code>NA</code>and <code>ciType</code> is set to <code>one-sided</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/217" class="external-link">#217</a>).</li>
+<ul><li>Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to <code>NA</code> and <code>ciType</code> is set to <code>one-sided</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/217" class="external-link">#217</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -93,10 +97,10 @@
 <div class="section level3">
 <h3 id="minor-improvements-and-fixes-2-0-2">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-2-0-2"></a></h3>
 <ul><li>
-<code>ParameterIdentification</code> will validate observed data availability in <code>PIOutputMapping</code> during initialization (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/145" class="external-link">#145</a>).<br></li>
+<code>ParameterIdentification</code> will validate observed data availability in <code>PIOutputMapping</code> during initialization (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/145" class="external-link">#145</a>).</li>
 <li>Cache Simulation ID in <code>PIOutputMapping</code>(<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/146" class="external-link">#146</a>).</li>
 <li>
-<code>PIOutputMapping</code> will attempt to retrieve the molecular weight for unit conversion when adding observed data (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/147" class="external-link">#147</a>).<br></li>
+<code>PIOutputMapping</code> will attempt to retrieve the molecular weight for unit conversion when adding observed data (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/147" class="external-link">#147</a>).</li>
 <li>
 <code>ParameterIdentification</code> now differentiates between simulation failures during the first iteration (stopping optimization) and subsequent iterations (returning infinite cost structure) (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/148" class="external-link">#148</a>).</li>
 <li>Simulation failure in <code>gridSearch</code>and <code>calculateOFVProfile</code> won’t break evaluation and return <code>Inf</code> for specific parameters (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/153" class="external-link">#153</a>).</li>

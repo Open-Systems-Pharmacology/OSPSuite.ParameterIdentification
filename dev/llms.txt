@@ -90,9 +90,9 @@ Main classes for running parameter identification
   : Scaling Options for Output Mapping
 - [`CIMethods`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIMethods.md)
   : Confidence Interval Estimation Methods
-- [`CIOptions_Hessian`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
+- [`CIOptions_hessian`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   [`CIOptions_PL`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
-  [`CIOptions_Bootstrap`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
+  [`CIOptions_bootstrap`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   : Confidence Interval Estimation Options
 
 ## Internal functions

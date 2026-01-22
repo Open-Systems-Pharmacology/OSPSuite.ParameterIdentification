@@ -7,11 +7,11 @@ within the package. These methods are configured via the
 ## Usage
 
 ``` r
-CIOptions_Hessian
+CIOptions_hessian
 
 CIOptions_PL
 
-CIOptions_Bootstrap
+CIOptions_bootstrap
 ```
 
 ## Format
@@ -23,7 +23,7 @@ An object of class `list` of length 3.
 
 An object of class `list` of length 3.
 
-## CIOptions_Hessian
+## CIOptions_hessian
 
 Default options for the **`hessian`** method.
 
@@ -46,7 +46,7 @@ Default options for the **`PL`** (Profile Likelihood) method.
 - **`maxIter`**: Maximum number of iterations for likelihood profiling.
   Default is `100`.
 
-## CIOptions_Bootstrap
+## CIOptions_bootstrap
 
 Default options for the **`bootstrap`** method.
 
