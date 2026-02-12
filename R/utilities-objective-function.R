@@ -103,10 +103,10 @@
   observedData <- observedData[!is.na(observedData$yValues), ]
 
   # Ensuring there is enough data to perform calculations
-  if (NROW(simulatedData) < 2 | is.null(simulatedData)) {
+  if (NROW(simulatedData) < 1 | is.null(simulatedData)) {
     stop("No simulated data found when calculating cost function.")
   }
-  if (NROW(observedData) < 2 | is.null(observedData)) {
+  if (NROW(observedData) < 1 | is.null(observedData)) {
     stop("No observed data found when calculating cost function.")
   }
 
