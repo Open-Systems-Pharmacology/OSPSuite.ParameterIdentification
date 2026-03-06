@@ -2,6 +2,8 @@
 
 ## ospsuite.parameteridentification (development version)
 
+## ospsuite.parameteridentification 2.1.1
+
 ### Breaking Changes
 
 - Default CI options lists were renamed to `CIOptions_hessian` and

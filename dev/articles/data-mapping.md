@@ -74,6 +74,14 @@ obsData <- loadDataSetsFromExcel(
   importerConfigurationOrPath = importConfig,
   importAllSheets = TRUE
 )
+#> Warning: The `importAllSheets` argument of `loadDataSetsFromExcel()` is deprecated as of
+#> ospsuite 12.4.2.
+#> ℹ Please use the `sheets` argument instead.
+#> ℹ Use `sheets = NULL` to load all sheets. This parameter will be removed in
+#>   version 14.
+#> This warning is displayed once per session.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
 
 # Attach one or more datasets to the mapping (labels come from the naming pattern)
 outputMapping$addObservedDataSets(
