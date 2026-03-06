@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,15 +107,20 @@ the likelihood, but it is computationally more intensive than the other
 methods.</p>
 <p>Resampling depends on the type of observed data:</p>
 <ul>
-<li>For individual datasets, new samples of individuals are drawn.<br>
-</li>
+<li>For individual datasets, new samples of individuals are drawn.</li>
 <li>For aggregated datasets, resampling is based on Gaussian Process
-Regression (GPR).<br>
-</li>
-<li>With both types of data, a mixed strategy is applied.<br>
-</li>
+Regression (GPR).</li>
+<li>With both types of data, a mixed strategy is applied.</li>
 <li>User-defined dataset weights are respected during resampling.</li>
 </ul>
+<p><strong>Note</strong>: When using the bootstrap method, if the
+parameter estimate falls outside the computed confidence interval, which
+can occur with highly skewed distributions, the package automatically
+reports a one-sided confidence interval. The conflicting bound is set to
+<code>NA</code>, and the <code>ciType</code> field is set to
+<code>"one-sided"</code>. If both bounds conflict, <code>ciType</code>
+is set to <code>"failed"</code>. For successfully estimated two-sided
+intervals, <code>ciType</code> is <code>"two-sided"</code>.</p>
 </li>
 </ul>
 </div>
@@ -124,8 +129,8 @@ Regression (GPR).<br>
 </h2>
 <p>Each confidence interval method provides a predefined set of default
 options. These defaults are available through the helper objects
-<code>CIOptions_Hessian</code>, <code>CIOptions_PL</code>, and
-<code>CIOptions_Bootstrap</code>.<br>
+<code>CIOptions_hessian</code>, <code>CIOptions_PL</code>, and
+<code>CIOptions_bootstrap</code>.<br>
 The corresponding object is assigned to
 <code>piConfiguration$ciOptions</code> and individual fields can then be
 modified as required.</p>
@@ -157,10 +162,10 @@ default options adjusted:</p>
 <code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># select CI method</span></span>
-<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciMethod</span>  <span class="op">&lt;-</span> <span class="st">"hessian"</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciMethod</span> <span class="op">&lt;-</span> <span class="st">"hessian"</span></span>
 <span></span>
 <span><span class="co"># assign default options and adjust if necessary</span></span>
-<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span> <span class="op">&lt;-</span> <span class="va">CIOptions_Hessian</span></span>
+<span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span> <span class="op">&lt;-</span> <span class="va">CIOptions_hessian</span></span>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">ciOptions</span><span class="op">$</span><span class="va">confLevel</span> <span class="op">&lt;-</span> <span class="fl">0.95</span></span></code></pre></div>
 <p>By default, confidence intervals are estimated immediately after each
 optimization run (<code>autoEstimateCI = TRUE</code>). To disable this
@@ -186,18 +191,16 @@ confidence intervals (if available).</p>
 <p>For programmatic access, the results of a PI run can be exported
 either as a data frame or as a list:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span>  <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span><span class="op">)</span>   <span class="co"># tidy table with estimates, sd, cv, lowerCI, upperCI, etc.</span></span>
-<span><span class="va">lst</span> <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span>        <span class="co"># full details including cost information and CI-specific details</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span><span class="op">)</span> <span class="co"># tidy table with estimates, sd, cv, lowerCI, upperCI, ciType, etc.</span></span>
+<span><span class="va">lst</span> <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span> <span class="co"># full details including cost information and CI-specific details</span></span></code></pre></div>
 <p>The list output also contains a <code>ciDetails</code> entry where
 method-specific information is stored:</p>
 <ul>
 <li>
 <code>hessian</code>: Hessian matrix, covariance matrix,
-eigenvalues, and correlation matrix<br>
-</li>
+eigenvalues, and correlation matrix</li>
 <li>
-<code>PL</code>: parameter history and likelihood thresholds<br>
-</li>
+<code>PL</code>: parameter history and likelihood thresholds</li>
 <li>
 <code>bootstrap</code>: bootstrap replicates, empirical confidence
 bounds, and the seed used for resampling</li>
@@ -228,11 +231,11 @@ required.</p></li>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, Rudi cre Engelke, <a href="https://github.com/svavil" class="external-link">Sergei Vavilov</a>.</p>
+  <p>Developed by <a href="https://esqlabs.com/" class="external-link"><img src="https://esqlabs.github.io/esqlabsR/reference/figures/circles.png" style="max-width:33px">ESQlabs</a>, <a href="https://github.com/PavelBal" class="external-link">Pavel Balazki</a>, <a href="https://github.com/rengelke" class="external-link">Rudi Engelke</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
