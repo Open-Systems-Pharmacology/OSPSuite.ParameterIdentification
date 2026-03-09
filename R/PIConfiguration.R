@@ -49,25 +49,13 @@ PIConfiguration <- R6::R6Class(
         private$.simulationRunOptions
       } else {
         ospsuite.utils::validateIsOfType(
-          value, "SimulationRunOptions",
+          value,
+          "SimulationRunOptions",
           nullAllowed = TRUE
         )
         private$.simulationRunOptions <- value
       }
     },
-
-    #' @field clearSimulationOutputIntervals
-    #' Logical. If TRUE, all simulation output intervals are cleared before adding
-    #' outputs and observed time points. This can reduce memory usage but may skip
-    #' event or dose triggers between observations. Default: FALSE.
-    clearSimulationOutputIntervals = function(value) {
-        if (missing(value)) {
-          private$.clearSimulationOutputIntervals
-        } else {
-          ospsuite.utils::validateIsLogical(value)
-          private$.clearSimulationOutputIntervals <- value
-        }
-      },
 
     #' @field objectiveFunctionOptions Settings for model fit evaluation,
     #' affecting error metrics and cost calculation. See [`ObjectiveFunctionSpecs`]

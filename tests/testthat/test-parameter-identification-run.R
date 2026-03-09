@@ -42,7 +42,11 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
     )
   )
   piResults$.__enclos_env__$private$.result$elapsed <- 0
-  expect_snapshot_value(piResults$toDataFrame(), style = "deparse", tolerance = 1e-03)
+  expect_snapshot_value(
+    piResults$toDataFrame(),
+    style = "deparse",
+    tolerance = 1e-03
+  )
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
@@ -58,17 +62,6 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
     )
   )
   expect_snapshot_value(evalOutput, style = "deparse", tolerance = 1)
-})
-
-test_that("run() works when simulation output intervals are cleared", {
-  piTask <- createPiTask()
-  piTask$configuration$algorithm <- "BOBYQA"
-  piTask$configuration$algorithmOptions <- list(maxeval = 1)
-  piTask$configuration$autoEstimateCI <- FALSE
-  piTask$configuration$clearSimulationOutputIntervals <- TRUE
-  suppressMessages(
-    expect_no_error(piTask$run())
-  )
 })
 
 # HJBK Algorithm
