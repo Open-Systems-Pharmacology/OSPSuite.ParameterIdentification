@@ -11,7 +11,10 @@ dataFile <- "DataSet.xlsx"
 dataSheets <- c("Boswell_2012")
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(dataFolder, "dataImporter_configuration.xml")
+  configurationFilePath = file.path(
+    dataFolder,
+    "dataImporter_configuration.xml"
+  )
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -45,9 +48,12 @@ parameterPaths <- c(
 piOutputMappings <- list()
 
 # Create a PIOutputMapping setting the quantity of a model
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|Tumor|Weight (tissue)",
-  container = simulations$Vehicle.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|Tumor|Weight (tissue)",
+    container = simulations$Vehicle.pkml
+  )
+)
 # Add observed data. Multiple data can be added to the same mapping
 piOutputMapping$addObservedDataSets(dataSets$`________IV_Vehicle`)
 # Add the mapping to the list of all mappings
@@ -76,7 +82,10 @@ piOutputMappings <- append(piOutputMappings, piOutputMapping)
 # CREATED ABOVE AND PASS ALL THREE SIMULATIONS AND MAPPINGS
 
 parameters <- lapply(parameterPaths, function(x) {
-  modelParams <- getParameter(path = x, container = simulations$`2_5_mg_kg.pkml`)
+  modelParams <- getParameter(
+    path = x,
+    container = simulations$`2_5_mg_kg.pkml`
+  )
   piParameters <- PIParameters$new(parameters = modelParams)
 })
 
@@ -109,7 +118,10 @@ pi$plotResults()
 for (parameterPath in parameterPaths) {
   modelParams <- list()
   for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
+    modelParams <- c(
+      modelParams,
+      ospsuite::getParameter(path = parameterPath, container = simulation)
+    )
   }
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
@@ -118,7 +130,9 @@ for (parameterPath in parameterPaths) {
 # piConfiguration$simulateSteadyState <- TRUE
 # Create new parameter identification. This PI would optimize all three simulations.
 pi <- ParameterIdentification$new(
-  simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
+  simulations = simulations,
+  parameters = parameters,
+  outputMappings = piOutputMappings,
   configuration = piConfiguration
 )
 # Plot results before optimization
