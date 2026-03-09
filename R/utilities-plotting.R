@@ -34,7 +34,6 @@
 #'   return(plot)
 #' }
 
-
 ### Commented out until https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/91 is fixed
 #' #' @description
 #' #' Plot the profiles of the objective function calculated by the calculateOFVProfiles() method.
