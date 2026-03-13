@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Bug fixes
+
+- Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#204).
+
 # ospsuite.parameteridentification 2.1.1
 
 ## Breaking Changes
