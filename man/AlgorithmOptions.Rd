@@ -6,6 +6,7 @@
 \alias{AlgorithmOptions_HJKB}
 \alias{AlgorithmOptions_BOBYQA}
 \alias{AlgorithmOptions_DEoptim}
+\alias{AlgorithmDefaults}
 \title{Algorithm Options for Optimization Algorithms}
 \format{
 An object of class \code{list} of length 5.
@@ -13,6 +14,8 @@ An object of class \code{list} of length 5.
 An object of class \code{list} of length 6.
 
 An object of class \code{list} of length 21.
+
+An object of class \code{list} of length 3.
 }
 \usage{
 AlgorithmOptions_HJKB
@@ -20,6 +23,8 @@ AlgorithmOptions_HJKB
 AlgorithmOptions_BOBYQA
 
 AlgorithmOptions_DEoptim
+
+AlgorithmDefaults
 }
 \description{
 Default options for various optimization algorithms used within the package.

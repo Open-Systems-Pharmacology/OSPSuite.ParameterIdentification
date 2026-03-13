@@ -63,7 +63,8 @@ AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
   )
 )
 
-#' @noRd
+#' @rdname AlgorithmOptions
+#' @export
 AlgorithmDefaults <- list(
   HJKB = AlgorithmOptions_HJKB,
   BOBYQA = AlgorithmOptions_BOBYQA,
@@ -148,7 +149,8 @@ CIOptions_bootstrap <- ospsuite.utils::enum(list(
   seed = NULL
 ))
 
-#' @noRd
+#' @rdname CIOptions
+#' @export
 CIDefaults <- list(
   hessian = CIOptions_hessian,
   PL = CIOptions_PL,
