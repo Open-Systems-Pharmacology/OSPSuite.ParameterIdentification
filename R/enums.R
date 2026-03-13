@@ -155,6 +155,32 @@ CIDefaults <- list(
   bootstrap = CIOptions_bootstrap
 )
 
+#' @noRd
+CIOptionSpecs <- list(
+  hessian = list(
+    epsilon = numericOption(
+      min = .Machine$double.eps,
+      nullAllowed = TRUE,
+      expectedLength = 1
+    ),
+    confLevel = numericOption(min = 0, max = 1)
+  ),
+  PL = list(
+    epsilon = numericOption(
+      min = .Machine$double.eps,
+      nullAllowed = TRUE,
+      expectedLength = NULL
+    ),
+    confLevel = numericOption(min = 0, max = 1),
+    maxIter = integerOption(min = 1L)
+  ),
+  bootstrap = list(
+    nBootstrap = integerOption(min = 1L),
+    confLevel = numericOption(min = 0, max = 1),
+    seed = integerOption(nullAllowed = TRUE)
+  )
+)
+
 #' Objective Function Options for Model Fit Assessment
 #'
 #' Default settings for objective function options in model fit analysis,
@@ -188,48 +214,19 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
 ))
 
-#' Objective Function Specifications
-#'
-#' Specifies supported objective function configurations for error calculation
-#' in parameter optimization. These specifications detail the allowable options
-#' for tailoring how model fit is assessed, configured within `PIConfiguration`.
-#'
-#' @export
-#' @name ObjectiveFunctionSpecs
-#' @details Includes:
-#' - **`objectiveFunctionType`** – Type of error calculation. Allowed values:
-#'   `lsq` (least squares), `m3"` (M3 method).
-#' - **`residualWeightingMethod`** – Method for weighting residuals. Allowed values:
-#'   `none`, `std`, `mean`, `error`.
-#' - **`robustMethod`** – Approach for robust outlier handling. Allowed values:
-#'   `none`, `huber`, `bisquare`.
-#' - **`scaleVar`** – Boolean for variance scaling. Allowed values: `TRUE`, `FALSE`.
-#' - **`scaling`** – Scaling type. Allowed values: `lin` (linear), `log` (logarithmic).
-#' - **`linScaleCV`** – Coefficient of variation for linear scaling. Numeric
-#'   range: `1e-9` to `1`.
-#' - **`logScaleSD`** – Standard deviation for log scaling. Numeric range: `1e-9`
-#'   to `Inf`.
-#'
-#'   These options directly influence the optimization process by defining how
-#'   discrepancies between simulated and observed data are quantified and
-#'   managed.
+#' @noRd
 ObjectiveFunctionSpecs <- list(
-  objectiveFunctionType = list(
-    type = "character",
-    allowedValues = c("lsq", "m3")
-  ),
-  residualWeightingMethod = list(
-    type = "character",
+  objectiveFunctionType = characterOption(allowedValues = c("lsq", "m3")),
+  residualWeightingMethod = characterOption(
     allowedValues = c("none", "std", "mean", "error")
   ),
-  robustMethod = list(
-    type = "character",
+  robustMethod = characterOption(
     allowedValues = c("none", "huber", "bisquare")
   ),
-  scaleVar = list(type = "logical"),
-  scaling = list(type = "character", allowedValues = c("lin", "log")),
-  linScaleCV = list(type = "numeric", valueRange = c(1e-9, 1)),
-  logScaleSD = list(type = "numeric", valueRange = c(1e-9, 1))
+  scaleVar = logicalOption(),
+  scaling = characterOption(allowedValues = c("lin", "log")),
+  linScaleCV = numericOption(min = 1e-9, max = 1),
+  logScaleSD = numericOption(min = 1e-9)
 )
 
 #' Scaling Options for Output Mapping
