@@ -188,12 +188,6 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
 ))
 
-#' @export
-CIOptions <- ospsuite.utils::enum(list(
-  method = "hessian",
-  epsilon = NULL
-))
-
 #' Objective Function Specifications
 #'
 #' Specifies supported objective function configurations for error calculation
