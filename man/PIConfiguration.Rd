@@ -18,8 +18,7 @@ function value after each evaluation. Default is \code{FALSE}.}
 simulation runs. If \code{NULL}, default options are used.}
 
 \item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
-affecting error metrics and cost calculation. See
-\code{\link{ObjectiveFunctionSpecs}} for details. Defaults in
+affecting error metrics and cost calculation. Defaults in
 \code{\link{ObjectiveFunctionOptions}}. Partial lists are merged with the current
 settings; only the provided keys are updated and validated.}
 
@@ -36,17 +35,17 @@ new method's defaults.}
 \item{\code{algorithmOptions}}{Named list of user-defined overrides for the
 selected algorithm's settings. Returns \code{NULL} if no overrides are set;
 in that case algorithm defaults (\code{AlgorithmOptions_XYZ}) are used
-automatically. Partial lists are merged with previously stored overrides.
-Unknown keys produce a warning and are ignored. Set to \code{NULL} to clear
-all overrides.}
+automatically. Partial lists are merged with previously stored
+overrides. Unknown keys produce a warning and are ignored. Set to
+\code{NULL} to clear all overrides.}
 
 \item{\code{ciOptions}}{Named list of settings for the selected CI method. Refer
 to \code{\link{CIOptions}} for default settings
 per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the method
 name). If \code{NULL}, CI method's default settings are returned. Partial
 lists are merged with the current settings; only the provided keys are
-validated. Unknown keys produce a warning and are ignored. Set to \code{NULL}
-to reset to defaults.}
+validated. Unknown keys produce a warning and are ignored. Set to
+\code{NULL} to reset to defaults.}
 
 \item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
 automatically estimated after optimization. If \code{FALSE}, the step is

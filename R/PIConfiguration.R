@@ -58,66 +58,152 @@ PIConfiguration <- R6::R6Class(
     },
 
     #' @field objectiveFunctionOptions Settings for model fit evaluation,
-    #'   affecting error metrics and cost calculation. See
-    #'   [`ObjectiveFunctionSpecs`] for details. Defaults in
-    #'   [`ObjectiveFunctionOptions`].
+    #'   affecting error metrics and cost calculation. Defaults in
+    #'   [`ObjectiveFunctionOptions`]. Partial lists are merged with the current
+    #'   settings; only the provided keys are updated and validated.
     objectiveFunctionOptions = function(value) {
       if (missing(value)) {
         private$.objectiveFunctionOptions
       } else {
-        private$.objectiveFunctionOptions <- value
+        ospsuite.utils::validateIsOfType(value, "list")
+        unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
+        if (length(unknownKeys) > 0) {
+          warning(
+            messages$warningUnknownOptions(
+              unknownKeys,
+              "objectiveFunctionOptions"
+            ),
+            call. = FALSE
+          )
+          value <- value[names(value) %in% names(ObjectiveFunctionSpecs)]
+        }
+        validateIsOption(
+          value,
+          ObjectiveFunctionSpecs[names(value)]
+        )
+        private$.objectiveFunctionOptions <- modifyList(
+          private$.objectiveFunctionOptions,
+          value
+        )
       }
     },
 
     #' @field algorithm Optimization algorithm name. See
     #'   [`ospsuite.parameteridentification::Algorithms`] for a list of
-    #'   supported algorithms. Defaults to `BOBYQA`.
+    #'   supported algorithms. Defaults to `BOBYQA`. Changing the algorithm
+    #'   resets `algorithmOptions` to the new algorithm's defaults.
     algorithm = function(value) {
       if (missing(value)) {
         private$.algorithm
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, Algorithms)
+        if (
+          value != private$.algorithm && !is.null(private$.algorithmOptions)
+        ) {
+          message(messages$messageOptionsReset(
+            "algorithm",
+            private$.algorithm,
+            value,
+            "algorithmOptions"
+          ))
+        }
         private$.algorithm <- value
+        private$.algorithmOptions <- NULL
       }
     },
 
     #' @field ciMethod Confidence interval estimation method. See
     #'   [`ospsuite.parameteridentification::CIMethods`] for available options.
-    #'   Defaults to `hessian`.
+    #'   Defaults to `hessian`. Changing the method resets `ciOptions` to the
+    #'   new method's defaults.
     ciMethod = function(value) {
       if (missing(value)) {
         private$.ciMethod
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, CIMethods)
+        if (value != private$.ciMethod && !is.null(private$.ciOptions)) {
+          message(messages$messageOptionsReset(
+            "ciMethod",
+            private$.ciMethod,
+            value,
+            "ciOptions"
+          ))
+        }
         private$.ciMethod <- value
+        private$.ciOptions <- NULL
       }
     },
 
-    #' @field algorithmOptions Named list of settings specific to the selected
-    #'   algorithm.. Refer to
-    #'   [`ospsuite.parameteridentification::AlgorithmOptions`] for default
-    #'   settings per algorithm (e.g., `AlgorithmOptions_XYZ` where `XYZ`
-    #'   denotes the algorithm name). If `NULL`, algorithm's default settings
-    #'   are applied.
+    #' @field algorithmOptions Named list of user-defined overrides for the
+    #'   selected algorithm's settings. Returns `NULL` if no overrides are set;
+    #'   in that case algorithm defaults (`AlgorithmOptions_XYZ`) are used
+    #'   automatically. Partial lists are merged with previously stored
+    #'   overrides. Unknown keys produce a warning and are ignored. Set to
+    #'   `NULL` to clear all overrides.
     algorithmOptions = function(value) {
       if (missing(value)) {
         private$.algorithmOptions
       } else {
-        private$.algorithmOptions <- value
+        if (is.null(value)) {
+          private$.algorithmOptions <- NULL
+          return(invisible(NULL))
+        }
+        ospsuite.utils::validateIsOfType(value, "list")
+        validKeys <- names(AlgorithmDefaults[[private$.algorithm]])
+        unknownKeys <- setdiff(names(value), validKeys)
+        if (length(unknownKeys) > 0) {
+          warning(
+            messages$warningUnknownOptions(unknownKeys, "algorithmOptions"),
+            call. = FALSE
+          )
+          value <- value[names(value) %in% validKeys]
+        }
+        if (length(value) == 0) {
+          return(invisible(NULL))
+        }
+        private$.algorithmOptions <- modifyList(
+          private$.algorithmOptions %||% list(),
+          value
+        )
       }
     },
 
     #' @field ciOptions Named list of settings for the selected CI method. Refer
     #'   to [`ospsuite.parameteridentification::CIOptions`] for default settings
     #'   per method (e.g., `CIOptions_XYZ` where `XYZ` corresponds to the method
-    #'   name). If `NULL`, CI method's default settings are applied.
+    #'   name). If `NULL`, CI method's default settings are returned. Partial
+    #'   lists are merged with the current settings; only the provided keys are
+    #'   validated. Unknown keys produce a warning and are ignored. Set to
+    #'   `NULL` to reset to defaults.
     ciOptions = function(value) {
       if (missing(value)) {
         private$.ciOptions
       } else {
-        private$.ciOptions <- value
+        if (is.null(value)) {
+          private$.ciOptions <- NULL
+          return(invisible(NULL))
+        }
+        ospsuite.utils::validateIsOfType(value, "list")
+        validKeys <- names(CIOptionSpecs[[private$.ciMethod]])
+        unknownKeys <- setdiff(names(value), validKeys)
+        if (length(unknownKeys) > 0) {
+          warning(
+            messages$warningUnknownOptions(unknownKeys, "ciOptions"),
+            call. = FALSE
+          )
+          value <- value[names(value) %in% validKeys]
+        }
+        validateIsOption(
+          value,
+          CIOptionSpecs[[private$.ciMethod]][names(value)]
+        )
+        private$.ciOptions <- modifyList(
+          private$.ciOptions %||% list(),
+          value,
+          keep.null = TRUE
+        )
       }
     },
 
