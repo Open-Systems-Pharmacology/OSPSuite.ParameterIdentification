@@ -636,7 +636,8 @@ Optimizer <- R6::R6Class(
       ciMethod <- private$.configuration$ciMethod
       ciOptions <- modifyList(
         CIDefaults[[ciMethod]],
-        private$.configuration$ciOptions %||% list()
+        private$.configuration$ciOptions %||% list(),
+        keep.null = TRUE
       )
       optimizer <- optimizer %||% self
 
