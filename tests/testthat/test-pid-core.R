@@ -30,8 +30,8 @@ test_that("ParameterIdentification configuration can be modified without errors"
   expect_true(piTask$configuration$printEvaluationFeedback)
   expect_no_error(piTask$configuration$autoEstimateCI <- FALSE)
   expect_false(piTask$configuration$autoEstimateCI)
-  expect_no_error(piTask$configuration$algorithmOptions <- list(maxeval = 3))
-  expect_equal(piTask$configuration$algorithmOptions$maxeval, 3)
+  expect_no_error(piTask$configuration$algorithmOptions <- list(maxfeval = 3))
+  expect_equal(piTask$configuration$algorithmOptions$maxfeval, 3)
   expect_no_error(
     piTask$configuration$objectiveFunctionOptions$robustMethod <- "huber"
   )

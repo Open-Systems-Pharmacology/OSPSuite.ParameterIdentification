@@ -17,8 +17,8 @@ test_that("estimateCI() throws error if optimization has not been executed", {
 })
 
 test_that("estimateCI() works as expected using Hessian", {
-  piTask <- createPiTask() # default BOBYQA, hessian
-  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTask <- createPiTask()
+  piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())
 
@@ -60,7 +60,7 @@ test_that("estimateCI() works with bootstrap and individual data", {
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration()
   )
-  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())
 
@@ -92,7 +92,7 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration()
   )
-  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())
 
@@ -124,7 +124,7 @@ test_that("estimateCI() outputs expected messages for mixed datasets", {
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration()
   )
-  piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())
 
@@ -141,10 +141,7 @@ test_that("estimateCI() applies bootstrap resampling to individual data", {
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 1)
   )
-  piTaskResample$configuration$algorithmOptions <- list(
-    itermax = 3,
-    trace = FALSE
-  )
+  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
@@ -167,10 +164,7 @@ test_that("estimateCI() applies bootstrap resampling to individual data with ini
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 1)
   )
-  piTaskResample$configuration$algorithmOptions <- list(
-    itermax = 3,
-    trace = FALSE
-  )
+  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
@@ -196,10 +190,7 @@ test_that("estimateCI() applies bootstrap resampling to mixed data (individual a
     outputMappings = outputMapping,
     configuration = bootstrapPiConfiguration(1, 2)
   )
-  piTaskResample$configuration$algorithmOptions <- list(
-    itermax = 3,
-    trace = FALSE
-  )
+  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
   piTaskResample$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTaskResample$run())
 
