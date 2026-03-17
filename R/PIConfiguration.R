@@ -98,18 +98,18 @@ PIConfiguration <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, Algorithms)
-        if (
-          value != private$.algorithm && !is.null(private$.algorithmOptions)
-        ) {
-          message(messages$messageOptionsReset(
-            "algorithm",
-            private$.algorithm,
-            value,
-            "algorithmOptions"
-          ))
+        if (value != private$.algorithm) {
+          if (!is.null(private$.algorithmOptions)) {
+            message(messages$messageOptionsReset(
+              "algorithm",
+              private$.algorithm,
+              value,
+              "algorithmOptions"
+            ))
+          }
+          private$.algorithmOptions <- NULL
         }
         private$.algorithm <- value
-        private$.algorithmOptions <- NULL
       }
     },
 
@@ -123,16 +123,18 @@ PIConfiguration <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, CIMethods)
-        if (value != private$.ciMethod && !is.null(private$.ciOptions)) {
-          message(messages$messageOptionsReset(
-            "ciMethod",
-            private$.ciMethod,
-            value,
-            "ciOptions"
-          ))
+        if (value != private$.ciMethod) {
+          if (!is.null(private$.ciOptions)) {
+            message(messages$messageOptionsReset(
+              "ciMethod",
+              private$.ciMethod,
+              value,
+              "ciOptions"
+            ))
+          }
+          private$.ciOptions <- NULL
         }
         private$.ciMethod <- value
-        private$.ciOptions <- NULL
       }
     },
 
