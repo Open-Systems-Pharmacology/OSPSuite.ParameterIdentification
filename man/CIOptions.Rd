@@ -11,12 +11,6 @@
 \format{
 A list containing default settings for confidence interval estimation
 methods.
-
-An object of class \code{list} of length 3.
-
-An object of class \code{list} of length 3.
-
-An object of class \code{list} of length 3.
 }
 \usage{
 CIOptions_hessian

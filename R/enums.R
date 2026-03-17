@@ -38,6 +38,7 @@ Algorithms <- ospsuite.utils::enum(c(
 #'
 #' @name AlgorithmOptions
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
   tol = 1e-06,
@@ -48,6 +49,7 @@ AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
   nloptr::nl.opts() |>
@@ -55,6 +57,7 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 )
 
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
   modifyList(
@@ -64,6 +67,7 @@ AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
 )
 
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmDefaults <- list(
   HJKB = AlgorithmOptions_HJKB,
@@ -127,6 +131,7 @@ CIMethods <- ospsuite.utils::enum(c(
 #'
 #' @name CIOptions
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_hessian <- ospsuite.utils::enum(list(
   epsilon = NULL,
@@ -134,6 +139,7 @@ CIOptions_hessian <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_PL <- ospsuite.utils::enum(list(
   epsilon = NULL, # vector or scalar / length not validated
@@ -142,6 +148,7 @@ CIOptions_PL <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_bootstrap <- ospsuite.utils::enum(list(
   nBootstrap = 100,
@@ -150,6 +157,7 @@ CIOptions_bootstrap <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIDefaults <- list(
   hessian = CIOptions_hessian,
