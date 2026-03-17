@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking Changes
+
+- `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
+
 # ospsuite.parameteridentification 2.1.1
 
 ## Breaking Changes
