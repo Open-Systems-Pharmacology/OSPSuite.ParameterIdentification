@@ -17,7 +17,10 @@ dataSheets <- c(
 )
 
 importerConfiguration <- ospsuite::loadDataImporterConfiguration(
-  configurationFilePath = file.path(dataFolder, "dataImporter_configuration.xml")
+  configurationFilePath = file.path(
+    dataFolder,
+    "dataImporter_configuration.xml"
+  )
 )
 importerConfiguration$sheets <- dataSheets
 
@@ -61,7 +64,10 @@ parameterPaths <- c(
 for (parameterPath in parameterPaths) {
   modelParams <- list()
   for (simulation in simulations) {
-    modelParams <- c(modelParams, ospsuite::getParameter(path = parameterPath, container = simulation))
+    modelParams <- c(
+      modelParams,
+      ospsuite::getParameter(path = parameterPath, container = simulation)
+    )
   }
   piParameter <- PIParameters$new(parameters = modelParams)
   parameters <- c(parameters, piParameter)
@@ -80,32 +86,43 @@ resultsTransformationFunction <- function(xVals, yVals) {
 }
 
 # Create a PIOutputMappings setting the quantity of a model
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity(
-  path = "Organism|OUTPUT_PercentInternalized",
-  container = simulations$StepIncrease_100nm.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    path = "Organism|OUTPUT_PercentInternalized",
+    container = simulations$StepIncrease_100nm.pkml
+  )
+)
 # Add observed data
 piOutputMapping$addObservedData(observedData$Backer_1989$IR_Int_Percent)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|OUTPUT_Percent_IR_P",
-  container = simulations$StepIncrease_100nm.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|OUTPUT_Percent_IR_P",
+    container = simulations$StepIncrease_100nm.pkml
+  )
+)
 piOutputMapping$addObservedData(observedData$Backer_1989$IR_P_Percent)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|OUTPUT_PercentInternalized",
-  container = simulations$StepIncrease_17.2nm.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|OUTPUT_PercentInternalized",
+    container = simulations$StepIncrease_17.2nm.pkml
+  )
+)
 piOutputMapping$addObservedData(list(
   observedData$McClain_1988$IR_Int_Percent,
   observedData$Marshall_1984$IR_Int_Percent
 ))
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|OUTPUT_IR_P_total",
-  container = simulations$IR_model_doseResponse.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|OUTPUT_IR_P_total",
+    container = simulations$IR_model_doseResponse.pkml
+  )
+)
 # Applying a user defined function for results post-processing
 piOutputMapping$transformResultsFunction <- resultsTransformationFunction
 # Changing the dimension of the observed data here as a workaround to match
@@ -114,17 +131,23 @@ observedData$DoseResponse$IR_P_rel$yDimension <- ospDimensions$Amount
 piOutputMapping$addObservedData(observedData$DoseResponse$IR_P_rel)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|IRS1_P",
-  container = simulations$IR_model_doseResponse.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|IRS1_P",
+    container = simulations$IR_model_doseResponse.pkml
+  )
+)
 piOutputMapping$transformResultsFunction <- resultsTransformationFunction
 observedData$DoseResponse$IRS_P_rel$yDimension <- ospDimensions$Amount
 piOutputMapping$addObservedData(observedData$DoseResponse$IRS_P_rel)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|OUTPUT_IR_P_total",
-  container = simulations$StepIncrease_100nm.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|OUTPUT_IR_P_total",
+    container = simulations$StepIncrease_100nm.pkml
+  )
+)
 piOutputMapping$transformResultsFunction <- resultsTransformationFunction
 observedData$Cedersund_2008$IR_P$yDimension <- ospDimensions$Amount
 piOutputMapping$addObservedData(observedData$Cedersund_2008$IR_P)
@@ -132,25 +155,36 @@ piOutputMapping$addObservedData(observedData$Cedersund_2008$IR_P)
 # results, this data set is the opposite case. The publication reports intensity
 # of meausred signal (phosphorylation of insulin receptor) in arbitrary units, with
 # values above 100%. We are applying scaling factor to normalize to 100%.
-piOutputMapping$setYFactors(observedData$Cedersund_2008$IR_P$label, 1 / max(observedData$Cedersund_2008$IR_P$yValues) * 100)
+piOutputMapping$setYFactors(
+  observedData$Cedersund_2008$IR_P$label,
+  1 / max(observedData$Cedersund_2008$IR_P$yValues) * 100
+)
 # The observed data set starts from minute 30. We therefore apply an offset of
 # 30 minutes to the x values
 piOutputMapping$setXOffset(observedData$Cedersund_2008$IR_P$label, -30)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
-piOutputMapping <- PIOutputMapping$new(quantity = getQuantity("Organism|IRS1_P",
-  container = simulations$StepIncrease_100nm.pkml
-))
+piOutputMapping <- PIOutputMapping$new(
+  quantity = getQuantity(
+    "Organism|IRS1_P",
+    container = simulations$StepIncrease_100nm.pkml
+  )
+)
 piOutputMapping$transformResultsFunction <- resultsTransformationFunction
 observedData$Cedersund_2008$IRS_P$yDimension <- ospDimensions$Amount
 piOutputMapping$addObservedData(observedData$Cedersund_2008$IRS_P)
-piOutputMapping$setYFactors(observedData$Cedersund_2008$IRS_P$label, 1 / max(observedData$Cedersund_2008$IRS_P$yValues) * 100)
+piOutputMapping$setYFactors(
+  observedData$Cedersund_2008$IRS_P$label,
+  1 / max(observedData$Cedersund_2008$IRS_P$yValues) * 100
+)
 piOutputMapping$setXOffset(observedData$Cedersund_2008$IRS_P$label, -30)
 piOutputMappings <- append(piOutputMappings, piOutputMapping)
 
 # Create new parameter identification.
 pi <- ParameterIdentification$new(
-  simulations = simulations, parameters = parameters, outputMappings = piOutputMappings,
+  simulations = simulations,
+  parameters = parameters,
+  outputMappings = piOutputMappings,
   configuration = piConfiguration
 )
 # Plot results before optimization
