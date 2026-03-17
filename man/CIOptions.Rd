@@ -6,14 +6,11 @@
 \alias{CIOptions_hessian}
 \alias{CIOptions_PL}
 \alias{CIOptions_bootstrap}
+\alias{CIDefaults}
 \title{Confidence Interval Estimation Options}
 \format{
 A list containing default settings for confidence interval estimation
 methods.
-
-An object of class \code{list} of length 3.
-
-An object of class \code{list} of length 3.
 }
 \usage{
 CIOptions_hessian
@@ -21,6 +18,8 @@ CIOptions_hessian
 CIOptions_PL
 
 CIOptions_bootstrap
+
+CIDefaults
 }
 \description{
 Default options for various confidence interval estimation methods used

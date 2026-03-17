@@ -39,7 +39,7 @@ Imports:
     ggtext,
     nloptr,
     numDeriv,
-    ospsuite.utils (>= 1.7.0),
+    ospsuite.utils (>= 1.9.0),
     purrr,
     R6,
     tibble
