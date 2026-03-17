@@ -165,7 +165,6 @@ CIDefaults <- list(
   bootstrap = CIOptions_bootstrap
 )
 
-
 #' Objective Function Options for Model Fit Assessment
 #'
 #' Default settings for objective function options in model fit analysis,

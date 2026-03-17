@@ -77,6 +77,9 @@ PIConfiguration <- R6::R6Class(
           )
           value <- value[names(value) %in% names(ObjectiveFunctionSpecs)]
         }
+        if (length(value) == 0) {
+          return(invisible(NULL))
+        }
         validateIsOption(
           value,
           ObjectiveFunctionSpecs[names(value)]
