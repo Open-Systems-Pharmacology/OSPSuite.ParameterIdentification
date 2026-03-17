@@ -12,15 +12,9 @@ AlgorithmOptions_HJKB
 AlgorithmOptions_BOBYQA
 
 AlgorithmOptions_DEoptim
+
+AlgorithmDefaults
 ```
-
-## Format
-
-An object of class `list` of length 5.
-
-An object of class `list` of length 6.
-
-An object of class `list` of length 21.
 
 ## AlgorithmOptions_HJKB
 

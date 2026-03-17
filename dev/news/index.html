@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,6 +46,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="ospsuiteparameteridentification-development-version">ospsuite.parameteridentification (development version)<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-development-version"></a></h2>
+<div class="section level3">
+<h3 id="major-changes-development-version">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-development-version"></a></h3>
+<ul><li>
+<code>PIConfiguration</code> active bindings (<code>objectiveFunctionOptions</code>, <code>algorithmOptions</code>, <code>ciOptions</code>) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing <code>algorithm</code> or <code>ciMethod</code> resets the corresponding options and emits a message (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228" class="external-link">#228</a>).</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.1" id="ospsuiteparameteridentification-211">ospsuite.parameteridentification 2.1.1<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-211"></a></h2>

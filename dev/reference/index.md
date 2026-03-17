@@ -22,11 +22,10 @@ Main classes for running parameter identification
 - [`AlgorithmOptions_HJKB`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.md)
   [`AlgorithmOptions_BOBYQA`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.md)
   [`AlgorithmOptions_DEoptim`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.md)
+  [`AlgorithmDefaults`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.md)
   : Algorithm Options for Optimization Algorithms
 - [`ObjectiveFunctionOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionOptions.md)
   : Objective Function Options for Model Fit Assessment
-- [`ObjectiveFunctionSpecs`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionSpecs.md)
-  : Objective Function Specifications
 - [`residualWeightingOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/residualWeightingOptions.md)
   : Residual Weighting Methods for Cost Function
 - [`robustMethodOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/robustMethodOptions.md)
@@ -38,6 +37,7 @@ Main classes for running parameter identification
 - [`CIOptions_hessian`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   [`CIOptions_PL`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   [`CIOptions_bootstrap`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
+  [`CIDefaults`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   : Confidence Interval Estimation Options
 
 ## Internal functions

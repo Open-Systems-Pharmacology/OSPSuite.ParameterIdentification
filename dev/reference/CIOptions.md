@@ -12,16 +12,14 @@ CIOptions_hessian
 CIOptions_PL
 
 CIOptions_bootstrap
+
+CIDefaults
 ```
 
 ## Format
 
 A list containing default settings for confidence interval estimation
 methods.
-
-An object of class `list` of length 3.
-
-An object of class `list` of length 3.
 
 ## CIOptions_hessian
 

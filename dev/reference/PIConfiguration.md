@@ -18,30 +18,33 @@ evaluation settings for parameter identification.
 - `objectiveFunctionOptions`:
 
   Settings for model fit evaluation, affecting error metrics and cost
-  calculation. See
-  [`ObjectiveFunctionSpecs`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionSpecs.md)
-  for details. Defaults in
+  calculation. Defaults in
   [`ObjectiveFunctionOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ObjectiveFunctionOptions.md).
+  Partial lists are merged with the current settings; only the provided
+  keys are updated and validated.
 
 - `algorithm`:
 
   Optimization algorithm name. See
   [`Algorithms`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/Algorithms.md)
-  for a list of supported algorithms. Defaults to `BOBYQA`.
+  for a list of supported algorithms. Defaults to `BOBYQA`. Changing the
+  algorithm resets `algorithmOptions` to the new algorithm's defaults.
 
 - `ciMethod`:
 
   Confidence interval estimation method. See
   [`CIMethods`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIMethods.md)
-  for available options. Defaults to `hessian`.
+  for available options. Defaults to `hessian`. Changing the method
+  resets `ciOptions` to the new method's defaults.
 
 - `algorithmOptions`:
 
-  Named list of settings specific to the selected algorithm.. Refer to
-  [`AlgorithmOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/AlgorithmOptions.md)
-  for default settings per algorithm (e.g., `AlgorithmOptions_XYZ` where
-  `XYZ` denotes the algorithm name). If `NULL`, algorithm's default
-  settings are applied.
+  Named list of user-defined overrides for the selected algorithm's
+  settings. Returns `NULL` if no overrides are set; in that case
+  algorithm defaults (`AlgorithmOptions_XYZ`) are used automatically.
+  Partial lists are merged with previously stored overrides. Unknown
+  keys produce a warning and are ignored. Set to `NULL` to clear all
+  overrides.
 
 - `ciOptions`:
 
@@ -49,7 +52,9 @@ evaluation settings for parameter identification.
   [`CIOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/CIOptions.md)
   for default settings per method (e.g., `CIOptions_XYZ` where `XYZ`
   corresponds to the method name). If `NULL`, CI method's default
-  settings are applied.
+  settings are returned. Partial lists are merged with the current
+  settings; only the provided keys are validated. Unknown keys produce a
+  warning and are ignored. Set to `NULL` to reset to defaults.
 
 - `autoEstimateCI`:
 

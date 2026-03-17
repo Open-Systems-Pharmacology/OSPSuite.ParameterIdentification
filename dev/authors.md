@@ -24,13 +24,13 @@ Source:
 
 Balazki P, Engelke R (2026). *ospsuite.parameteridentification: Open
 Systems Pharmacology Parameter Identification package*. R package
-version 2.1.1.9002,
+version 2.1.1.9003,
 <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification>.
 
     @Manual{,
       title = {ospsuite.parameteridentification: Open Systems Pharmacology Parameter Identification package},
       author = {Pavel Balazki and Rudi Engelke},
       year = {2026},
-      note = {R package version 2.1.1.9002},
+      note = {R package version 2.1.1.9003},
       url = {https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification},
     }

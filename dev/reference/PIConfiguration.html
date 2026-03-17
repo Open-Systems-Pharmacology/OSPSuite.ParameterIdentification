@@ -9,7 +9,7 @@ choice, and evaluation settings for parameter identification."><meta name="robot
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,37 +67,42 @@ simulation runs. If <code>NULL</code>, default options are used.</p></dd>
 
 <dt><code>objectiveFunctionOptions</code></dt>
 <dd><p>Settings for model fit evaluation,
-affecting error metrics and cost calculation. See
-<code><a href="ObjectiveFunctionSpecs.html">ObjectiveFunctionSpecs</a></code> for details. Defaults in
-<code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>.</p></dd>
+affecting error metrics and cost calculation. Defaults in
+<code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>. Partial lists are merged with the current
+settings; only the provided keys are updated and validated.</p></dd>
 
 
 <dt><code>algorithm</code></dt>
 <dd><p>Optimization algorithm name. See
 <code><a href="Algorithms.html">Algorithms</a></code> for a list of
-supported algorithms. Defaults to <code>BOBYQA</code>.</p></dd>
+supported algorithms. Defaults to <code>BOBYQA</code>. Changing the algorithm
+resets <code>algorithmOptions</code> to the new algorithm's defaults.</p></dd>
 
 
 <dt><code>ciMethod</code></dt>
 <dd><p>Confidence interval estimation method. See
 <code><a href="CIMethods.html">CIMethods</a></code> for available options.
-Defaults to <code>hessian</code>.</p></dd>
+Defaults to <code>hessian</code>. Changing the method resets <code>ciOptions</code> to the
+new method's defaults.</p></dd>
 
 
 <dt><code>algorithmOptions</code></dt>
-<dd><p>Named list of settings specific to the selected
-algorithm.. Refer to
-<code><a href="AlgorithmOptions.html">AlgorithmOptions</a></code> for default
-settings per algorithm (e.g., <code>AlgorithmOptions_XYZ</code> where <code>XYZ</code>
-denotes the algorithm name). If <code>NULL</code>, algorithm's default settings
-are applied.</p></dd>
+<dd><p>Named list of user-defined overrides for the
+selected algorithm's settings. Returns <code>NULL</code> if no overrides are set;
+in that case algorithm defaults (<code>AlgorithmOptions_XYZ</code>) are used
+automatically. Partial lists are merged with previously stored
+overrides. Unknown keys produce a warning and are ignored. Set to
+<code>NULL</code> to clear all overrides.</p></dd>
 
 
 <dt><code>ciOptions</code></dt>
 <dd><p>Named list of settings for the selected CI method. Refer
 to <code><a href="CIOptions.html">CIOptions</a></code> for default settings
 per method (e.g., <code>CIOptions_XYZ</code> where <code>XYZ</code> corresponds to the method
-name). If <code>NULL</code>, CI method's default settings are applied.</p></dd>
+name). If <code>NULL</code>, CI method's default settings are returned. Partial
+lists are merged with the current settings; only the provided keys are
+validated. Unknown keys produce a warning and are ignored. Set to
+<code>NULL</code> to reset to defaults.</p></dd>
 
 
 <dt><code>autoEstimateCI</code></dt>
