@@ -1,8 +1,12 @@
 # ospsuite.parameteridentification (development version)
 
-## Bug fixes
+## Major changes
 
-- Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#204).
+- `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
+
+## Minor improvements and bug fixes
+
+- Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
 # ospsuite.parameteridentification 2.1.1
 
@@ -13,7 +17,7 @@
 ## Minor improvements and bug fixes
 
 - Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to `NA` and `ciType` is set to `one-sided` (#217).
-- Allow dataSet with a single observation (`#221`)
+- Allow dataSet with a single observation (#221)
 
 # ospsuite.parameteridentification 2.1.0
 

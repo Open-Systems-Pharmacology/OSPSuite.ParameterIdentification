@@ -12,22 +12,6 @@ test_that("run() errors if initial simulation fails", {
   ))
 })
 
-test_that("run() errors on invalid objective function options", {
-  piTask <- createPiTask()
-  piTask$configuration$objectiveFunctionOptions$objectiveFunctionType <- "invalidType"
-  expect_error(
-    suppressMessages(piTask$run()),
-    "not included in allowed values"
-  )
-
-  piTask <- createPiTask()
-  piTask$configuration$objectiveFunctionOptions$linScaleCV <- 10
-  expect_error(
-    suppressMessages(piTask$run()),
-    regexp = "out of the allowed range"
-  )
-})
-
 
 # BOBYQA Algorithm (Default)
 

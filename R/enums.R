@@ -38,6 +38,7 @@ Algorithms <- ospsuite.utils::enum(c(
 #'
 #' @name AlgorithmOptions
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
   tol = 1e-06,
@@ -48,6 +49,7 @@ AlgorithmOptions_HJKB <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
   nloptr::nl.opts() |>
@@ -55,6 +57,7 @@ AlgorithmOptions_BOBYQA <- ospsuite.utils::enum(
 )
 
 #' @rdname AlgorithmOptions
+#' @format NULL
 #' @export
 AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
   modifyList(
@@ -63,7 +66,9 @@ AlgorithmOptions_DEoptim <- ospsuite.utils::enum(
   )
 )
 
-#' @noRd
+#' @rdname AlgorithmOptions
+#' @format NULL
+#' @export
 AlgorithmDefaults <- list(
   HJKB = AlgorithmOptions_HJKB,
   BOBYQA = AlgorithmOptions_BOBYQA,
@@ -126,6 +131,7 @@ CIMethods <- ospsuite.utils::enum(c(
 #'
 #' @name CIOptions
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_hessian <- ospsuite.utils::enum(list(
   epsilon = NULL,
@@ -133,6 +139,7 @@ CIOptions_hessian <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_PL <- ospsuite.utils::enum(list(
   epsilon = NULL, # vector or scalar / length not validated
@@ -141,6 +148,7 @@ CIOptions_PL <- ospsuite.utils::enum(list(
 ))
 
 #' @rdname CIOptions
+#' @format NULL
 #' @export
 CIOptions_bootstrap <- ospsuite.utils::enum(list(
   nBootstrap = 100,
@@ -148,7 +156,9 @@ CIOptions_bootstrap <- ospsuite.utils::enum(list(
   seed = NULL
 ))
 
-#' @noRd
+#' @rdname CIOptions
+#' @format NULL
+#' @export
 CIDefaults <- list(
   hessian = CIOptions_hessian,
   PL = CIOptions_PL,
@@ -187,56 +197,6 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   linScaleCV = 0.2,
   logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
 ))
-
-#' @export
-CIOptions <- ospsuite.utils::enum(list(
-  method = "hessian",
-  epsilon = NULL
-))
-
-#' Objective Function Specifications
-#'
-#' Specifies supported objective function configurations for error calculation
-#' in parameter optimization. These specifications detail the allowable options
-#' for tailoring how model fit is assessed, configured within `PIConfiguration`.
-#'
-#' @export
-#' @name ObjectiveFunctionSpecs
-#' @details Includes:
-#' - **`objectiveFunctionType`** – Type of error calculation. Allowed values:
-#'   `lsq` (least squares), `m3"` (M3 method).
-#' - **`residualWeightingMethod`** – Method for weighting residuals. Allowed values:
-#'   `none`, `std`, `mean`, `error`.
-#' - **`robustMethod`** – Approach for robust outlier handling. Allowed values:
-#'   `none`, `huber`, `bisquare`.
-#' - **`scaleVar`** – Boolean for variance scaling. Allowed values: `TRUE`, `FALSE`.
-#' - **`scaling`** – Scaling type. Allowed values: `lin` (linear), `log` (logarithmic).
-#' - **`linScaleCV`** – Coefficient of variation for linear scaling. Numeric
-#'   range: `1e-9` to `1`.
-#' - **`logScaleSD`** – Standard deviation for log scaling. Numeric range: `1e-9`
-#'   to `Inf`.
-#'
-#'   These options directly influence the optimization process by defining how
-#'   discrepancies between simulated and observed data are quantified and
-#'   managed.
-ObjectiveFunctionSpecs <- list(
-  objectiveFunctionType = list(
-    type = "character",
-    allowedValues = c("lsq", "m3")
-  ),
-  residualWeightingMethod = list(
-    type = "character",
-    allowedValues = c("none", "std", "mean", "error")
-  ),
-  robustMethod = list(
-    type = "character",
-    allowedValues = c("none", "huber", "bisquare")
-  ),
-  scaleVar = list(type = "logical"),
-  scaling = list(type = "character", allowedValues = c("lin", "log")),
-  linScaleCV = list(type = "numeric", valueRange = c(1e-9, 1)),
-  logScaleSD = list(type = "numeric", valueRange = c(1e-9, 1))
-)
 
 #' Scaling Options for Output Mapping
 #'

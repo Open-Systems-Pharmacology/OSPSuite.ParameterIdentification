@@ -259,3 +259,15 @@ messages$warnParameterMetadata <- function(message) {
     message
   )
 }
+
+messages$messageOptionsReset <- function(field, oldValue, newValue, optionsField) {
+  ospsuite.utils::cliFormat(
+    "{.field {field}} changed from {.val {oldValue}} to {.val {newValue}}. {.field {optionsField}} reset to defaults."
+  )
+}
+
+messages$warningUnknownOptions <- function(keys, fieldName) {
+  ospsuite.utils::cliFormat(
+    "{cli::qty(length(keys))}Unknown option{?s} for {.field {fieldName}}: {.val {keys}}. Ignored."
+  )
+}

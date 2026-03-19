@@ -634,7 +634,11 @@ Optimizer <- R6::R6Class(
 
       fn <- private$.preprocessFn(fn)
       ciMethod <- private$.configuration$ciMethod
-      ciOptions <- private$.configuration$ciOptions %||% CIDefaults[[ciMethod]]
+      ciOptions <- modifyList(
+        CIDefaults[[ciMethod]],
+        private$.configuration$ciOptions %||% list(),
+        keep.null = TRUE
+      )
       optimizer <- optimizer %||% self
 
       estimateCIFn <- switch(
