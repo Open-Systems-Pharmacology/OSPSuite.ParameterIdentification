@@ -209,14 +209,12 @@
   )
 
   # Calculating log probability to evaluate model fit
-  logProbability <- -sum(log(pmax(
-    0,
-    stats::dnorm(
-      residualsData$ySimulated,
-      residualsData$yObserved,
-      1 / residualsData$totalWeights
-    )
-  )))
+  logProbability <- -sum(stats::dnorm(
+    residualsData$ySimulated,
+    residualsData$yObserved,
+    1 / residualsData$totalWeights,
+    log = TRUE
+  ))
 
   # Organizing output with model evaluation metrics
   modelCost <- list(
