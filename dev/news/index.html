@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,10 @@
 <ul><li>
 <code>PIConfiguration</code> active bindings (<code>objectiveFunctionOptions</code>, <code>algorithmOptions</code>, <code>ciOptions</code>) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing <code>algorithm</code> or <code>ciMethod</code> resets the corresponding options and emits a message (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228" class="external-link">#228</a>).</li>
 </ul></div>
+<div class="section level3">
+<h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
+<ul><li>Removed <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/clearOutputIntervals.html" class="external-link">clearOutputIntervals()</a></code> call from <code>ParameterIdentification</code> initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/226" class="external-link">#226</a>).</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.1" id="ospsuiteparameteridentification-211">ospsuite.parameteridentification 2.1.1<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-211"></a></h2>
@@ -61,7 +65,7 @@
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-2-1-1">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-2-1-1"></a></h3>
 <ul><li>Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to <code>NA</code> and <code>ciType</code> is set to <code>one-sided</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/217" class="external-link">#217</a>).</li>
-<li>Allow dataSet with a single observation (<code>#221</code>)</li>
+<li>Allow dataSet with a single observation (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/221" class="external-link">#221</a>)</li>
 </ul></div>
 </div>
     <div class="section level2">

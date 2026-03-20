@@ -426,8 +426,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 109
 #>   • Function evaluations: 109
-#>   • Elapsed (optimization): 24.23 s
-#>   • Elapsed (CI): 10.75 s
+#>   • Elapsed (optimization): 27.53 s
+#>   • Elapsed (CI): 12.41 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,
 #>   -1.068]

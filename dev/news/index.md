@@ -11,6 +11,15 @@
   options and emits a message
   ([\#228](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228)).
 
+### Minor improvements and bug fixes
+
+- Removed
+  [`clearOutputIntervals()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/clearOutputIntervals.html)
+  call from `ParameterIdentification` initialization, which could lead
+  to wrong simulation results when events are triggered in time
+  intervals without observed data
+  ([\#226](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/226)).
+
 ## ospsuite.parameteridentification 2.1.1
 
 ### Breaking Changes
@@ -26,7 +35,8 @@
   the result, the opposite bound is set to `NA` and `ciType` is set to
   `one-sided`
   ([\#217](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/217)).
-- Allow dataSet with a single observation (`#221`)
+- Allow dataSet with a single observation
+  ([\#221](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/221))
 
 ## ospsuite.parameteridentification 2.1.0
 
