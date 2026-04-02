@@ -80,7 +80,7 @@ testOutputMappingWithoutObsData <- getTestOutputMapping(
 )
 
 
-createPiTask <- function() {
+testPiTask <- function() {
   testSimulation <- getTestSimulation()
   sim <- testSimulation()
   testParameters <- getTestParameters()
