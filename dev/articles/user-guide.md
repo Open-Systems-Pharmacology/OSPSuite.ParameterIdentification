@@ -424,15 +424,15 @@ print(piResult)
 #>   • CI Method: hessian
 #>   • Convergence: TRUE
 #>   • Objective value: 6.536
-#>   • Iterations: 109
-#>   • Function evaluations: 109
-#>   • Elapsed (optimization): 27.53 s
-#>   • Elapsed (CI): 12.41 s
+#>   • Iterations: 99
+#>   • Function evaluations: 99
+#>   • Elapsed (optimization): 21.73 s
+#>   • Elapsed (CI): 10.70 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,
 #>   -1.068]
-#>   • TSspec: Estimate = 0.8353, SD = 0.1651, CV = 0.1977, CI = [0.5116, 1.159]
-#>   • TSspec: Estimate = 0.7572, SD = 0.1513, CV = 0.1999, CI = [0.4605, 1.054]
+#>   • TSspec: Estimate = 0.8351, SD = 0.1651, CV = 0.1977, CI = [0.5115, 1.159]
+#>   • TSspec: Estimate = 0.7572, SD = 0.1514, CV = 0.1999, CI = [0.4605, 1.054]
 ```
 
 `piResult` is an R6 object that encapsulates the optimization output
@@ -455,9 +455,9 @@ piResult$toDataFrame()
 #> 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec
 #> 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec
 #>        unit   estimate        sd         cv    lowerCI   upperCI ciType
-#> 1 Log Units -1.2816387 0.1090013 0.08504839 -1.4952774 -1.068000   <NA>
-#> 2     1/min  0.8352532 0.1651480 0.19772213  0.5115690  1.158937   <NA>
-#> 3     1/min  0.7571563 0.1513412 0.19988100  0.4605331  1.053780   <NA>
+#> 1 Log Units -1.2816747 0.1090078 0.08505107 -1.4953260 -1.068023   <NA>
+#> 2     1/min  0.8350807 0.1651042 0.19771044  0.5114825  1.158679   <NA>
+#> 3     1/min  0.7571649 0.1513508 0.19989146  0.4605228  1.053807   <NA>
 #>   initialValue
 #> 1    -0.097000
 #> 2     0.941241
