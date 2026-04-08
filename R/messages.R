@@ -271,3 +271,40 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
     "{cli::qty(length(keys))}Unknown option{?s} for {.field {fieldName}}: {.val {keys}}. Ignored."
   )
 }
+
+messages$errorRDUnitConversion <- function(pkParameter, targetUnit, dimension, detail) {
+  ospsuite.utils::cliFormat(
+    "Incompatible {.field targetUnit} {.val {targetUnit}} for {.val {pkParameter}} (dimension: {.val {dimension}}). Detail: {detail}"
+  )
+}
+
+messages$errorRDPKParameterNotAvailable <- function(pkParameter, quantityPath, detail = NULL) {
+  msg <- ospsuite.utils::cliFormat(
+    "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}."
+  )
+  if (!is.null(detail)) paste0(msg, "\nDetail: ", detail) else msg
+}
+
+messages$errorRDSimulationMismatch <- function() {
+  ospsuite.utils::cliFormat(
+    "All {.cls RDOutputMapping} objects must use the same simulation."
+  )
+}
+
+messages$errorRDCINotImplemented <- function() {
+  ospsuite.utils::cliFormat(
+    "CI estimation for reverse dosimetry is not yet implemented."
+  )
+}
+
+messages$statusRDAutoInit <- function() {
+  ospsuite.utils::cliFormat(
+    "Estimating initial dose via proportional scaling (auto-initialization)."
+  )
+}
+
+messages$statusRDAutoInitResult <- function(dose, unit) {
+  ospsuite.utils::cliFormat(
+    "Auto-initialization: starting optimization from dose = {.val {format(dose, digits = 4)}} {unit}."
+  )
+}
