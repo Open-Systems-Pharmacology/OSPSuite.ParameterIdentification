@@ -16,7 +16,7 @@ test_that("run() errors if initial simulation fails", {
 # BOBYQA Algorithm (Default)
 
 test_that("run() runs successfully using default BOBYQA algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$autoEstimateCI <- FALSE
   startValue <- piTask$parameters[[1]]$startValue
 
@@ -36,7 +36,7 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
@@ -51,7 +51,7 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
 })
 
 test_that("run() stores best running cost in costDetails", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
   piTask$configuration$autoEstimateCI <- FALSE
@@ -66,7 +66,7 @@ test_that("run() stores best running cost in costDetails", {
 # HJBK Algorithm
 
 test_that("run() fails with HJKB algorithm and one parameter", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "HJKB"
   startValue <- piTask$parameters[[1]]$startValue
 
@@ -83,7 +83,7 @@ test_that("run() fails with HJKB algorithm and one parameter", {
 # DEoptim Algorithm
 
 test_that("run() runs successfully using DEoptim algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "DEoptim"
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)

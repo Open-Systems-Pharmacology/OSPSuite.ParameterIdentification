@@ -14,7 +14,7 @@ test_that("PIResult can be initialized with optimization results only", {
   expect_s3_class(piResult, "R6")
 })
 
-piTask <- createPiTask()
+piTask <- testPiTask()
 piTask$configuration$algorithmOptions <- list(maxeval = 10)
 suppressMessages(
   piResult <- piTask$run()
