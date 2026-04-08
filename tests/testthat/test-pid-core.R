@@ -16,14 +16,14 @@ test_that("ParameterIdentification is created successfully", {
 })
 
 test_that("ParameterIdentification read-only fields cannot be modified", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   expect_error(piTask$simulations <- testSimulation())
   expect_error(piTask$parameters <- testParameters())
   expect_error(piTask$outputMappings <- testOutputMapping())
 })
 
 test_that("ParameterIdentification configuration can be modified without errors", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   expect_no_error(piTask$configuration$algorithm <- "HJKB")
   expect_equal(piTask$configuration$algorithm, "HJKB")
   expect_no_error(piTask$configuration$printEvaluationFeedback <- TRUE)
@@ -46,7 +46,7 @@ test_that("ParameterIdentification configuration can be modified without errors"
 })
 
 test_that("ParameterIdentification instance prints expected output", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
 
   expect_no_error(print(piTask))
 

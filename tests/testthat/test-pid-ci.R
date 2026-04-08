@@ -5,7 +5,7 @@ resetTestFactories()
 # Hessian CI Method
 
 test_that("estimateCI() throws error if optimization has not been executed", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
 
   expect_error(
     expect_message(
@@ -17,7 +17,7 @@ test_that("estimateCI() throws error if optimization has not been executed", {
 })
 
 test_that("estimateCI() works as expected using Hessian", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())

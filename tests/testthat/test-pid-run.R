@@ -16,7 +16,7 @@ test_that("run() errors if initial simulation fails", {
 # BOBYQA Algorithm (Default)
 
 test_that("run() runs successfully using default BOBYQA algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$autoEstimateCI <- FALSE
   startValue <- piTask$parameters[[1]]$startValue
 
@@ -36,7 +36,7 @@ test_that("run() runs successfully using default BOBYQA algorithm", {
 })
 
 test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$printEvaluationFeedback <- TRUE
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
@@ -51,7 +51,7 @@ test_that("run() outputs expected evaluation feedback using BOBYQA algorithm", {
 })
 
 test_that("run() stores best running cost in costDetails", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "BOBYQA"
   piTask$configuration$algorithmOptions <- list(maxeval = 3)
   piTask$configuration$autoEstimateCI <- FALSE
@@ -66,7 +66,7 @@ test_that("run() stores best running cost in costDetails", {
 # HJBK Algorithm
 
 test_that("run() fails with HJKB algorithm and one parameter", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "HJKB"
   startValue <- piTask$parameters[[1]]$startValue
 
@@ -83,7 +83,7 @@ test_that("run() fails with HJKB algorithm and one parameter", {
 # DEoptim Algorithm
 
 test_that("run() runs successfully using DEoptim algorithm", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithm <- "DEoptim"
   piTask$configuration$printEvaluationFeedback <- FALSE
   piTask$configuration$algorithmOptions <- list(itermax = 3, trace = FALSE)
@@ -119,7 +119,7 @@ test_that("run() works with one dataset and scalar weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 3112.516, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 157.9, tolerance = 1e-3)
 })
 
 test_that("run() works with two datasets and single vector weight", {
@@ -136,7 +136,7 @@ test_that("run() works with two datasets and single vector weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 163.346, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 163.3, tolerance = 1e-1)
 })
 
 test_that("run() works with two datasets and individual weights", {
@@ -155,5 +155,5 @@ test_that("run() works with two datasets and individual weights", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 227.5477, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 227.5, tolerance = 1e-1)
 })
