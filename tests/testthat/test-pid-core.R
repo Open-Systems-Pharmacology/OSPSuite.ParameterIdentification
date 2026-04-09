@@ -59,11 +59,7 @@ test_that("ParameterIdentification instance prints expected output", {
 
 test_that("ParameterIdentification errors on missing simulation IDs", {
   simulationMismatch <- loadSimulation(
-    system.file(
-      "extdata",
-      "Aciclovir.pkml",
-      package = "ospsuite.parameteridentification"
-    )
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
   expect_error(
     ParameterIdentification$new(

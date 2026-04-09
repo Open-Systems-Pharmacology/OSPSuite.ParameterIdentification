@@ -53,22 +53,22 @@ To set up a PI task, the user has to define:
 
 A set of `Simulation` objects. See the documentation of `{ospsuite-r}` on [how to load and adjust simulations](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html).
 
-For this example, we will load two instances of the Aciclovir PBPK model provided with the `{ospsuite.parameteridentification}` package. We want to optimize the lipophilicity and the renal clearance using plasma concentration data gathered after a 10-minute intravenous infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a scenario-independent parameter, i.e., the same value will be applied for both simulations. For the renal clearance, we can assume an inter-individual variability and will optimize the value of this parameter separately for each dose group.
+For this example, we will load two instances of the Aciclovir PBPK model provided with the `{ospsuite-r}` package. We want to optimize the lipophilicity and the renal clearance using plasma concentration data gathered after a 10-minute intravenous infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a scenario-independent parameter, i.e., the same value will be applied for both simulations. For the renal clearance, we can assume an inter-individual variability and will optimize the value of this parameter separately for each dose group.
 
 We will start by loading the simulation of the \*.pkml file twice. The dose in this simulation is set to 250 mg. Remember that both `Simulation` objects are created by loading the same \*.pkml file, they represent two independent instances of a simulation.
 
 ```{r loadSimulations}
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
+sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 ```
 
 In the next step, we will retrieve the objects of the application dose parameters and change the dose of the second simulation to 500 mg.
 
 ```{r setDose}
 # Path to the dose parameter
-doseParameterPath <- "Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
@@ -98,8 +98,8 @@ piParameterLipo <- PIParameters$new(parameters = list(
 ))
 
 # Creating two separate PIParameters for the renal clearance
-piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_250mg))
-piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_500mg))
+piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_250mg))
+piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_500mg))
 ```
 
 Each `PIParameter` has the following properties:
