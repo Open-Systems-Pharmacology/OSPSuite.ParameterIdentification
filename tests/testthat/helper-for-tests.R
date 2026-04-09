@@ -5,7 +5,11 @@ getTestSimulation <- function() {
   function() {
     if (is.null(.simulation)) {
       .simulation <<- loadSimulation(
-        system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+        system.file(
+          "extdata",
+          "Aciclovir.pkml",
+          package = "ospsuite.parameteridentification"
+        )
       )
     }
     return(.simulation)
@@ -208,7 +212,11 @@ testQuantity <- function(simulation = testSimulation()) {
 
 testModifiedTask <- function() {
   sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+    system.file(
+      "extdata",
+      "Aciclovir.pkml",
+      package = "ospsuite.parameteridentification"
+    )
   )
   sim$solver$mxStep <- 1
 
@@ -268,10 +276,18 @@ executeWithTestFile <- function(actionWithFile) {
 # Multi-Simulation Setup
 
 sim_250mg <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 sim_500mg <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piParameterLipo <- PIParameters$new(

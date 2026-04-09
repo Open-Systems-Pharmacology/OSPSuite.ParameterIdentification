@@ -60,8 +60,8 @@ We will start by loading the simulation of the \*.pkml file twice. The dose in t
 ```{r loadSimulations}
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
+sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
 ```
 
 In the next step, we will retrieve the objects of the application dose parameters and change the dose of the second simulation to 500 mg.
