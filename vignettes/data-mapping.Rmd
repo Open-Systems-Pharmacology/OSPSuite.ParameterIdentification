@@ -46,7 +46,7 @@ library(ospsuite.parameteridentification)
 
 # Load example simulation
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification")
 )
 
 # Retrieve a quantity by path from the simulation

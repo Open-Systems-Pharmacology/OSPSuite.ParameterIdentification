@@ -11,7 +11,11 @@ devtools::load_all(".")
 
 
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -97,7 +101,11 @@ test_that("Objective function profiles equal expected values", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -162,7 +170,11 @@ test_that("Hessian-based standard deviation equals expected value", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -227,7 +239,11 @@ test_that("Hessian-based standard deviation equals expected value", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piConfiguration <- PIConfiguration$new()
@@ -292,7 +308,11 @@ test_that("Hessian-based standard deviation equals expected value", {
 # -------------------------------------------------------------------------
 
 simulation <- loadSimulation(
-  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  system.file(
+    "extdata",
+    "Aciclovir.pkml",
+    package = "ospsuite.parameteridentification"
+  )
 )
 
 piConfiguration <- PIConfiguration$new()
