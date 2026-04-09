@@ -287,13 +287,13 @@ piParameterLipo_250mg <- PIParameters$new(
 )
 piParameterCl_250mg <- PIParameters$new(
   parameters = getParameter(
-    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_250mg
   )
 )
 piParameterCl_500mg <- PIParameters$new(
   parameters = getParameter(
-    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_500mg
   )
 )
