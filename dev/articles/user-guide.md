@@ -43,13 +43,14 @@ on [how to load and adjust
 simulations](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html).
 
 For this example, we will load two instances of the Aciclovir PBPK model
-provided with the `{ospsuite-r}` package. We want to optimize the
-lipophilicity and the renal clearance using plasma concentration data
-gathered after a 10-minute intravenous infusion of aciclovir at doses
-250 mg and 500 mg. Lipophilicity will be considered a
-scenario-independent parameter, i.e., the same value will be applied for
-both simulations. For the renal clearance, we can assume an
-inter-individual variability and will optimize the value of this
+provided with the
+[ospsuite.parameteridentification](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
+package. We want to optimize the lipophilicity and the renal clearance
+using plasma concentration data gathered after a 10-minute intravenous
+infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be
+considered a scenario-independent parameter, i.e., the same value will
+be applied for both simulations. For the renal clearance, we can assume
+an inter-individual variability and will optimize the value of this
 parameter separately for each dose group.
 
 We will start by loading the simulation of the \*.pkml file twice. The
@@ -60,8 +61,8 @@ represent two independent instances of a simulation.
 ``` r
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
+sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
 ```
 
 In the next step, we will retrieve the objects of the application dose
@@ -426,8 +427,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 99
 #>   • Function evaluations: 99
-#>   • Elapsed (optimization): 23.00 s
-#>   • Elapsed (CI): 11.28 s
+#>   • Elapsed (optimization): 21.77 s
+#>   • Elapsed (CI): 10.71 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,
 #>   -1.068]

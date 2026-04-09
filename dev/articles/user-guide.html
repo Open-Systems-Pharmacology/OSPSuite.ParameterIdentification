@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9006</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9007</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,13 +116,13 @@ algorithm and algorithm options.</p></li>
 <code>{ospsuite-r}</code> on <a href="https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html" class="external-link">how
 to load and adjust simulations</a>.</p>
 <p>For this example, we will load two instances of the Aciclovir PBPK
-model provided with the <code>{ospsuite-r}</code> package. We want to
-optimize the lipophilicity and the renal clearance using plasma
-concentration data gathered after a 10-minute intravenous infusion of
-aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a
-scenario-independent parameter, i.e., the same value will be applied for
-both simulations. For the renal clearance, we can assume an
-inter-individual variability and will optimize the value of this
+model provided with the <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a>
+package. We want to optimize the lipophilicity and the renal clearance
+using plasma concentration data gathered after a 10-minute intravenous
+infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be
+considered a scenario-independent parameter, i.e., the same value will
+be applied for both simulations. For the renal clearance, we can assume
+an inter-individual variability and will optimize the value of this
 parameter separately for each dose group.</p>
 <p>We will start by loading the simulation of the *.pkml file twice. The
 dose in this simulation is set to 250 mg. Remember that both
@@ -131,8 +131,8 @@ file, they represent two independent instances of a simulation.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>In the next step, we will retrieve the objects of the application
 dose parameters and change the dose of the second simulation to 500
 mg.</p>
@@ -443,8 +443,8 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 99</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 99</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 23.00 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 11.28 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 21.77 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 10.71 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
