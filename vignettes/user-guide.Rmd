@@ -53,7 +53,7 @@ To set up a PI task, the user has to define:
 
 A set of `Simulation` objects. See the documentation of `{ospsuite-r}` on [how to load and adjust simulations](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html).
 
-For this example, we will load two instances of the Aciclovir PBPK model provided with the `{ospsuite-r}` package. We want to optimize the lipophilicity and the renal clearance using plasma concentration data gathered after a 10-minute intravenous infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a scenario-independent parameter, i.e., the same value will be applied for both simulations. For the renal clearance, we can assume an inter-individual variability and will optimize the value of this parameter separately for each dose group.
+For this example, we will load two instances of the Aciclovir PBPK model provided with the `{ospsuite.parameteridentification}` package. We want to optimize the lipophilicity and the renal clearance using plasma concentration data gathered after a 10-minute intravenous infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a scenario-independent parameter, i.e., the same value will be applied for both simulations. For the renal clearance, we can assume an inter-individual variability and will optimize the value of this parameter separately for each dose group.
 
 We will start by loading the simulation of the \*.pkml file twice. The dose in this simulation is set to 250 mg. Remember that both `Simulation` objects are created by loading the same \*.pkml file, they represent two independent instances of a simulation.
 
