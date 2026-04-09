@@ -33,3 +33,28 @@ test_that("print() produces expected output", {
 test_that("toDataFrame() produces expected output", {
   expect_snapshot(piResult$toDataFrame())
 })
+
+test_that("toDataFrame() returns one row per grouped parameter", {
+  # piParameterLipo groups two Lipophilicity parameters (from sim_250mg and sim_500mg)
+  optimResult <- list(
+    par = 1.0,
+    value = 100,
+    startValues = 1.5,
+    convergence = TRUE,
+    iterations = 10,
+    fnEvaluations = 10,
+    algorithm = "BOBYQA",
+    elapsed = 1.0
+  )
+
+  piResult <- PIResult$new(
+    optimResult = optimResult,
+    piParameters = list(piParameterLipo)
+  )
+
+  df <- piResult$toDataFrame()
+
+  expect_equal(nrow(df), 2)
+  expect_equal(df$estimate, c(1.0, 1.0))
+  expect_equal(df$group, c("1", "1"))
+})
