@@ -30,7 +30,7 @@ BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdent
 Encoding: UTF-8
 Depends:
     R (>= 4.1),
-    ospsuite (>= 12.3.0)
+    ospsuite (>= 12.4.2)
 Imports:
     DEoptim,
     DiceKriging,
