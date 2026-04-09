@@ -157,6 +157,9 @@ PIResult <- R6::R6Class(
     #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
     #' - `initialValue`: Initial parameter value used for optimization
     toDataFrame = function() {
+      if (is.null(private$.parameters)) {
+        stop(messages$errorParameterMetadataMissing())
+      }
       params <- private$.parameters
       group_idx <- as.integer(params$group)
       data.frame(

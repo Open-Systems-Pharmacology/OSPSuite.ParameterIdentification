@@ -260,6 +260,13 @@ messages$warnParameterMetadata <- function(message) {
   )
 }
 
+messages$errorParameterMetadataMissing <- function() {
+  paste0(
+    "Parameter metadata is not available. `toDataFrame()` cannot be called ",
+    "on a `PIResult` created without `piParameters`."
+  )
+}
+
 messages$messageOptionsReset <- function(
   field,
   oldValue,

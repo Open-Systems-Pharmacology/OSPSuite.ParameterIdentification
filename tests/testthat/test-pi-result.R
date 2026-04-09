@@ -14,6 +14,21 @@ test_that("PIResult can be initialized with optimization results only", {
   expect_s3_class(piResult, "R6")
 })
 
+test_that("toDataFrame() errors clearly when PIResult has no parameter metadata", {
+  optimResult <- list(
+    par = -0.097,
+    value = 778.129,
+    startValues = -0.097,
+    convergence = TRUE,
+    iterations = 3,
+    fnEvaluations = 3,
+    algorithm = "BOBYQA",
+    elapsed = 1.51
+  )
+  piResult <- PIResult$new(optimResult)
+  expect_error(piResult$toDataFrame(), "Parameter metadata is not available")
+})
+
 piTask <- testPiTask()
 piTask$configuration$algorithmOptions <- list(maxeval = 10)
 suppressMessages(
