@@ -260,7 +260,12 @@ messages$warnParameterMetadata <- function(message) {
   )
 }
 
-messages$messageOptionsReset <- function(field, oldValue, newValue, optionsField) {
+messages$messageOptionsReset <- function(
+  field,
+  oldValue,
+  newValue,
+  optionsField
+) {
   ospsuite.utils::cliFormat(
     "{.field {field}} changed from {.val {oldValue}} to {.val {newValue}}. {.field {optionsField}} reset to defaults."
   )
