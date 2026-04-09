@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,13 +116,13 @@ algorithm and algorithm options.</p></li>
 <code>{ospsuite-r}</code> on <a href="https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html" class="external-link">how
 to load and adjust simulations</a>.</p>
 <p>For this example, we will load two instances of the Aciclovir PBPK
-model provided with the <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a>
-package. We want to optimize the lipophilicity and the renal clearance
-using plasma concentration data gathered after a 10-minute intravenous
-infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be
-considered a scenario-independent parameter, i.e., the same value will
-be applied for both simulations. For the renal clearance, we can assume
-an inter-individual variability and will optimize the value of this
+model provided with the <code>{ospsuite-r}</code> package. We want to
+optimize the lipophilicity and the renal clearance using plasma
+concentration data gathered after a 10-minute intravenous infusion of
+aciclovir at doses 250 mg and 500 mg. Lipophilicity will be considered a
+scenario-independent parameter, i.e., the same value will be applied for
+both simulations. For the renal clearance, we can assume an
+inter-individual variability and will optimize the value of this
 parameter separately for each dose group.</p>
 <p>We will start by loading the simulation of the *.pkml file twice. The
 dose in this simulation is set to 250 mg. Remember that both
@@ -131,14 +131,14 @@ file, they represent two independent instances of a simulation.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>In the next step, we will retrieve the objects of the application
 dose parameters and change the dose of the second simulation to 500
 mg.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Path to the dose parameter</span></span>
-<span><span class="va">doseParameterPath</span> <span class="op">&lt;-</span> <span class="st">"Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"</span></span>
+<span><span class="va">doseParameterPath</span> <span class="op">&lt;-</span> <span class="st">"Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"</span></span>
 <span><span class="co"># Get the parameter from the first simulation</span></span>
 <span></span>
 <span><span class="co"># Get the instances of the parameters</span></span>
@@ -146,7 +146,7 @@ mg.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_250mg_doseParam</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;Parameter&gt;</span></span></span>
 <span><span class="co">#&gt;   • Quantity Type: Parameter</span></span>
-<span><span class="co">#&gt;   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
+<span><span class="co">#&gt;   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
 <span><span class="co">#&gt;   • Value: 2.50e-04 [kg]</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Formula</span> ──</span></span>
@@ -159,7 +159,7 @@ mg.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_500mg_doseParam</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;Parameter&gt;</span></span></span>
 <span><span class="co">#&gt;   • Quantity Type: Parameter</span></span>
-<span><span class="co">#&gt;   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
+<span><span class="co">#&gt;   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose</span></span>
 <span><span class="co">#&gt;   • Value: 5.00e-04 [kg]</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Formula</span> ──</span></span>
@@ -197,8 +197,8 @@ they are considered independent.</p>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Creating two separate PIParameters for the renal clearance</span></span>
-<span><span class="va">piParameterCl_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">piParameterCl_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">piParameterCl_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">piParameterCl_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Each <code>PIParameter</code> has the following properties:</p>
 <ul>
 <li><p><code>$value</code>: Current value of the parameter. Corresponds
@@ -441,14 +441,14 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • CI Method: hessian</span></span>
 <span><span class="co">#&gt;   • Convergence: TRUE</span></span>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
-<span><span class="co">#&gt;   • Iterations: 99</span></span>
-<span><span class="co">#&gt;   • Function evaluations: 99</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 21.77 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 10.71 s</span></span>
+<span><span class="co">#&gt;   • Iterations: 110</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 110</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 29.57 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 13.20 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
-<span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,</span></span>
+<span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
-<span><span class="co">#&gt;   • TSspec: Estimate = 0.8351, SD = 0.1651, CV = 0.1977, CI = [0.5115, 1.159]</span></span>
+<span><span class="co">#&gt;   • TSspec: Estimate = 0.8352, SD = 0.1651, CV = 0.1977, CI = [0.5116, 1.159]</span></span>
 <span><span class="co">#&gt;   • TSspec: Estimate = 0.7572, SD = 0.1514, CV = 0.1999, CI = [0.4605, 1.054]</span></span></code></pre></div>
 <p><code>piResult</code> is an R6 object that encapsulates the
 optimization output (and, if configured, confidence intervals) and
@@ -468,14 +468,14 @@ estimates and related fields:</li>
 <span><span class="co">#&gt; 1     1 Lipophilicity</span></span>
 <span><span class="co">#&gt; 2     2        TSspec</span></span>
 <span><span class="co">#&gt; 3     3        TSspec</span></span>
-<span><span class="co">#&gt;                                                                                     path</span></span>
-<span><span class="co">#&gt; 1                                                 Vergin 1995 IV|Aciclovir|Lipophilicity</span></span>
-<span><span class="co">#&gt; 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec</span></span>
-<span><span class="co">#&gt; 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec</span></span>
+<span><span class="co">#&gt;                                                                                               path</span></span>
+<span><span class="co">#&gt; 1                                                           Vergin 1995 IV|Aciclovir|Lipophilicity</span></span>
+<span><span class="co">#&gt; 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec</span></span>
+<span><span class="co">#&gt; 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec</span></span>
 <span><span class="co">#&gt;        unit   estimate        sd         cv    lowerCI   upperCI ciType</span></span>
-<span><span class="co">#&gt; 1 Log Units -1.2816747 0.1090078 0.08505107 -1.4953260 -1.068023   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2     1/min  0.8350807 0.1651042 0.19771044  0.5114825  1.158679   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3     1/min  0.7571649 0.1513508 0.19989146  0.4605228  1.053807   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 1 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   &lt;NA&gt;</span></span>
 <span><span class="co">#&gt;   initialValue</span></span>
 <span><span class="co">#&gt; 1    -0.097000</span></span>
 <span><span class="co">#&gt; 2     0.941241</span></span>

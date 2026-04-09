@@ -43,14 +43,13 @@ on [how to load and adjust
 simulations](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/load-get.html).
 
 For this example, we will load two instances of the Aciclovir PBPK model
-provided with the
-[ospsuite.parameteridentification](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
-package. We want to optimize the lipophilicity and the renal clearance
-using plasma concentration data gathered after a 10-minute intravenous
-infusion of aciclovir at doses 250 mg and 500 mg. Lipophilicity will be
-considered a scenario-independent parameter, i.e., the same value will
-be applied for both simulations. For the renal clearance, we can assume
-an inter-individual variability and will optimize the value of this
+provided with the `{ospsuite-r}` package. We want to optimize the
+lipophilicity and the renal clearance using plasma concentration data
+gathered after a 10-minute intravenous infusion of aciclovir at doses
+250 mg and 500 mg. Lipophilicity will be considered a
+scenario-independent parameter, i.e., the same value will be applied for
+both simulations. For the renal clearance, we can assume an
+inter-individual variability and will optimize the value of this
 parameter separately for each dose group.
 
 We will start by loading the simulation of the \*.pkml file twice. The
@@ -61,8 +60,8 @@ represent two independent instances of a simulation.
 ``` r
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite.parameteridentification"))
+sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 ```
 
 In the next step, we will retrieve the objects of the application dose
@@ -70,7 +69,7 @@ parameters and change the dose of the second simulation to 500 mg.
 
 ``` r
 # Path to the dose parameter
-doseParameterPath <- "Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
@@ -78,7 +77,7 @@ sim_250mg_doseParam <- getParameter(path = doseParameterPath, container = sim_25
 print(sim_250mg_doseParam)
 #> <Parameter>
 #>   • Quantity Type: Parameter
-#>   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
+#>   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
 #>   • Value: 2.50e-04 [kg]
 #> 
 #> ── Formula ──
@@ -91,7 +90,7 @@ setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
 print(sim_500mg_doseParam)
 #> <Parameter>
 #>   • Quantity Type: Parameter
-#>   • Path: Applications|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
+#>   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
 #>   • Value: 5.00e-04 [kg]
 #> 
 #> ── Formula ──
@@ -130,8 +129,8 @@ piParameterLipo <- PIParameters$new(parameters = list(
 ))
 
 # Creating two separate PIParameters for the renal clearance
-piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_250mg))
-piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec", container = sim_500mg))
+piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_250mg))
+piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_500mg))
 ```
 
 Each `PIParameter` has the following properties:
@@ -425,14 +424,14 @@ print(piResult)
 #>   • CI Method: hessian
 #>   • Convergence: TRUE
 #>   • Objective value: 6.536
-#>   • Iterations: 99
-#>   • Function evaluations: 99
-#>   • Elapsed (optimization): 21.77 s
-#>   • Elapsed (CI): 10.71 s
+#>   • Iterations: 110
+#>   • Function evaluations: 110
+#>   • Elapsed (optimization): 29.57 s
+#>   • Elapsed (CI): 13.20 s
 #> Parameter Estimates:
-#>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08505, CI = [-1.495,
+#>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
-#>   • TSspec: Estimate = 0.8351, SD = 0.1651, CV = 0.1977, CI = [0.5115, 1.159]
+#>   • TSspec: Estimate = 0.8352, SD = 0.1651, CV = 0.1977, CI = [0.5116, 1.159]
 #>   • TSspec: Estimate = 0.7572, SD = 0.1514, CV = 0.1999, CI = [0.4605, 1.054]
 ```
 
@@ -451,14 +450,14 @@ piResult$toDataFrame()
 #> 1     1 Lipophilicity
 #> 2     2        TSspec
 #> 3     3        TSspec
-#>                                                                                     path
-#> 1                                                 Vergin 1995 IV|Aciclovir|Lipophilicity
-#> 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec
-#> 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec
+#>                                                                                               path
+#> 1                                                           Vergin 1995 IV|Aciclovir|Lipophilicity
+#> 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec
+#> 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec
 #>        unit   estimate        sd         cv    lowerCI   upperCI ciType
-#> 1 Log Units -1.2816747 0.1090078 0.08505107 -1.4953260 -1.068023   <NA>
-#> 2     1/min  0.8350807 0.1651042 0.19771044  0.5114825  1.158679   <NA>
-#> 3     1/min  0.7571649 0.1513508 0.19989146  0.4605228  1.053807   <NA>
+#> 1 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   <NA>
+#> 2     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   <NA>
+#> 3     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   <NA>
 #>   initialValue
 #> 1    -0.097000
 #> 2     0.941241
