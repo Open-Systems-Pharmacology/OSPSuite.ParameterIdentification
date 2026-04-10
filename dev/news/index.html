@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9008</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,9 @@
 </ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
-<ul><li>Removed <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/clearOutputIntervals.html" class="external-link">clearOutputIntervals()</a></code> call from <code>ParameterIdentification</code> initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/226" class="external-link">#226</a>).</li>
+<ul><li>
+<code>PIResult$toDataFrame()</code> now returns one row per parameter path for grouped <code>PIParameters</code>, instead of only the first path (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/230" class="external-link">#230</a>).</li>
+<li>Removed <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/clearOutputIntervals.html" class="external-link">clearOutputIntervals()</a></code> call from <code>ParameterIdentification</code> initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/226" class="external-link">#226</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">

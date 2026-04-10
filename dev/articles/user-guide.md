@@ -426,8 +426,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 110
 #>   • Function evaluations: 110
-#>   • Elapsed (optimization): 29.57 s
-#>   • Elapsed (CI): 13.20 s
+#>   • Elapsed (optimization): 30.72 s
+#>   • Elapsed (CI): 13.47 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -448,20 +448,24 @@ like `$toDataFrame()` and `$toList()` for exporting results.
 piResult$toDataFrame()
 #>   group          name
 #> 1     1 Lipophilicity
-#> 2     2        TSspec
-#> 3     3        TSspec
+#> 2     1 Lipophilicity
+#> 3     2        TSspec
+#> 4     3        TSspec
 #>                                                                                               path
 #> 1                                                           Vergin 1995 IV|Aciclovir|Lipophilicity
-#> 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec
+#> 2                                                           Vergin 1995 IV|Aciclovir|Lipophilicity
 #> 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec
+#> 4 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec
 #>        unit   estimate        sd         cv    lowerCI   upperCI ciType
 #> 1 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   <NA>
-#> 2     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   <NA>
-#> 3     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   <NA>
+#> 2 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   <NA>
+#> 3     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   <NA>
+#> 4     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   <NA>
 #>   initialValue
 #> 1    -0.097000
-#> 2     0.941241
+#> 2    -0.097000
 #> 3     0.941241
+#> 4     0.941241
 ```
 
 - Use `$toList()` to export full details, including diagnostics, cost

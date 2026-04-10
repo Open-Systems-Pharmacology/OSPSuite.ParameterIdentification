@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9008</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -443,8 +443,8 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 110</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 110</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 29.57 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 13.20 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 30.72 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 13.47 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
@@ -466,20 +466,24 @@ estimates and related fields:</li>
 <code class="sourceCode R"><span><span class="va">piResult</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   group          name</span></span>
 <span><span class="co">#&gt; 1     1 Lipophilicity</span></span>
-<span><span class="co">#&gt; 2     2        TSspec</span></span>
-<span><span class="co">#&gt; 3     3        TSspec</span></span>
+<span><span class="co">#&gt; 2     1 Lipophilicity</span></span>
+<span><span class="co">#&gt; 3     2        TSspec</span></span>
+<span><span class="co">#&gt; 4     3        TSspec</span></span>
 <span><span class="co">#&gt;                                                                                               path</span></span>
 <span><span class="co">#&gt; 1                                                           Vergin 1995 IV|Aciclovir|Lipophilicity</span></span>
-<span><span class="co">#&gt; 2 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec</span></span>
+<span><span class="co">#&gt; 2                                                           Vergin 1995 IV|Aciclovir|Lipophilicity</span></span>
 <span><span class="co">#&gt; 3 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec</span></span>
+<span><span class="co">#&gt; 4 Vergin 1995 IV|Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec</span></span>
 <span><span class="co">#&gt;        unit   estimate        sd         cv    lowerCI   upperCI ciType</span></span>
 <span><span class="co">#&gt; 1 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 2     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   &lt;NA&gt;</span></span>
-<span><span class="co">#&gt; 3     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 2 Log Units -1.2815976 0.1089746 0.08503028 -1.4951839 -1.068011   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 3     1/min  0.8351755 0.1650932 0.19767482  0.5115989  1.158752   &lt;NA&gt;</span></span>
+<span><span class="co">#&gt; 4     1/min  0.7571906 0.1513528 0.19988728  0.4605446  1.053837   &lt;NA&gt;</span></span>
 <span><span class="co">#&gt;   initialValue</span></span>
 <span><span class="co">#&gt; 1    -0.097000</span></span>
-<span><span class="co">#&gt; 2     0.941241</span></span>
-<span><span class="co">#&gt; 3     0.941241</span></span></code></pre></div>
+<span><span class="co">#&gt; 2    -0.097000</span></span>
+<span><span class="co">#&gt; 3     0.941241</span></span>
+<span><span class="co">#&gt; 4     0.941241</span></span></code></pre></div>
 <ul>
 <li>Use <code>$toList()</code> to export full details, including
 diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>SSR</code>,

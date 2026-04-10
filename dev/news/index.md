@@ -13,6 +13,9 @@
 
 ### Minor improvements and bug fixes
 
+- `PIResult$toDataFrame()` now returns one row per parameter path for
+  grouped `PIParameters`, instead of only the first path
+  ([\#230](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/230)).
 - Removed
   [`clearOutputIntervals()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/clearOutputIntervals.html)
   call from `ParameterIdentification` initialization, which could lead
