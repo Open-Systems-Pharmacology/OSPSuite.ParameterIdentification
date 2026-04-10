@@ -6,6 +6,7 @@
 
 ## Minor improvements and bug fixes
 
+- `PIResult$toDataFrame()` now returns one row per parameter path for grouped `PIParameters`, instead of only the first path (#230).
 - Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
 # ospsuite.parameteridentification 2.1.1
