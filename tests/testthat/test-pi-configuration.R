@@ -217,7 +217,7 @@ test_that("algorithmOptions reset to NULL clears overrides", {
 test_that("changing algorithm resets algorithmOptions with message", {
   piConfiguration <- PIConfiguration$new()
   piConfiguration$algorithmOptions$maxeval <- 500L
-  
+
   expect_message(
     piConfiguration$algorithm <- "HJKB",
     messages$messageOptionsReset(
@@ -326,7 +326,8 @@ test_that("ciOptions bootstrap: nBootstrap validated and seed allows NULL", {
   piConfiguration$ciOptions <- list(nBootstrap = 500L)
   expect_equal(piConfiguration$ciOptions$nBootstrap, 500L)
   expect_error(
-    piConfiguration$ciOptions <- list(nBootstrap = 0L), regexp = "nBootstrap"
+    piConfiguration$ciOptions <- list(nBootstrap = 0L),
+    regexp = "nBootstrap"
   )
   piConfiguration$ciOptions <- list(seed = 42L)
   expect_equal(piConfiguration$ciOptions$seed, 42L)

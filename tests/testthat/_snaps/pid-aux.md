@@ -17,7 +17,7 @@
        9                   -0.810                                         1.65    77.1
       10                   -0.650                                         1.65    66.5
       # i abbreviated name:
-      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
+      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec`
 
 # gridSearch() sets new start values with correct message
 
@@ -58,7 +58,7 @@
       ofvProfiles[[2]][1:10, ]
     Output
       # A tibble: 10 x 2
-         Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSsp~1   ofv
+         Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Acic~1   ofv
                                                                            <dbl> <dbl>
        1                                                                   0.847  41.2
        2                                                                   0.857  41.0
@@ -71,12 +71,12 @@
        9                                                                   0.926  39.7
       10                                                                   0.936  39.6
       # i abbreviated name:
-      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec`
+      #   1: `Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec`
 
 # calculateOFVProfiles() returns `Inf` on simulation failure
 
     Code
       ofvProfiles[[2]]$ofv
     Output
-      [1]      Inf 180.8782 159.9647
+      [1]      Inf 180.8782 159.9646
 

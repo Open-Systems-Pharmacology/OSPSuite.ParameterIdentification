@@ -260,7 +260,19 @@ messages$warnParameterMetadata <- function(message) {
   )
 }
 
-messages$messageOptionsReset <- function(field, oldValue, newValue, optionsField) {
+messages$errorParameterMetadataMissing <- function() {
+  paste0(
+    "Parameter metadata is not available. `toDataFrame()` cannot be called ",
+    "on a `PIResult` created without `piParameters`."
+  )
+}
+
+messages$messageOptionsReset <- function(
+  field,
+  oldValue,
+  newValue,
+  optionsField
+) {
   ospsuite.utils::cliFormat(
     "{.field {field}} changed from {.val {oldValue}} to {.val {newValue}}. {.field {optionsField}} reset to defaults."
   )
