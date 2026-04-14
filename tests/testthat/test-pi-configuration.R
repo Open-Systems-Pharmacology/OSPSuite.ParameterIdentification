@@ -263,12 +263,11 @@ test_that("ciOptions single-field assignment is validated", {
   expect_equal(piConfiguration$ciOptions$confLevel, 0.9)
 })
 
-test_that("ciOptions rejects invalid confLevel", {
+test_that("ciOptions rejects invalid values", {
   piConfiguration <- PIConfiguration$new()
-  expect_error(
-    piConfiguration$ciOptions$confLevel <- 1.5,
-    regexp = "confLevel"
-  )
+  expect_error(piConfiguration$ciOptions$confLevel <- 1.5, regexp = "confLevel")
+  expect_error(piConfiguration$ciOptions <- list(r = 1L), regexp = "r")
+  expect_error(piConfiguration$ciOptions <- list(d = 0), regexp = "d")
 })
 
 test_that("ciOptions warns and ignores unknown keys", {
