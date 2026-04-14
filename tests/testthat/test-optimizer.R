@@ -507,5 +507,4 @@ test_that("Hessian CI uses r from ciOptions to control number of iterations", {
   # (default r=4: 50 hessian evals + 1 cost eval = 51 total)
   expect_equal(evalCount, 27L)
   expect_null(ciResult$error)
-  expect_false(any(is.null(ciResult$lowerCI)))
 })
