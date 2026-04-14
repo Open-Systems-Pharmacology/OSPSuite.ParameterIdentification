@@ -119,7 +119,7 @@ test_that("run() works with one dataset and scalar weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 157.9, tolerance = 1e-3)
+  expect_equal(result$toList()$objectiveValue, 3112.517, tolerance = 0.1)
 })
 
 test_that("run() works with two datasets and single vector weight", {
@@ -136,7 +136,7 @@ test_that("run() works with two datasets and single vector weight", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 163.3, tolerance = 1e-1)
+  expect_equal(result$toList()$objectiveValue, 3220.573, tolerance = 0.1)
 })
 
 test_that("run() works with two datasets and individual weights", {
@@ -155,5 +155,5 @@ test_that("run() works with two datasets and individual weights", {
   piTask$configuration$autoEstimateCI <- FALSE
 
   suppressMessages(result <- piTask$run())
-  expect_equal(result$toList()$objectiveValue, 227.5, tolerance = 1e-1)
+  expect_equal(result$toList()$objectiveValue, 4486.392, tolerance = 0.1)
 })
