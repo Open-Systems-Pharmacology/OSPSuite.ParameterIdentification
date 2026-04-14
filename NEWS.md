@@ -6,6 +6,7 @@
 
 ## Minor improvements and bug fixes
 
+- `ParameterIdentification` now converts observed and simulated data to OSPSuite base units before computing residuals, ensuring consistent and reproducible OFV values (#229, #237).
 - Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
 # ospsuite.parameteridentification 2.1.1
