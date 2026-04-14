@@ -119,10 +119,18 @@ Optimizer <- R6::R6Class(
       epsilon <- controlCI$epsilon %||% pmax(1e-8, pmin(1e-4, 0.1 * abs(par)))
       zScore <- qnorm(1 - (1 - controlCI$confLevel) / 2)
 
+      methodArgs <- purrr::compact(
+        list(
+          eps = epsilon,
+          r = controlCI$r,
+          d = controlCI$d
+        )
+      )
+
       # Compute the Hessian matrix numerically
       hess <- tryCatch(
         {
-          numDeriv::hessian(fn, x = par, method.args = list(eps = epsilon))
+          numDeriv::hessian(fn, x = par, method.args = methodArgs)
         },
         error = function(e) {
           result$error <- messages$ciEstimationError(

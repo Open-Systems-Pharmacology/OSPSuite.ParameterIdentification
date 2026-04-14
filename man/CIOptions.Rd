@@ -28,11 +28,23 @@ class.
 }
 \section{CIOptions_hessian}{
  Default options for the \strong{\code{hessian}} method.
+The Hessian matrix is computed via \code{\link[numDeriv:hessian]{numDeriv::hessian()}} using the
+Richardson method (the only supported method). The \code{r} and \code{d} options map
+directly to \code{method.args} of that function.
 \itemize{
 \item \strong{\code{epsilon}}: Numerical step size for numerical differentiation. Default
-is \code{NULL}, which applies an adaptive step size.
+is \code{NULL}, which applies an adaptive step size based on the parameter
+values.
 \item \strong{\code{confLevel}}: Confidence level for interval estimation. Default is \code{0.95}
 (95\% confidence intervals).
+\item \strong{\code{r}}: Number of Richardson iterations. Controls the trade-off between
+accuracy and computation time: \code{(N^2 + N)*r + 1} objective function
+evaluations are performed, where \code{N} is the number of free parameters.
+Must be at least \code{2}. Default is \code{NULL}, which uses \code{numDeriv}'s default
+of \code{4}.
+\item \strong{\code{d}}: Fractional step size. Smaller values reduce the step size relative
+to the parameter value. Default is \code{NULL}, which uses \code{numDeriv}'s default
+of \code{0.1}.
 }
 }
 
