@@ -217,7 +217,7 @@ test_that("algorithmOptions reset to NULL clears overrides", {
 test_that("changing algorithm resets algorithmOptions with message", {
   piConfiguration <- PIConfiguration$new()
   piConfiguration$algorithmOptions$maxeval <- 500L
-  
+
   expect_message(
     piConfiguration$algorithm <- "HJKB",
     messages$messageOptionsReset(
@@ -263,12 +263,11 @@ test_that("ciOptions single-field assignment is validated", {
   expect_equal(piConfiguration$ciOptions$confLevel, 0.9)
 })
 
-test_that("ciOptions rejects invalid confLevel", {
+test_that("ciOptions rejects invalid values", {
   piConfiguration <- PIConfiguration$new()
-  expect_error(
-    piConfiguration$ciOptions$confLevel <- 1.5,
-    regexp = "confLevel"
-  )
+  expect_error(piConfiguration$ciOptions$confLevel <- 1.5, regexp = "confLevel")
+  expect_error(piConfiguration$ciOptions <- list(r = 1L), regexp = "r")
+  expect_error(piConfiguration$ciOptions <- list(d = 0), regexp = "d")
 })
 
 test_that("ciOptions warns and ignores unknown keys", {
@@ -326,7 +325,8 @@ test_that("ciOptions bootstrap: nBootstrap validated and seed allows NULL", {
   piConfiguration$ciOptions <- list(nBootstrap = 500L)
   expect_equal(piConfiguration$ciOptions$nBootstrap, 500L)
   expect_error(
-    piConfiguration$ciOptions <- list(nBootstrap = 0L), regexp = "nBootstrap"
+    piConfiguration$ciOptions <- list(nBootstrap = 0L),
+    regexp = "nBootstrap"
   )
   piConfiguration$ciOptions <- list(seed = 42L)
   expect_equal(piConfiguration$ciOptions$seed, 42L)
