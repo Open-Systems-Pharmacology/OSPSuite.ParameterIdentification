@@ -184,7 +184,9 @@ ReverseDosimetry <- R6::R6Class(
           ),
           error = function(e) {
             stop(messages$errorRDPKParameterNotAvailable(
-              mapping$pkParameter, mapping$quantity$path, e$message
+              mapping$pkParameter,
+              mapping$quantity$path,
+              e$message
             ))
           }
         )
@@ -259,15 +261,19 @@ ReverseDosimetry <- R6::R6Class(
       }
 
       # For each mapping, estimate: dose_needed ≈ target / pk_at_start * start
-      estimates <- vapply(seq_along(private$.rdMappings), function(i) {
-        pkValBase <- result$pkValues[[i]]
-        targetBase <- private$.rdMappings[[i]]$targetValueInBaseUnit
-        if (is.finite(pkValBase) && pkValBase > 0) {
-          startVal * (targetBase / pkValBase)
-        } else {
-          NA_real_
-        }
-      }, numeric(1))
+      estimates <- vapply(
+        seq_along(private$.rdMappings),
+        function(i) {
+          pkValBase <- result$pkValues[[i]]
+          targetBase <- private$.rdMappings[[i]]$targetValueInBaseUnit
+          if (is.finite(pkValBase) && pkValBase > 0) {
+            startVal * (targetBase / pkValBase)
+          } else {
+            NA_real_
+          }
+        },
+        numeric(1)
+      )
 
       validEstimates <- estimates[is.finite(estimates) & estimates > 0]
 
@@ -292,7 +298,10 @@ ReverseDosimetry <- R6::R6Class(
 
       if (!is.null(initialGuess) && is.finite(initialGuess)) {
         startValues <- max(lower, min(upper, initialGuess))
-        message(messages$statusRDAutoInitResult(startValues, private$.piParameters$unit))
+        message(messages$statusRDAutoInitResult(
+          startValues,
+          private$.piParameters$unit
+        ))
       }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
@@ -402,7 +411,9 @@ ReverseDosimetry <- R6::R6Class(
       # Evaluate once more at optimized dose to collect achieved PK values
       finalEval <- tryCatch(
         private$.evaluate(optimResult$par[[1]]),
-        error = function(e) list(pkValues = vector("list", length(private$.rdMappings)))
+        error = function(e) {
+          list(pkValues = vector("list", length(private$.rdMappings)))
+        }
       )
 
       return(RDResult$new(

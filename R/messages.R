@@ -284,13 +284,22 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
   )
 }
 
-messages$errorRDUnitConversion <- function(pkParameter, targetUnit, dimension, detail) {
+messages$errorRDUnitConversion <- function(
+  pkParameter,
+  targetUnit,
+  dimension,
+  detail
+) {
   ospsuite.utils::cliFormat(
     "Incompatible {.field targetUnit} {.val {targetUnit}} for {.val {pkParameter}} (dimension: {.val {dimension}}). Detail: {detail}"
   )
 }
 
-messages$errorRDPKParameterNotAvailable <- function(pkParameter, quantityPath, detail = NULL) {
+messages$errorRDPKParameterNotAvailable <- function(
+  pkParameter,
+  quantityPath,
+  detail = NULL
+) {
   msg <- ospsuite.utils::cliFormat(
     "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}."
   )

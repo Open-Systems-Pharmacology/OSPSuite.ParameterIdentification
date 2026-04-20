@@ -47,7 +47,10 @@ RDOutputMapping <- R6::R6Class(
         private$.pkParameter
       } else {
         ospsuite.utils::validateIsString(value)
-        ospsuite.utils::validateIsIncluded(value, names(ospsuite::StandardPKParameter))
+        ospsuite.utils::validateIsIncluded(
+          value,
+          names(ospsuite::StandardPKParameter)
+        )
         private$.pkParameter <- value
       }
     },
@@ -152,7 +155,10 @@ RDOutputMapping <- R6::R6Class(
     initialize = function(quantity, pkParameter, targetValue, targetUnit) {
       ospsuite.utils::validateIsOfType(quantity, "Quantity")
       ospsuite.utils::validateIsString(pkParameter)
-      ospsuite.utils::validateIsIncluded(pkParameter, names(ospsuite::StandardPKParameter))
+      ospsuite.utils::validateIsIncluded(
+        pkParameter,
+        names(ospsuite::StandardPKParameter)
+      )
       ospsuite.utils::validateIsNumeric(targetValue)
       ospsuite.utils::validateIsString(targetUnit)
 
