@@ -91,10 +91,13 @@ Run the reverse dosimetry optimization.
 }
 
 \subsection{Details}{
-Finds the external dose that minimizes the sum of squared
-differences (in base units) between the simulated PK metric(s) and
-their target(s). The simulation's output selections are temporarily
-modified during the run and restored afterwards.
+Finds the external dose that minimizes a dimensionless sum of
+squared relative errors between the simulated PK metric(s) and their
+target(s). Each mapping contributes \code{((simulated - target) / target)^2}
+in base units, so the objective is comparable across PK parameters with
+different physical dimensions (e.g., C_max and AUC). The simulation's
+output selections are temporarily modified during the run and restored
+afterwards.
 }
 
 \subsection{Returns}{
