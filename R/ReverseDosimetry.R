@@ -1,45 +1,10 @@
 #' @title ReverseDosimetry
 #' @docType class
-#' @description Performs reverse dosimetry (QIVIVE — Quantitative In Vitro to
-#'   In Vivo Extrapolation) by finding the external dose that yields a
-#'   specified internal PK metric (e.g., C_max matching an in vitro EC50) in
-#'   a PBPK simulation.
-#'
-#' @details
-#' Reverse dosimetry is the inverse of forward simulation: instead of
-#' computing internal concentrations from a known dose, it finds the external
-#' dose that produces a target internal biomarker value. This is done by
-#' numerical optimization of the dose parameter using one of the algorithms
-#' available in [`PIConfiguration`].
-#'
-#' **Workflow:**
-#' 1. Create a `ReverseDosimetry` instance with the simulation, a
-#'    [`PIParameters`] object wrapping the dose parameter, and one or more
-#'    [`RDOutputMapping`] objects specifying target PK metrics.
-#' 2. Optionally configure the optimizer via a [`PIConfiguration`] object.
-#' 3. Call `$run()` to obtain an [`RDResult`].
-#'
-#' **Auto-initialization**: `$run()` always runs the simulation once at the
-#' parameter's start value to estimate an improved initial guess before
-#' optimization, exploiting the approximate linearity of many PBPK models.
-#' To skip this, manually set `$parameters$startValue` to the desired initial
-#' dose before calling `$run()`.
-#'
-#' **Multiple output mappings**: When multiple [`RDOutputMapping`] objects
-#' are supplied, the objective function minimizes the sum of squared
-#' differences (in base units) between each achieved PK metric and its
-#' target. This balances multiple targets simultaneously.
-#'
-#' **Simulation outputs**: Unlike [`ParameterIdentification`], this class
-#' does **not** strip existing output intervals from the simulation, since
-#' `ospsuite::calculatePKAnalyses()` requires the full time course. The
-#' simulation outputs are restored to their original state after `$run()`
-#' completes.
-#'
-#' **Confidence intervals (v2)**: CI estimation for reverse dosimetry
-#' requires Monte Carlo sampling over PK model parameters and is not yet
-#' implemented. See [`RDResult`]`$estimateCI()`.
-#'
+#' @description Performs reverse dosimetry (QIVIVE) by numerically optimizing
+#'   a model parameter to match a target internal PK metric (e.g., C_max
+#'   matching an in vitro EC50) in a PBPK simulation. Although designed for
+#'   dose estimation, any parameter that drives the target PK metric can be
+#'   used.
 #' @import R6 ospsuite.utils ospsuite
 #' @export
 #' @format NULL
@@ -57,8 +22,8 @@ ReverseDosimetry <- R6::R6Class(
       }
     },
 
-    #' @field parameters The `PIParameters` object representing the dose
-    #'   parameter to optimize. Read-only.
+    #' @field parameters The `PIParameters` object representing the parameter
+    #'   to optimize. Read-only.
     parameters = function(value) {
       if (missing(value)) {
         private$.piParameters
@@ -93,11 +58,11 @@ ReverseDosimetry <- R6::R6Class(
     .simulation = NULL,
     # Named list of simulations keyed by root container ID (single entry for RD)
     .simulations = NULL,
-    # SimulationBatch for the dose parameter
+    # SimulationBatch for the optimized parameter
     .simulationBatch = NULL,
     # Named list of variable parameters for the batch: list(simId = list(path = startVal))
     .variableParameters = NULL,
-    # PIParameters object (dose parameter)
+    # PIParameters object
     .piParameters = NULL,
     # List of RDOutputMapping objects
     .rdMappings = NULL,
@@ -123,7 +88,7 @@ ReverseDosimetry <- R6::R6Class(
         )
       }
 
-      # Register dose parameter as a variable parameter
+      # Register the optimized parameter as a variable parameter
       private$.variableParameters <- list()
       private$.variableParameters[[simId]] <- list()
 
@@ -132,21 +97,21 @@ ReverseDosimetry <- R6::R6Class(
           private$.piParameters$startValue
       }
 
-      # Create simulation batch with the dose parameter as variable
+      # Create simulation batch with the optimized parameter as variable
       private$.simulationBatch <- ospsuite::createSimulationBatch(
         simulation = private$.simulation,
         parametersOrPaths = names(private$.variableParameters[[simId]])
       )
     },
 
-    # Run the simulation for a given dose value and extract PK metrics.
+    # Run the simulation for a given parameter value and extract PK metrics.
     # Returns a named list: list(pkValues = list(numeric), cost = numeric)
-    .evaluate = function(doseValue) {
+    .evaluate = function(paramValue) {
       simId <- private$.simulation$root$id
 
-      # Update dose parameter value in the variable parameter list
+      # Update the variable parameter value
       for (param in private$.piParameters$parameters) {
-        private$.variableParameters[[simId]][[param$path]] <- doseValue
+        private$.variableParameters[[simId]][[param$path]] <- paramValue
       }
 
       # Submit run values to the batch
@@ -216,10 +181,10 @@ ReverseDosimetry <- R6::R6Class(
     .objectiveFunction = function(currVals) {
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
-      doseValue <- currVals[[1]]
+      paramValue <- currVals[[1]]
 
       result <- tryCatch(
-        private$.evaluate(doseValue),
+        private$.evaluate(paramValue),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
@@ -245,7 +210,7 @@ ReverseDosimetry <- R6::R6Class(
       return(result$cost)
     },
 
-    # Estimate a good starting dose by running at the current start value and
+    # Estimate a good starting value by running at the current start value and
     # scaling proportionally to the target(s). Exploits the approximate
     # linearity of many PBPK models.
     .estimateInitialDose = function() {
@@ -260,7 +225,7 @@ ReverseDosimetry <- R6::R6Class(
         return(NULL)
       }
 
-      # For each mapping, estimate: dose_needed ≈ target / pk_at_start * start
+      # For each mapping, estimate: value_needed ≈ target / pk_at_start * start
       estimates <- vapply(
         seq_along(private$.rdMappings),
         function(i) {
@@ -304,6 +269,7 @@ ReverseDosimetry <- R6::R6Class(
         ))
       }
 
+      # ciMethod and ciOptions are not forwarded. Wire them here when implementing CI.
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       optimResult <- optimizer$run(
@@ -324,18 +290,21 @@ ReverseDosimetry <- R6::R6Class(
     #' @param simulation A [`ospsuite::Simulation`] object loaded via
     #'   [`ospsuite::loadSimulation()`]. The simulation must have appropriate
     #'   output intervals configured for PK analysis.
-    #' @param parameters A [`PIParameters`] object wrapping the dose
-    #'   parameter(s) to optimize. The `startValue`, `minValue`, and
-    #'   `maxValue` define the search space for the dose. Use
-    #'   [`ospsuite::getParameter()`] to obtain the dose parameter, then
-    #'   pass it to `PIParameters$new()`.
+    #' @param parameters A [`PIParameters`] object wrapping the parameter to
+    #'   optimize. Typically a dose parameter, but any model parameter with a
+    #'   monotonic effect on the target PK metric can be used. The
+    #'   `startValue`, `minValue`, and `maxValue` define the search space.
     #' @param outputMappings A single [`RDOutputMapping`] or a list of
     #'   `RDOutputMapping` objects. Each mapping specifies a simulation output
     #'   quantity, a PK metric (e.g., `"C_max"`), and the target value to
     #'   match. All quantities must belong to the same simulation.
-    #' @param configuration (Optional) A [`PIConfiguration`] object
-    #'   specifying the optimization algorithm and options. Defaults to a new
-    #'   `PIConfiguration` with `BOBYQA` algorithm if omitted.
+    #' @param configuration (Optional) A [`PIConfiguration`] object.
+    #'   Defaults to a new `PIConfiguration` with `BOBYQA` algorithm if omitted.
+    #'   The fields `algorithm`, `algorithmOptions`, `simulationRunOptions`, and
+    #'   `printEvaluationFeedback` are used. `objectiveFunctionOptions` has no
+    #'   effect because reverse dosimetry uses a fixed sum-of-squared-errors
+    #'   objective. `ciMethod` and `ciOptions` are reserved for a future
+    #'   release.
     #'
     #' @return A new `ReverseDosimetry` object ready to run via `$run()`.
     initialize = function(
@@ -405,10 +374,10 @@ ReverseDosimetry <- R6::R6Class(
 
       optimResult <- private$.runAlgorithm()
 
-      # Apply the optimized dose back to the parameter object
+      # Apply the optimized value back to the parameter object
       private$.piParameters$setValue(optimResult$par[[1]])
 
-      # Evaluate once more at optimized dose to collect achieved PK values
+      # Evaluate once more at optimized value to collect achieved PK values
       finalEval <- tryCatch(
         private$.evaluate(optimResult$par[[1]]),
         error = function(e) {
@@ -430,8 +399,8 @@ ReverseDosimetry <- R6::R6Class(
       ospsuite.utils::ospPrintClass(self)
       ospsuite.utils::ospPrintItems(list(
         "Simulation" = private$.simulation$root$name,
-        "Dose parameter" = private$.piParameters$parameters[[1]]$path,
-        "Dose unit" = private$.piParameters$unit,
+        "Parameter" = private$.piParameters$parameters[[1]]$path,
+        "Unit" = private$.piParameters$unit,
         "Start value" = format(private$.piParameters$startValue, digits = 4),
         "Min value" = format(private$.piParameters$minValue, digits = 4),
         "Max value" = format(private$.piParameters$maxValue, digits = 4),

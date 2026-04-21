@@ -1,27 +1,7 @@
 #' @title RDOutputMapping
 #' @docType class
-#' @description Defines a mapping from a simulated model output quantity to a
-#'   target PK metric for use in reverse dosimetry (QIVIVE) optimization.
-#'
-#' @details
-#' An `RDOutputMapping` specifies:
-#' - The **quantity** in the simulation to extract PK data from (e.g., a plasma
-#'   concentration output).
-#' - The **PK parameter** to evaluate (e.g., `"C_max"`, `"AUC_tEnd"`). Must be
-#'   one of [`ospsuite::StandardPKParameter`].
-#' - The **target value** and its **unit**, representing the biomarker
-#'   concentration to match (e.g., an in vitro EC50).
-#'
-#' **Unit handling**: At construction the target value is converted to base
-#' units using the quantity's dimension. This means `targetUnit` must be
-#' dimensionally compatible with the output quantity (e.g., a concentration
-#' unit for `"C_max"`). PK parameters with a different dimension than the
-#' output quantity (e.g., `"AUC_tEnd"` relative to a concentration quantity)
-#' require a target unit compatible with that PK parameter's dimension, which
-#' may not match the quantity's dimension. In that case, provide the target
-#' value in a unit consistent with what `ospsuite::calculatePKAnalyses()`
-#' returns for that parameter.
-#'
+#' @description Defines a mapping from a simulated output quantity to a target
+#'   PK metric for use in [`ReverseDosimetry`] optimization.
 #' @import R6 ospsuite.utils ospsuite
 #' @export
 #' @format NULL

@@ -1,20 +1,8 @@
 #' @title RDResult
 #' @docType class
-#' @description Structured output of a reverse dosimetry run, containing the
-#'   estimated external dose, achieved PK metric values, convergence
+#' @description Structured output of a [`ReverseDosimetry`] run, containing the
+#'   estimated parameter value, achieved PK metric values, convergence
 #'   information, and parameter metadata.
-#'
-#' @details
-#' `RDResult` is returned by [`ReverseDosimetry`]`$run()`. It stores the
-#' optimized dose that yields the specified in vitro target concentrations in
-#' the PBPK simulation, together with the corresponding PK metric values
-#' achieved at that dose.
-#'
-#' **Confidence intervals (v2)**: The `$estimateCI()` method is reserved for a
-#' future implementation based on Monte Carlo sampling over PK model parameters,
-#' as described in the QIVIVE uncertainty analysis framework. It currently
-#' raises an error.
-#'
 #' @keywords internal
 #' @format NULL
 RDResult <- R6::R6Class(
@@ -33,10 +21,10 @@ RDResult <- R6::R6Class(
     #'   `value`, `convergence`, `algorithm`, `elapsed`, `iterations`,
     #'   `fnEvaluations`, and `startValues`.
     #' @param achievedPKValues Named list of achieved PK metric values at the
-    #'   optimized dose, in the quantity's display unit as returned by
+    #'   optimized parameter value, in the quantity's display unit as returned by
     #'   `ospsuite::calculatePKAnalyses()`.
     #' @param rdMappings List of `RDOutputMapping` objects used in the run.
-    #' @param piParameters `PIParameters` object representing the dose
+    #' @param piParameters `PIParameters` object representing the optimized
     #'   parameter.
     #' @param configuration `PIConfiguration` used during the run.
     #'
@@ -53,7 +41,7 @@ RDResult <- R6::R6Class(
       private$.piParameters <- piParameters
 
       private$.result <- list(
-        estimatedDose = optimResult$par[[1]],
+        estimatedValue = optimResult$par[[1]],
         unit = piParameters$unit,
         objectiveValue = optimResult$value,
         convergence = if (!is.finite(optimResult$value)) {
@@ -65,7 +53,7 @@ RDResult <- R6::R6Class(
         elapsed = optimResult$elapsed,
         iterations = optimResult$iterations,
         fnEvaluations = optimResult$fnEvaluations,
-        initialDose = optimResult$startValues[[1]],
+        initialValue = optimResult$startValues[[1]],
         achievedPKValues = achievedPKValues,
         mappings = lapply(rdMappings, function(m) {
           list(
@@ -87,9 +75,9 @@ RDResult <- R6::R6Class(
     #' - `pkParameter`: name of the PK parameter
     #' - `targetValue`: user-specified target value
     #' - `targetUnit`: unit of the target value
-    #' - `achievedValue`: PK metric value reached at the optimized dose
-    #' - `estimatedDose`: optimized external dose
-    #' - `doseUnit`: unit of the estimated dose
+    #' - `achievedValue`: PK metric value at the optimized parameter value
+    #' - `estimatedValue`: optimized parameter value
+    #' - `parameterUnit`: unit of the optimized parameter
     toDataFrame = function() {
       x <- private$.result
       n <- length(x$mappings)
@@ -100,8 +88,8 @@ RDResult <- R6::R6Class(
         targetValue = sapply(x$mappings, `[[`, "targetValue"),
         targetUnit = sapply(x$mappings, `[[`, "targetUnit"),
         achievedValue = unlist(x$achievedPKValues),
-        estimatedDose = rep(x$estimatedDose, n),
-        doseUnit = rep(x$unit, n),
+        estimatedValue = rep(x$estimatedValue, n),
+        parameterUnit = rep(x$unit, n),
         stringsAsFactors = FALSE
       )
     },
@@ -112,7 +100,7 @@ RDResult <- R6::R6Class(
       private$.result
     },
 
-    #' @description Estimate confidence intervals for the dose estimate.
+    #' @description Estimate confidence intervals for the parameter estimate.
     #'
     #' @details **Not yet implemented.** Proper CI for reverse dosimetry
     #' requires Monte Carlo sampling over PK model parameters to build a
@@ -139,12 +127,12 @@ RDResult <- R6::R6Class(
           "Iterations" = x$iterations,
           "Function evaluations" = x$fnEvaluations,
           "Elapsed" = paste0(.formatValues(x$elapsed), " s"),
-          "Estimated dose" = paste(
-            .formatValues(x$estimatedDose),
+          "Estimated value" = paste(
+            .formatValues(x$estimatedValue),
             x$unit
           ),
-          "Initial dose" = paste(
-            .formatValues(x$initialDose),
+          "Initial value" = paste(
+            .formatValues(x$initialValue),
             x$unit
           )
         ),

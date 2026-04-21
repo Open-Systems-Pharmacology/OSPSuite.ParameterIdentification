@@ -5,20 +5,9 @@
 \alias{RDResult}
 \title{RDResult}
 \description{
-Structured output of a reverse dosimetry run, containing the
-estimated external dose, achieved PK metric values, convergence
+Structured output of a \code{\link{ReverseDosimetry}} run, containing the
+estimated parameter value, achieved PK metric values, convergence
 information, and parameter metadata.
-}
-\details{
-\code{RDResult} is returned by \code{\link{ReverseDosimetry}}\verb{$run()}. It stores the
-optimized dose that yields the specified in vitro target concentrations in
-the PBPK simulation, together with the corresponding PK metric values
-achieved at that dose.
-
-\strong{Confidence intervals (v2)}: The \verb{$estimateCI()} method is reserved for a
-future implementation based on Monte Carlo sampling over PK model parameters,
-as described in the QIVIVE uncertainty analysis framework. It currently
-raises an error.
 }
 \keyword{internal}
 \section{Methods}{
@@ -55,12 +44,12 @@ Initialize an \code{RDResult} instance. For internal use only.
 \code{fnEvaluations}, and \code{startValues}.}
 
 \item{\code{achievedPKValues}}{Named list of achieved PK metric values at the
-optimized dose, in the quantity's display unit as returned by
+optimized parameter value, in the quantity's display unit as returned by
 \code{ospsuite::calculatePKAnalyses()}.}
 
 \item{\code{rdMappings}}{List of \code{RDOutputMapping} objects used in the run.}
 
-\item{\code{piParameters}}{\code{PIParameters} object representing the dose
+\item{\code{piParameters}}{\code{PIParameters} object representing the optimized
 parameter.}
 
 \item{\code{configuration}}{\code{PIConfiguration} used during the run.}
@@ -88,9 +77,9 @@ A \code{data.frame} with columns:
 \item \code{pkParameter}: name of the PK parameter
 \item \code{targetValue}: user-specified target value
 \item \code{targetUnit}: unit of the target value
-\item \code{achievedValue}: PK metric value reached at the optimized dose
-\item \code{estimatedDose}: optimized external dose
-\item \code{doseUnit}: unit of the estimated dose
+\item \code{achievedValue}: PK metric value at the optimized parameter value
+\item \code{estimatedValue}: optimized parameter value
+\item \code{parameterUnit}: unit of the optimized parameter
 }
 }
 }
@@ -111,7 +100,7 @@ A named list.
 \if{html}{\out{<a id="method-RDResult-estimateCI"></a>}}
 \if{latex}{\out{\hypertarget{method-RDResult-estimateCI}{}}}
 \subsection{Method \code{estimateCI()}}{
-Estimate confidence intervals for the dose estimate.
+Estimate confidence intervals for the parameter estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{RDResult$estimateCI()}\if{html}{\out{</div>}}
 }

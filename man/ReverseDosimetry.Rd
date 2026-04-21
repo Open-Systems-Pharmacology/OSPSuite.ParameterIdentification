@@ -5,47 +5,11 @@
 \alias{ReverseDosimetry}
 \title{ReverseDosimetry}
 \description{
-Performs reverse dosimetry (QIVIVE — Quantitative In Vitro to
-In Vivo Extrapolation) by finding the external dose that yields a
-specified internal PK metric (e.g., C_max matching an in vitro EC50) in
-a PBPK simulation.
-}
-\details{
-Reverse dosimetry is the inverse of forward simulation: instead of
-computing internal concentrations from a known dose, it finds the external
-dose that produces a target internal biomarker value. This is done by
-numerical optimization of the dose parameter using one of the algorithms
-available in \code{\link{PIConfiguration}}.
-
-\strong{Workflow:}
-\enumerate{
-\item Create a \code{ReverseDosimetry} instance with the simulation, a
-\code{\link{PIParameters}} object wrapping the dose parameter, and one or more
-\code{\link{RDOutputMapping}} objects specifying target PK metrics.
-\item Optionally configure the optimizer via a \code{\link{PIConfiguration}} object.
-\item Call \verb{$run()} to obtain an \code{\link{RDResult}}.
-}
-
-\strong{Auto-initialization}: \verb{$run()} always runs the simulation once at the
-parameter's start value to estimate an improved initial guess before
-optimization, exploiting the approximate linearity of many PBPK models.
-To skip this, manually set \verb{$parameters$startValue} to the desired initial
-dose before calling \verb{$run()}.
-
-\strong{Multiple output mappings}: When multiple \code{\link{RDOutputMapping}} objects
-are supplied, the objective function minimizes the sum of squared
-differences (in base units) between each achieved PK metric and its
-target. This balances multiple targets simultaneously.
-
-\strong{Simulation outputs}: Unlike \code{\link{ParameterIdentification}}, this class
-does \strong{not} strip existing output intervals from the simulation, since
-\code{ospsuite::calculatePKAnalyses()} requires the full time course. The
-simulation outputs are restored to their original state after \verb{$run()}
-completes.
-
-\strong{Confidence intervals (v2)}: CI estimation for reverse dosimetry
-requires Monte Carlo sampling over PK model parameters and is not yet
-implemented. See \code{\link{RDResult}}\verb{$estimateCI()}.
+Performs reverse dosimetry (QIVIVE) by numerically optimizing
+a model parameter to match a target internal PK metric (e.g., C_max
+matching an in vitro EC50) in a PBPK simulation. Although designed for
+dose estimation, any parameter that drives the target PK metric can be
+used.
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -53,8 +17,8 @@ implemented. See \code{\link{RDResult}}\verb{$estimateCI()}.
 \item{\code{simulation}}{The \code{Simulation} object used for optimization.
 Read-only.}
 
-\item{\code{parameters}}{The \code{PIParameters} object representing the dose
-parameter to optimize. Read-only.}
+\item{\code{parameters}}{The \code{PIParameters} object representing the parameter
+to optimize. Read-only.}
 
 \item{\code{outputMappings}}{A list of \code{RDOutputMapping} objects defining
 target PK metrics. Read-only.}
@@ -93,20 +57,23 @@ Initialize a \code{ReverseDosimetry} instance.
 \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}}. The simulation must have appropriate
 output intervals configured for PK analysis.}
 
-\item{\code{parameters}}{A \code{\link{PIParameters}} object wrapping the dose
-parameter(s) to optimize. The \code{startValue}, \code{minValue}, and
-\code{maxValue} define the search space for the dose. Use
-\code{\link[ospsuite:getParameter]{ospsuite::getParameter()}} to obtain the dose parameter, then
-pass it to \code{PIParameters$new()}.}
+\item{\code{parameters}}{A \code{\link{PIParameters}} object wrapping the parameter to
+optimize. Typically a dose parameter, but any model parameter with a
+monotonic effect on the target PK metric can be used. The
+\code{startValue}, \code{minValue}, and \code{maxValue} define the search space.}
 
 \item{\code{outputMappings}}{A single \code{\link{RDOutputMapping}} or a list of
 \code{RDOutputMapping} objects. Each mapping specifies a simulation output
 quantity, a PK metric (e.g., \code{"C_max"}), and the target value to
 match. All quantities must belong to the same simulation.}
 
-\item{\code{configuration}}{(Optional) A \code{\link{PIConfiguration}} object
-specifying the optimization algorithm and options. Defaults to a new
-\code{PIConfiguration} with \code{BOBYQA} algorithm if omitted.}
+\item{\code{configuration}}{(Optional) A \code{\link{PIConfiguration}} object.
+Defaults to a new \code{PIConfiguration} with \code{BOBYQA} algorithm if omitted.
+The fields \code{algorithm}, \code{algorithmOptions}, \code{simulationRunOptions}, and
+\code{printEvaluationFeedback} are used. \code{objectiveFunctionOptions} has no
+effect because reverse dosimetry uses a fixed sum-of-squared-errors
+objective. \code{ciMethod} and \code{ciOptions} are reserved for a future
+release.}
 }
 \if{html}{\out{</div>}}
 }

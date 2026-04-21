@@ -5,29 +5,8 @@
 \alias{RDOutputMapping}
 \title{RDOutputMapping}
 \description{
-Defines a mapping from a simulated model output quantity to a
-target PK metric for use in reverse dosimetry (QIVIVE) optimization.
-}
-\details{
-An \code{RDOutputMapping} specifies:
-\itemize{
-\item The \strong{quantity} in the simulation to extract PK data from (e.g., a plasma
-concentration output).
-\item The \strong{PK parameter} to evaluate (e.g., \code{"C_max"}, \code{"AUC_tEnd"}). Must be
-one of \code{\link[ospsuite:StandardPKParameter]{ospsuite::StandardPKParameter}}.
-\item The \strong{target value} and its \strong{unit}, representing the biomarker
-concentration to match (e.g., an in vitro EC50).
-}
-
-\strong{Unit handling}: At construction the target value is converted to base
-units using the quantity's dimension. This means \code{targetUnit} must be
-dimensionally compatible with the output quantity (e.g., a concentration
-unit for \code{"C_max"}). PK parameters with a different dimension than the
-output quantity (e.g., \code{"AUC_tEnd"} relative to a concentration quantity)
-require a target unit compatible with that PK parameter's dimension, which
-may not match the quantity's dimension. In that case, provide the target
-value in a unit consistent with what \code{ospsuite::calculatePKAnalyses()}
-returns for that parameter.
+Defines a mapping from a simulated output quantity to a target
+PK metric for use in \code{\link{ReverseDosimetry}} optimization.
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}

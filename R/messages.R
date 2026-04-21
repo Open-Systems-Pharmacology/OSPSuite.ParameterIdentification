@@ -320,12 +320,12 @@ messages$errorRDCINotImplemented <- function() {
 
 messages$statusRDAutoInit <- function() {
   ospsuite.utils::cliFormat(
-    "Estimating initial dose via proportional scaling (auto-initialization)."
+    "Estimating initial value via proportional scaling (auto-initialization)."
   )
 }
 
-messages$statusRDAutoInitResult <- function(dose, unit) {
+messages$statusRDAutoInitResult <- function(value, unit) {
   ospsuite.utils::cliFormat(
-    "Auto-initialization: starting optimization from dose = {.val {format(dose, digits = 4)}} {unit}."
+    "Auto-initialization: starting optimization from value = {.val {format(value, digits = 4)}} {unit}."
   )
 }
