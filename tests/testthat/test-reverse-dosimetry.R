@@ -277,6 +277,53 @@ test_that("run() restores simulation output state after completion", {
   )
 })
 
+test_that("run() cost function uses base units: same target in different units gives same result", {
+  sim1 <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE
+  )
+  sim2 <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE
+  )
+
+  # 30 µmol/l and 30000 nmol/l are the same physical concentration.
+  # The optimizer must converge to the same dose regardless of which unit is used.
+  suppressMessages(
+    result_base <- ReverseDosimetry$new(
+      simulation = sim1,
+      parameters = testRdParameters(sim1),
+      outputMappings = RDOutputMapping$new(
+        quantity = testQuantity(sim1),
+        pkParameter = "C_max",
+        targetValue = 30,
+        targetUnit = "µmol/l"
+      ),
+      configuration = lowIterPiConfiguration(50)
+    )$run()
+  )
+
+  suppressMessages(
+    result_nmol <- ReverseDosimetry$new(
+      simulation = sim2,
+      parameters = testRdParameters(sim2),
+      outputMappings = RDOutputMapping$new(
+        quantity = testQuantity(sim2),
+        pkParameter = "C_max",
+        targetValue = 30000,
+        targetUnit = "nmol/l"
+      ),
+      configuration = lowIterPiConfiguration(50)
+    )$run()
+  )
+
+  expect_equal(
+    result_base$toList()$estimatedValue,
+    result_nmol$toList()$estimatedValue,
+    tolerance = 1e-6
+  )
+})
+
 
 # RDResult: structure
 
