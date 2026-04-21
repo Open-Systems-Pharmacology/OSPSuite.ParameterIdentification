@@ -4,7 +4,7 @@ testRdOutputMapping <- function(simulation = testSimulation()) {
   RDOutputMapping$new(
     quantity = testQuantity(simulation),
     pkParameter = "C_max",
-    targetValue = 1,
+    targetValue = 30,
     targetUnit = testQuantity(simulation)$unit
   )
 }
@@ -26,7 +26,7 @@ test_that("RDOutputMapping constructs correctly with valid inputs", {
 
   expect_s3_class(mapping, "RDOutputMapping")
   expect_equal(mapping$pkParameter, "C_max")
-  expect_equal(mapping$targetValue, 1)
+  expect_equal(mapping$targetValue, 30)
   expect_true(is.numeric(mapping$targetValueInBaseUnit))
   expect_true(is.finite(mapping$targetValueInBaseUnit))
 })
@@ -64,6 +64,18 @@ test_that("RDOutputMapping rejects incompatible targetUnit", {
   )
 })
 
+test_that("RDOutputMapping validates targetUnit against pkParameter dimension", {
+  sim <- testSimulation()
+  expect_no_error(
+    RDOutputMapping$new(
+      quantity = testQuantity(sim),
+      pkParameter = "AUC_tEnd",
+      targetValue = 5000,
+      targetUnit = "µmol*min/l"
+    )
+  )
+})
+
 test_that("RDOutputMapping rejects non-Quantity object", {
   expect_error(
     RDOutputMapping$new(
@@ -92,9 +104,10 @@ test_that("RDOutputMapping mutable fields can be updated", {
   mapping$pkParameter <- "AUC_tEnd"
   expect_equal(mapping$pkParameter, "AUC_tEnd")
 
+  mapping$targetUnit <- "µmol*min/l"
   origBase <- mapping$targetValueInBaseUnit
-  mapping$targetValue <- 5
-  expect_equal(mapping$targetValue, 5)
+  mapping$targetValue <- 5000
+  expect_equal(mapping$targetValue, 5000)
   expect_false(isTRUE(all.equal(mapping$targetValueInBaseUnit, origBase)))
 })
 
@@ -106,8 +119,11 @@ test_that("RDOutputMapping stores target in correct base units", {
   quantity <- testQuantity()
 
   expected <- ospsuite::toBaseUnit(
-    quantityOrDimension = quantity$dimension,
-    values = 1,
+    quantityOrDimension = ospsuite::pkParameterByName(
+      "C_max",
+      stopIfNotFound = TRUE
+    )$dimension,
+    values = mapping$targetValue,
     unit = quantity$unit
   )
 
@@ -215,6 +231,36 @@ test_that("ReverseDosimetry prints without error", {
 test_that("run() returns an RDResult object", {
   suppressMessages(result <- testRdTask(iter = 5)$run())
   expect_s3_class(result, "RDResult")
+})
+
+test_that("run() converges with C_max and AUC_tEnd mappings", {
+  sim <- testSimulation()
+  quantity <- testQuantity(sim)
+
+  suppressMessages(
+    result <- ReverseDosimetry$new(
+      simulation = sim,
+      parameters = testRdParameters(sim),
+      outputMappings = list(
+        RDOutputMapping$new(
+          quantity = quantity,
+          pkParameter = "C_max",
+          targetValue = 30,
+          targetUnit = quantity$unit
+        ),
+        RDOutputMapping$new(
+          quantity = quantity,
+          pkParameter = "AUC_tEnd",
+          targetValue = 5000,
+          targetUnit = "µmol*min/l"
+        )
+      ),
+      configuration = lowIterPiConfiguration(5)
+    )$run()
+  )
+
+  expect_s3_class(result, "RDResult")
+  expect_true(is.finite(result$toList()$estimatedValue))
 })
 
 test_that("run() restores simulation output state after completion", {

@@ -90,17 +90,23 @@ RDOutputMapping <- R6::R6Class(
     .targetValueInBaseUnit = NULL,
     .simId = NULL,
 
-    # Convert targetValue from targetUnit to base units using the quantity's
-    # dimension. Stores result in .targetValueInBaseUnit.
+    # Convert targetValue from targetUnit to base units using the PK parameter's
+    # dimension (not the quantity's dimension, which differs for e.g. AUC).
+    # Stores result in .targetValueInBaseUnit.
     .recomputeTargetInBaseUnit = function() {
       if (
         !is.null(private$.targetValue) &&
           !is.null(private$.targetUnit) &&
-          !is.null(private$.quantity)
+          !is.null(private$.quantity) &&
+          !is.null(private$.pkParameter)
       ) {
+        dim <- ospsuite::pkParameterByName(
+          private$.pkParameter,
+          stopIfNotFound = TRUE
+        )$dimension
         private$.targetValueInBaseUnit <- tryCatch(
           ospsuite::toBaseUnit(
-            quantityOrDimension = private$.quantity$dimension,
+            quantityOrDimension = dim,
             values = private$.targetValue,
             unit = private$.targetUnit
           ),
@@ -108,7 +114,7 @@ RDOutputMapping <- R6::R6Class(
             stop(messages$errorRDUnitConversion(
               private$.pkParameter,
               private$.targetUnit,
-              private$.quantity$dimension,
+              dim,
               e$message
             ))
           }

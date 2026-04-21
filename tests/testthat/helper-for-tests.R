@@ -47,6 +47,33 @@ getTestParameters <- function() {
 testParameters <- getTestParameters()
 
 
+getTestRdParameters <- function() {
+  .parameters <- NULL
+  .simulation <- NULL
+  function(simulation = NULL) {
+    if (!is.null(simulation)) {
+      param <- ospsuite::getParameter(
+        path = "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+        container = simulation
+      )
+      piParameter <- PIParameters$new(parameters = list(param))
+      piParameter$minValue <- 0.0001
+      piParameter$maxValue <- 0.001
+      return(piParameter)
+    }
+
+    if (is.null(.parameters)) {
+      .simulation <<- testSimulation()
+      .parameters <<- Recall(simulation = .simulation)
+    }
+
+    return(.parameters)
+  }
+}
+
+testRdParameters <- getTestRdParameters()
+
+
 getTestOutputMapping <- function(includeObservedData = TRUE) {
   .outputMapping <- NULL
   .simulation <- NULL

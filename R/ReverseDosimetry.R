@@ -158,20 +158,12 @@ ReverseDosimetry <- R6::R6Class(
 
         pkVal <- pkParam$values
 
-        # Store the raw value (in quantity display unit) for user-facing output
+        # Store the raw value (in PK parameter display unit) for user-facing output
         pkValues[[i]] <- pkVal
 
-        # Convert to base units for cost computation
-        pkValBase <- tryCatch(
-          ospsuite::toBaseUnit(
-            quantityOrDimension = mapping$quantity$dimension,
-            values = pkVal,
-            unit = mapping$quantity$unit
-          ),
-          error = function(e) pkVal # fallback: compare as-is if conversion fails
-        )
-
-        cost <- cost + (pkValBase - mapping$targetValueInBaseUnit)^2
+        # Normalized relative cost: dimensionless, comparable across different
+        # PK parameter dimensions (e.g. C_max in µmol/l and AUC in µmol*min/l)
+        cost <- cost + ((pkVal - mapping$targetValue) / mapping$targetValue)^2
       }
 
       return(list(pkValues = pkValues, cost = cost))
@@ -229,10 +221,10 @@ ReverseDosimetry <- R6::R6Class(
       estimates <- vapply(
         seq_along(private$.rdMappings),
         function(i) {
-          pkValBase <- result$pkValues[[i]]
-          targetBase <- private$.rdMappings[[i]]$targetValueInBaseUnit
-          if (is.finite(pkValBase) && pkValBase > 0) {
-            startVal * (targetBase / pkValBase)
+          pkVal <- result$pkValues[[i]]
+          target <- private$.rdMappings[[i]]$targetValue
+          if (is.finite(pkVal) && pkVal > 0) {
+            startVal * (target / pkVal)
           } else {
             NA_real_
           }
