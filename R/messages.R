@@ -300,10 +300,15 @@ messages$errorRDPKParameterNotAvailable <- function(
   quantityPath,
   detail = NULL
 ) {
-  msg <- ospsuite.utils::cliFormat(
-    "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}."
-  )
-  if (!is.null(detail)) paste0(msg, "\nDetail: ", detail) else msg
+  if (is.null(detail)) {
+    ospsuite.utils::cliFormat(
+      "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}."
+    )
+  } else {
+    ospsuite.utils::cliFormat(
+      "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}.\nDetail: {detail}"
+    )
+  }
 }
 
 messages$errorRDSimulationMismatch <- function() {

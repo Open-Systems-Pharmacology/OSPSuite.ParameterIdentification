@@ -163,7 +163,9 @@ ReverseDosimetry <- R6::R6Class(
 
         # Normalized relative cost: dimensionless, comparable across different
         # PK parameter dimensions (e.g. C_max in µmol/l and AUC in µmol*min/l)
-        cost <- cost + ((pkVal - mapping$targetValue) / mapping$targetValue)^2
+        cost <- cost +
+          ((pkVal - mapping$targetValueInBaseUnit) /
+            mapping$targetValueInBaseUnit)^2
       }
 
       return(list(pkValues = pkValues, cost = cost))
@@ -222,7 +224,7 @@ ReverseDosimetry <- R6::R6Class(
         seq_along(private$.rdMappings),
         function(i) {
           pkVal <- result$pkValues[[i]]
-          target <- private$.rdMappings[[i]]$targetValue
+          target <- private$.rdMappings[[i]]$targetValueInBaseUnit
           if (is.finite(pkVal) && pkVal > 0) {
             startVal * (target / pkVal)
           } else {
@@ -376,7 +378,7 @@ ReverseDosimetry <- R6::R6Class(
       finalEval <- tryCatch(
         private$.evaluate(optimResult$par[[1]]),
         error = function(e) {
-          list(pkValues = vector("list", length(private$.rdMappings)))
+          list(pkValues = as.list(rep(NA_real_, length(private$.rdMappings))))
         }
       )
 
