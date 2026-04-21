@@ -236,6 +236,14 @@ testModifiedTask <- function() {
 
 # General Helpers
 
+parseFnevals <- function(output) {
+  text <- paste0(output, collapse = "\n")
+  as.integer(regmatches(
+    text,
+    gregexpr("(?<=fneval: )\\d+", text, perl = TRUE)
+  )[[1]])
+}
+
 getTestDataFilePath <- function(fileName) {
   dataPath <- testthat::test_path("../data")
   file.path(dataPath, fileName, fsep = .Platform$file.sep)
