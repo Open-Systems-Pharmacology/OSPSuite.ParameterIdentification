@@ -346,10 +346,14 @@ ParameterIdentification <- R6::R6Class(
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
-        # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[
-          idx
-        ]]$toDataFrame())
+        # Convert all columns to base units for consistent residual calculation
+        obsVsPredDf <- ospsuite:::.unitConverter(
+          obsVsPredList[[idx]]$toDataFrame(),
+          xUnit = ospsuite::getBaseUnit("Time"),
+          yUnit = ospsuite::getBaseUnit(
+            outputMappings[[idx]]$quantity$dimension
+          )
+        )
         # Apply LLOQ handling for LSQ
         if (
           private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
@@ -767,7 +771,8 @@ ParameterIdentification <- R6::R6Class(
         par = currValues,
         fn = function(p, ...) private$.objectiveFunction(p, ...),
         lower = lower,
-        upper = upper
+        upper = upper,
+        resetFn = function() private$.fnEvaluations <- 0
       )
 
       if (!is.null(private$.savedSimulationState)) {
