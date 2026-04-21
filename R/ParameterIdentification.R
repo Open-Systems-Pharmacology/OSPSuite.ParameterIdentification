@@ -767,7 +767,8 @@ ParameterIdentification <- R6::R6Class(
         par = currValues,
         fn = function(p, ...) private$.objectiveFunction(p, ...),
         lower = lower,
-        upper = upper
+        upper = upper,
+        resetFn = function() private$.fnEvaluations <- 0
       )
 
       if (!is.null(private$.savedSimulationState)) {
