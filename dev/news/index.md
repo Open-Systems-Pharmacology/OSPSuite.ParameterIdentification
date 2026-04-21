@@ -13,6 +13,11 @@
 
 ### Minor improvements and bug fixes
 
+- `ParameterIdentification$estimateCI()` now resets the objective
+  function evaluation counter before each bootstrap iteration and each
+  profile likelihood step, so `printEvaluationFeedback` output restarts
+  from 1 for every sub-optimization
+  ([\#238](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/238)).
 - `ParameterIdentification` now converts observed and simulated data to
   OSPSuite base units before computing residuals, ensuring consistent
   and reproducible OFV values

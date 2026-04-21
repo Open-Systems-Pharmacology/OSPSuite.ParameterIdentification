@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9010</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9011</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -54,6 +54,8 @@
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
 <ul><li>
+<code>ParameterIdentification$estimateCI()</code> now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so <code>printEvaluationFeedback</code> output restarts from 1 for every sub-optimization (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/238" class="external-link">#238</a>).</li>
+<li>
 <code>ParameterIdentification</code> now converts observed and simulated data to OSPSuite base units before computing residuals, ensuring consistent and reproducible OFV values (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/229" class="external-link">#229</a>, <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/237" class="external-link">#237</a>).</li>
 <li>
 <code>PIResult$toDataFrame()</code> now returns one row per parameter path for grouped <code>PIParameters</code>, instead of only the first path (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/230" class="external-link">#230</a>).</li>
