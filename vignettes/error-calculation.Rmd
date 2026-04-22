@@ -12,7 +12,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(ospsuite.parameteridentification)
 knitr::opts_knit$set(
   root.dir = ".."
 )
@@ -39,6 +38,8 @@ The `m3` method extends the least squares error by incorporating the likelihood 
 To apply an error model, set the `targetFunctionType` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
+library(ospsuite.parameteridentification)
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq" # or "m3"
 ```
