@@ -35,6 +35,11 @@ reference:
       - PIOutputMapping
       - PIParameters
       - PIResult
+  - title: Reverse dosimetry workflow
+    desc: Classes for reverse dosimetry (QIVIVE)
+    contents:
+      - ReverseDosimetry
+      - RDOutputMapping
   - title: Configuration options
     contents:
       - Algorithms
