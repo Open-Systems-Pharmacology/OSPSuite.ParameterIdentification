@@ -63,6 +63,10 @@ articles:
     navbar: Parameter identification workflow
     contents:
       - user-guide
+  - title: Reverse dosimetry workflow
+    navbar: Reverse dosimetry workflow
+    contents:
+      - reverse-dosimetry
   - title: Details
     navbar: Details
     contents:
