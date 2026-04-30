@@ -14,7 +14,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(ospsuite.parameteridentification)
 knitr::opts_knit$set(
   root.dir = ".."
 )
@@ -57,6 +56,8 @@ Selecting the appropriate algorithm depends on the nature of your optimization p
 Example usage:
 
 ```{r, eval=FALSE}
+library(ospsuite.parameteridentification)
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$algorithm <- "BOBYQA"
 piConfiguration$algorithmOptions <- list(

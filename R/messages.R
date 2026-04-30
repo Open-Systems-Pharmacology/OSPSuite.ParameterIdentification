@@ -283,3 +283,78 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
     "{cli::qty(length(keys))}Unknown option{?s} for {.field {fieldName}}: {.val {keys}}. Ignored."
   )
 }
+
+messages$errorRDUnitConversion <- function(
+  pkParameter,
+  targetUnit,
+  dimension,
+  detail
+) {
+  ospsuite.utils::cliFormat(
+    "Incompatible {.field targetUnit} {.val {targetUnit}} for {.val {pkParameter}} (dimension: {.val {dimension}}). Detail: {detail}"
+  )
+}
+
+messages$errorRDPKParameterNotAvailable <- function(
+  pkParameter,
+  quantityPath,
+  detail = NULL
+) {
+  if (is.null(detail)) {
+    ospsuite.utils::cliFormat(
+      "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}."
+    )
+  } else {
+    ospsuite.utils::cliFormat(
+      "PK parameter {.val {pkParameter}} not available for {.val {quantityPath}}.\nDetail: {detail}"
+    )
+  }
+}
+
+messages$errorRDSimulationMismatch <- function() {
+  ospsuite.utils::cliFormat(
+    "All {.cls RDOutputMapping} objects must use the same simulation."
+  )
+}
+
+messages$errorRDParameterSimulationMismatch <- function() {
+  ospsuite.utils::cliFormat(
+    "{.cls PIParameters} must belong to the same simulation passed to {.cls ReverseDosimetry}."
+  )
+}
+
+messages$errorRDCINotImplemented <- function() {
+  ospsuite.utils::cliFormat(
+    "CI estimation for reverse dosimetry is not yet implemented."
+  )
+}
+
+messages$statusRDAutoInit <- function() {
+  ospsuite.utils::cliFormat(
+    "Estimating initial value via proportional scaling (auto-initialization)."
+  )
+}
+
+messages$statusRDAutoInitResult <- function(value, unit) {
+  ospsuite.utils::cliFormat(
+    "Auto-initialization: starting optimization from value = {.val {format(value, digits = 4)}} {unit}."
+  )
+}
+
+messages$errorNAValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must not be {.val NA}."
+  )
+}
+
+messages$errorNonPositiveValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must be greater than zero."
+  )
+}
+
+messages$errorRDMultipleParameters <- function() {
+  ospsuite.utils::cliFormat(
+    "{.cls ReverseDosimetry} supports exactly one optimized parameter."
+  )
+}

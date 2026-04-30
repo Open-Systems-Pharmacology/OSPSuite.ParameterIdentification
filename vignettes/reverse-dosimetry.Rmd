@@ -1,0 +1,176 @@
+---
+title: "Reverse dosimetry (QIVIVE)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reverse dosimetry (QIVIVE)}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+
+### Introduction
+
+Reverse dosimetry is the inverse of forward PBPK simulation. Instead of computing internal concentrations from a known dose, it finds the external dose that produces a target internal biomarker value. This is useful for (i) QIVIVE (Quantitative In Vitro to In Vivo Extrapolation), where an in vitro effect concentration (e.g., an EC50) needs to be translated into an equivalent in vivo dose, and for (ii) human biomonitoring studies, where concentrations in plasma or urine have been measured and the external dose needs to be reconstructed.
+
+The `{ospsuite.parameteridentification}` package implements reverse dosimetry via numerical optimization: given a target PK metric (e.g., C_max), the optimizer adjusts the dose parameter until the simulated value matches the target. Although designed for dose estimation, any model parameter with a monotonic effect on the target PK metric can be used in place of the dose.
+
+
+### Workflow
+
+A reverse dosimetry task requires three components:
+
+- A `Simulation` object loaded via `loadSimulation()`.
+- A `PIParameters` object wrapping the dose parameter to optimize.
+- One or more `RDOutputMapping` objects, each specifying a simulated output quantity, a PK metric, and the target value.
+
+#### Simulation
+
+```{r loadSimulation}
+library(ospsuite.parameteridentification)
+
+sim <- loadSimulation(
+  system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+)
+```
+
+#### Dose parameter
+
+The dose parameter is retrieved by its full path in the simulation. The `minValue` and `maxValue` define the search space for the optimizer.
+
+```{r doseParam}
+doseParam <- getParameter(
+  path = "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+  container = sim
+)
+
+piParam <- PIParameters$new(parameters = list(doseParam))
+piParam$minValue <- 0.0001 # 100 mg in kg
+piParam$maxValue <- 0.001 # 1 g in kg
+print(piParam)
+```
+
+#### Output mapping
+
+An `RDOutputMapping` connects a simulated output quantity to a target PK metric. The `pkParameter` argument must be one of `ospsuite::StandardPKParameter`. The target value must be given in a unit compatible with the quantity's dimension.
+
+```{r outputMapping}
+plasmaConc <- getQuantity(
+  path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+  container = sim
+)
+
+mapping <- RDOutputMapping$new(
+  quantity = plasmaConc,
+  pkParameter = "C_max",
+  targetValue = 30,
+  targetUnit = "µmol/l"
+)
+print(mapping)
+```
+
+If the PK parameter has a different physical dimension than the output quantity (e.g., `"AUC_tEnd"` relative to a concentration output), provide `targetUnit` in a unit consistent with what `calculatePKAnalyses()` returns for that parameter.
+
+
+### Running the optimization
+
+```{r run}
+rd <- ReverseDosimetry$new(
+  simulation = sim,
+  parameters = piParam,
+  outputMappings = mapping
+)
+
+result <- rd$run()
+```
+
+Before calling the optimizer, `$run()` executes the simulation once at the parameter's start value and estimates an improved initial guess by exploiting the approximate linearity of many PBPK models. This proportional scaling step reduces the number of optimizer iterations needed. To skip it, manually set `$parameters$startValue` before calling `$run()`.
+
+
+### Inspecting results
+
+```{r printResult}
+print(result)
+```
+
+```{r resultDf}
+result$toDataFrame()
+```
+
+The data frame contains one row per output mapping, with the estimated parameter value (`estimatedValue`), its unit (`parameterUnit`), the achieved PK metric value, and the target.
+
+`$toList()` returns the full result including convergence status, number of iterations, elapsed time, and the algorithm used.
+
+
+### Multiple output mappings
+
+When multiple `RDOutputMapping` objects are supplied, the optimizer minimizes the sum of squared differences across all mappings simultaneously.
+
+```{r multiMapping, eval = FALSE}
+mappingCmax <- RDOutputMapping$new(
+  quantity = plasmaConc,
+  pkParameter = "C_max",
+  targetValue = 30,
+  targetUnit = "µmol/l"
+)
+
+mappingAuc <- RDOutputMapping$new(
+  quantity = plasmaConc,
+  pkParameter = "AUC_tEnd",
+  targetValue = 2400,
+  targetUnit = "µmol*min/l"
+)
+
+rdMulti <- ReverseDosimetry$new(
+  simulation = sim,
+  parameters = piParam,
+  outputMappings = list(mappingCmax, mappingAuc)
+)
+```
+
+
+### Algorithm and configuration
+
+By default, `ReverseDosimetry` uses the BOBYQA algorithm, which is efficient for single-parameter problems with smooth objective functions. A different algorithm can be set via a `PIConfiguration` object.
+
+```{r algorithmConfig, eval = FALSE}
+config <- PIConfiguration$new()
+config$algorithm <- "HJKB"
+
+rdHjkb <- ReverseDosimetry$new(
+  simulation = sim,
+  parameters = piParam,
+  outputMappings = mapping,
+  configuration = config
+)
+```
+
+The fields `algorithm`, `algorithmOptions`, `simulationRunOptions`, and `printEvaluationFeedback` from `PIConfiguration` are respected. See `?PIConfiguration` and the [optimization algorithms vignette](optimization-algorithms.html) for available options.
+
+
+### Non-dose parameters
+
+Although the typical use case is dose estimation, any model parameter with a monotonic effect on the target PK metric can be optimized. The example below uses lipophilicity instead of dose.
+
+```{r nonDoseParam, eval = FALSE}
+lipoParam <- getParameter("Aciclovir|Lipophilicity", container = sim)
+piLipo <- PIParameters$new(parameters = list(lipoParam))
+piLipo$minValue <- -5
+piLipo$maxValue <- 5
+
+rdLipo <- ReverseDosimetry$new(
+  simulation = sim,
+  parameters = piLipo,
+  outputMappings = mapping
+)
+```

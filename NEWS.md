@@ -2,6 +2,7 @@
 
 ## Major changes
 
+- `ReverseDosimetry`, `RDOutputMapping`, and `RDResult` add reverse dosimetry (QIVIVE) support: given a target PK metric, the optimizer finds the model parameter value (typically dose) that produces it (#235).
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
 
 ## Minor improvements and bug fixes
