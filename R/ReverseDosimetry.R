@@ -309,6 +309,9 @@ ReverseDosimetry <- R6::R6Class(
     ) {
       ospsuite.utils::validateIsOfType(simulation, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
+      if (length(parameters$parameters) != 1) {
+        stop(messages$errorRDMultipleParameters())
+      }
       ospsuite.utils::validateIsOfType(outputMappings, "RDOutputMapping")
       ospsuite.utils::validateIsOfType(
         configuration,

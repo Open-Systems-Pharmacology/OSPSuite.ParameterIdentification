@@ -201,6 +201,23 @@ test_that("ReverseDosimetry accepts a list of output mappings", {
   expect_length(rd$outputMappings, 2)
 })
 
+test_that("ReverseDosimetry rejects PIParameters with more than one parameter", {
+  sim <- testSimulation()
+  param <- ospsuite::getParameter(
+    "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+    container = sim
+  )
+  multiParams <- PIParameters$new(parameters = list(param, param))
+
+  expect_error(
+    ReverseDosimetry$new(
+      simulation = sim,
+      parameters = multiParams,
+      outputMappings = testRdOutputMapping(sim)
+    )
+  )
+})
+
 test_that("ReverseDosimetry rejects wrong simulation type", {
   expect_error(
     ReverseDosimetry$new(

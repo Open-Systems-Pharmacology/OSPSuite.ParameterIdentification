@@ -352,3 +352,9 @@ messages$errorNonPositiveValue <- function(argName) {
     "{.arg {argName}} must be greater than zero."
   )
 }
+
+messages$errorRDMultipleParameters <- function() {
+  ospsuite.utils::cliFormat(
+    "{.cls ReverseDosimetry} supports exactly one optimized parameter."
+  )
+}
