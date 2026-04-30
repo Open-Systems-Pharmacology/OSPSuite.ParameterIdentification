@@ -53,6 +53,22 @@ test_that("RDOutputMapping rejects non-numeric targetValue", {
   )
 })
 
+test_that("RDOutputMapping rejects NA targetValue at construction", {
+  expect_error(
+    RDOutputMapping$new(
+      quantity = testQuantity(),
+      pkParameter = "C_max",
+      targetValue = NA_real_,
+      targetUnit = testQuantity()$unit
+    )
+  )
+})
+
+test_that("RDOutputMapping rejects NA targetValue via setter", {
+  mapping <- testRdOutputMapping()
+  expect_error(mapping$targetValue <- NA_real_)
+})
+
 test_that("RDOutputMapping rejects incompatible targetUnit", {
   expect_error(
     RDOutputMapping$new(

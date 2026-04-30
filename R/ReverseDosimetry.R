@@ -158,7 +158,7 @@ ReverseDosimetry <- R6::R6Class(
 
         pkVal <- pkParam$values
 
-        # Store the raw value (in PK parameter display unit) for user-facing output
+        # Store the raw value (in base unit) for user-facing output
         pkValues[[i]] <- pkVal
 
         # Normalized relative cost: dimensionless, comparable across different

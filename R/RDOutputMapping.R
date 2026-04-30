@@ -42,6 +42,9 @@ RDOutputMapping <- R6::R6Class(
         private$.targetValue
       } else {
         ospsuite.utils::validateIsNumeric(value)
+        if (anyNA(value)) {
+          stop(messages$errorNAValue("targetValue"))
+        }
         private$.targetValue <- value
         private$.recomputeTargetInBaseUnit()
       }
@@ -146,6 +149,9 @@ RDOutputMapping <- R6::R6Class(
         names(ospsuite::StandardPKParameter)
       )
       ospsuite.utils::validateIsNumeric(targetValue)
+      if (anyNA(targetValue)) {
+        stop(messages$errorNAValue("targetValue"))
+      }
       ospsuite.utils::validateIsString(targetUnit)
 
       private$.quantity <- quantity

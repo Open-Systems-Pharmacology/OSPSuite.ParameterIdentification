@@ -334,3 +334,9 @@ messages$statusRDAutoInitResult <- function(value, unit) {
     "Auto-initialization: starting optimization from value = {.val {format(value, digits = 4)}} {unit}."
   )
 }
+
+messages$errorNAValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must not be {.val NA}."
+  )
+}
