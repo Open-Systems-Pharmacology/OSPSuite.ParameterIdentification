@@ -346,3 +346,9 @@ messages$errorNAValue <- function(argName) {
     "{.arg {argName}} must not be {.val NA}."
   )
 }
+
+messages$errorNonPositiveValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must be greater than zero."
+  )
+}

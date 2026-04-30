@@ -45,6 +45,9 @@ RDOutputMapping <- R6::R6Class(
         if (anyNA(value)) {
           stop(messages$errorNAValue("targetValue"))
         }
+        if (any(value <= 0)) {
+          stop(messages$errorNonPositiveValue("targetValue"))
+        }
         private$.targetValue <- value
         private$.recomputeTargetInBaseUnit()
       }
@@ -151,6 +154,9 @@ RDOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(targetValue)
       if (anyNA(targetValue)) {
         stop(messages$errorNAValue("targetValue"))
+      }
+      if (any(targetValue <= 0)) {
+        stop(messages$errorNonPositiveValue("targetValue"))
       }
       ospsuite.utils::validateIsString(targetUnit)
 
