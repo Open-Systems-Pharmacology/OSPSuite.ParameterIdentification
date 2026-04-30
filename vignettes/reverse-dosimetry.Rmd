@@ -37,8 +37,8 @@ A reverse dosimetry task requires three components:
 #### Simulation
 
 ```{r loadSimulation}
-# library(ospsuite.parameteridentification)
-devtools::load_all()
+library(ospsuite.parameteridentification)
+
 sim <- loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
