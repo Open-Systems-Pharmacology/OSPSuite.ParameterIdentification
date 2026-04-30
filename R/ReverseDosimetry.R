@@ -336,6 +336,15 @@ ReverseDosimetry <- R6::R6Class(
         stop(messages$errorRDSimulationMismatch())
       }
 
+      # Validate that all parameters belong to this simulation
+      paramSimIds <- unique(sapply(
+        parameters$parameters,
+        function(p) .getSimulationContainer(p)$id
+      ))
+      if (!all(paramSimIds == simId)) {
+        stop(messages$errorRDParameterSimulationMismatch())
+      }
+
       # Also store simulation in a named list for .storeSimulationState()
       private$.simulations <- list(simulation)
       names(private$.simulations) <- simId

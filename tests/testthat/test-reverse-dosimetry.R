@@ -198,6 +198,20 @@ test_that("ReverseDosimetry rejects mapping from a different simulation", {
   )
 })
 
+test_that("ReverseDosimetry rejects parameters from a different simulation", {
+  otherSim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+
+  expect_error(
+    ReverseDosimetry$new(
+      simulation = testSimulation(),
+      parameters = testRdParameters(otherSim),
+      outputMappings = testRdOutputMapping()
+    )
+  )
+})
+
 test_that("ReverseDosimetry accepts a PIConfiguration", {
   sim <- testSimulation()
   config <- PIConfiguration$new()

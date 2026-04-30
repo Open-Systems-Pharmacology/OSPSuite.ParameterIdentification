@@ -317,6 +317,12 @@ messages$errorRDSimulationMismatch <- function() {
   )
 }
 
+messages$errorRDParameterSimulationMismatch <- function() {
+  ospsuite.utils::cliFormat(
+    "{.cls PIParameters} must belong to the same simulation passed to {.cls ReverseDosimetry}."
+  )
+}
+
 messages$errorRDCINotImplemented <- function() {
   ospsuite.utils::cliFormat(
     "CI estimation for reverse dosimetry is not yet implemented."
