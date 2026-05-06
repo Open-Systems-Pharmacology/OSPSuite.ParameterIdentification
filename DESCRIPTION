@@ -57,8 +57,9 @@ Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
-Remotes: 
-    ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils,
+Remotes:
     ospsuite=Open-Systems-Pharmacology/OSPSuite-R,
-    ospsuite.plots=Open-Systems-Pharmacology/OSPSuite.Plots,
-    tlf=Open-Systems-Pharmacology/TLF-Library
+    ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils,
+    Open-Systems-Pharmacology/rSharp,
+    tlf=Open-Systems-Pharmacology/TLF-Library,
+    ospsuite.plots=Open-Systems-Pharmacology/OSPSuite.Plots
