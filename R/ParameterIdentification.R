@@ -536,11 +536,10 @@ ParameterIdentification <- R6::R6Class(
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
-        resultId <- names(simulationResults[[simBatch$id]])[[1]]
         obsVsPred$addSimulationResults(
           resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = resultId,
+          names = groupName,
           groups = groupName
         )
 
@@ -827,28 +826,77 @@ ParameterIdentification <- R6::R6Class(
       }
       dataCombined <- private$.evaluate(parValues)
 
+      previousTheme <- ggplot2::theme_get()
+      on.exit(ggplot2::theme_set(previousTheme), add = TRUE)
+      ggplot2::theme_update(legend.title = ggplot2::element_blank())
+
+      # ospsuite.plots sets explicit guide titles via guide_legend(title = ...),
+      # which override theme(legend.title). Strip them with labs(NULL) so the
+      # collected legend has no title, and drop redundant aesthetic legends so
+      # the three sub-plots can be merged into a single legend.
+      stripGuides <- ggplot2::labs(
+        colour = NULL,
+        fill = NULL,
+        shape = NULL,
+        linetype = NULL
+      )
+
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
         axisScale <- if (scaling == "lin") "linear" else "log"
 
+        # Drop the name-based legend entries (which duplicate the same
+        # path label across all sub-plots via the linetype aesthetic),
+        # and keep only one copy of the group-based legend on the
+        # time-profile. The residual plot needs no legend at all; the
+        # predicted-vs-observed plot keeps only the identity / 2-fold
+        # comparison-line legend (linetype).
         indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
-          yScale = axisScale
-        )
+          yScale = axisScale,
+          showLegendPerDataset = "observed"
+        ) +
+          stripGuides +
+          ggplot2::guides(linetype = "none")
         predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
-          xyScale = axisScale
-        )
+          xyScale = axisScale,
+          showLegendPerDataset = "observed"
+        ) +
+          stripGuides +
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            shape = "none"
+          )
         resVsTime <- ospsuite::plotResidualsVsCovariate(
           dataCombined[[idx]],
           xAxis = "time",
-          residualScale = axisScale
-        )
+          residualScale = axisScale,
+          showLegendPerDataset = "observed"
+        ) +
+          stripGuides +
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            shape = "none",
+            linetype = "none"
+          )
 
         patchwork::wrap_plots(
           list(indivTimeProfile, predVsObs, resVsTime),
-          ncol = 2
-        )
+          ncol = 1
+        ) +
+          patchwork::plot_layout(guides = "collect") &
+          ggplot2::theme(
+            legend.position = "top",
+            legend.title = ggplot2::element_blank(),
+            legend.box = "vertical",
+            legend.direction = "horizontal",
+            legend.spacing.y = ggplot2::unit(0, "pt"),
+            legend.margin = ggplot2::margin(0, 0, 0, 0),
+            aspect.ratio = 0.4
+          )
       })
 
       if (!is.null(private$.savedSimulationState)) {
