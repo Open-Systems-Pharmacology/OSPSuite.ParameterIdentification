@@ -253,3 +253,14 @@ test_that(".computeErrorWeights uses exact lognormal SD formula for GeometricStd
   # GSD=3, mean=20: sigma=ln(3)=1.0986, exp(sigma^2)-1=2.343, SD=20*sqrt(2.343)=30.62
   expect_equal(result, c(1 / 7.854, 1 / 30.62), tolerance = 1e-3)
 })
+
+test_that(".computeErrorWeights warns when error weighting falls back to unit weights", {
+  yValues <- c(5, 10)
+  yErrorValues <- c(0, 0)
+  yErrorType <- c("ArithmeticStdDev", "ArithmeticStdDev")
+
+  expect_warning(
+    .computeErrorWeights(yValues, yErrorValues, yErrorType),
+    regexp = "unit weights"
+  )
+})

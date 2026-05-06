@@ -283,3 +283,9 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
     "{cli::qty(length(keys))}Unknown option{?s} for {.field {fieldName}}: {.val {keys}}. Ignored."
   )
 }
+
+messages$warningNoValidErrorValues <- function() {
+  ospsuite.utils::cliFormat(
+    "No valid error values found. Falling back to unit weights (equivalent to {.val none})."
+  )
+}

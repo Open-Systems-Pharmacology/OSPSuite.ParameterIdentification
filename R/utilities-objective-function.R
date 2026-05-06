@@ -260,12 +260,14 @@
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
   weights <- rep(defaultWeight, length(yValues))
+  anyWeightsSet <- FALSE
 
   idx <- which(
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
   if (length(idx) > 0) {
     weights[idx] <- 1 / yErrorValues[idx]
+    anyWeightsSet <- TRUE
   }
 
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
@@ -273,6 +275,11 @@
     # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
     stDev <- yValues[idx] * sqrt(exp(log(yErrorValues[idx])^2) - 1)
     weights[idx] <- 1 / stDev
+    anyWeightsSet <- TRUE
+  }
+
+  if (!anyWeightsSet) {
+    warning(messages$warningNoValidErrorValues())
   }
 
   return(weights)
