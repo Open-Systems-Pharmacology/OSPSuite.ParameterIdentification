@@ -853,15 +853,13 @@ ParameterIdentification <- R6::R6Class(
         # comparison-line legend (linetype).
         indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
-          yScale = axisScale,
-          showLegendPerDataset = "observed"
+          yScale = axisScale
         ) +
           stripGuides +
           ggplot2::guides(linetype = "none")
         predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
-          xyScale = axisScale,
-          showLegendPerDataset = "observed"
+          xyScale = axisScale
         ) +
           stripGuides +
           ggplot2::guides(
@@ -872,8 +870,7 @@ ParameterIdentification <- R6::R6Class(
         resVsTime <- ospsuite::plotResidualsVsCovariate(
           dataCombined[[idx]],
           xAxis = "time",
-          residualScale = axisScale,
-          showLegendPerDataset = "observed"
+          residualScale = axisScale
         ) +
           stripGuides +
           ggplot2::guides(
