@@ -214,7 +214,13 @@ Optimizer <- R6::R6Class(
     },
 
     # Estimate confidence intervals using Profile Likelihood method.
-    .estimateCIProfileLikelihood = function(par, fn, controlCI, optimizer) {
+    .estimateCIProfileLikelihood = function(
+      par,
+      fn,
+      controlCI,
+      optimizer,
+      resetFn = NULL
+    ) {
       result <- private$.initializeCIResult()
 
       # Calculate cost threshold based on confidence level (chi-sq criterion)
@@ -240,7 +246,8 @@ Optimizer <- R6::R6Class(
           optimizer,
           p,
           -1,
-          controlCI
+          controlCI,
+          resetFn
         )
         upperResult <- private$.computeProfileCI(
           par,
@@ -248,7 +255,8 @@ Optimizer <- R6::R6Class(
           optimizer,
           p,
           1,
-          controlCI
+          controlCI,
+          resetFn
         )
 
         lowerCI[p] <- lowerResult$ci
@@ -274,7 +282,15 @@ Optimizer <- R6::R6Class(
     },
 
     # Profile likelihood confidence interval estimation for one parameter
-    .computeProfileCI = function(par, fn, optimizer, p, direction, controlCI) {
+    .computeProfileCI = function(
+      par,
+      fn,
+      optimizer,
+      p,
+      direction,
+      controlCI,
+      resetFn = NULL
+    ) {
       ci <- NA_real_
 
       epsilon <- controlCI$epsilon
@@ -298,6 +314,10 @@ Optimizer <- R6::R6Class(
         newPar[p] <- par[p] + direction * epsilon * i
 
         fixedParams <- list(idx = p, values = newPar[p])
+
+        if (!is.null(resetFn)) {
+          resetFn()
+        }
 
         # Run optimization with current fixed parameter
         optimResult <- optimizer$run(
@@ -340,7 +360,8 @@ Optimizer <- R6::R6Class(
       lower,
       upper,
       controlCI,
-      optimizer = NULL
+      optimizer = NULL,
+      resetFn = NULL
     ) {
       result <- private$.initializeCIResult()
 
@@ -356,6 +377,10 @@ Optimizer <- R6::R6Class(
       # Bootstrap loop
       for (i in seq_len(nBootstrap)) {
         message(messages$statusBootstrap(i, nBootstrap))
+
+        if (!is.null(resetFn)) {
+          resetFn()
+        }
 
         # Pass individual seed to obj. function to resample observed data
         bootstrapFn <- function(p) fn(p, bootstrapSeed = seedVector[i])
@@ -629,7 +654,14 @@ Optimizer <- R6::R6Class(
     #'   likelihood or bootstrap CI estimation.
     #' @return List with confidence interval results including lower and upper
     #'   bounds, standard errors, coefficient of variation, and method details.
-    estimateCI = function(par, fn, lower, upper, optimizer = NULL) {
+    estimateCI = function(
+      par,
+      fn,
+      lower,
+      upper,
+      optimizer = NULL,
+      resetFn = NULL
+    ) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
       ospsuite.utils::validateIsNumeric(upper)
@@ -664,7 +696,8 @@ Optimizer <- R6::R6Class(
         lower = lower,
         upper = upper,
         controlCI = ciOptions,
-        optimizer = optimizer
+        optimizer = optimizer,
+        resetFn = resetFn
       )
       filteredArgs <- argsList[intersect(names(argsList), allowedArgs)]
 
