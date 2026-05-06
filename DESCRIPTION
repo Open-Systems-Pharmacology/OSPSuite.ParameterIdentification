@@ -54,4 +54,5 @@ Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Remotes:  
+    ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils,
     ospsuite=Open-Systems-Pharmacology/OSPSuite-R
