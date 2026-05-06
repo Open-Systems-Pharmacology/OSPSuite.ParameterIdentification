@@ -804,9 +804,9 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @param par Optional parameter values for simulations, in the order of
     #'   `ParameterIdentification$parameters`. Use current values if `NULL`.
-    #' @return A list of `ggplot2` plots (one per output mapping), showing:
+    #' @return A list of `patchwork` objects (one per output mapping), showing:
     #' - Individual time profiles
-    #' - Observed vs. simulated values
+    #' - Predicted vs. observed values
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
       simulationState <- NULL
@@ -827,35 +827,28 @@ ParameterIdentification <- R6::R6Class(
       }
       dataCombined <- private$.evaluate(parValues)
 
-      # Create figures and plot
-      plotConfiguration <- ospsuite::DefaultPlotConfiguration$new()
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
-        plotConfiguration$yAxisScale <- scaling
-        plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(
+        axisScale <- if (scaling == "lin") "linear" else "log"
+
+        indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
-          plotConfiguration
+          yScale = axisScale
         )
-        plotConfiguration$legendPosition <- "none"
-        plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- ospsuite::plotObservedVsSimulated(
+        predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
-          plotConfiguration
+          xyScale = axisScale
         )
-        plotConfiguration$xAxisScale <- "lin"
-        plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- ospsuite::plotResidualsVsTime(
+        resVsTime <- ospsuite::plotResidualsVsCovariate(
           dataCombined[[idx]],
-          plotConfiguration
+          xAxis = "time",
+          residualScale = axisScale
         )
-        plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
-        plotGridConfiguration$addPlots(list(
-          indivTimeProfile,
-          obsVsSim,
-          resVsTime
-        ))
-        return(ospsuite::plotGrid(plotGridConfiguration))
+
+        patchwork::wrap_plots(
+          list(indivTimeProfile, predVsObs, resVsTime),
+          ncol = 2
+        )
       })
 
       if (!is.null(private$.savedSimulationState)) {
