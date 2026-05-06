@@ -9,123 +9,133 @@ A parameter to be optimized in a parameter identification
 routine
 }
 \section{Active bindings}{
-\if{html}{\out{<div class="r6-active-bindings">}}
-\describe{
-\item{\code{parameters}}{A list of parameter objects. Adding or removing
+  \if{html}{\out{<div class="r6-active-bindings">}}
+  \describe{
+    \item{\code{parameters}}{A list of parameter objects. Adding or removing
 parameters is not supported.}
 
-\item{\code{currValue}}{The current parameter values for simulations, in units
+    \item{\code{currValue}}{The current parameter values for simulations, in units
 specified by \verb{$unit}.}
 
-\item{\code{startValue}}{Initial value used for optimization.}
+    \item{\code{startValue}}{Initial value used for optimization.}
 
-\item{\code{minValue}}{Lowest permissible parameter value.}
+    \item{\code{minValue}}{Lowest permissible parameter value.}
 
-\item{\code{maxValue}}{Highest permissible parameter value.}
+    \item{\code{maxValue}}{Highest permissible parameter value.}
 
-\item{\code{unit}}{Parameter value units. Changing the unit does NOT
+    \item{\code{unit}}{Parameter value units. Changing the unit does NOT
 automatically adjust min/max/start values.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-PIParameters-new}{\code{PIParameters$new()}}
-\item \href{#method-PIParameters-setValue}{\code{PIParameters$setValue()}}
-\item \href{#method-PIParameters-toDataFrame}{\code{PIParameters$toDataFrame()}}
-\item \href{#method-PIParameters-print}{\code{PIParameters$print()}}
-\item \href{#method-PIParameters-clone}{\code{PIParameters$clone()}}
-}
+  \itemize{
+    \item \href{#method-PIParameters-initialize}{\code{PIParameters$new()}}
+    \item \href{#method-PIParameters-setValue}{\code{PIParameters$setValue()}}
+    \item \href{#method-PIParameters-toDataFrame}{\code{PIParameters$toDataFrame()}}
+    \item \href{#method-PIParameters-print}{\code{PIParameters$print()}}
+    \item \href{#method-PIParameters-clone}{\code{PIParameters$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIParameters-new"></a>}}
-\if{latex}{\out{\hypertarget{method-PIParameters-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a new instance of the class. The initial start
+\if{html}{\out{<a id="method-PIParameters-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-PIParameters-initialize}{}}}
+\subsection{\code{PIParameters$new()}}{
+  Initialize a new instance of the class. The initial start
 value is derived from the first parameter upon creation, modifiable via
 \code{PIParameters$startValue}. All parameters are optimized using this
 unified value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIParameters$new(parameters)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIParameters$new(parameters)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{parameters}}{List of \code{Parameter} class objects to be optimized.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new \code{PIParameters} object.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{parameters}}{List of \code{Parameter} class objects to be optimized.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{PIParameters} object.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIParameters-setValue"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-setValue}{}}}
-\subsection{Method \code{setValue()}}{
-Updates parameter(s) value. Value is specified in units of
+\subsection{\code{PIParameters$setValue()}}{
+  Updates parameter(s) value. Value is specified in units of
 \verb{$unit}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIParameters$setValue(value)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIParameters$setValue(value)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{value}}{Numeric value to set.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{value}}{Numeric value to set.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIParameters-toDataFrame"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-toDataFrame}{}}}
-\subsection{Method \code{toDataFrame()}}{
-Export parameter metadata and configuration to a data frame.
+\subsection{\code{PIParameters$toDataFrame()}}{
+  Export parameter metadata and configuration to a data frame.
 Returns one row per internal model parameter wrapped by the
 \code{PIParameters} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIParameters$toDataFrame(group = NULL)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIParameters$toDataFrame(group = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{group}}{Optional character label identifying the optimization group.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{data.frame} with one row per internal parameter.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{group}}{Optional character label identifying the optimization group.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A \code{data.frame} with one row per internal parameter.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIParameters-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-print}{}}}
-\subsection{Method \code{print()}}{
-Prints a summary of the PIParameters.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIParameters$print()}\if{html}{\out{</div>}}
+\subsection{\code{PIParameters$print()}}{
+  Prints a summary of the PIParameters.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIParameters$print()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIParameters-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-PIParameters-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIParameters$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{PIParameters$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIParameters$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }
