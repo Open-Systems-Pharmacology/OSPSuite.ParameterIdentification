@@ -259,8 +259,6 @@
   ospsuite.utils::isSameLength(yValues, yErrorValues)
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
-  n <- numeric(length(yValues))
-
   weights <- rep(defaultWeight, length(yValues))
 
   idx <- which(
@@ -272,8 +270,8 @@
 
   idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
   if (length(idx) > 0) {
-    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
-    stDev <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
+    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
+    stDev <- yValues[idx] * sqrt(exp(log(yErrorValues[idx])^2) - 1)
     weights[idx] <- 1 / stDev
   }
 
