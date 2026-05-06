@@ -30,7 +30,7 @@ BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdent
 Encoding: UTF-8
 Depends:
     R (>= 4.4),
-    ospsuite (>= 12.4.2)
+    ospsuite (>= 12.4.0)
 Imports:
     DEoptim,
     DiceKriging,
@@ -49,10 +49,10 @@ Suggests:
     readr,
     testthat (>= 3.0.0),
     vdiffr
-RoxygenNote: 7.3.3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Remotes:  
+Remotes: 
     ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils,
     ospsuite=Open-Systems-Pharmacology/OSPSuite-R
+Config/roxygen2/version: 8.0.0

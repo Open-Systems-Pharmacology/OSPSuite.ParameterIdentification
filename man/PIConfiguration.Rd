@@ -9,37 +9,37 @@ Encapsulates configurations such as optimization algorithm
 choice, and evaluation settings for parameter identification.
 }
 \section{Active bindings}{
-\if{html}{\out{<div class="r6-active-bindings">}}
-\describe{
-\item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
+  \if{html}{\out{<div class="r6-active-bindings">}}
+  \describe{
+    \item{\code{printEvaluationFeedback}}{Boolean. If \code{TRUE}, prints objective
 function value after each evaluation. Default is \code{FALSE}.}
 
-\item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for
+    \item{\code{simulationRunOptions}}{Object of \code{SimulationRunOptions} for
 simulation runs. If \code{NULL}, default options are used.}
 
-\item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
+    \item{\code{objectiveFunctionOptions}}{Settings for model fit evaluation,
 affecting error metrics and cost calculation. Defaults in
 \code{\link{ObjectiveFunctionOptions}}. Partial lists are merged with the current
 settings; only the provided keys are updated and validated.}
 
-\item{\code{algorithm}}{Optimization algorithm name. See
+    \item{\code{algorithm}}{Optimization algorithm name. See
 \code{\link{Algorithms}} for a list of
 supported algorithms. Defaults to \code{BOBYQA}. Changing the algorithm
 resets \code{algorithmOptions} to the new algorithm's defaults.}
 
-\item{\code{ciMethod}}{Confidence interval estimation method. See
+    \item{\code{ciMethod}}{Confidence interval estimation method. See
 \code{\link{CIMethods}} for available options.
 Defaults to \code{hessian}. Changing the method resets \code{ciOptions} to the
 new method's defaults.}
 
-\item{\code{algorithmOptions}}{Named list of user-defined overrides for the
+    \item{\code{algorithmOptions}}{Named list of user-defined overrides for the
 selected algorithm's settings. Returns \code{NULL} if no overrides are set;
 in that case algorithm defaults (\code{AlgorithmOptions_XYZ}) are used
 automatically. Partial lists are merged with previously stored
 overrides. Unknown keys produce a warning and are ignored. Set to
 \code{NULL} to clear all overrides.}
 
-\item{\code{ciOptions}}{Named list of settings for the selected CI method. Refer
+    \item{\code{ciOptions}}{Named list of settings for the selected CI method. Refer
 to \code{\link{CIOptions}} for default settings
 per method (e.g., \code{CIOptions_XYZ} where \code{XYZ} corresponds to the method
 name). If \code{NULL}, CI method's default settings are returned. Partial
@@ -47,62 +47,68 @@ lists are merged with the current settings; only the provided keys are
 validated. Unknown keys produce a warning and are ignored. Set to
 \code{NULL} to reset to defaults.}
 
-\item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
+    \item{\code{autoEstimateCI}}{Logical. If \code{TRUE}, confidence intervals are
 automatically estimated after optimization. If \code{FALSE}, the step is
 skipped and can be triggered manually by calling the \code{estimateCI()}
 method on the \code{ParameterIdentification} object.}
 
-\item{\code{modelCostField}}{Read-only field name in the cost object used as the
+    \item{\code{modelCostField}}{Read-only field name in the cost object used as the
 optimization target. Currently, only \code{modelCost} is supported.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-PIConfiguration-new}{\code{PIConfiguration$new()}}
-\item \href{#method-PIConfiguration-print}{\code{PIConfiguration$print()}}
-\item \href{#method-PIConfiguration-clone}{\code{PIConfiguration$clone()}}
-}
+  \itemize{
+    \item \href{#method-PIConfiguration-initialize}{\code{PIConfiguration$new()}}
+    \item \href{#method-PIConfiguration-print}{\code{PIConfiguration$print()}}
+    \item \href{#method-PIConfiguration-clone}{\code{PIConfiguration$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIConfiguration-new"></a>}}
-\if{latex}{\out{\hypertarget{method-PIConfiguration-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a new instance of the class.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$new()}\if{html}{\out{</div>}}
+\if{html}{\out{<a id="method-PIConfiguration-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-PIConfiguration-initialize}{}}}
+\subsection{\code{PIConfiguration$new()}}{
+  Initialize a new instance of the class.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIConfiguration$new()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new \code{PIConfiguration} object.
+  }
 }
 
-\subsection{Returns}{
-A new \code{PIConfiguration} object.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-print}{}}}
-\subsection{Method \code{print()}}{
-Prints a summary of the \code{PIConfiguration}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$print()}\if{html}{\out{</div>}}
+\subsection{\code{PIConfiguration$print()}}{
+  Prints a summary of the \code{PIConfiguration}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIConfiguration$print()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIConfiguration-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-PIConfiguration-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIConfiguration$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{PIConfiguration$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIConfiguration$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }
