@@ -50,7 +50,6 @@ Suggests:
     rmarkdown,
     readr,
     showtext,
-    sysfonts,
     testthat (>= 3.0.0),
     vdiffr
 Roxygen: list(markdown = TRUE)
