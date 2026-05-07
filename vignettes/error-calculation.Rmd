@@ -36,7 +36,7 @@ The `m3` method extends the least squares error by incorporating the likelihood 
 
 ### Configuring Error Models in PI
 
-To apply an error model, set the `targetFunctionType` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply an error model, set the `targetFunctionType` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
 piConfiguration <- PIConfiguration$new()
@@ -73,7 +73,7 @@ For enhanced flexibility in handling outliers, ´PIConfiguration´ allows specif
 - **`huber`**: Minimizes the impact of outliers by combining squared and absolute values, making it less sensitive to extreme deviations.
 - **`bisquare`**: Further reduces the influence of outliers by applying a weighting scheme that diminishes the role of residuals as they move away from the median.
 
-To apply robust residual calculation, set the `robustMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply robust residual calculation, set the `robustMethod` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
 piConfiguration$objectiveFunctionOptions$robustMethod <- "huber" # or "bisquare"
