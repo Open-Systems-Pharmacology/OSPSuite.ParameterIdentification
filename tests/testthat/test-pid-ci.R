@@ -113,6 +113,23 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
   )
 })
 
+test_that("estimateCI() restarts evaluation counter from 1 for each bootstrap iteration", {
+  nBootstrap <- 3L
+
+  piTask <- testPiTask()
+  piTask$configuration$algorithmOptions <- list(maxeval = 3L)
+  piTask$configuration$ciMethod <- "bootstrap"
+  piTask$configuration$ciOptions <- list(seed = 2203L, nBootstrap = nBootstrap)
+  piTask$configuration$printEvaluationFeedback <- TRUE
+  piTask$configuration$autoEstimateCI <- FALSE
+  capture_output(suppressMessages(piTask$run()))
+
+  evalOutput <- capture_output(suppressMessages(piTask$estimateCI()))
+
+  fnevals <- parseFnevals(evalOutput)
+  expect_equal(sum(fnevals == 1L), nBootstrap)
+})
+
 test_that("estimateCI() outputs expected messages for mixed datasets", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData()) # aggregated

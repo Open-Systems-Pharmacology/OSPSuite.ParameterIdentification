@@ -8,5 +8,6 @@
 #' @import ggtext
 #' @importFrom nloptr bobyqa nl.opts
 #' @importFrom numDeriv hessian
+#' @importFrom patchwork wrap_plots
 #' @importFrom tibble tibble as_tibble
 NULL
