@@ -9,7 +9,7 @@ choice, and evaluation settings for parameter identification."><meta name="robot
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9012</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,33 +60,33 @@ choice, and evaluation settings for parameter identification.</p>
 function value after each evaluation. Default is <code>FALSE</code>.</p></dd>
 
 
-<dt><code>simulationRunOptions</code></dt>
+    <dt><code>simulationRunOptions</code></dt>
 <dd><p>Object of <code>SimulationRunOptions</code> for
 simulation runs. If <code>NULL</code>, default options are used.</p></dd>
 
 
-<dt><code>objectiveFunctionOptions</code></dt>
+    <dt><code>objectiveFunctionOptions</code></dt>
 <dd><p>Settings for model fit evaluation,
 affecting error metrics and cost calculation. Defaults in
 <code><a href="ObjectiveFunctionOptions.html">ObjectiveFunctionOptions</a></code>. Partial lists are merged with the current
 settings; only the provided keys are updated and validated.</p></dd>
 
 
-<dt><code>algorithm</code></dt>
+    <dt><code>algorithm</code></dt>
 <dd><p>Optimization algorithm name. See
 <code><a href="Algorithms.html">Algorithms</a></code> for a list of
 supported algorithms. Defaults to <code>BOBYQA</code>. Changing the algorithm
 resets <code>algorithmOptions</code> to the new algorithm's defaults.</p></dd>
 
 
-<dt><code>ciMethod</code></dt>
+    <dt><code>ciMethod</code></dt>
 <dd><p>Confidence interval estimation method. See
 <code><a href="CIMethods.html">CIMethods</a></code> for available options.
 Defaults to <code>hessian</code>. Changing the method resets <code>ciOptions</code> to the
 new method's defaults.</p></dd>
 
 
-<dt><code>algorithmOptions</code></dt>
+    <dt><code>algorithmOptions</code></dt>
 <dd><p>Named list of user-defined overrides for the
 selected algorithm's settings. Returns <code>NULL</code> if no overrides are set;
 in that case algorithm defaults (<code>AlgorithmOptions_XYZ</code>) are used
@@ -95,7 +95,7 @@ overrides. Unknown keys produce a warning and are ignored. Set to
 <code>NULL</code> to clear all overrides.</p></dd>
 
 
-<dt><code>ciOptions</code></dt>
+    <dt><code>ciOptions</code></dt>
 <dd><p>Named list of settings for the selected CI method. Refer
 to <code><a href="CIOptions.html">CIOptions</a></code> for default settings
 per method (e.g., <code>CIOptions_XYZ</code> where <code>XYZ</code> corresponds to the method
@@ -105,14 +105,14 @@ validated. Unknown keys produce a warning and are ignored. Set to
 <code>NULL</code> to reset to defaults.</p></dd>
 
 
-<dt><code>autoEstimateCI</code></dt>
+    <dt><code>autoEstimateCI</code></dt>
 <dd><p>Logical. If <code>TRUE</code>, confidence intervals are
 automatically estimated after optimization. If <code>FALSE</code>, the step is
 skipped and can be triggered manually by calling the <code>estimateCI()</code>
 method on the <code>ParameterIdentification</code> object.</p></dd>
 
 
-<dt><code>modelCostField</code></dt>
+    <dt><code>modelCostField</code></dt>
 <dd><p>Read-only field name in the cost object used as the
 optimization target. Currently, only <code>modelCost</code> is supported.</p></dd>
 
@@ -124,38 +124,36 @@ optimization target. Currently, only <code>modelCost</code> is supported.</p></d
 
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
-
-<ul><li><p><a href="#method-PIConfiguration-new"><code>PIConfiguration$new()</code></a></p></li>
+<p></p><ul><li><p><a href="#method-PIConfiguration-initialize"><code>PIConfiguration$new()</code></a></p></li>
 <li><p><a href="#method-PIConfiguration-print"><code>PIConfiguration$print()</code></a></p></li>
 <li><p><a href="#method-PIConfiguration-clone"><code>PIConfiguration$clone()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-PIConfiguration-new"></a><div class="section">
-<h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
+</ul></div><p></p><hr><a id="method-PIConfiguration-initialize"></a><div class="section">
+<h3 id="piconfiguration-new-"><code>PIConfiguration$new()</code><a class="anchor" aria-label="anchor" href="#piconfiguration-new-"></a></h3>
 <p>Initialize a new instance of the class.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="returns">Returns<a class="anchor" aria-label="anchor" href="#returns"></a></h4>
 <p>A new <code>PIConfiguration</code> object.</p>
 </div>
 
-</div><p></p><hr><a id="method-PIConfiguration-print"></a><div class="section">
-<h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIConfiguration-print"></a><div class="section">
+<h3 id="piconfiguration-print-"><code>PIConfiguration$print()</code><a class="anchor" aria-label="anchor" href="#piconfiguration-print-"></a></h3>
 <p>Prints a summary of the <code>PIConfiguration</code>.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIConfiguration</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+</div>
 
-</div><p></p><hr><a id="method-PIConfiguration-clone"></a><div class="section">
-<h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
+<p></p><hr><a id="method-PIConfiguration-clone"></a><div class="section">
+<h3 id="piconfiguration-clone-"><code>PIConfiguration$clone()</code><a class="anchor" aria-label="anchor" href="#piconfiguration-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIConfiguration</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
@@ -165,6 +163,7 @@ optimization target. Currently, only <code>modelCost</code> is supported.</p></d
 </div>
 
 </div>
+
 
     </div>
 

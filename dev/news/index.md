@@ -35,6 +35,11 @@
 
 ### Minor improvements and bug fixes
 
+- Re-enabled
+  [`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plotOFVProfiles.md)
+  for visualizing OFV profiles produced by
+  `ParameterIdentification$calculateOFVProfiles()`
+  ([\#91](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/91)).
 - New `Imports`: `patchwork` (used to compose the sub-plots produced by
   `plotResults()`).
 - `ParameterIdentification$estimateCI()` now resets the objective

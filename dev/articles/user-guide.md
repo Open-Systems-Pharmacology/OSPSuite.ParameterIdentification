@@ -61,8 +61,16 @@ represent two independent instances of a simulation.
 
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_250mg <- loadSimulation(system.file(
+  "extdata",
+  "Aciclovir.pkml",
+  package = "ospsuite"
+))
+sim_500mg <- loadSimulation(system.file(
+  "extdata",
+  "Aciclovir.pkml",
+  package = "ospsuite"
+))
 ```
 
 In the next step, we will retrieve the objects of the application dose
@@ -75,7 +83,10 @@ doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dos
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
-sim_250mg_doseParam <- getParameter(path = doseParameterPath, container = sim_250mg)
+sim_250mg_doseParam <- getParameter(
+  path = doseParameterPath,
+  container = sim_250mg
+)
 print(sim_250mg_doseParam)
 #> <Parameter>
 #>   • Quantity Type: Parameter
@@ -85,7 +96,10 @@ print(sim_250mg_doseParam)
 #> ── Formula ──
 #> 
 #>   • isConstant: TRUE
-sim_500mg_doseParam <- getParameter(path = doseParameterPath, container = sim_500mg)
+sim_500mg_doseParam <- getParameter(
+  path = doseParameterPath,
+  container = sim_500mg
+)
 
 # Chage the value to 500 mg
 setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
@@ -126,14 +140,26 @@ the renal clearance, as they are considered independent.
 ``` r
 
 # Creating a PIParameters object with two simulation parameters retrieved from different simulations
-piParameterLipo <- PIParameters$new(parameters = list(
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
-))
+piParameterLipo <- PIParameters$new(
+  parameters = list(
+    getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+    getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+  )
+)
 
 # Creating two separate PIParameters for the renal clearance
-piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_250mg))
-piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_500mg))
+piParameterCl_250mg <- PIParameters$new(
+  parameters = getParameter(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
+    container = sim_250mg
+  )
+)
+piParameterCl_500mg <- PIParameters$new(
+  parameters = getParameter(
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
+    container = sim_500mg
+  )
+)
 ```
 
 Each `PIParameter` has the following properties:
@@ -250,14 +276,21 @@ documentation for details.
 
 ``` r
 
-filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx", package = "ospsuite.parameteridentification")
+filePath <- system.file(
+  "extdata",
+  "Aciclovir_Profiles.xlsx",
+  package = "ospsuite.parameteridentification"
+)
 
 # Create importer configuration for the file
 importConfig <- createImporterConfigurationForFile(filePath = filePath)
 # Set naming patter
 importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
 # Import data sets
-obsData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = importConfig, importAllSheets = TRUE)
+obsData <- loadDataSetsFromExcel(
+  xlsFilePath = filePath,
+  importerConfigurationOrPath = importConfig
+)
 
 print(names(obsData))
 #> [1] "Aciclovir_Profiles.Vergin 1995.Iv.250 mg"
@@ -277,17 +310,25 @@ dose group:
 
 ``` r
 
-outputMapping_250mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_250mg))
+outputMapping_250mg <- PIOutputMapping$new(
+  quantity = getQuantity(path = simOutputPath, container = sim_250mg)
+)
 
-outputMapping_500mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_500mg))
+outputMapping_500mg <- PIOutputMapping$new(
+  quantity = getQuantity(path = simOutputPath, container = sim_500mg)
+)
 ```
 
 and link simulation results to the corresponding observed data:
 
 ``` r
 
-outputMapping_250mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`)
-outputMapping_500mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`)
+outputMapping_250mg$addObservedDataSets(
+  obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`
+)
+outputMapping_500mg$addObservedDataSets(
+  obsData$`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`
+)
 
 print(outputMapping_250mg)
 #> <PIOutputMapping>
@@ -443,8 +484,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 28.04 s
-#>   • Elapsed (CI): 12.25 s
+#>   • Elapsed (optimization): 28.98 s
+#>   • Elapsed (CI): 12.68 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -530,3 +571,40 @@ The quality of the fit can be assessed by the following criteria:
 The residuals only above or only below zero indicate an overprediction
 or an underprediction. Another set of parameters will likely result in a
 better fit.
+
+##### OFV profiles around the optimum
+
+A converged optimum should sit in a locally convex region of the
+objective function. Inspect this with `calculateOFVProfiles()`, which
+varies each `PIParameter` independently around the current values while
+holding the others fixed. The result is a named list of tibbles (one per
+parameter), each holding the parameter’s grid values and the matching
+`ofv`. Pass it to
+[`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plotOFVProfiles.md)
+to visualize:
+
+``` r
+
+ofvProfiles <- piTask$calculateOFVProfiles()
+plotOFVProfiles(ofvProfiles)[[1]]
+```
+
+![](user-guide_files/figure-html/unnamed-chunk-18-1.png)
+
+By default the grid covers ±10% (`boundFactor = 0.1`) around the current
+value at 20 evaluations per parameter. To widen the explored
+neighborhood or refine the grid, pass `boundFactor` and
+`totalEvaluations`:
+
+``` r
+
+wideProfiles <- piTask$calculateOFVProfiles(
+  boundFactor = 0.5,
+  totalEvaluations = 50
+)
+plotOFVProfiles(wideProfiles)[[2]]
+```
+
+A roughly parabolic profile with the minimum near the current value
+indicates a well-conditioned optimum; a flat or monotonic profile
+suggests poor identifiability of that parameter.

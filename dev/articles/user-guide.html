@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9012</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -131,8 +131,16 @@ file, they represent two independent instances of a simulation.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir.pkml"</span>, package <span class="op">=</span> <span class="st">"ospsuite"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">sim_250mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata"</span>,</span>
+<span>  <span class="st">"Aciclovir.pkml"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"ospsuite"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sim_500mg</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadSimulation.html" class="external-link">loadSimulation</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata"</span>,</span>
+<span>  <span class="st">"Aciclovir.pkml"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"ospsuite"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>In the next step, we will retrieve the objects of the application
 dose parameters and change the dose of the second simulation to 500
 mg.</p>
@@ -142,7 +150,10 @@ mg.</p>
 <span><span class="co"># Get the parameter from the first simulation</span></span>
 <span></span>
 <span><span class="co"># Get the instances of the parameters</span></span>
-<span><span class="va">sim_250mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">doseParameterPath</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span></span>
+<span><span class="va">sim_250mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
+<span>  path <span class="op">=</span> <span class="va">doseParameterPath</span>,</span>
+<span>  container <span class="op">=</span> <span class="va">sim_250mg</span></span>
+<span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">sim_250mg_doseParam</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;Parameter&gt;</span></span></span>
 <span><span class="co">#&gt;   • Quantity Type: Parameter</span></span>
@@ -152,7 +163,10 @@ mg.</p>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Formula</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   • isConstant: TRUE</span></span>
-<span><span class="va">sim_500mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">doseParameterPath</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span></span>
+<span><span class="va">sim_500mg_doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
+<span>  path <span class="op">=</span> <span class="va">doseParameterPath</span>,</span>
+<span>  container <span class="op">=</span> <span class="va">sim_500mg</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Chage the value to 500 mg</span></span>
 <span><span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/setParameterValues.html" class="external-link">setParameterValues</a></span><span class="op">(</span>parameters <span class="op">=</span> <span class="va">sim_500mg_doseParam</span>, values <span class="op">=</span> <span class="fl">500</span>, units <span class="op">=</span> <span class="st">"mg"</span><span class="op">)</span></span>
@@ -191,14 +205,26 @@ together, and two <code>PIParameters</code> for the renal clearance, as
 they are considered independent.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Creating a PIParameters object with two simulation parameters retrieved from different simulations</span></span>
-<span><span class="va">piParameterLipo</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Aciclovir|Lipophilicity"</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span>,</span>
-<span>  <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Aciclovir|Lipophilicity"</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span></span>
-<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">piParameterLipo</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  parameters <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Aciclovir|Lipophilicity"</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Aciclovir|Lipophilicity"</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Creating two separate PIParameters for the renal clearance</span></span>
-<span><span class="va">piParameterCl_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">piParameterCl_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span>path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">piParameterCl_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
+<span>    path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>,</span>
+<span>    container <span class="op">=</span> <span class="va">sim_250mg</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">piParameterCl_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  parameters <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
+<span>    path <span class="op">=</span> <span class="st">"Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"</span>,</span>
+<span>    container <span class="op">=</span> <span class="va">sim_500mg</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>Each <code>PIParameter</code> has the following properties:</p>
 <ul>
 <li><p><code>$value</code>: Current value of the parameter. Corresponds
@@ -293,14 +319,21 @@ objects.</p>
 file provided with the package. Read the article <a href="https://www.open-systems-pharmacology.org/OSPSuite-R/articles/observed-data.html" class="external-link">Observed
 data</a> from the <a href="https://github.com/open-systems-pharmacology/ospsuite-r" class="external-link">ospsuite</a> documentation for details.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">filePath</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"Aciclovir_Profiles.xlsx"</span>, package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">filePath</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata"</span>,</span>
+<span>  <span class="st">"Aciclovir_Profiles.xlsx"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"ospsuite.parameteridentification"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create importer configuration for the file</span></span>
 <span><span class="va">importConfig</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/createImporterConfigurationForFile.html" class="external-link">createImporterConfigurationForFile</a></span><span class="op">(</span>filePath <span class="op">=</span> <span class="va">filePath</span><span class="op">)</span></span>
 <span><span class="co"># Set naming patter</span></span>
 <span><span class="va">importConfig</span><span class="op">$</span><span class="va">namingPattern</span> <span class="op">&lt;-</span> <span class="st">"{Source}.{Sheet}.{Dose}"</span></span>
 <span><span class="co"># Import data sets</span></span>
-<span><span class="va">obsData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadDataSetsFromExcel.html" class="external-link">loadDataSetsFromExcel</a></span><span class="op">(</span>xlsFilePath <span class="op">=</span> <span class="va">filePath</span>, importerConfigurationOrPath <span class="op">=</span> <span class="va">importConfig</span>, importAllSheets <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">obsData</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/loadDataSetsFromExcel.html" class="external-link">loadDataSetsFromExcel</a></span><span class="op">(</span></span>
+<span>  xlsFilePath <span class="op">=</span> <span class="va">filePath</span>,</span>
+<span>  importerConfigurationOrPath <span class="op">=</span> <span class="va">importConfig</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">obsData</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "Aciclovir_Profiles.Vergin 1995.Iv.250 mg"</span></span>
@@ -312,13 +345,21 @@ the corresponding simulation output has the path:</p>
 <p>We will create two objects of the <code>PIOutputMapping</code> class,
 one for each dose group:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">outputMapping_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>quantity <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getQuantity.html" class="external-link">getQuantity</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">simOutputPath</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">outputMapping_250mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  quantity <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getQuantity.html" class="external-link">getQuantity</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">simOutputPath</span>, container <span class="op">=</span> <span class="va">sim_250mg</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">outputMapping_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>quantity <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getQuantity.html" class="external-link">getQuantity</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">simOutputPath</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">outputMapping_500mg</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  quantity <span class="op">=</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getQuantity.html" class="external-link">getQuantity</a></span><span class="op">(</span>path <span class="op">=</span> <span class="va">simOutputPath</span>, container <span class="op">=</span> <span class="va">sim_500mg</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>and link simulation results to the corresponding observed data:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">outputMapping_250mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`</span><span class="op">)</span></span>
-<span><span class="va">outputMapping_500mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">outputMapping_250mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span></span>
+<span>  <span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">outputMapping_500mg</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span></span>
+<span>  <span class="va">obsData</span><span class="op">$</span><span class="va">`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">outputMapping_250mg</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIOutputMapping&gt;</span></span></span>
@@ -443,8 +484,8 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 112</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 112</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 28.04 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 12.25 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 28.98 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 12.68 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
@@ -523,6 +564,35 @@ points.</li>
 <p>The residuals only above or only below zero indicate an
 overprediction or an underprediction. Another set of parameters will
 likely result in a better fit.</p>
+<div class="section level5">
+<h5 id="ofv-profiles-around-the-optimum">OFV profiles around the optimum<a class="anchor" aria-label="anchor" href="#ofv-profiles-around-the-optimum"></a>
+</h5>
+<p>A converged optimum should sit in a locally convex region of the
+objective function. Inspect this with
+<code>calculateOFVProfiles()</code>, which varies each
+<code>PIParameter</code> independently around the current values while
+holding the others fixed. The result is a named list of tibbles (one per
+parameter), each holding the parameter’s grid values and the matching
+<code>ofv</code>. Pass it to <code><a href="../reference/plotOFVProfiles.html">plotOFVProfiles()</a></code> to
+visualize:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ofvProfiles</span> <span class="op">&lt;-</span> <span class="va">piTask</span><span class="op">$</span><span class="fu">calculateOFVProfiles</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plotOFVProfiles.html">plotOFVProfiles</a></span><span class="op">(</span><span class="va">ofvProfiles</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
+<p><img src="user-guide_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" alt="" width="516px"></p>
+<p>By default the grid covers ±10% (<code>boundFactor = 0.1</code>)
+around the current value at 20 evaluations per parameter. To widen the
+explored neighborhood or refine the grid, pass <code>boundFactor</code>
+and <code>totalEvaluations</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">wideProfiles</span> <span class="op">&lt;-</span> <span class="va">piTask</span><span class="op">$</span><span class="fu">calculateOFVProfiles</span><span class="op">(</span></span>
+<span>  boundFactor <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  totalEvaluations <span class="op">=</span> <span class="fl">50</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plotOFVProfiles.html">plotOFVProfiles</a></span><span class="op">(</span><span class="va">wideProfiles</span><span class="op">)</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
+<p>A roughly parabolic profile with the minimum near the current value
+indicates a well-conditioned optimum; a flat or monotonic profile
+suggests poor identifiability of that parameter.</p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

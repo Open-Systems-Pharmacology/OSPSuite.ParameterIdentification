@@ -11,7 +11,7 @@ configuration."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9012</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,14 +61,13 @@ configuration.</p>
 
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
-
-<ul><li><p><a href="#method-PIResult-new"><code>PIResult$new()</code></a></p></li>
+<p></p><ul><li><p><a href="#method-PIResult-initialize"><code>PIResult$new()</code></a></p></li>
 <li><p><a href="#method-PIResult-toDataFrame"><code>PIResult$toDataFrame()</code></a></p></li>
 <li><p><a href="#method-PIResult-toList"><code>PIResult$toList()</code></a></p></li>
 <li><p><a href="#method-PIResult-print"><code>PIResult$print()</code></a></p></li>
 <li><p><a href="#method-PIResult-clone"><code>PIResult$clone()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-PIResult-new"></a><div class="section">
-<h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
+</ul></div><p></p><hr><a id="method-PIResult-initialize"></a><div class="section">
+<h3 id="piresult-new-"><code>PIResult$new()</code><a class="anchor" aria-label="anchor" href="#piresult-new-"></a></h3>
 <p>Initializes a <code>PIResult</code> instance. For internal use only.</p>
 <p>This constructor is used internally by the parameter identification
 workflow to store and standardize results from optimization and
@@ -81,55 +80,48 @@ confidence interval estimation.</p><div class="section">
 <span>  configuration <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  piParameters <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>optimResult</code></dt>
 <dd><p>A named list containing optimization results.
 Typically produced internally by <code>Optimizer$run()</code> and includes fields
 such as <code>par</code>, <code>value</code>, <code>startValues</code>, <code>elapsed</code>, <code>convergence</code>, etc.</p></dd>
 
-
-<dt><code>ciResult</code></dt>
+      <dt><code>ciResult</code></dt>
 <dd><p>(Optional) A named list of confidence interval results,
 returned by <code>Optimizer$estimateCI()</code>. Contains fields like <code>sd</code>, <code>cv</code>,
 <code>lowerCI</code>, <code>upperCI</code>, <code>ciType</code>, <code>elapsed</code>, and <code>details</code>.</p></dd>
 
-
-<dt><code>costDetails</code></dt>
+      <dt><code>costDetails</code></dt>
 <dd><p>(Optional) A named list with detailed cost metrics
 computed during optimization.</p></dd>
 
-
-<dt><code>configuration</code></dt>
+      <dt><code>configuration</code></dt>
 <dd><p>(Optional) The <code>PIConfiguration</code> object used during
 parameter identification.</p></dd>
 
-
-<dt><code>piParameters</code></dt>
+      <dt><code>piParameters</code></dt>
 <dd><p>(Optional) A list of <code>PIParameter</code> objects used in
 the optimization. If not provided, default parameter names will be
 generated automatically.</p></dd>
 
 
 </dl><p></p></div>
-</div>
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="returns">Returns<a class="anchor" aria-label="anchor" href="#returns"></a></h4>
 <p>A <code>PIResult</code> object containing optimization results, confidence
 interval estimates (if available), parameter metadata (if available),
 and configuration.</p>
 </div>
 
-</div><p></p><hr><a id="method-PIResult-toDataFrame"></a><div class="section">
-<h3 id="method-todataframe-">Method <code>toDataFrame()</code><a class="anchor" aria-label="anchor" href="#method-todataframe-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIResult-toDataFrame"></a><div class="section">
+<h3 id="piresult-todataframe-"><code>PIResult$toDataFrame()</code><a class="anchor" aria-label="anchor" href="#piresult-todataframe-"></a></h3>
 <p>Export PIResult to a <code>data.frame</code>.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIResult</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
 <p>A data frame with the following columns:</p><ul><li><p><code>group</code>: Parameter group identifier</p></li>
 <li><p><code>name</code>: Parameter name</p></li>
@@ -142,36 +134,38 @@ and configuration.</p>
 <li><p><code>upperCI</code>: Upper confidence bound</p></li>
 <li><p><code>ciType</code>: Type of confidence interval ("two-sided", "one-sided", or "failed")</p></li>
 <li><p><code>initialValue</code>: Initial parameter value used for optimization</p></li>
-</ul></div>
+</ul><p></p>
+</div>
 
-</div><p></p><hr><a id="method-PIResult-toList"></a><div class="section">
-<h3 id="method-tolist-">Method <code>toList()</code><a class="anchor" aria-label="anchor" href="#method-tolist-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIResult-toList"></a><div class="section">
+<h3 id="piresult-tolist-"><code>PIResult$toList()</code><a class="anchor" aria-label="anchor" href="#piresult-tolist-"></a></h3>
 <p>Returns the full internal result list.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="returns-2">Returns<a class="anchor" aria-label="anchor" href="#returns-2"></a></h4>
 <p>A named list containing all result values.</p>
 </div>
 
-</div><p></p><hr><a id="method-PIResult-print"></a><div class="section">
-<h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIResult-print"></a><div class="section">
+<h3 id="piresult-print-"><code>PIResult$print()</code><a class="anchor" aria-label="anchor" href="#piresult-print-"></a></h3>
 <p>Prints a summary of <code>PIResult</code></p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIResult</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+</div>
 
-</div><p></p><hr><a id="method-PIResult-clone"></a><div class="section">
-<h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
+<p></p><hr><a id="method-PIResult-clone"></a><div class="section">
+<h3 id="piresult-clone-"><code>PIResult$clone()</code><a class="anchor" aria-label="anchor" href="#piresult-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIResult</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
@@ -181,6 +175,7 @@ and configuration.</p>
 </div>
 
 </div>
+
 
     </div>
 

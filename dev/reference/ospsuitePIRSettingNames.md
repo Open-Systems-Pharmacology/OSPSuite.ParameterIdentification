@@ -8,7 +8,3 @@ Names of the settings stored in piEnv Can be used with
 ``` r
 ospsuitePIRSettingNames
 ```
-
-## Format
-
-An object of class `list` of length 2.

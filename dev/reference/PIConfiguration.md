@@ -72,7 +72,7 @@ evaluation settings for parameter identification.
 
 ### Public methods
 
-- [`PIConfiguration$new()`](#method-PIConfiguration-new)
+- [`PIConfiguration$new()`](#method-PIConfiguration-initialize)
 
 - [`PIConfiguration$print()`](#method-PIConfiguration-print)
 
@@ -80,7 +80,7 @@ evaluation settings for parameter identification.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `PIConfiguration$new()`
 
 Initialize a new instance of the class.
 
@@ -94,7 +94,7 @@ A new `PIConfiguration` object.
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `PIConfiguration$print()`
 
 Prints a summary of the `PIConfiguration`.
 
@@ -104,7 +104,7 @@ Prints a summary of the `PIConfiguration`.
 
 ------------------------------------------------------------------------
 
-### Method `clone()`
+### `PIConfiguration$clone()`
 
 The objects of this class are cloneable with this method.
 

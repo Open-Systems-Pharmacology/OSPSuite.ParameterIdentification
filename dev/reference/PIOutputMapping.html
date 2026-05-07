@@ -11,7 +11,7 @@ instances to align and compare simulation outputs with empirical data."><meta na
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9012</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,30 +63,30 @@ instances to align and compare simulation outputs with empirical data.</p>
 comparison with simulation outcomes.</p></dd>
 
 
-<dt><code>dataTransformations</code></dt>
+    <dt><code>dataTransformations</code></dt>
 <dd><p>A named list of factors and offsets.</p></dd>
 
 
-<dt><code>dataWeights</code></dt>
+    <dt><code>dataWeights</code></dt>
 <dd><p>A named list of y-value weights.</p></dd>
 
 
-<dt><code>quantity</code></dt>
+    <dt><code>quantity</code></dt>
 <dd><p>Simulation quantities to be aligned with observed data
 values.</p></dd>
 
 
-<dt><code>simId</code></dt>
+    <dt><code>simId</code></dt>
 <dd><p>Identifier of the simulation associated with the mapped
 quantity.</p></dd>
 
 
-<dt><code>scaling</code></dt>
+    <dt><code>scaling</code></dt>
 <dd><p>Specifies scaling for output mapping: linear (default) or
 logarithmic.</p></dd>
 
 
-<dt><code>transformResultsFunction</code></dt>
+    <dt><code>transformResultsFunction</code></dt>
 <dd><p>A function to preprocess simulated
 results (time and observation values) before residual calculation. It
 takes numeric vectors <code>xVals</code> and <code>yVals</code>, and returns a named list
@@ -100,71 +100,62 @@ with keys <code>xVals</code> and <code>yVals</code>.</p></dd>
 
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
-
-<ul><li><p><a href="#method-PIOutputMapping-new"><code>PIOutputMapping$new()</code></a></p></li>
+<p></p><ul><li><p><a href="#method-PIOutputMapping-initialize"><code>PIOutputMapping$new()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-addObservedDataSets"><code>PIOutputMapping$addObservedDataSets()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-removeObservedDataSet"><code>PIOutputMapping$removeObservedDataSet()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataTransformations"><code>PIOutputMapping$setDataTransformations()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataWeights"><code>PIOutputMapping$setDataWeights()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-print"><code>PIOutputMapping$print()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-clone"><code>PIOutputMapping$clone()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-PIOutputMapping-new"></a><div class="section">
-<h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
+</ul></div><p></p><hr><a id="method-PIOutputMapping-initialize"></a><div class="section">
+<h3 id="pioutputmapping-new-"><code>PIOutputMapping$new()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-new-"></a></h3>
 <p>Initialize a new instance of the class.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/PIOutputMapping.html">PIOutputMapping</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">quantity</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>quantity</code></dt>
 <dd><p>An object of the type <code>Quantity</code>.</p></dd>
 
 
 </dl><p></p></div>
-</div>
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="returns">Returns<a class="anchor" aria-label="anchor" href="#returns"></a></h4>
-<p>A new <code>PIOutputMapping</code> object.
-Adds or updates observed data using <code>DataSet</code> objects.</p>
+<p>A new <code>PIOutputMapping</code> object.</p>
 </div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-addObservedDataSets"></a><div class="section">
-<h3 id="method-addobserveddatasets-">Method <code>addObservedDataSets()</code><a class="anchor" aria-label="anchor" href="#method-addobserveddatasets-"></a></h3>
+</div>
 
-<div class="section">
+<p></p><hr><a id="method-PIOutputMapping-addObservedDataSets"></a><div class="section">
+<h3 id="pioutputmapping-addobserveddatasets-"><code>PIOutputMapping$addObservedDataSets()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-addobserveddatasets-"></a></h3>
+<p>Adds or updates observed data using <code>DataSet</code> objects.</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">addObservedDataSets</span><span class="op">(</span><span class="va">data</span>, weights <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>data</code></dt>
 <dd><p>A <code>DataSet</code> object or a list thereof, matching the simulation
 quantity dimensions.</p></dd>
 
-
-<dt><code>weights</code></dt>
+      <dt><code>weights</code></dt>
 <dd><p>A named list of numeric values or numeric vectors. The
 names must match the names of the observed datasets.</p></dd>
 
 
 </dl><p></p></div>
-</div>
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h4>
 <p>Replaces any existing dataset with the same label.</p>
 </div>
 
+</div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-removeObservedDataSet"></a><div class="section">
-<h3 id="method-removeobserveddataset-">Method <code>removeObservedDataSet()</code><a class="anchor" aria-label="anchor" href="#method-removeobserveddataset-"></a></h3>
+<p></p><hr><a id="method-PIOutputMapping-removeObservedDataSet"></a><div class="section">
+<h3 id="pioutputmapping-removeobserveddataset-"><code>PIOutputMapping$removeObservedDataSet()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-removeobserveddataset-"></a></h3>
 <p>Removes specified observed data series.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">removeObservedDataSet</span><span class="op">(</span><span class="va">label</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>label</code></dt>
 <dd><p>The label of the observed data series to remove.</p></dd>
@@ -173,8 +164,10 @@ names must match the names of the observed datasets.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-setDataTransformations"></a><div class="section">
-<h3 id="method-setdatatransformations-">Method <code>setDataTransformations()</code><a class="anchor" aria-label="anchor" href="#method-setdatatransformations-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIOutputMapping-setDataTransformations"></a><div class="section">
+<h3 id="pioutputmapping-setdatatransformations-"><code>PIOutputMapping$setDataTransformations()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-setdatatransformations-"></a></h3>
 <p>Configures transformations for datasets.</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">setDataTransformations</span><span class="op">(</span></span>
@@ -184,43 +177,37 @@ names must match the names of the observed datasets.</p></dd>
 <span>  xFactors <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  yFactors <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>labels</code></dt>
 <dd><p>List of dataset labels for targeted transformations.
 Absence of labels applies transformations globally.</p></dd>
 
-
-<dt><code>xOffsets</code></dt>
+      <dt><code>xOffsets</code></dt>
 <dd><p>Numeric list/value for X-offset adjustments.</p></dd>
 
-
-<dt><code>yOffsets</code></dt>
+      <dt><code>yOffsets</code></dt>
 <dd><p>Numeric list/value for Y-offset adjustments.</p></dd>
 
-
-<dt><code>xFactors</code></dt>
+      <dt><code>xFactors</code></dt>
 <dd><p>Numeric list/value for X-scaling factors.</p></dd>
 
-
-<dt><code>yFactors</code></dt>
+      <dt><code>yFactors</code></dt>
 <dd><p>Numeric list/value for Y-scaling factors.</p></dd>
 
 
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-setDataWeights"></a><div class="section">
-<h3 id="method-setdataweights-">Method <code>setDataWeights()</code><a class="anchor" aria-label="anchor" href="#method-setdataweights-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIOutputMapping-setDataWeights"></a><div class="section">
+<h3 id="pioutputmapping-setdataweights-"><code>PIOutputMapping$setDataWeights()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-setdataweights-"></a></h3>
 <p>Assigns weights to observed data sets for residual weighting
 during parameter identification.</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">setDataWeights</span><span class="op">(</span><span class="va">weights</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>weights</code></dt>
 <dd><p>A named list of numeric values or numeric vectors. The
@@ -236,22 +223,23 @@ per dataset.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-print"></a><div class="section">
-<h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
+</div>
+
+<p></p><hr><a id="method-PIOutputMapping-print"></a><div class="section">
+<h3 id="pioutputmapping-print-"><code>PIOutputMapping$print()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-print-"></a></h3>
 <p>Prints a summary of the PIOutputMapping.</p><div class="section">
 <h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
+</div>
 
-</div><p></p><hr><a id="method-PIOutputMapping-clone"></a><div class="section">
-<h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
+<p></p><hr><a id="method-PIOutputMapping-clone"></a><div class="section">
+<h3 id="pioutputmapping-clone-"><code>PIOutputMapping$clone()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
+</div><p></p><div class="section">
 <h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
@@ -261,6 +249,7 @@ per dataset.</p></dd>
 </div>
 
 </div>
+
 
     </div>
 

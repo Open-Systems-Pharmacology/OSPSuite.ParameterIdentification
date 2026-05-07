@@ -10,10 +10,6 @@ configured via the `PIConfiguration` class.
 Algorithms
 ```
 
-## Format
-
-An object of class `list` of length 3.
-
 ## Details
 
 Supported algorithms include:

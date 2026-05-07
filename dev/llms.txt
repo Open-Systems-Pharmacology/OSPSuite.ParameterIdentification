@@ -72,6 +72,11 @@ Main classes for running parameter identification
 - [`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md)
   : PIResult
 
+## Diagnostics
+
+- [`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plotOFVProfiles.md)
+  : Plot Objective Function Value (OFV) Profiles
+
 ## Configuration options
 
 - [`Algorithms`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/Algorithms.md)

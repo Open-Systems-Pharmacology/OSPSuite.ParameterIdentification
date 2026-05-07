@@ -9,10 +9,6 @@ how discrepancies between simulations and observed data are evaluated.
 residualWeightingOptions
 ```
 
-## Format
-
-An object of class `list` of length 4.
-
 ## Details
 
 The methods include:
