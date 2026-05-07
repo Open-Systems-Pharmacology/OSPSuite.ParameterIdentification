@@ -35,6 +35,9 @@ reference:
       - PIOutputMapping
       - PIParameters
       - PIResult
+  - title: Diagnostics
+    contents:
+      - plotOFVProfiles
   - title: Configuration options
     contents:
       - Algorithms
