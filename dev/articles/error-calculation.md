@@ -33,6 +33,7 @@ To apply an error model, set the `targetFunctionType` attribute in
 `objectFunctionOptions` of the `PIConfiguration` object:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq" # or "m3"
 ```
@@ -69,6 +70,7 @@ To apply residual weighting, set the `residualWeightingMethod` attribute
 in `objectFunctionOptions` of the `PIConfiguration` object:
 
 ``` r
+
 piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "std" # or "mean" or "error"
 ```
 
@@ -92,6 +94,7 @@ To apply robust residual calculation, set the `robustMethod` attribute
 in `objectFunctionOptions` of the `PIConfiguration` object:
 
 ``` r
+
 piConfiguration$objectiveFunctionOptions$robustMethod <- "huber" # or "bisquare"
 ```
 
@@ -108,6 +111,7 @@ To change the default
 ´lin`scaling, set the`scaling`attribute in`PIOutputMapping\`:
 
 ``` r
+
 outputMapping <- PIOutputMapping$new(quantity = testQuantity)
 outputMapping$scaling <- "log"
 ```

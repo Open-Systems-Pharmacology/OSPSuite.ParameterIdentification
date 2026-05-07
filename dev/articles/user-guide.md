@@ -58,6 +58,7 @@ dose in this simulation is set to 250 mg. Remember that both
 represent two independent instances of a simulation.
 
 ``` r
+
 library(ospsuite.parameteridentification)
 
 sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
@@ -68,6 +69,7 @@ In the next step, we will retrieve the objects of the application dose
 parameters and change the dose of the second simulation to 500 mg.
 
 ``` r
+
 # Path to the dose parameter
 doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
@@ -122,6 +124,7 @@ from the two simulations are linked together, and two `PIParameters` for
 the renal clearance, as they are considered independent.
 
 ``` r
+
 # Creating a PIParameters object with two simulation parameters retrieved from different simulations
 piParameterLipo <- PIParameters$new(parameters = list(
   getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
@@ -155,6 +158,7 @@ Each `PIParameter` has the following properties:
   values of the renal clearance parameter are given in `1/min`:
 
 ``` r
+
 print(piParameterCl_250mg)
 #> <PIParameters>
 #>   • Number of parameters: 1
@@ -170,6 +174,7 @@ Setting the unit to `1/h` will cause the identification to start at
 `0.94 1/h * 60 min = 56.47 1/h`:
 
 ``` r
+
 piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/h`
 print(piParameterCl_250mg)
 #> <PIParameters>
@@ -185,6 +190,7 @@ We will set the boundaries for lipophilicity to \[-10, 10\], and for
 renal clearance to \[0, 10\] `1/min`:
 
 ``` r
+
 piParameterLipo$minValue <- -10
 piParameterLipo$maxValue <- 10
 
@@ -243,6 +249,7 @@ from the
 documentation for details.
 
 ``` r
+
 filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx", package = "ospsuite.parameteridentification")
 
 # Create importer configuration for the file
@@ -261,6 +268,7 @@ The data sets hold concentration data of aciclovir in venous blood; the
 corresponding simulation output has the path:
 
 ``` r
+
 simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 ```
 
@@ -268,6 +276,7 @@ We will create two objects of the `PIOutputMapping` class, one for each
 dose group:
 
 ``` r
+
 outputMapping_250mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_250mg))
 
 outputMapping_500mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_500mg))
@@ -276,6 +285,7 @@ outputMapping_500mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutp
 and link simulation results to the corresponding observed data:
 
 ``` r
+
 outputMapping_250mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`)
 outputMapping_500mg$addObservedDataSets(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.500 mg`)
 
@@ -294,6 +304,7 @@ error-functions. For concentration data, we will change the scaling to
 logarithmic:
 
 ``` r
+
 outputMapping_250mg$scaling <- "log"
 outputMapping_500mg$scaling <- "log"
 ```
@@ -312,6 +323,7 @@ PI tasks. If no user-defined configuration is provided to a PI task, a
 default one is created with the following properties:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 #> <PIConfiguration>
@@ -350,6 +362,7 @@ is the algorithm’s name. For example, the default settings for the
 `BOBYQA` algorithm are stored in `AlgorithmOptions_BOBYQA`:
 
 ``` r
+
 print(AlgorithmOptions_BOBYQA)
 #> $stopval
 #> [1] -Inf
@@ -374,6 +387,7 @@ E.g. to set the maximal number of function evaluations to 1500 for the
 `BOBYQA` algorithm, we can use the following code:
 
 ``` r
+
 algOptions <- AlgorithmOptions_BOBYQA
 algOptions$maxFunctionEvaluations <- 1500
 piConfiguration$algorithmOptions <- algOptions
@@ -386,6 +400,7 @@ and simulated data, and the configuration are defined, they are used in
 an instance of the `ParameterIdentification` class:
 
 ``` r
+
 piTask <- ParameterIdentification$new(
   simulations = list(sim_250mg, sim_500mg),
   parameters = list(piParameterLipo, piParameterCl_250mg, piParameterCl_500mg),
@@ -399,6 +414,7 @@ observed data with the current parameter values. A separate time profile
 is created for each `PIOutputMapping`.
 
 ``` r
+
 piTask$plotResults()
 #> [[1]]
 ```
@@ -416,6 +432,7 @@ not the start values!
 We can now run the PI and print the results:
 
 ``` r
+
 piResult <- piTask$run()
 print(piResult)
 #> <PIResult>
@@ -426,8 +443,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 29.11 s
-#>   • Elapsed (CI): 12.72 s
+#>   • Elapsed (optimization): 28.04 s
+#>   • Elapsed (CI): 12.25 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -445,6 +462,7 @@ like `$toDataFrame()` and `$toList()` for exporting results.
   related fields:
 
 ``` r
+
 piResult$toDataFrame()
 #>   group          name
 #> 1     1 Lipophilicity
@@ -474,6 +492,7 @@ piResult$toDataFrame()
   `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
 
 ``` r
+
 names(piResult$toList())
 #>  [1] "finalParameters"   "objectiveValue"    "initialParameters"
 #>  [4] "convergence"       "algorithm"         "elapsed"          
@@ -490,6 +509,7 @@ To assess the goodness of the fit, plot the time profiles after the
 optimization:
 
 ``` r
+
 piTask$plotResults()
 #> [[1]]
 ```

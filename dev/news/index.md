@@ -10,9 +10,33 @@
   settings. Changing `algorithm` or `ciMethod` resets the corresponding
   options and emits a message
   ([\#228](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228)).
+- `ParameterIdentification$plotResults()` migrated from the
+  soft-deprecated
+  [tlf](https://github.com/open-systems-pharmacology/tlf-library)-based
+  `ospsuite` plotting functions
+  ([`plotIndividualTimeProfile()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotIndividualTimeProfile.html),
+  [`plotObservedVsSimulated()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotObservedVsSimulated.html),
+  [`plotResidualsVsTime()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsTime.html))
+  to the new
+  [ospsuite.plots](https://www.open-systems-pharmacology.org/OSPSuite.Plots/)-based
+  equivalents (`plotTimeProfile()`,
+  [`plotPredictedVsObserved()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotPredictedVsObserved.html),
+  [`plotResidualsVsCovariate()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsCovariate.html)).
+  The `DefaultPlotConfiguration` object is no longer used; axis scales
+  are derived directly from each `PIOutputMapping$scaling`, and the
+  residual sub-plot now matches the mapping’s scale instead of being
+  hard-coded to linear. Visual output of `plotResults()` changes
+  accordingly.
+- Sub-plot composition in `plotResults()` switched from
+  [`ospsuite::plotGrid()`](https://rdrr.io/pkg/tlf/man/plotGrid.html) to
+  [`patchwork::wrap_plots()`](https://patchwork.data-imaginist.com/reference/wrap_plots.html);
+  the returned objects are now `patchwork` objects rather than the
+  previous `ospsuite` plot-grid objects.
 
 ### Minor improvements and bug fixes
 
+- New `Imports`: `patchwork` (used to compose the sub-plots produced by
+  `plotResults()`).
 - `ParameterIdentification$estimateCI()` now resets the objective
   function evaluation counter before each bootstrap iteration and each
   profile likelihood step, so `printEvaluationFeedback` output restarts

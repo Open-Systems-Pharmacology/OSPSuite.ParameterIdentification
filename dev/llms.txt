@@ -13,6 +13,7 @@ The package can be installed from GitHub using the
 [pak](https://pak.r-lib.org/) package. Simply run the following code:
 
 ``` r
+
 install.packages("pak")
 
 pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
@@ -21,6 +22,7 @@ pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
 Get the latest development version with:
 
 ``` r
+
 pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
 

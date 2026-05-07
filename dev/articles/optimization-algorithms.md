@@ -58,6 +58,7 @@ constructed quadratic approximation for the objective function (Powell,
 Example usage:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$algorithm <- "BOBYQA"
 piConfiguration$algorithmOptions <- list(
@@ -96,6 +97,7 @@ function (Kelley, 2009).
 Example usage:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$algorithm <- "HJKB"
 piConfiguration$algorithmOptions <- list(
@@ -141,6 +143,7 @@ real-valued parameter vector (Mullen et *al.*, 2011)
 Example usage:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$algorithm <- "DEoptim"
 piConfiguration$algorithmOptions <- list(

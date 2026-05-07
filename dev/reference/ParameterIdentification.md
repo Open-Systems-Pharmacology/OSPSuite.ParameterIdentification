@@ -156,11 +156,11 @@ values and generates plots comparing predictions to observed data.
 
 #### Returns
 
-A list of `ggplot2` plots (one per output mapping), showing:
+A list of `patchwork` objects (one per output mapping), showing:
 
 - Individual time profiles
 
-- Observed vs. simulated values
+- Predicted vs. observed values
 
 - Residuals vs. time Perform a Parameter Grid Search
 
