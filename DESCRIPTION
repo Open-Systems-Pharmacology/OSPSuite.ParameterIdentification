@@ -1,58 +1,55 @@
-Package: ospsuite.parameteridentification
 Type: Package
+Package: ospsuite.parameteridentification
 Title: Open Systems Pharmacology Parameter Identification package
 Version: 2.1.1.9011
-Authors@R: 
-    c(person(given = "Open-Systems-Pharmacology Community",
-             role = "cph"),
-      person("esqLABS GmbH", role = "fnd"),
-      person(given = "Pavel",
-             family = "Balazki",
-             role = c("aut", "cre"),
-             email = "pavel.balazki@gmail.com"),
-      person(given = "Rudi",
-             family = "Engelke",
-             role = "aut"),
-      person(given = "Sergei",
-             family = "Vavilov",
-             role = "ctb"),
-      person(given = "Felix",
-             family = "Mil",
-             role = "ctb")
-      )
+Authors@R: c(
+    person("Open-Systems-Pharmacology Community", role = "cph"),
+    person("esqLABS GmbH", role = "fnd"),
+    person("Pavel", "Balazki", , "pavel.balazki@gmail.com", role = c("aut", "cre")),
+    person("Rudi", "Engelke", role = "aut"),
+    person("Sergei", "Vavilov", role = "ctb"),
+    person("Felix", "Mil", role = "ctb")
+  )
 Maintainer: Pavel Balazki <pavel.balazki@esqlabs.com>
-Description: R package for performing parameter identification for the 
+Description: R package for performing parameter identification for the
     Open Systems Pharmacology models.
 License: GPL-2 | file LICENSE
-URL: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification,
-     https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification
-BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues
-Encoding: UTF-8
+URL:
+    https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification,
+    https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification
+BugReports:
+    https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues
 Depends:
-    R (>= 4.4),
-    ospsuite (>= 12.4.0)
+    R (>= 4.4)
 Imports:
+    ospsuite (>= 12.4.0),
     DEoptim,
-    DiceKriging,
     dfoptim,
+    DiceKriging,
+    dplyr,
+    graphics,
     nloptr,
     numDeriv,
     ospsuite.utils,
     purrr,
     R6,
-    tibble
+    stats,
+    tibble,
+    utils
 Suggests:
     devtools,
     knitr,
     mockthat,
-    rmarkdown,
     readr,
+    rmarkdown,
     testthat (>= 3.0.0),
     vdiffr
-Roxygen: list(markdown = TRUE)
-VignetteBuilder: knitr
+VignetteBuilder:
+    knitr
+Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
-Remotes: 
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Remotes:
     ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils,
     ospsuite=Open-Systems-Pharmacology/OSPSuite-R
-Config/roxygen2/version: 8.0.0
