@@ -10,136 +10,140 @@ observed data. Supports customizable optimization and confidence interval
 methods.
 }
 \section{Active bindings}{
-\if{html}{\out{<div class="r6-active-bindings">}}
-\describe{
-\item{\code{simulations}}{A named list of \code{Simulation} objects, keyed by the IDs
+  \if{html}{\out{<div class="r6-active-bindings">}}
+  \describe{
+    \item{\code{simulations}}{A named list of \code{Simulation} objects, keyed by the IDs
 of their root containers.}
 
-\item{\code{parameters}}{A list of \code{PIParameters}, each representing a grouped
+    \item{\code{parameters}}{A list of \code{PIParameters}, each representing a grouped
 set of model parameters to be optimized (read-only).}
 
-\item{\code{configuration}}{A \code{PIConfiguration} object controlling algorithm, CI
+    \item{\code{configuration}}{A \code{PIConfiguration} object controlling algorithm, CI
 estimation, and objective function options.}
 
-\item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping
+    \item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping
 observed datasets to simulated outputs.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-ParameterIdentification-new}{\code{ParameterIdentification$new()}}
-\item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
-\item \href{#method-ParameterIdentification-estimateCI}{\code{ParameterIdentification$estimateCI()}}
-\item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
-\item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
-\item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
-\item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
-}
+  \itemize{
+    \item \href{#method-ParameterIdentification-initialize}{\code{ParameterIdentification$new()}}
+    \item \href{#method-ParameterIdentification-run}{\code{ParameterIdentification$run()}}
+    \item \href{#method-ParameterIdentification-estimateCI}{\code{ParameterIdentification$estimateCI()}}
+    \item \href{#method-ParameterIdentification-plotResults}{\code{ParameterIdentification$plotResults()}}
+    \item \href{#method-ParameterIdentification-gridSearch}{\code{ParameterIdentification$gridSearch()}}
+    \item \href{#method-ParameterIdentification-calculateOFVProfiles}{\code{ParameterIdentification$calculateOFVProfiles()}}
+    \item \href{#method-ParameterIdentification-print}{\code{ParameterIdentification$print()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ParameterIdentification-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ParameterIdentification-new}{}}}
-\subsection{Method \code{new()}}{
-Initializes a \code{ParameterIdentification} instance.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$new(
+\if{html}{\out{<a id="method-ParameterIdentification-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-ParameterIdentification-initialize}{}}}
+\subsection{\code{ParameterIdentification$new()}}{
+  Initializes a \code{ParameterIdentification} instance.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$new(
   simulations,
   parameters,
   outputMappings,
   configuration = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{simulations}}{A \code{Simulation} or list of \code{Simulation} objects to be
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{simulations}}{A \code{Simulation} or list of \code{Simulation} objects to be
 used for parameter estimation. Each simulation must contain the model
 parameters specified in \code{parameters}. Use
 \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}} to load simulation files.}
-
-\item{\code{parameters}}{A \code{PIParameters} or list of \code{PIParameters} objects
+      \item{\code{parameters}}{A \code{PIParameters} or list of \code{PIParameters} objects
 specifying the model parameters to optimize. Each \code{PIParameters} object
 may group one or more underlying model parameters. See
 \code{\link{PIParameters}} for details.}
-
-\item{\code{outputMappings}}{A \code{PIOutputMapping} or list of \code{PIOutputMapping}
+      \item{\code{outputMappings}}{A \code{PIOutputMapping} or list of \code{PIOutputMapping}
 objects mapping model outputs (represented by \code{Quantity} objects) to
 observed data. #' See
 \code{\link{PIOutputMapping}} for details.}
-
-\item{\code{configuration}}{(Optional) A \code{PIConfiguration} object specifying
+      \item{\code{configuration}}{(Optional) A \code{PIConfiguration} object specifying
 algorithm, CI method, and objective function settings. Defaults to a
 new configuration if omitted. See
 \code{\link{PIConfiguration}} for configuration
 options.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A \code{ParameterIdentification} object ready to run parameter
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{ParameterIdentification} object ready to run parameter
 estimation.
 Executes Parameter Identification
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-run"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-run}{}}}
-\subsection{Method \code{run()}}{
-Runs parameter identification using the configured
+\subsection{\code{ParameterIdentification$run()}}{
+  Runs parameter identification using the configured
 optimization algorithm. Returns a structured \code{piResults}object
 containing estimated parameters, diagnostics, and (optionally)
 confidence intervals.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$run()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$run()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{\link{PIResult}} object containing the optimization results.
+Estimate Confidence Intervals
+  }
 }
 
-\subsection{Returns}{
-A \code{\link{PIResult}} object containing the optimization results.
-Estimate Confidence Intervals
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-estimateCI"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-estimateCI}{}}}
-\subsection{Method \code{estimateCI()}}{
-Computes confidence intervals for the optimized parameters
+\subsection{\code{ParameterIdentification$estimateCI()}}{
+  Computes confidence intervals for the optimized parameters
 using the method defined in the associated \code{PIConfiguration}. Intended
 for advanced use when \code{autoEstimateCI} was set to \code{FALSE} during the
 initial run.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$estimateCI()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-The same \code{\link{PIResult}} object returned by the \code{run()} method,
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$estimateCI()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The same \code{\link{PIResult}} object returned by the \code{run()} method,
 updated to include confidence interval estimates.
 Plot Parameter Estimation Results
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-plotResults"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-plotResults}{}}}
-\subsection{Method \code{plotResults()}}{
-Re-runs model simulations using the current or specified
+\subsection{\code{ParameterIdentification$plotResults()}}{
+  Re-runs model simulations using the current or specified
 parameter values and generates plots comparing predictions to observed
 data.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$plotResults(par = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{par}}{Optional parameter values for simulations, in the order of
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$plotResults(par = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{par}}{Optional parameter values for simulations, in the order of
 \code{ParameterIdentification$parameters}. Use current values if \code{NULL}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list of \code{ggplot2} plots (one per output mapping), showing:
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A list of \code{ggplot2} plots (one per output mapping), showing:
 \itemize{
 \item Individual time profiles
 \item Observed vs. simulated values
@@ -153,91 +157,92 @@ subsequent optimization.
 
 Note: The resulting grid can be used to explore the parameter space or
 initialize better starting values.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-gridSearch"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-gridSearch}{}}}
-\subsection{Method \code{gridSearch()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$gridSearch(
+\subsection{\code{ParameterIdentification$gridSearch()}}{
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$gridSearch(
   lower = NULL,
   upper = NULL,
   logScaleFlag = FALSE,
   totalEvaluations = 50,
   setStartValue = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
 \code{PIParameter} minimum values.}
-
-\item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
+      \item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
 \code{PIParameter} maximum values.}
-
-\item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
+      \item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
 are spaced logarithmically. Default is \code{FALSE}.}
-
-\item{\code{totalEvaluations}}{Integer specifying the total grid points. Default
+      \item{\code{totalEvaluations}}{Integer specifying the total grid points. Default
 is 50.}
-
-\item{\code{setStartValue}}{Logical. If \code{TRUE}, updates \code{PIParameter} starting
+      \item{\code{setStartValue}}{Logical. If \code{TRUE}, updates \code{PIParameter} starting
 values to the best grid point. Default is \code{FALSE}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A tibble where each row is a parameter combination and the
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A tibble where each row is a parameter combination and the
 corresponding objective function value (\code{ofv}).
 Calculate Objective Function Value (OFV) Profiles
 
 Generates OFV profiles by varying each parameter independently while
 holding others constant.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-calculateOFVProfiles"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-calculateOFVProfiles}{}}}
-\subsection{Method \code{calculateOFVProfiles()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$calculateOFVProfiles(
+\subsection{\code{ParameterIdentification$calculateOFVProfiles()}}{
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$calculateOFVProfiles(
   par = NULL,
   boundFactor = 0.1,
   totalEvaluations = 20
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{par}}{Numeric vector of parameter values, one for each parameter.
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{par}}{Numeric vector of parameter values, one for each parameter.
 Defaults to current parameter values if \code{NULL}, invalid or mismatched.}
-
-\item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\%
+      \item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\%
 below \code{par} and \code{upper} is 10\% above \code{par}. Default is \code{0.1}.}
-
-\item{\code{totalEvaluations}}{Integer specifying the total number of grid
+      \item{\code{totalEvaluations}}{Integer specifying the total number of grid
 points across each parameter profile. Default is 20.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list of tibbles, one for each parameter, showing how the
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A list of tibbles, one for each parameter, showing how the
 objective function value (OFV) changes when varying that parameter
 while keeping the others fixed.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ParameterIdentification-print"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-print}{}}}
-\subsection{Method \code{print()}}{
-Prints a summary of \code{ParameterIdentification} instance.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ParameterIdentification$print()}\if{html}{\out{</div>}}
+\subsection{\code{ParameterIdentification$print()}}{
+  Prints a summary of \code{ParameterIdentification} instance.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ParameterIdentification$print()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 }
