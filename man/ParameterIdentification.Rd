@@ -9,6 +9,24 @@ Performs parameter estimation by fitting model simulations to
 observed data. Supports customizable optimization and confidence interval
 methods.
 }
+\examples{
+
+## ------------------------------------------------
+## Method `ParameterIdentification$calculateOFVProfiles()`
+## ------------------------------------------------
+
+# piTask is a configured ParameterIdentification instance
+# Default: +/-10\% around current values, 20 grid points per parameter
+# ofvProfiles <- piTask$calculateOFVProfiles()
+
+# Wider neighborhood, finer grid
+# ofvProfiles <- piTask$calculateOFVProfiles(
+#   boundFactor = 0.5,
+#   totalEvaluations = 50
+# )
+
+# plotOFVProfiles(ofvProfiles)[[1]]
+}
 \section{Active bindings}{
   \if{html}{\out{<div class="r6-active-bindings">}}
   \describe{
@@ -195,9 +213,6 @@ values to the best grid point. Default is \code{FALSE}.}
     A tibble where each row is a parameter combination and the
 corresponding objective function value (\code{ofv}).
 Calculate Objective Function Value (OFV) Profiles
-
-Generates OFV profiles by varying each parameter independently while
-holding others constant.
   }
 }
 
@@ -205,6 +220,10 @@ holding others constant.
 \if{html}{\out{<a id="method-ParameterIdentification-calculateOFVProfiles"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-calculateOFVProfiles}{}}}
 \subsection{\code{ParameterIdentification$calculateOFVProfiles()}}{
+  Generates OFV profiles by varying each \code{PIParameter} independently while
+holding the others fixed at \code{par}. Useful as a post-optimization
+diagnostic: around a (local) minimum the OFV is expected to be roughly
+convex along each axis.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ParameterIdentification$calculateOFVProfiles(
@@ -217,19 +236,57 @@ holding others constant.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{par}}{Numeric vector of parameter values, one for each parameter.
-Defaults to current parameter values if \code{NULL}, invalid or mismatched.}
-      \item{\code{boundFactor}}{Numeric value. A value of 0.1 means \code{lower} is 10\%
-below \code{par} and \code{upper} is 10\% above \code{par}. Default is \code{0.1}.}
-      \item{\code{totalEvaluations}}{Integer specifying the total number of grid
-points across each parameter profile. Default is 20.}
+      \item{\code{par}}{Numeric vector of parameter values, one for each
+\code{PIParameter}. Defaults to current parameter values if \code{NULL},
+not numeric, or of mismatched length.}
+      \item{\code{boundFactor}}{Numeric scalar. A value of \code{0.1} (default) means
+bounds extend ±10\% around \code{par} for each parameter.}
+      \item{\code{totalEvaluations}}{Integer specifying the number of grid points
+per parameter profile. Default is \code{20}.}
     }
     \if{html}{\out{</div>}}
   }
+  \subsection{Details}{
+    For each parameter \code{i} a one-dimensional grid of \code{totalEvaluations}
+equally spaced points is built between \code{lower[i]} and \code{upper[i]}, with
+the bounds derived from \code{par[i]} and \code{boundFactor}:
+\itemize{
+\item \code{par[i] >= 0}: \code{lower[i] = (1 - boundFactor) * par[i]},
+\code{upper[i] = (1 + boundFactor) * par[i]}.
+\item \code{par[i] <  0}: bounds are mirrored so that \code{lower < upper} is preserved.
+}
+
+The objective function is evaluated along each axis with all other
+parameters held at their \code{par} values. Failed simulations contribute
+\code{Inf} to the corresponding \code{ofv} cell.
+  }
   \subsection{Returns}{
-    A list of tibbles, one for each parameter, showing how the
-objective function value (OFV) changes when varying that parameter
-while keeping the others fixed.
+    A named list of tibbles, one element per \code{PIParameter}. List
+names are the parameter paths (taken from \code{parameters[[1]]$path}).
+Each tibble has two columns:
+\itemize{
+\item a column named after the parameter path, holding the grid values;
+\item \code{ofv}, holding the matching objective function values.
+}
+
+Pass the returned list to \code{plotOFVProfiles()} to visualize the
+profiles.
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# piTask is a configured ParameterIdentification instance
+# Default: +/-10\% around current values, 20 grid points per parameter
+# ofvProfiles <- piTask$calculateOFVProfiles()
+
+# Wider neighborhood, finer grid
+# ofvProfiles <- piTask$calculateOFVProfiles(
+#   boundFactor = 0.5,
+#   totalEvaluations = 50
+# )
+
+# plotOFVProfiles(ofvProfiles)[[1]]
+}
+    \if{html}{\out{</div>}}
   }
 }
 
