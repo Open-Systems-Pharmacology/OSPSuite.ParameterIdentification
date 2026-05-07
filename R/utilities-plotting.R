@@ -50,7 +50,11 @@ plotOFVProfiles <- function(profiles) {
       ggplot2::aes(x = .data[[parameterName]], y = .data[["ofv"]])
     ) +
       ggplot2::theme_bw() +
-      ggplot2::geom_point(ggplot2::aes(col = .data[["ofv"]]), shape = 16, size = 2) +
+      ggplot2::geom_point(
+        ggplot2::aes(col = .data[["ofv"]]),
+        shape = 16,
+        size = 2
+      ) +
       ggplot2::labs(title = parameterName, x = axisLabel, y = "OFV") +
       ggplot2::scale_color_viridis_c(direction = -1) +
       ggplot2::guides(col = "none")
