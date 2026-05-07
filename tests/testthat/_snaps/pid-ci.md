@@ -1,8 +1,8 @@
 # estimateCI() works as expected using Hessian
 
-    list(hessian = structure(37.0555817784895, dim = c(1L, 1L)), 
-        covMat = structure(0.0427752123714457, dim = c(1L, 1L)), 
-        eigen = 0.0427752123714457, corMat = structure(1, dim = c(1L, 
+    list(hessian = structure(730.829887625898, dim = c(1L, 1L)), 
+        covMat = structure(0.0427616122764907, dim = c(1L, 1L)), 
+        eigen = 0.0427616122764907, corMat = structure(1, dim = c(1L, 
         1L)))
 
 ---
