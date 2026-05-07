@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9014</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,7 +56,9 @@
 </ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
-<ul><li>Re-enabled <code><a href="../reference/plotOFVProfiles.html">plotOFVProfiles()</a></code> for visualizing OFV profiles produced by <code>ParameterIdentification$calculateOFVProfiles()</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/91" class="external-link">#91</a>).</li>
+<ul><li>
+<code>residualWeightingMethod = "error"</code> now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/255" class="external-link">#255</a>).</li>
+<li>Re-enabled <code><a href="../reference/plotOFVProfiles.html">plotOFVProfiles()</a></code> for visualizing OFV profiles produced by <code>ParameterIdentification$calculateOFVProfiles()</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/91" class="external-link">#91</a>).</li>
 <li>New <code>Imports</code>: <code>patchwork</code> (used to compose the sub-plots produced by <code>plotResults()</code>).</li>
 <li>
 <code>ParameterIdentification$estimateCI()</code> now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so <code>printEvaluationFeedback</code> output restarts from 1 for every sub-optimization (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/238" class="external-link">#238</a>).</li>

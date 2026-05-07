@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9013</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9014</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -151,7 +151,13 @@ the observed data <code>DataSet</code>. Ideal when individual data
 points come with variance estimates, allowing for weighting by the
 inverse of these variances. The <code>yErrorType</code> must be a
 supported OSP Suite error type: <code>ArithmeticStdDev</code> or
-<code>GeometricStdDev</code>.</li>
+<code>GeometricStdDev</code>. <em>Limitation:</em> When the error field
+holds population SD for group means, the correct weight is
+<code>n / SD²</code>, not <code>1 / SD</code> (where <code>n</code> is
+the group size). Because <code>DataSet</code> does not store
+<code>n</code> per time point, this cannot be corrected automatically.
+Group mean observations will be under-weighted by <code>1 / √n</code>
+relative to the optimal value.</li>
 </ul>
 <p>To apply residual weighting, set the
 <code>residualWeightingMethod</code> attribute in

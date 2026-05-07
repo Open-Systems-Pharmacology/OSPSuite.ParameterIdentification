@@ -35,6 +35,10 @@
 
 ### Minor improvements and bug fixes
 
+- `residualWeightingMethod = "error"` now computes arithmetic SD from
+  geometric standard deviation without approximation. A warning is
+  issued when any error values are invalid and fall back to unit weights
+  ([\#255](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/255)).
 - Re-enabled
   [`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plotOFVProfiles.md)
   for visualizing OFV profiles produced by

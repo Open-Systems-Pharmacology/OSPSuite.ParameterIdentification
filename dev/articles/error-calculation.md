@@ -65,6 +65,11 @@ Available options include:
   points come with variance estimates, allowing for weighting by the
   inverse of these variances. The `yErrorType` must be a supported OSP
   Suite error type: `ArithmeticStdDev` or `GeometricStdDev`.
+  *Limitation:* When the error field holds population SD for group
+  means, the correct weight is `n / SD²`, not `1 / SD` (where `n` is the
+  group size). Because `DataSet` does not store `n` per time point, this
+  cannot be corrected automatically. Group mean observations will be
+  under-weighted by `1 / √n` relative to the optimal value.
 
 To apply residual weighting, set the `residualWeightingMethod` attribute
 in `objectFunctionOptions` of the `PIConfiguration` object:
