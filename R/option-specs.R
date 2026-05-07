@@ -28,7 +28,7 @@ CIOptionSpecs <- list(
 ObjectiveFunctionSpecs <- list(
   objectiveFunctionType = characterOption(allowedValues = c("lsq", "m3")),
   residualWeightingMethod = characterOption(
-    allowedValues = c("none", "std", "mean", "error")
+    allowedValues = c("none", "error")
   ),
   robustMethod = characterOption(
     allowedValues = c("none", "huber", "bisquare")

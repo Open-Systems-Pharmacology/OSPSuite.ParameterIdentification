@@ -225,15 +225,9 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' - **`none`** – No weighting applied, treating all residuals equally.
 #' - **`error`** – Weights based on error estimates for the dependent variable
 #'   in observed data.
-#' - **`std`** – Weights equal to the reciprocal of the standard deviation of
-#'   the observed data.
-#' - **`mean`** – Weights based on the reciprocal of the mean of the absolute
-#'   values of the observed data, useful for relative error scaling.
 residualWeightingOptions <- ospsuite.utils::enum(c(
   "none",
-  "error",
-  "std",
-  "mean"
+  "error"
 ))
 
 #' Robust Weighting Methods for Cost Function

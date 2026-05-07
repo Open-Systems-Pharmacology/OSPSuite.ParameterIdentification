@@ -5,7 +5,7 @@
 \alias{residualWeightingOptions}
 \title{Residual Weighting Methods for Cost Function}
 \format{
-An object of class \code{list} of length 4.
+An object of class \code{list} of length 2.
 }
 \usage{
 residualWeightingOptions
@@ -20,10 +20,6 @@ The methods include:
 \item \strong{\code{none}} – No weighting applied, treating all residuals equally.
 \item \strong{\code{error}} – Weights based on error estimates for the dependent variable
 in observed data.
-\item \strong{\code{std}} – Weights equal to the reciprocal of the standard deviation of
-the observed data.
-\item \strong{\code{mean}} – Weights based on the reciprocal of the mean of the absolute
-values of the observed data, useful for relative error scaling.
 }
 }
 \keyword{datasets}
