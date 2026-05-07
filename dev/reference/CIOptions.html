@@ -11,7 +11,7 @@ class."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9014</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9015</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,10 +73,22 @@ methods.</p>
     </div>
     <div class="section level2">
     <h2 id="cioptions-hessian">CIOptions_hessian<a class="anchor" aria-label="anchor" href="#cioptions-hessian"></a></h2>
-    <p>Default options for the <strong><code>hessian</code></strong> method.</p><ul><li><p><strong><code>epsilon</code></strong>: Numerical step size for numerical differentiation. Default
-is <code>NULL</code>, which applies an adaptive step size.</p></li>
+    <p>Default options for the <strong><code>hessian</code></strong> method.
+The Hessian matrix is computed via <code><a href="https://rdrr.io/pkg/numDeriv/man/hessian.html" class="external-link">numDeriv::hessian()</a></code> using the
+Richardson method (the only supported method). The <code>r</code> and <code>d</code> options map
+directly to <code>method.args</code> of that function.</p><ul><li><p><strong><code>epsilon</code></strong>: Numerical step size for numerical differentiation. Default
+is <code>NULL</code>, which applies an adaptive step size based on the parameter
+values.</p></li>
 <li><p><strong><code>confLevel</code></strong>: Confidence level for interval estimation. Default is <code>0.95</code>
 (95% confidence intervals).</p></li>
+<li><p><strong><code>r</code></strong>: Number of Richardson iterations. Controls the trade-off between
+accuracy and computation time: <code>(N^2 + N)*r + 1</code> objective function
+evaluations are performed, where <code>N</code> is the number of free parameters.
+Must be at least <code>2</code>. Default is <code>NULL</code>, which uses <code>numDeriv</code>'s default
+of <code>4</code>.</p></li>
+<li><p><strong><code>d</code></strong>: Fractional step size. Smaller values reduce the step size relative
+to the parameter value. Default is <code>NULL</code>, which uses <code>numDeriv</code>'s default
+of <code>0.1</code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="cioptions-pl">CIOptions_PL<a class="anchor" aria-label="anchor" href="#cioptions-pl"></a></h2>

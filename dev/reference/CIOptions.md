@@ -23,13 +23,28 @@ methods.
 
 ## CIOptions_hessian
 
-Default options for the **`hessian`** method.
+Default options for the **`hessian`** method. The Hessian matrix is
+computed via
+[`numDeriv::hessian()`](https://rdrr.io/pkg/numDeriv/man/hessian.html)
+using the Richardson method (the only supported method). The `r` and `d`
+options map directly to `method.args` of that function.
 
 - **`epsilon`**: Numerical step size for numerical differentiation.
-  Default is `NULL`, which applies an adaptive step size.
+  Default is `NULL`, which applies an adaptive step size based on the
+  parameter values.
 
 - **`confLevel`**: Confidence level for interval estimation. Default is
   `0.95` (95% confidence intervals).
+
+- **`r`**: Number of Richardson iterations. Controls the trade-off
+  between accuracy and computation time: `(N^2 + N)*r + 1` objective
+  function evaluations are performed, where `N` is the number of free
+  parameters. Must be at least `2`. Default is `NULL`, which uses
+  `numDeriv`'s default of `4`.
+
+- **`d`**: Fractional step size. Smaller values reduce the step size
+  relative to the parameter value. Default is `NULL`, which uses
+  `numDeriv`'s default of `0.1`.
 
 ## CIOptions_PL
 
