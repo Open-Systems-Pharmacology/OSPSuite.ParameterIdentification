@@ -260,25 +260,27 @@
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
   weights <- rep(defaultWeight, length(yValues))
-  anyWeightsSet <- FALSE
 
-  idx <- which(
+  idxArith <- which(
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
-  if (length(idx) > 0) {
-    weights[idx] <- 1 / yErrorValues[idx]
-    anyWeightsSet <- TRUE
+  if (length(idxArith) > 0) {
+    weights[idxArith] <- 1 / yErrorValues[idxArith]
   }
 
-  idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
-  if (length(idx) > 0) {
+  idxGSD <- which(
+    yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
+  )
+  if (length(idxGSD) > 0) {
     # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
-    stDev <- yValues[idx] * sqrt(exp(log(yErrorValues[idx])^2) - 1)
-    weights[idx] <- 1 / stDev
-    anyWeightsSet <- TRUE
+    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+    weights[idxGSD] <- 1 / stDev
   }
 
-  if (!anyWeightsSet) {
+  nEligible <- sum(
+    yErrorType %in% c("ArithmeticStdDev", "GeometricStdDev") & yValues > 0
+  )
+  if (length(idxArith) + length(idxGSD) < nEligible) {
     warning(messages$warningNoValidErrorValues())
   }
 

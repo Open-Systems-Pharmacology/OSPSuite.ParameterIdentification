@@ -264,3 +264,14 @@ test_that(".computeErrorWeights warns when error weighting falls back to unit we
     regexp = "unit weights"
   )
 })
+
+test_that(".computeErrorWeights warns when some GSD error values are invalid", {
+  yValues <- c(10, 20, 15)
+  yErrorValues <- c(2.0, 0.5, 3.0)
+  yErrorType <- c("GeometricStdDev", "GeometricStdDev", "GeometricStdDev")
+
+  expect_warning(
+    .computeErrorWeights(yValues, yErrorValues, yErrorType),
+    regexp = "unit weights"
+  )
+})

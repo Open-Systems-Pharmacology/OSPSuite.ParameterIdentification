@@ -286,6 +286,6 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
 
 messages$warningNoValidErrorValues <- function() {
   ospsuite.utils::cliFormat(
-    "No valid error values found. Falling back to unit weights (equivalent to {.val none})."
+    "Some error values are invalid and will use unit weights (equivalent to {.val none})."
   )
 }

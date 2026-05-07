@@ -6,7 +6,7 @@
 
 ## Minor improvements and bug fixes
 
-- `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when no valid error values are found.
+- `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights.
 - `PIResult$toDataFrame()` now returns one row per parameter path for grouped `PIParameters`, instead of only the first path (#230).
 - Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
