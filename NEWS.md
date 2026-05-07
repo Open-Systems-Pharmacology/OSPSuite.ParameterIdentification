@@ -8,6 +8,7 @@
 
 ## Minor improvements and bug fixes
 
+- Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
 - New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
 - `ParameterIdentification$estimateCI()` now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so `printEvaluationFeedback` output restarts from 1 for every sub-optimization (#238).
 - `ParameterIdentification` now converts observed and simulated data to OSPSuite base units before computing residuals, ensuring consistent and reproducible OFV values (#229, #237).

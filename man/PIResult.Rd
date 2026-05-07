@@ -12,73 +12,72 @@ configuration.
 \keyword{internal}
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-PIResult-new}{\code{PIResult$new()}}
-\item \href{#method-PIResult-toDataFrame}{\code{PIResult$toDataFrame()}}
-\item \href{#method-PIResult-toList}{\code{PIResult$toList()}}
-\item \href{#method-PIResult-print}{\code{PIResult$print()}}
-\item \href{#method-PIResult-clone}{\code{PIResult$clone()}}
-}
+  \itemize{
+    \item \href{#method-PIResult-initialize}{\code{PIResult$new()}}
+    \item \href{#method-PIResult-toDataFrame}{\code{PIResult$toDataFrame()}}
+    \item \href{#method-PIResult-toList}{\code{PIResult$toList()}}
+    \item \href{#method-PIResult-print}{\code{PIResult$print()}}
+    \item \href{#method-PIResult-clone}{\code{PIResult$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PIResult-new"></a>}}
-\if{latex}{\out{\hypertarget{method-PIResult-new}{}}}
-\subsection{Method \code{new()}}{
-Initializes a \code{PIResult} instance. For internal use only.
+\if{html}{\out{<a id="method-PIResult-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-PIResult-initialize}{}}}
+\subsection{\code{PIResult$new()}}{
+  Initializes a \code{PIResult} instance. For internal use only.
 
 This constructor is used internally by the parameter identification
 workflow to store and standardize results from optimization and
 confidence interval estimation.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIResult$new(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIResult$new(
   optimResult,
   ciResult = NULL,
   costDetails = NULL,
   configuration = NULL,
   piParameters = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{optimResult}}{A named list containing optimization results.
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{optimResult}}{A named list containing optimization results.
 Typically produced internally by \code{Optimizer$run()} and includes fields
 such as \code{par}, \code{value}, \code{startValues}, \code{elapsed}, \code{convergence}, etc.}
-
-\item{\code{ciResult}}{(Optional) A named list of confidence interval results,
+      \item{\code{ciResult}}{(Optional) A named list of confidence interval results,
 returned by \code{Optimizer$estimateCI()}. Contains fields like \code{sd}, \code{cv},
 \code{lowerCI}, \code{upperCI}, \code{ciType}, \code{elapsed}, and \code{details}.}
-
-\item{\code{costDetails}}{(Optional) A named list with detailed cost metrics
+      \item{\code{costDetails}}{(Optional) A named list with detailed cost metrics
 computed during optimization.}
-
-\item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
+      \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
 parameter identification.}
-
-\item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
+      \item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
 the optimization. If not provided, default parameter names will be
 generated automatically.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A \code{PIResult} object containing optimization results, confidence
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{PIResult} object containing optimization results, confidence
 interval estimates (if available), parameter metadata (if available),
 and configuration.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIResult-toDataFrame"></a>}}
 \if{latex}{\out{\hypertarget{method-PIResult-toDataFrame}{}}}
-\subsection{Method \code{toDataFrame()}}{
-Export PIResult to a \code{data.frame}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIResult$toDataFrame()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-A data frame with the following columns:
+\subsection{\code{PIResult$toDataFrame()}}{
+  Export PIResult to a \code{data.frame}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIResult$toDataFrame()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A data frame with the following columns:
 \itemize{
 \item \code{group}: Parameter group identifier
 \item \code{name}: Parameter name
@@ -92,46 +91,53 @@ A data frame with the following columns:
 \item \code{ciType}: Type of confidence interval ("two-sided", "one-sided", or "failed")
 \item \code{initialValue}: Initial parameter value used for optimization
 }
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIResult-toList"></a>}}
 \if{latex}{\out{\hypertarget{method-PIResult-toList}{}}}
-\subsection{Method \code{toList()}}{
-Returns the full internal result list.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIResult$toList()}\if{html}{\out{</div>}}
+\subsection{\code{PIResult$toList()}}{
+  Returns the full internal result list.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIResult$toList()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A named list containing all result values.
+  }
 }
 
-\subsection{Returns}{
-A named list containing all result values.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIResult-print"></a>}}
 \if{latex}{\out{\hypertarget{method-PIResult-print}{}}}
-\subsection{Method \code{print()}}{
-Prints a summary of \code{PIResult}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIResult$print()}\if{html}{\out{</div>}}
+\subsection{\code{PIResult$print()}}{
+  Prints a summary of \code{PIResult}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIResult$print()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PIResult-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-PIResult-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{PIResult$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{PIResult$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIResult$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

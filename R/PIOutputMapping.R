@@ -118,7 +118,7 @@ PIOutputMapping <- R6::R6Class(
       private$.scaling <- "lin"
     },
 
-    #' Adds or updates observed data using `DataSet` objects.
+    #' @description Adds or updates observed data using `DataSet` objects.
     #' @details Replaces any existing dataset with the same label.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
