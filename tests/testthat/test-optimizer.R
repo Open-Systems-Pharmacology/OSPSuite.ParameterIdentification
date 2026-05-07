@@ -479,3 +479,32 @@ test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
   expect_equal(ciResult$ciType, c("two-sided", "one-sided", "two-sided"))
   expect_equal(ciResult$lowerCI, c(0.971, NA, 2.659), tolerance = 0.01)
 })
+
+
+# Hessian CI method.args tests
+
+test_that("Hessian CI uses r from ciOptions to control number of iterations", {
+  piConfig <- PIConfiguration$new()
+  piConfig$ciOptions <- list(r = 2L)
+  optimizer <- Optimizer$new(piConfig)
+
+  evalCount <- 0L
+  fnCounting <- function(p) {
+    evalCount <<- evalCount + 1L
+    fnObjective(p)
+  }
+
+  suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnCounting,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+
+  # r=2 with N=3: 26 hessian evals + 1 cost eval = 27 total
+  # (default r=4: 50 hessian evals + 1 cost eval = 51 total)
+  expect_equal(evalCount, 27L)
+  expect_null(ciResult$error)
+})

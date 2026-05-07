@@ -247,22 +247,29 @@
   ospsuite.utils::isSameLength(yValues, yErrorValues)
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
-  n <- numeric(length(yValues))
-
   weights <- rep(defaultWeight, length(yValues))
 
-  idx <- which(
+  idxArith <- which(
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
-  if (length(idx) > 0) {
-    weights[idx] <- 1 / yErrorValues[idx]
+  if (length(idxArith) > 0) {
+    weights[idxArith] <- 1 / yErrorValues[idxArith]
   }
 
-  idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
-  if (length(idx) > 0) {
-    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
-    stDev <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
-    weights[idx] <- 1 / stDev
+  idxGSD <- which(
+    yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
+  )
+  if (length(idxGSD) > 0) {
+    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
+    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+    weights[idxGSD] <- 1 / stDev
+  }
+
+  nEligible <- sum(
+    yErrorType %in% c("ArithmeticStdDev", "GeometricStdDev") & yValues > 0
+  )
+  if (length(idxArith) + length(idxGSD) < nEligible) {
+    warning(messages$warningNoValidErrorValues())
   }
 
   return(weights)
