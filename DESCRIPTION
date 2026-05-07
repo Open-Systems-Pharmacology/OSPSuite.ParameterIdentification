@@ -35,6 +35,7 @@ Imports:
     DiceKriging,
     dfoptim,
     ggplot2,
+    ggtext,
     nloptr,
     numDeriv,
     ospsuite.utils,
