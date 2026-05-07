@@ -8,6 +8,7 @@
 
 ## Minor improvements and bug fixes
 
+- `CIOptions_hessian` gains `r` and `d` options to tune the post-hoc Hessian CI step. `r` controls the number of iterations (minimum `2`, default `4`) and `d` the fractional step size (default `0.1`). Reducing `r` lowers the number of objective function evaluations at the cost of accuracy (#215).
 - `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (#255).
 - Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
 - New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
