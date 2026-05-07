@@ -1045,6 +1045,11 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
+      # Store simulation outputs and time intervals to reset them at the end.
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
+
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
 

@@ -38,7 +38,7 @@
 #'
 #' @export
 plotOFVProfiles <- function(profiles) {
-  if (missing(profiles)) {
+  if (missing(profiles) || is.null(profiles)) {
     stop(messages$profilesNotSupplied())
   }
   plotList <- vector(mode = "list", length = length(profiles))

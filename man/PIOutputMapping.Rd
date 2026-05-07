@@ -66,7 +66,6 @@ with keys \code{xVals} and \code{yVals}.}
   }
   \subsection{Returns}{
     A new \code{PIOutputMapping} object.
-Adds or updates observed data using \code{DataSet} objects.
   }
 }
 
@@ -74,6 +73,7 @@ Adds or updates observed data using \code{DataSet} objects.
 \if{html}{\out{<a id="method-PIOutputMapping-addObservedDataSets"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-addObservedDataSets}{}}}
 \subsection{\code{PIOutputMapping$addObservedDataSets()}}{
+  Adds or updates observed data using \code{DataSet} objects.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$addObservedDataSets(data, weights = NULL)}

@@ -9,6 +9,13 @@ test_that("plotOFVProfiles() errors when called with no argument", {
   )
 })
 
+test_that("plotOFVProfiles() errors when called with NULL", {
+  expect_error(
+    plotOFVProfiles(NULL),
+    "calculateOFVProfiles"
+  )
+})
+
 test_that("plotOFVProfiles() returns one ggplot per profile", {
   profiles <- list(
     `paramX` = tibble::tibble(`paramX` = seq(0, 1, length.out = 5), ofv = c(3, 2, 1, 2, 3)),
