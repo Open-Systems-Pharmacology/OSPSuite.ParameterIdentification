@@ -23,7 +23,7 @@ PIParameters <- R6::R6Class(
     #'   specified by `$unit`.
     currValue = function(value) {
       if (missing(value)) {
-        toUnit(
+        ospsuite::toUnit(
           quantityOrDimension = private$.parameters[[1]],
           values = private$.parameters[[1]]$value,
           targetUnit = private$.unit

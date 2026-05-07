@@ -195,10 +195,10 @@ test_that("PIOutputMapping can set weight vectors correctly", {
 })
 
 test_that("PIOutputMapping fails with unknown label in weights for multiple datasets", {
-  dataSet1 <- DataSet$new(name = "dataSet1")
+  dataSet1 <- ospsuite::DataSet$new(name = "dataSet1")
   dataSet1$setValues(xValues = c(1, 2, 3, 4), yValues = c(10, 20, 30, 40))
 
-  dataSet2 <- DataSet$new(name = "dataSet2")
+  dataSet2 <- ospsuite::DataSet$new(name = "dataSet2")
   dataSet2$setValues(xValues = c(1, 2, 3), yValues = c(20, 30, 40))
 
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
@@ -217,10 +217,10 @@ test_that("PIOutputMapping fails with unknown label in weights for multiple data
 })
 
 test_that("PIOutputMapping fails with wrong weight length for one of multiple datasets", {
-  dataSet1 <- DataSet$new(name = "dataSet1")
+  dataSet1 <- ospsuite::DataSet$new(name = "dataSet1")
   dataSet1$setValues(xValues = c(1, 2, 3, 4), yValues = c(10, 20, 30, 40))
 
-  dataSet2 <- DataSet$new(name = "dataSet2")
+  dataSet2 <- ospsuite::DataSet$new(name = "dataSet2")
   dataSet2$setValues(xValues = c(1, 2, 3), yValues = c(20, 30, 40))
 
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
@@ -239,10 +239,10 @@ test_that("PIOutputMapping fails with wrong weight length for one of multiple da
 })
 
 test_that("PIOutputMapping warns if data weights exist and new datasets are added", {
-  dataSet1 <- DataSet$new(name = "dataSet1")
+  dataSet1 <- ospsuite::DataSet$new(name = "dataSet1")
   dataSet1$setValues(xValues = c(1, 2, 3, 4), yValues = c(10, 20, 30, 40))
 
-  dataSet2 <- DataSet$new(name = "dataSet2")
+  dataSet2 <- ospsuite::DataSet$new(name = "dataSet2")
   dataSet2$setValues(xValues = c(1, 2, 3), yValues = c(20, 30, 40))
 
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)

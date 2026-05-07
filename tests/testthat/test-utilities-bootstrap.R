@@ -22,7 +22,9 @@ test_that(".prepareGPRModels fits a GPR model for datasets with GeometricStdDev 
   sqrtLogTerm <- sqrt(log1p(relVar))
   gsd <- exp(sqrtLogTerm)
 
-  dataSet <- DataSet$new(name = mapping[[1]]$observedDataSets[[1]]$name)
+  dataSet <- ospsuite::DataSet$new(
+    name = mapping[[1]]$observedDataSets[[1]]$name
+  )
   dataSet$setValues(
     xValues = mapping[[1]]$observedDataSets[[1]]$xValues,
     yValues = mapping[[1]]$observedDataSets[[1]]$yValues,
@@ -31,7 +33,7 @@ test_that(".prepareGPRModels fits a GPR model for datasets with GeometricStdDev 
   dataSet$yErrorType <- "GeometricStdDev"
 
   mapping <- PIOutputMapping$new(
-    quantity = getQuantity(
+    quantity = ospsuite::getQuantity(
       "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
       container = testSimulation()
     )

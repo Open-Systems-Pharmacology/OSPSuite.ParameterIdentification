@@ -60,8 +60,8 @@ We will start by loading the simulation of the \*.pkml file twice. The dose in t
 ```{r loadSimulations}
 library(ospsuite.parameteridentification)
 
-sim_250mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
-sim_500mg <- loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_250mg <- ospsuite::loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
+sim_500mg <- ospsuite::loadSimulation(system.file("extdata", "Aciclovir.pkml", package = "ospsuite"))
 ```
 
 In the next step, we will retrieve the objects of the application dose parameters and change the dose of the second simulation to 500 mg.
@@ -72,12 +72,12 @@ doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dos
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
-sim_250mg_doseParam <- getParameter(path = doseParameterPath, container = sim_250mg)
+sim_250mg_doseParam <- ospsuite::getParameter(path = doseParameterPath, container = sim_250mg)
 print(sim_250mg_doseParam)
-sim_500mg_doseParam <- getParameter(path = doseParameterPath, container = sim_500mg)
+sim_500mg_doseParam <- ospsuite::getParameter(path = doseParameterPath, container = sim_500mg)
 
 # Chage the value to 500 mg
-setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
+ospsuite::setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
 print(sim_500mg_doseParam)
 ```
 
@@ -93,13 +93,13 @@ Consider the example above. We will create three `PIParameters` objects - one fo
 ```{r createPIParameters}
 # Creating a PIParameters object with two simulation parameters retrieved from different simulations
 piParameterLipo <- PIParameters$new(parameters = list(
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
-  getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+  ospsuite::getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
+  ospsuite::getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
 ))
 
 # Creating two separate PIParameters for the renal clearance
-piParameterCl_250mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_250mg))
-piParameterCl_500mg <- PIParameters$new(parameters = getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_500mg))
+piParameterCl_250mg <- PIParameters$new(parameters = ospsuite::getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_250mg))
+piParameterCl_500mg <- PIParameters$new(parameters = ospsuite::getParameter(path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec", container = sim_500mg))
 ```
 
 Each `PIParameter` has the following properties:
@@ -121,7 +121,7 @@ print(piParameterCl_250mg)
 Setting the unit to `1/h` will cause the identification to start at `0.94 1/h`, while the current value is still `0.94 1/h` or `0.94 1/h * 60 min = 56.47 1/h`:
 
 ```{r}
-piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/h`
+piParameterCl_250mg$unit <- ospsuite::ospUnits$`Inversed time`$`1/h`
 print(piParameterCl_250mg)
 ```
 
@@ -133,11 +133,11 @@ piParameterLipo$maxValue <- 10
 
 piParameterCl_250mg$minValue <- 0
 piParameterCl_250mg$maxValue <- 10
-piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
+piParameterCl_250mg$unit <- ospsuite::ospUnits$`Inversed time`$`1/min`
 
 piParameterCl_500mg$minValue <- 0
 piParameterCl_500mg$maxValue <- 10
-piParameterCl_500mg$unit <- ospUnits$`Inversed time`$`1/min`
+piParameterCl_500mg$unit <- ospsuite::ospUnits$`Inversed time`$`1/min`
 
 print(piParameterLipo)
 print(piParameterCl_250mg)
@@ -155,11 +155,11 @@ In the first step, we will load two observed data sets from the Excel file provi
 filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx", package = "ospsuite.parameteridentification")
 
 # Create importer configuration for the file
-importConfig <- createImporterConfigurationForFile(filePath = filePath)
+importConfig <- ospsuite::createImporterConfigurationForFile(filePath = filePath)
 # Set naming patter
 importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
 # Import data sets
-obsData <- loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = importConfig, importAllSheets = TRUE)
+obsData <- ospsuite::loadDataSetsFromExcel(xlsFilePath = filePath, importerConfigurationOrPath = importConfig, importAllSheets = TRUE)
 
 print(names(obsData))
 ```
@@ -173,9 +173,9 @@ simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Ve
 We will create two objects of the `PIOutputMapping` class, one for each dose group:
 
 ```{r}
-outputMapping_250mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_250mg))
+outputMapping_250mg <- PIOutputMapping$new(quantity = ospsuite::getQuantity(path = simOutputPath, container = sim_250mg))
 
-outputMapping_500mg <- PIOutputMapping$new(quantity = getQuantity(path = simOutputPath, container = sim_500mg))
+outputMapping_500mg <- PIOutputMapping$new(quantity = ospsuite::getQuantity(path = simOutputPath, container = sim_500mg))
 ```
 
 and link simulation results to the corresponding observed data:

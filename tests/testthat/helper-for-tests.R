@@ -4,7 +4,7 @@ getTestSimulation <- function() {
   .simulation <- NULL
   function() {
     if (is.null(.simulation)) {
-      .simulation <<- loadSimulation(
+      .simulation <<- ospsuite::loadSimulation(
         system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
       )
     }
@@ -52,7 +52,7 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
   .simulation <- NULL
   function(simulation = NULL) {
     if (!is.null(simulation)) {
-      quantity <- getQuantity(
+      quantity <- ospsuite::getQuantity(
         "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
         container = simulation
       )
@@ -106,19 +106,19 @@ resetTestFactories <- function() {
 
 testObservedData <- function() {
   filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
-  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig <- ospsuite::createImporterConfigurationForFile(filePath)
   dataConfig$sheets <- "Laskin 1982.Group A"
   dataConfig$namingPattern <- "{Source}.{Sheet}"
-  loadDataSetsFromExcel(filePath, dataConfig)
+  ospsuite::loadDataSetsFromExcel(filePath, dataConfig)
 }
 
 syntheticObservedData <- function() {
   filePath <- testthat::test_path("../data/AciclovirDataIndividuals.xlsx")
-  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig <- ospsuite::createImporterConfigurationForFile(filePath)
   dataConfig$sheets <- "Aciclovir.Synthetic"
   dataConfig$namingPattern <- "{Source}.{Sheet}.{Subject Id}"
   dataConfig$errorColumn <- NULL
-  loadDataSetsFromExcel(
+  ospsuite::loadDataSetsFromExcel(
     xlsFilePath = filePath,
     importerConfigurationOrPath = dataConfig
   )
@@ -126,14 +126,14 @@ syntheticObservedData <- function() {
 
 testObservedDataMultiple <- function() {
   filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
-  dataConfig <- createImporterConfigurationForFile(filePath)
+  dataConfig <- ospsuite::createImporterConfigurationForFile(filePath)
   dataConfig$sheets <- "Laskin 1982.Group A"
   dataConfig$namingPattern <- "{Source}.{Sheet}"
 
-  dataSet1 <- loadDataSetsFromExcel(filePath, dataConfig)[[1]]
+  dataSet1 <- ospsuite::loadDataSetsFromExcel(filePath, dataConfig)[[1]]
   dataSet1$name <- "dataSet1"
 
-  dataSet2 <- DataSet$new(name = "dataSet2")
+  dataSet2 <- ospsuite::DataSet$new(name = "dataSet2")
   dataSet2$setValues(
     xValues = dataSet1$xValues[-length(dataSet1$xValues)],
     yValues = 1.5 * dataSet1$yValues[-length(dataSet1$yValues)],
@@ -207,13 +207,13 @@ testQuantity <- function(simulation = testSimulation()) {
 }
 
 testModifiedTask <- function() {
-  sim <- loadSimulation(
+  sim <- ospsuite::loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
   sim$solver$mxStep <- 1
 
   mapping <- PIOutputMapping$new(
-    quantity = getQuantity(
+    quantity = ospsuite::getQuantity(
       "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
       container = sim
     )
@@ -222,7 +222,7 @@ testModifiedTask <- function() {
 
   params <- PIParameters$new(
     parameters = list(
-      getParameter("Aciclovir|Lipophilicity", container = sim)
+      ospsuite::getParameter("Aciclovir|Lipophilicity", container = sim)
     )
   )
 
@@ -275,32 +275,41 @@ executeWithTestFile <- function(actionWithFile) {
 
 # Multi-Simulation Setup
 
-sim_250mg <- loadSimulation(
+sim_250mg <- ospsuite::loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
-sim_500mg <- loadSimulation(
+sim_500mg <- ospsuite::loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
 
 piParameterLipo <- PIParameters$new(
   parameters = list(
-    getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg),
-    getParameter(path = "Aciclovir|Lipophilicity", container = sim_500mg)
+    ospsuite::getParameter(
+      path = "Aciclovir|Lipophilicity",
+      container = sim_250mg
+    ),
+    ospsuite::getParameter(
+      path = "Aciclovir|Lipophilicity",
+      container = sim_500mg
+    )
   )
 )
 piParameterLipo_250mg <- PIParameters$new(
   parameters = list(
-    getParameter(path = "Aciclovir|Lipophilicity", container = sim_250mg)
+    ospsuite::getParameter(
+      path = "Aciclovir|Lipophilicity",
+      container = sim_250mg
+    )
   )
 )
 piParameterCl_250mg <- PIParameters$new(
-  parameters = getParameter(
+  parameters = ospsuite::getParameter(
     path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_250mg
   )
 )
 piParameterCl_500mg <- PIParameters$new(
-  parameters = getParameter(
+  parameters = ospsuite::getParameter(
     path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_500mg
   )
@@ -308,10 +317,10 @@ piParameterCl_500mg <- PIParameters$new(
 
 simOutputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 outputMapping_250mg <- PIOutputMapping$new(
-  quantity = getQuantity(path = simOutputPath, container = sim_250mg)
+  quantity = ospsuite::getQuantity(path = simOutputPath, container = sim_250mg)
 )
 outputMapping_500mg <- PIOutputMapping$new(
-  quantity = getQuantity(path = simOutputPath, container = sim_500mg)
+  quantity = ospsuite::getQuantity(path = simOutputPath, container = sim_500mg)
 )
 outputMapping_250mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`

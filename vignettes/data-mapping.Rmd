@@ -45,12 +45,12 @@ In the following we use the Aciclovir example simulation:
 library(ospsuite.parameteridentification)
 
 # Load example simulation
-simulation <- loadSimulation(
+simulation <- ospsuite::loadSimulation(
   system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
 )
 
 # Retrieve a quantity by path from the simulation
-quantity <- getQuantity(
+quantity <- ospsuite::getQuantity(
   path = "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
   container = simulation
 )
@@ -78,10 +78,10 @@ article in the {ospsuite} documentation.
 filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx",
                         package = "ospsuite.parameteridentification")
 
-importConfig <- createImporterConfigurationForFile(filePath)
+importConfig <- ospsuite::createImporterConfigurationForFile(filePath)
 importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
 
-obsData <- loadDataSetsFromExcel(
+obsData <- ospsuite::loadDataSetsFromExcel(
   xlsFilePath = filePath,
   importerConfigurationOrPath = importConfig,
   importAllSheets = TRUE
