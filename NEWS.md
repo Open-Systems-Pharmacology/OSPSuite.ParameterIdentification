@@ -8,6 +8,7 @@
 
 ## Minor improvements and bug fixes
 
+- `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (#255).
 - Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
 - New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
 - `ParameterIdentification$estimateCI()` now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so `printEvaluationFeedback` output restarts from 1 for every sub-optimization (#238).
