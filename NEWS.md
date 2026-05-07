@@ -7,9 +7,14 @@
 ## Major changes
 
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
+- `ParameterIdentification$plotResults()` migrated from the soft-deprecated `{tlf}`-based `ospsuite` plotting functions (`plotIndividualTimeProfile()`, `plotObservedVsSimulated()`, `plotResidualsVsTime()`) to the new `{ospsuite.plots}`-based equivalents (`plotTimeProfile()`, `plotPredictedVsObserved()`, `plotResidualsVsCovariate()`). The `DefaultPlotConfiguration` object is no longer used; axis scales are derived directly from each `PIOutputMapping$scaling`, and the residual sub-plot now matches the mapping's scale instead of being hard-coded to linear. Visual output of `plotResults()` changes accordingly.
+- Sub-plot composition in `plotResults()` switched from `ospsuite::plotGrid()` to `patchwork::wrap_plots()`; the returned objects are now `patchwork` objects rather than the previous `ospsuite` plot-grid objects.
 
 ## Minor improvements and bug fixes
 
+- New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
+- `ParameterIdentification$estimateCI()` now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so `printEvaluationFeedback` output restarts from 1 for every sub-optimization (#238).
+- `ParameterIdentification` now converts observed and simulated data to OSPSuite base units before computing residuals, ensuring consistent and reproducible OFV values (#229, #237).
 - `PIResult$toDataFrame()` now returns one row per parameter path for grouped `PIParameters`, instead of only the first path (#230).
 - Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
