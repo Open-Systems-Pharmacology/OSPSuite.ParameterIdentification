@@ -18,8 +18,14 @@ test_that("plotOFVProfiles() errors when called with NULL", {
 
 test_that("plotOFVProfiles() returns one ggplot per profile", {
   profiles <- list(
-    `paramX` = tibble::tibble(`paramX` = seq(0, 1, length.out = 5), ofv = c(3, 2, 1, 2, 3)),
-    `Group|Sub|paramY` = tibble::tibble(`Group|Sub|paramY` = seq(-1, 1, length.out = 5), ofv = c(5, 4, 3, 4, 5))
+    `paramX` = tibble::tibble(
+      `paramX` = seq(0, 1, length.out = 5),
+      ofv = c(3, 2, 1, 2, 3)
+    ),
+    `Group|Sub|paramY` = tibble::tibble(
+      `Group|Sub|paramY` = seq(-1, 1, length.out = 5),
+      ofv = c(5, 4, 3, 4, 5)
+    )
   )
   plots <- plotOFVProfiles(profiles)
   expect_type(plots, "list")
