@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- `residualWeightingMethod` values `"std"` and `"mean"` have been removed from `residualWeightingOptions`. Use `outputMapping$scaling = "log"` for proportional error handling or `"error"` for inverse-variance weighting.
+
 ## Major changes
 
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).

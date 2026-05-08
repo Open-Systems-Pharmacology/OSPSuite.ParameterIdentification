@@ -36,7 +36,7 @@ The `m3` method extends the least squares error by incorporating the likelihood 
 
 ### Configuring Error Models in PI
 
-To apply an error model, set the `targetFunctionType` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply an error model, set the `targetFunctionType` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
 piConfiguration <- PIConfiguration$new()
@@ -51,19 +51,18 @@ The error calculation between simulated results and observer datasets within eac
 
 ### Residual Weighting 
 
-`PIConfiguration` offers further customization for error calculation through the `residualWeightingMethod`. This option specifies how residuals are weighted. These methods are advantageous when observed data comes from diverse populations, when datasets comprise different observation counts, or when error of dependent variable is measured. Available options include:
+`PIConfiguration` offers further customization for error calculation through the `residualWeightingMethod`. This option specifies how residuals are weighted. Available options include:
 
-- **`none`**: (default): No residual weighting.
-- **`std`**: Useful when variability in observed data points is high, as it normalizes residuals by the standard deviation, mitigating the impact of outliers.
-- **`mean`**: Beneficial for datasets with significant differences in observation magnitudes, scaling residuals by the mean to ensure equal contribution across data points.
+- **`none`** (default): No residual weighting.
 - **`error`**: Requires both `yErrorValues` and `yErrorType` to be provided in the observed data `DataSet`. Ideal when individual data points come with variance estimates, allowing for weighting by the inverse of these variances. The `yErrorType` must be a supported OSP Suite error type: `ArithmeticStdDev` or `GeometricStdDev`.
   *Limitation:* When the error field holds population SD for group means, the correct weight is `n / SD²`, not `1 / SD` (where `n` is the group size). Because `DataSet` does not store `n` per time point, this cannot be corrected automatically. Group mean observations will be under-weighted by `1 / √n` relative to the optimal value.
 
+For proportional error handling across outputs of different magnitudes, use `outputMapping$scaling = "log"` instead. Log residuals are dimensionless and automatically comparable across mappings spanning different concentration ranges.
 
-To apply residual weighting, set the `residualWeightingMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply error-based residual weighting, set the `residualWeightingMethod` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
-piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "std" # or "mean" or "error"
+piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "error"
 ```
 
 
@@ -75,7 +74,7 @@ For enhanced flexibility in handling outliers, ´PIConfiguration´ allows specif
 - **`huber`**: Minimizes the impact of outliers by combining squared and absolute values, making it less sensitive to extreme deviations.
 - **`bisquare`**: Further reduces the influence of outliers by applying a weighting scheme that diminishes the role of residuals as they move away from the median.
 
-To apply robust residual calculation, set the `robustMethod` attribute in `objectFunctionOptions` of the `PIConfiguration` object:
+To apply robust residual calculation, set the `robustMethod` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ```{r, eval=FALSE}
 piConfiguration$objectiveFunctionOptions$robustMethod <- "huber" # or "bisquare"

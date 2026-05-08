@@ -167,14 +167,15 @@ test_that("calculateCostMetrics with residualWeightingMethod `none` returns expe
   expect_snapshot_value(result$modelCost, tolerance = 1e-3)
 })
 
-test_that("calculateCostMetrics with residualWeightingMethod `std` returns expected results", {
-  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std")
-  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
-})
-
-test_that("calculateCostMetrics with residualWeightingMethod `mean` returns expected results", {
-  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean")
-  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
+test_that("calculateCostMetrics rejects removed weighting methods std and mean", {
+  expect_error(
+    .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std"),
+    regexp = "std"
+  )
+  expect_error(
+    .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean"),
+    regexp = "mean"
+  )
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `error` returns expected results", {
