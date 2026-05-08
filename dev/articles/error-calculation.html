@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9015</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9016</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,7 +110,7 @@ BQL observations.</p>
 <h3 id="configuring-error-models-in-pi">Configuring Error Models in PI<a class="anchor" aria-label="anchor" href="#configuring-error-models-in-pi"></a>
 </h3>
 <p>To apply an error model, set the <code>targetFunctionType</code>
-attribute in <code>objectFunctionOptions</code> of the
+attribute in <code>objectiveFunctionOptions</code> of the
 <code>PIConfiguration</code> object:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
@@ -128,22 +128,12 @@ optimization process, aggregating errors across all mappings.</p>
 </h3>
 <p><code>PIConfiguration</code> offers further customization for error
 calculation through the <code>residualWeightingMethod</code>. This
-option specifies how residuals are weighted. These methods are
-advantageous when observed data comes from diverse populations, when
-datasets comprise different observation counts, or when error of
-dependent variable is measured. Available options include:</p>
+option specifies how residuals are weighted. Available options
+include:</p>
 <ul>
 <li>
-<strong><code>none</code></strong>: (default): No residual
+<strong><code>none</code></strong> (default): No residual
 weighting.</li>
-<li>
-<strong><code>std</code></strong>: Useful when variability in
-observed data points is high, as it normalizes residuals by the standard
-deviation, mitigating the impact of outliers.</li>
-<li>
-<strong><code>mean</code></strong>: Beneficial for datasets with
-significant differences in observation magnitudes, scaling residuals by
-the mean to ensure equal contribution across data points.</li>
 <li>
 <strong><code>error</code></strong>: Requires both
 <code>yErrorValues</code> and <code>yErrorType</code> to be provided in
@@ -159,12 +149,16 @@ the group size). Because <code>DataSet</code> does not store
 Group mean observations will be under-weighted by <code>1 / √n</code>
 relative to the optimal value.</li>
 </ul>
-<p>To apply residual weighting, set the
+<p>For proportional error handling across outputs of different
+magnitudes, use <code>outputMapping$scaling = "log"</code> instead. Log
+residuals are dimensionless and automatically comparable across mappings
+spanning different concentration ranges.</p>
+<p>To apply error-based residual weighting, set the
 <code>residualWeightingMethod</code> attribute in
-<code>objectFunctionOptions</code> of the <code>PIConfiguration</code>
-object:</p>
+<code>objectiveFunctionOptions</code> of the
+<code>PIConfiguration</code> object:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span><span class="op">$</span><span class="va">residualWeightingMethod</span> <span class="op">&lt;-</span> <span class="st">"std"</span> <span class="co"># or "mean" or "error"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span><span class="op">$</span><span class="va">residualWeightingMethod</span> <span class="op">&lt;-</span> <span class="st">"error"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="robust-residual-calculation">Robust Residual Calculation<a class="anchor" aria-label="anchor" href="#robust-residual-calculation"></a>
@@ -189,8 +183,8 @@ role of residuals as they move away from the median.</li>
 </ul>
 <p>To apply robust residual calculation, set the
 <code>robustMethod</code> attribute in
-<code>objectFunctionOptions</code> of the <code>PIConfiguration</code>
-object:</p>
+<code>objectiveFunctionOptions</code> of the
+<code>PIConfiguration</code> object:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">objectiveFunctionOptions</span><span class="op">$</span><span class="va">robustMethod</span> <span class="op">&lt;-</span> <span class="st">"huber"</span> <span class="co"># or "bisquare"</span></span></code></pre></div>
 </div>

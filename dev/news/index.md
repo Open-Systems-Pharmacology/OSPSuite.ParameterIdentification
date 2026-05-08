@@ -2,6 +2,13 @@
 
 ## ospsuite.parameteridentification (development version)
 
+### Breaking changes
+
+- `residualWeightingMethod` values `"std"` and `"mean"` have been
+  removed from `residualWeightingOptions`. Use
+  `outputMapping$scaling = "log"` for proportional error handling or
+  `"error"` for inverse-variance weighting.
+
 ### Major changes
 
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`,

@@ -30,7 +30,7 @@ accurate and statistically robust approach to handling BQL observations.
 ### Configuring Error Models in PI
 
 To apply an error model, set the `targetFunctionType` attribute in
-`objectFunctionOptions` of the `PIConfiguration` object:
+`objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ``` r
 
@@ -48,18 +48,9 @@ aggregating errors across all mappings.
 
 `PIConfiguration` offers further customization for error calculation
 through the `residualWeightingMethod`. This option specifies how
-residuals are weighted. These methods are advantageous when observed
-data comes from diverse populations, when datasets comprise different
-observation counts, or when error of dependent variable is measured.
-Available options include:
+residuals are weighted. Available options include:
 
-- **`none`**: (default): No residual weighting.
-- **`std`**: Useful when variability in observed data points is high, as
-  it normalizes residuals by the standard deviation, mitigating the
-  impact of outliers.
-- **`mean`**: Beneficial for datasets with significant differences in
-  observation magnitudes, scaling residuals by the mean to ensure equal
-  contribution across data points.
+- **`none`** (default): No residual weighting.
 - **`error`**: Requires both `yErrorValues` and `yErrorType` to be
   provided in the observed data `DataSet`. Ideal when individual data
   points come with variance estimates, allowing for weighting by the
@@ -71,12 +62,18 @@ Available options include:
   cannot be corrected automatically. Group mean observations will be
   under-weighted by `1 / √n` relative to the optimal value.
 
-To apply residual weighting, set the `residualWeightingMethod` attribute
-in `objectFunctionOptions` of the `PIConfiguration` object:
+For proportional error handling across outputs of different magnitudes,
+use `outputMapping$scaling = "log"` instead. Log residuals are
+dimensionless and automatically comparable across mappings spanning
+different concentration ranges.
+
+To apply error-based residual weighting, set the
+`residualWeightingMethod` attribute in `objectiveFunctionOptions` of the
+`PIConfiguration` object:
 
 ``` r
 
-piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "std" # or "mean" or "error"
+piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "error"
 ```
 
 ### Robust Residual Calculation
@@ -96,7 +93,7 @@ identification outcomes. Available options include:
   away from the median.
 
 To apply robust residual calculation, set the `robustMethod` attribute
-in `objectFunctionOptions` of the `PIConfiguration` object:
+in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
 ``` r
 
