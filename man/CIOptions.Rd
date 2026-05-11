@@ -37,8 +37,9 @@ values.
 \item \strong{\code{confLevel}}: Confidence level for interval estimation. Default is \code{0.95}
 (95\% confidence intervals).
 \item \strong{\code{r}}: Number of Richardson iterations. Controls the trade-off between
-accuracy and computation time: \code{(N^2 + N)*r + 1} objective function
-evaluations are performed, where \code{N} is the number of free parameters.
+accuracy and computation time: approximately \code{(N^2 + N)*r} objective
+function evaluations are performed, where \code{N} is the number of free
+parameters.
 Must be at least \code{2}. Default is \code{NULL}, which uses \code{numDeriv}'s default
 of \code{4}.
 \item \strong{\code{d}}: Fractional step size. Smaller values reduce the step size relative
