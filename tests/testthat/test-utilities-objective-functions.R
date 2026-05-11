@@ -167,14 +167,15 @@ test_that("calculateCostMetrics with residualWeightingMethod `none` returns expe
   expect_snapshot_value(result$modelCost, tolerance = 1e-3)
 })
 
-test_that("calculateCostMetrics with residualWeightingMethod `std` returns expected results", {
-  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std")
-  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
-})
-
-test_that("calculateCostMetrics with residualWeightingMethod `mean` returns expected results", {
-  result <- .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean")
-  expect_snapshot_value(result$modelCost, tolerance = 1e-3)
+test_that("calculateCostMetrics rejects removed weighting methods std and mean", {
+  expect_error(
+    .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "std"),
+    regexp = "std"
+  )
+  expect_error(
+    .calculateCostMetrics(obsVsPredDf, residualWeightingMethod = "mean"),
+    regexp = "mean"
+  )
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `error` returns expected results", {
@@ -185,15 +186,21 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
   )
   expect_snapshot_value(resultArith$modelCost, tolerance = 1e-3)
 
-  # GeometricStdDev
+  # GeometricStdDev: convert ArithSD to exact lognormal-equivalent GSD values
+  # GSD = exp(sqrt(log(1 + CV^2))) where CV = arithSD / mean
   obsVsPredDfGeom <- obsVsPredDf
-  obsVsPredDfGeom$yErrorValues[14:16] <- c(1.083, 1.083, 1.162)
+  obs <- obsVsPredDfGeom[obsVsPredDfGeom$dataType == "observed", ]
+  validIdx <- !is.na(obs$yErrorValues) & obs$yErrorValues > 0
+  obs$yErrorValues[validIdx] <- exp(
+    sqrt(log(1 + (obs$yErrorValues[validIdx] / obs$yValues[validIdx])^2))
+  )
+  obsVsPredDfGeom[obsVsPredDfGeom$dataType == "observed", ] <- obs
   obsVsPredDfGeom$yErrorType <- "GeometricStdDev"
   resultGeom <- .calculateCostMetrics(
     obsVsPredDfGeom,
     residualWeightingMethod = "error"
   )
-  expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-2)
+  expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-3)
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
@@ -232,4 +239,40 @@ test_that("calculateCostMetrics handles infinite values in xValues and yValues c
   obsVsPredDfInf$xValues[1] <- Inf
   obsVsPredDfInf$yValues[1] <- -Inf
   expect_silent(.calculateCostMetrics(obsVsPredDfInf))
+})
+
+# .computeErrorWeights
+
+test_that(".computeErrorWeights uses exact lognormal SD formula for GeometricStdDev", {
+  yValues <- c(10, 20)
+  yErrorValues <- c(2.0, 3.0)
+  yErrorType <- c("GeometricStdDev", "GeometricStdDev")
+
+  result <- .computeErrorWeights(yValues, yErrorValues, yErrorType)
+
+  # GSD=2, mean=10: sigma=ln(2)=0.6931, exp(sigma^2)-1=0.617, SD=10*sqrt(0.617)=7.854
+  # GSD=3, mean=20: sigma=ln(3)=1.0986, exp(sigma^2)-1=2.343, SD=20*sqrt(2.343)=30.62
+  expect_equal(result, c(1 / 7.854, 1 / 30.62), tolerance = 1e-3)
+})
+
+test_that(".computeErrorWeights warns when error weighting falls back to unit weights", {
+  yValues <- c(5, 10)
+  yErrorValues <- c(0, 0)
+  yErrorType <- c("ArithmeticStdDev", "ArithmeticStdDev")
+
+  expect_warning(
+    .computeErrorWeights(yValues, yErrorValues, yErrorType),
+    regexp = "unit weights"
+  )
+})
+
+test_that(".computeErrorWeights warns when some GSD error values are invalid", {
+  yValues <- c(10, 20, 15)
+  yErrorValues <- c(2.0, 0.5, 3.0)
+  yErrorType <- c("GeometricStdDev", "GeometricStdDev", "GeometricStdDev")
+
+  expect_warning(
+    .computeErrorWeights(yValues, yErrorValues, yErrorType),
+    regexp = "unit weights"
+  )
 })

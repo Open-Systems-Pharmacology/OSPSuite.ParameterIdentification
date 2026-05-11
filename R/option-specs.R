@@ -4,8 +4,10 @@ CIOptionSpecs <- list(
     epsilon = numericOption(
       min = .Machine$double.eps,
       nullAllowed = TRUE,
-      expectedLength = 1
+      expectedLength = NULL
     ),
+    r = integerOption(min = 2L, nullAllowed = TRUE),
+    d = numericOption(min = .Machine$double.eps, nullAllowed = TRUE),
     confLevel = numericOption(min = 0, max = 1)
   ),
   PL = list(
@@ -28,7 +30,7 @@ CIOptionSpecs <- list(
 ObjectiveFunctionSpecs <- list(
   objectiveFunctionType = characterOption(allowedValues = c("lsq", "m3")),
   residualWeightingMethod = characterOption(
-    allowedValues = c("none", "std", "mean", "error")
+    allowedValues = c("none", "error")
   ),
   robustMethod = characterOption(
     allowedValues = c("none", "huber", "bisquare")

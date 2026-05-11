@@ -3,6 +3,7 @@
 ## Breaking changes
 
 - Minimum required R version is now 4.4, consistent with `ospsuite`.
+- `residualWeightingMethod` values `"std"` and `"mean"` have been removed from `residualWeightingOptions`. Use `outputMapping$scaling = "log"` for proportional error handling or `"error"` for inverse-variance weighting.
 
 ## Major changes
 
@@ -12,6 +13,8 @@
 
 ## Minor improvements and bug fixes
 
+- `CIOptions_hessian` gains `r` and `d` options to tune the post-hoc Hessian CI step. `r` controls the number of iterations (minimum `2`, default `4`) and `d` the fractional step size (default `0.1`). Reducing `r` lowers the number of objective function evaluations at the cost of accuracy (#215).
+- `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (#255).
 - Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
 - New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
 - `ParameterIdentification$estimateCI()` now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so `printEvaluationFeedback` output restarts from 1 for every sub-optimization (#238).

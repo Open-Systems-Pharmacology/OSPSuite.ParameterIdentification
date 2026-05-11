@@ -13,8 +13,7 @@
 #'   for calculating model cost. Options include `"lsq"` (least squares,
 #'   default) and `"m3"` for handling censored data.
 #' @param residualWeightingMethod A string indicating the method to weight the
-#'   residuals. Options include `"none"` (default), `"std"`, `"mean"`, and
-#'   `"error"`.
+#'   residuals. Options include `"none"` (default) and `"error"`.
 #' @param robustMethod A string indicating the robust method to apply to the
 #'   residuals. Options include `"none"` (default), `"huber"`, and `"bisquare"`.
 #' @param scaleVar A boolean indicating whether to scale residuals by the number
@@ -40,7 +39,7 @@
 #' df <- DataCombined$toDataFrame()
 #'
 #' # Calculate cost metrics
-#' costMetrics <- .calculateCostMetrics(df, residualWeightingMethod = "std", scaleVar = TRUE)
+#' costMetrics <- .calculateCostMetrics(df, residualWeightingMethod = "error", scaleVar = TRUE)
 #'
 #' # View model cost
 #' print(costMetrics$modelCost)
@@ -159,18 +158,7 @@
         yValues = observedData[["yValues"]],
         yErrorValues = observedData[["yErrorValues"]],
         yErrorType = observedData[["yErrorType"]]
-      ),
-      "std" = {
-        if (length(unique(observedYVal)) == 1) {
-          sqrt(.Machine$double.eps)
-        } else {
-          stats::sd(observedYVal, na.rm = TRUE)
-        }
-      },
-      "mean" = {
-        meanVal <- mean(abs(observedYVal), na.rm = TRUE)
-        if (meanVal == 0) 1 else meanVal
-      }
+      )
     )
 
   # Calculate robust weights based on the specified robust method
@@ -259,22 +247,29 @@
   ospsuite.utils::isSameLength(yValues, yErrorValues)
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
-  n <- numeric(length(yValues))
-
   weights <- rep(defaultWeight, length(yValues))
 
-  idx <- which(
+  idxArith <- which(
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
-  if (length(idx) > 0) {
-    weights[idx] <- 1 / yErrorValues[idx]
+  if (length(idxArith) > 0) {
+    weights[idxArith] <- 1 / yErrorValues[idxArith]
   }
 
-  idx <- which(yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1)
-  if (length(idx) > 0) {
-    # SD = mean * sqrt(e^(σ^2) - 1) with approximation e^(σ^2) = GSD^2
-    stDev <- yValues[idx] * sqrt(yErrorValues[idx]^2 - 1)
-    weights[idx] <- 1 / stDev
+  idxGSD <- which(
+    yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
+  )
+  if (length(idxGSD) > 0) {
+    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
+    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+    weights[idxGSD] <- 1 / stDev
+  }
+
+  nEligible <- sum(
+    yErrorType %in% c("ArithmeticStdDev", "GeometricStdDev") & yValues > 0
+  )
+  if (length(idxArith) + length(idxGSD) < nEligible) {
+    warning(messages$warningNoValidErrorValues())
   }
 
   return(weights)
