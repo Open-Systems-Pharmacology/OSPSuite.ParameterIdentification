@@ -5,11 +5,11 @@ resetTestFactories()
 # Plot Results
 
 test_that("plotResults() generates expected plot before parameter estimation", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   vdiffr::expect_doppelganger("before-estimation", piTask$plotResults()[[1]])
 })
 
-piTask <- createPiTask()
+piTask <- testPiTask()
 suppressMessages(piResults <- piTask$run())
 test_that("plotResults() generates expected plot after parameter estimation", {
   vdiffr::expect_doppelganger("after-estimation", piTask$plotResults()[[1]])
@@ -23,7 +23,7 @@ test_that("plotResults() generates expected plot with parameter input", {
 # Grid Search
 
 test_that("gridSearch() works without error for single parameter", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   expect_no_error(gridSearchResults <- piTask$gridSearch())
 })
 

@@ -5,7 +5,7 @@ resetTestFactories()
 # Hessian CI Method
 
 test_that("estimateCI() throws error if optimization has not been executed", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
 
   expect_error(
     expect_message(
@@ -17,7 +17,7 @@ test_that("estimateCI() throws error if optimization has not been executed", {
 })
 
 test_that("estimateCI() works as expected using Hessian", {
-  piTask <- createPiTask()
+  piTask <- testPiTask()
   piTask$configuration$algorithmOptions <- list(maxeval = 200L)
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piResult <- piTask$run())
@@ -111,6 +111,23 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
     outputMapping$observedDataSets[[1]]$yValues,
     yValuesInitial
   )
+})
+
+test_that("estimateCI() restarts evaluation counter from 1 for each bootstrap iteration", {
+  nBootstrap <- 3L
+
+  piTask <- testPiTask()
+  piTask$configuration$algorithmOptions <- list(maxeval = 3L)
+  piTask$configuration$ciMethod <- "bootstrap"
+  piTask$configuration$ciOptions <- list(seed = 2203L, nBootstrap = nBootstrap)
+  piTask$configuration$printEvaluationFeedback <- TRUE
+  piTask$configuration$autoEstimateCI <- FALSE
+  capture_output(suppressMessages(piTask$run()))
+
+  evalOutput <- capture_output(suppressMessages(piTask$estimateCI()))
+
+  fnevals <- parseFnevals(evalOutput)
+  expect_equal(sum(fnevals == 1L), nBootstrap)
 })
 
 test_that("estimateCI() outputs expected messages for mixed datasets", {
