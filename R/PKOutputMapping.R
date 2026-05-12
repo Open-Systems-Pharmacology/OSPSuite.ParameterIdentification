@@ -1,6 +1,6 @@
 #' @title PKOutputMapping
 #' @docType class
-#' @description Maps a simulation output quantity to a target PK metric for use
+#' @description Maps a simulation output quantity to a target PK parameter for use
 #'   in [`ParameterIdentification`] optimization.
 #' @import R6 ospsuite.utils ospsuite
 #' @export
@@ -27,7 +27,7 @@ PKOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field pkParameter Name of the PK metric to target. Must be one of
+    #' @field pkParameter Name of the PK parameter to target. Must be one of
     #'   [`ospsuite::StandardPKParameter`].
     pkParameter = function(value) {
       if (missing(value)) {
@@ -141,7 +141,7 @@ PKOutputMapping <- R6::R6Class(
     #'
     #' @param quantity An ospsuite `Quantity` object from the simulation whose
     #'   PK profile will be analyzed.
-    #' @param pkParameter Character string specifying the PK metric to target.
+    #' @param pkParameter Character string specifying the PK parameter to target.
     #'   Must be one of [`ospsuite::StandardPKParameter`] (e.g., `"C_max"`,
     #'   `"AUC_tEnd"`).
     #' @param targetValue Numeric scalar target value in units of `targetUnit`.

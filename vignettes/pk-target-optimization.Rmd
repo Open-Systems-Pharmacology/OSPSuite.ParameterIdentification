@@ -1,8 +1,8 @@
 ---
-title: "Fitting to PK metric targets (QIVIVE)"
+title: "Fitting to PK parameter targets"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Fitting to PK metric targets (QIVIVE)}
+  %\VignetteIndexEntry{Fitting to PK parameter targets}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options:
@@ -21,9 +21,9 @@ knitr::opts_chunk$set(
 
 ### Introduction
 
-Parameter identification typically fits a model to a full concentration-time series. In some workflows only a single PK metric is available or relevant as a target: for example, an in vitro EC50 that must be translated into an equivalent in vivo dose (QIVIVE), or a C_max reconstructed from a human biomonitoring study. In these cases, optimising the full time-series objective is unnecessary.
+Parameter identification typically fits a model to a full time profile. In some workflows only a single PK metric is available or relevant as a target: for example, a C_max reconstructed from a human biomonitoring study, or an AUC derived from a non-compartmental analysis. In these cases, optimising the full time-series objective is unnecessary.
 
-`PKOutputMapping` supports this by linking a simulation quantity to a scalar PK metric target. The optimizer adjusts the free parameter until the simulated metric matches the target. Any parameter that has a monotonic effect on the metric can be used, although dose is the most common choice for QIVIVE applications.
+`PKOutputMapping` supports this by linking a simulation quantity to a scalar PK metric target. The optimizer adjusts the free parameter until the simulated metric matches the target. Any parameter that has a monotonic effect on the metric can be used.
 
 
 ### Workflow
@@ -48,21 +48,21 @@ sim <- loadSimulation(
 
 The parameter is retrieved by its full path in the simulation. `minValue` and `maxValue` define the search space.
 
-```{r doseParam}
+```{r piParameter}
 doseParam <- getParameter(
   path = "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
   container = sim
 )
 
-piParam <- PIParameters$new(parameters = list(doseParam))
-piParam$minValue <- 0.0001  # 100 mg in kg
-piParam$maxValue <- 0.001   # 1 g in kg
-print(piParam)
+piParameterDose <- PIParameters$new(parameters = list(doseParam))
+piParameterDose$minValue <- 0.0001 # 100 mg in kg
+piParameterDose$maxValue <- 0.001 # 1 g in kg
+print(piParameterDose)
 ```
 
 #### Output mapping
 
-`PKOutputMapping` connects a simulation quantity to a target PK metric. The `pkParameter` argument must be one of `ospsuite::StandardPKParameter`. The target value must be given in a unit compatible with the quantity's dimension.
+`PKOutputMapping` connects a simulation quantity to a target PK parameter. The `pkParameter` argument must be one of `ospsuite::StandardPKParameter`. The target value must be given in a unit compatible with the PK parameter's dimension.
 
 ```{r outputMapping}
 plasmaConc <- getQuantity(
@@ -70,16 +70,16 @@ plasmaConc <- getQuantity(
   container = sim
 )
 
-mapping <- PKOutputMapping$new(
-  quantity  = plasmaConc,
+pkOutputMapping <- PKOutputMapping$new(
+  quantity = plasmaConc,
   pkParameter = "C_max",
   targetValue = 30,
-  targetUnit  = "µmol/l"
+  targetUnit = "µmol/l"
 )
-print(mapping)
+print(pkOutputMapping)
 ```
 
-If the PK metric has a different physical dimension than the quantity (e.g. `"AUC_tEnd"` relative to a concentration output), provide `targetUnit` in a unit consistent with what `calculatePKAnalyses()` returns for that metric, which is the base unit of the metric's dimension.
+If the PK parameter has a different physical dimension than the quantity (e.g. `"AUC_tEnd"` relative to a concentration output), provide `targetUnit` in a unit consistent with what `calculatePKAnalyses()` returns for that PK parameter, which is the base unit of the PK parameter's dimension.
 
 
 ### Running the optimization
@@ -87,24 +87,31 @@ If the PK metric has a different physical dimension than the quantity (e.g. `"AU
 Pass the mapping via `pkOutputMappings` to `ParameterIdentification`.
 
 ```{r run}
-pi <- ParameterIdentification$new(
-  simulations    = sim,
-  parameters     = piParam,
-  pkOutputMappings = mapping
+piTask <- ParameterIdentification$new(
+  simulations = sim,
+  parameters = piParameterDose,
+  pkOutputMappings = pkOutputMapping
 )
 
-result <- suppressMessages(pi$run())
+piResult <- piTask$run()
 ```
 
 
 ### Inspecting results
 
 ```{r printResult}
-print(result)
+print(piResult)
 ```
 
 ```{r resultDf}
-result$toDataFrame()
+piResult$toDataFrame()[, c(
+  "pkParameter",
+  "targetValue",
+  "targetUnit",
+  "achievedValue",
+  "estimatedValue",
+  "parameterUnit"
+)]
 ```
 
 The data frame contains one row per output mapping with the estimated parameter value (`estimatedValue`), its unit (`parameterUnit`), the achieved PK metric value (`achievedValue`), and the target (`targetValue`, `targetUnit`).
@@ -112,66 +119,31 @@ The data frame contains one row per output mapping with the estimated parameter 
 `$toList()` returns the full result including convergence status, number of iterations, elapsed time, and the algorithm used.
 
 
-
 ### Multiple output mappings
 
 When multiple `PKOutputMapping` objects are supplied, the optimizer minimises the sum of normalised squared differences across all mappings simultaneously.
 
 ```{r multiMapping, eval = FALSE}
-mappingCmax <- PKOutputMapping$new(
-  quantity    = plasmaConc,
+pkOutputMappingCmax <- PKOutputMapping$new(
+  quantity = plasmaConc,
   pkParameter = "C_max",
   targetValue = 30,
-  targetUnit  = "µmol/l"
+  targetUnit = "µmol/l"
 )
 
-mappingAuc <- PKOutputMapping$new(
-  quantity    = plasmaConc,
+pkOutputMappingAuc <- PKOutputMapping$new(
+  quantity = plasmaConc,
   pkParameter = "AUC_tEnd",
   targetValue = 2400,
-  targetUnit  = "µmol*min/l"
+  targetUnit = "µmol*min/l"
 )
 
-piMulti <- ParameterIdentification$new(
-  simulations      = sim,
-  parameters       = piParam,
-  pkOutputMappings = list(mappingCmax, mappingAuc)
-)
-```
-
-
-### Algorithm and configuration
-
-By default, `ParameterIdentification` uses the BOBYQA algorithm, which is efficient for single-parameter problems with smooth objective functions. A different algorithm or iteration limit can be set via `PIConfiguration`.
-
-```{r algorithmConfig, eval = FALSE}
-config <- PIConfiguration$new()
-config$algorithm <- "HJKB"
-
-piHjkb <- ParameterIdentification$new(
-  simulations      = sim,
-  parameters       = piParam,
-  pkOutputMappings = mapping,
-  configuration    = config
+piTaskMulti <- ParameterIdentification$new(
+  simulations = sim,
+  parameters = piParameterDose,
+  pkOutputMappings = list(pkOutputMappingCmax, pkOutputMappingAuc)
 )
 ```
 
-See `?PIConfiguration` and the [optimization algorithms vignette](optimization-algorithms.html) for all available options.
 
-
-### Non-dose parameters
-
-Any model parameter with a monotonic effect on the target metric can be optimized. The example below uses lipophilicity instead of dose.
-
-```{r nonDoseParam, eval = FALSE}
-lipoParam <- getParameter("Aciclovir|Lipophilicity", container = sim)
-piLipo <- PIParameters$new(parameters = list(lipoParam))
-piLipo$minValue <- -5
-piLipo$maxValue <-  5
-
-piLipoTask <- ParameterIdentification$new(
-  simulations      = sim,
-  parameters       = piLipo,
-  pkOutputMappings = mapping
-)
-```
+By default `ParameterIdentification` uses BOBYQA. A different algorithm or iteration limit can be set via `PIConfiguration`; see `?PIConfiguration` and the [optimization algorithms vignette](optimization-algorithms.html).

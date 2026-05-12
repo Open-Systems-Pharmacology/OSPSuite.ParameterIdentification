@@ -35,7 +35,7 @@ PKResult <- R6::R6Class(
     #' @param piParameters (Optional) A list of `PIParameter` objects used in
     #'   the optimization.
     #' @param pkMappings A list of `PKOutputMapping` objects.
-    #' @param achievedPKValues A list of numeric scalars with the PK metric
+    #' @param achievedPKValues A list of numeric scalars with the PK parameter
     #'   values achieved at the optimized parameter estimate.
     #'
     #' @keywords internal
@@ -183,11 +183,13 @@ PKResult <- R6::R6Class(
               m$pkParameter,
               m$targetUnit
             )
-          )
+          ),
+          " ",
+          m$targetUnit
         )
       })
       names(pkSummaries) <- sapply(x$pkMappings, `[[`, "pkParameter")
-      ospsuite.utils::ospPrintItems(pkSummaries, title = "PK Targets")
+      ospsuite.utils::ospPrintItems(pkSummaries, title = "PK Parameters")
     }
   )
 )
