@@ -96,6 +96,12 @@ ParameterIdentification <- R6::R6Class(
     .pkMappings = NULL,
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
+
+    .assertNotPKMode = function(methodName) {
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode(methodName))
+      }
+    },
     # Most recently used bootstrap seed to detect when resampling is needed
     .activeBootstrapSeed = NULL,
     # Cached original weights and values of all datasets before bootstrap
@@ -903,9 +909,7 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorMissingOptimizationResult())
       }
 
-      if (!is.null(private$.pkMappings)) {
-        stop(messages$errorMethodNotApplicableInPKMode("estimateCI"))
-      }
+      private$.assertNotPKMode("estimateCI")
 
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
@@ -975,9 +979,7 @@ ParameterIdentification <- R6::R6Class(
     #' - Predicted vs. observed values
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
-      if (!is.null(private$.pkMappings)) {
-        stop(messages$errorMethodNotApplicableInPKMode("plotResults"))
-      }
+      private$.assertNotPKMode("plotResults")
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
@@ -1111,10 +1113,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(totalEvaluations)
       ospsuite.utils::validateIsLogical(setStartValue)
 
-      if (!is.null(private$.pkMappings)) {
-        stop(messages$errorMethodNotApplicableInPKMode("gridSearch"))
-      }
-
+      private$.assertNotPKMode("gridSearch")
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
 
@@ -1257,9 +1256,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
-      if (!is.null(private$.pkMappings)) {
-        stop(messages$errorMethodNotApplicableInPKMode("calculateOFVProfiles"))
-      }
+      private$.assertNotPKMode("calculateOFVProfiles")
 
       # Store simulation outputs and time intervals to reset them at the end.
       private$.savedSimulationState <- .storeSimulationState(

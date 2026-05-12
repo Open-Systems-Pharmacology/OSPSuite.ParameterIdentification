@@ -10,7 +10,23 @@ PKResult <- R6::R6Class(
   cloneable = TRUE,
   private = list(
     .result = NULL,
-    .parameters = NULL
+    .parameters = NULL,
+
+    .toDisplayUnit = function(val, pkParameter, targetUnit) {
+      if (anyNA(val)) {
+        return(NA_real_)
+      }
+      dim <- ospsuite::pkParameterByName(
+        pkParameter,
+        stopIfNotFound = TRUE
+      )$dimension
+      val /
+        ospsuite::toBaseUnit(
+          quantityOrDimension = dim,
+          values = 1,
+          unit = targetUnit
+        )
+    }
   ),
   public = list(
     #' @description Initializes a `PKResult` instance. For internal use only.
@@ -110,19 +126,7 @@ PKResult <- R6::R6Class(
 
       achievedVals <- mapply(
         function(mapping, val) {
-          if (anyNA(val)) {
-            return(NA_real_)
-          }
-          dim <- ospsuite::pkParameterByName(
-            mapping$pkParameter,
-            stopIfNotFound = TRUE
-          )$dimension
-          val /
-            ospsuite::toBaseUnit(
-              quantityOrDimension = dim,
-              values = 1,
-              unit = mapping$targetUnit
-            )
+          private$.toDisplayUnit(val, mapping$pkParameter, mapping$targetUnit)
         },
         x$pkMappings,
         x$achievedPKValues,
@@ -174,20 +178,11 @@ PKResult <- R6::R6Class(
           m$targetUnit,
           ", Achieved = ",
           .formatValues(
-            if (anyNA(x$achievedPKValues[[i]])) {
-              NA_real_
-            } else {
-              dim <- ospsuite::pkParameterByName(
-                m$pkParameter,
-                stopIfNotFound = TRUE
-              )$dimension
-              x$achievedPKValues[[i]] /
-                ospsuite::toBaseUnit(
-                  quantityOrDimension = dim,
-                  values = 1,
-                  unit = m$targetUnit
-                )
-            }
+            private$.toDisplayUnit(
+              x$achievedPKValues[[i]],
+              m$pkParameter,
+              m$targetUnit
+            )
           )
         )
       })

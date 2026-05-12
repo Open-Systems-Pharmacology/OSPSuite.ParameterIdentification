@@ -190,6 +190,8 @@ PKOutputMapping <- R6::R6Class(
     },
 
     #' @description Print a summary of the `PKOutputMapping`.
+    #'
+    #' @return Called for its side effect of printing. Returns `invisible(self)`.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
       ospsuite.utils::ospPrintItems(list(
