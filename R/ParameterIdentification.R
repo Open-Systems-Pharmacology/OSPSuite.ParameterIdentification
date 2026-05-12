@@ -82,6 +82,8 @@ ParameterIdentification <- R6::R6Class(
     .lastCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
+    # List of `PKOutputMapping` objects (PK metric mode)
+    .pkMappings = NULL,
     # Flag to indicate if objective function is being called from grid search
     .gridSearchFlag = FALSE,
     # Most recently used bootstrap seed to detect when resampling is needed
@@ -145,36 +147,39 @@ ParameterIdentification <- R6::R6Class(
           ospsuite::clearOutputs(simulation)
         }
 
-        # Add time points to the output schema that are present in the observed
-        # data. Also add output quantities.
-        for (outputMapping in private$.outputMappings) {
-          # ID of the and the parent simulation of the quantity of the mapping.
-          simId <- outputMapping$simId
-          simulation <- private$.simulations[[simId]]
-          # Add the quantity to the outputs of the simulations.
-          ospsuite::addOutputs(
-            quantitiesOrPaths = outputMapping$quantity,
-            simulation = simulation
-          )
-          # Add time points present in the observed data of this mapping.
-          for (dataset in outputMapping$observedDataSets) {
-            # Time values can be stored in units different from the base unit
-            # and must be converted to the base unit first.
-            label <- dataset$name
-            xFactor <- outputMapping$dataTransformations$xFactors
-            if (length(xFactor) != 1) {
-              xFactor <- xFactor[[label]]
-            }
-            xOffset <- outputMapping$dataTransformations$xOffsets
-            if (length(xOffset) != 1) {
-              xOffset <- xOffset[[label]]
-            }
-            xVals <- ospsuite::toBaseUnit(
-              ospsuite::ospDimensions$Time,
-              values = (dataset$xValues + xOffset) * xFactor,
-              unit = dataset$xUnit
+        if (!is.null(private$.pkMappings)) {
+          for (mapping in private$.pkMappings) {
+            simulation <- private$.simulations[[mapping$simId]]
+            ospsuite::addOutputs(
+              quantitiesOrPaths = mapping$quantity,
+              simulation = simulation
             )
-            simulation$outputSchema$addTimePoints(xVals)
+          }
+        } else {
+          for (outputMapping in private$.outputMappings) {
+            simId <- outputMapping$simId
+            simulation <- private$.simulations[[simId]]
+            ospsuite::addOutputs(
+              quantitiesOrPaths = outputMapping$quantity,
+              simulation = simulation
+            )
+            for (dataset in outputMapping$observedDataSets) {
+              label <- dataset$name
+              xFactor <- outputMapping$dataTransformations$xFactors
+              if (length(xFactor) != 1) {
+                xFactor <- xFactor[[label]]
+              }
+              xOffset <- outputMapping$dataTransformations$xOffsets
+              if (length(xOffset) != 1) {
+                xOffset <- xOffset[[label]]
+              }
+              xVals <- ospsuite::toBaseUnit(
+                ospsuite::ospDimensions$Time,
+                values = (dataset$xValues + xOffset) * xFactor,
+                unit = dataset$xUnit
+              )
+              simulation$outputSchema$addTimePoints(xVals)
+            }
           }
         }
 
@@ -231,76 +236,6 @@ ParameterIdentification <- R6::R6Class(
         # }
         private$.needBatchInitialization <- FALSE
       }
-    },
-
-    # Retrieve Output Mappings with Optional Bootstrap Resampling
-    #
-    # Returns the list of output mappings used during objective function evaluation.
-    # If no bootstrap seed is provided, the original mappings are returned.
-    # If a `bootstrapSeed` is provided and differs from the previously active
-    # seed, dataset weights and values are resampled accordingly.
-    #
-    # Strategy rationale:
-    # Bootstrap behavior is implemented by modifying dataset weights and, for
-    # aggregated data, replacing y-values with synthetic samples generated from
-    # GPR models.
-    #
-    # This method uses lazy initialization and avoids redundant recomputation:
-    # - The initial mapping state (weights and values) is extracted only once via
-    #   `.extractOutputMappingState()`.
-    # - GPR models are prepared for aggregated datasets only once via
-    #   `.prepareGPRModels()`.
-    # - On each new bootstrap seed, mappings are resampled using
-    #   `.resampleAndApplyMappingState()`, updating the internal `.outputMappings`.
-    #
-    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
-    #   returns the unmodified output mappings.
-    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
-    #   weights and values.
-    .getOutputMappings = function(bootstrapSeed = NULL) {
-      if (is.null(bootstrapSeed)) {
-        return(private$.outputMappings)
-      }
-
-      # First-time bootstrap setup: cache initial state and fit GPR models
-      if (is.null(private$.initialOutputMappingState)) {
-        private$.initialOutputMappingState <- .extractOutputMappingState(
-          private$.outputMappings
-        )
-      }
-
-      # Trigger resampling only if the seed has changed
-      if (
-        is.null(private$.activeBootstrapSeed) ||
-          private$.activeBootstrapSeed != bootstrapSeed
-      ) {
-        private$.activeBootstrapSeed <- bootstrapSeed
-        private$.outputMappings <- .resampleAndApplyMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState,
-          private$.gprModels,
-          bootstrapSeed
-        )
-      }
-
-      return(private$.outputMappings)
-    },
-
-    # Restore Output Mapping State
-    #
-    # Restores `outputMappings` to their original state before bootstrap
-    # resampling, including both dataset weights and y-values. Clears
-    # bootstrap-related state.
-    .restoreOutputMappingsState = function() {
-      if (!is.null(private$.initialOutputMappingState)) {
-        private$.outputMappings <- .applyOutputMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState
-        )
-      }
-      private$.initialOutputMappingState <- NULL
-      private$.activeBootstrapSeed <- NULL
-      private$.gprModels <- NULL
     },
 
     # Aggregate Model Cost Calculation
@@ -442,20 +377,107 @@ ParameterIdentification <- R6::R6Class(
       return(runningCost)
     },
 
-    # Apply Identified Parameter Values
-    #
-    # Assigns the final optimized parameter values back to the respective
-    # `PIParameters` objects within the simulation, aligning with their order in
-    # the `$parameters` list.
-    #
-    # @param values Optimized parameter values to be applied.
-    .applyFinalValues = function(values) {
-      for (idx in seq_along(values)) {
-        # The order of the values corresponds to the order of PIParameters in
-        # `$parameters` list
-        piParameter <- private$.piParameters[[idx]]
-        piParameter$setValue(values[[idx]])
+    .pkObjectiveFunction = function(currVals) {
+      private$.fnEvaluations <- private$.fnEvaluations + 1
+
+      pkValues <- tryCatch(
+        private$.getPKValues(currVals),
+        error = function(cond) {
+          if (private$.fnEvaluations == 1) {
+            stop(cond)
+          }
+          messages$logSimulationError(currVals, cond)
+          return(NA)
+        }
+      )
+
+      if (any(vapply(pkValues, anyNA, logical(1)))) {
+        message(messages$simulationError())
+        return(.Machine$double.xmax)
       }
+
+      cost <- 0
+      for (i in seq_along(private$.pkMappings)) {
+        target <- private$.pkMappings[[i]]$targetValueInBaseUnit
+        if (target <= 0) {
+          stop(messages$errorPKZeroTarget(
+            private$.pkMappings[[i]]$pkParameter,
+            private$.pkMappings[[i]]$quantity$path
+          ))
+        }
+        cost <- cost + ((pkValues[[i]] - target) / target)^2
+      }
+
+      if (private$.configuration$printEvaluationFeedback) {
+        cat(messages$evaluationFeedback(private$.fnEvaluations, currVals, cost))
+      }
+
+      return(cost)
+    },
+
+    .getPKValues = function(paramValues) {
+      for (idx in seq_along(paramValues)) {
+        piParameter <- private$.piParameters[[idx]]
+        for (parameter in piParameter$parameters) {
+          simId <- .getSimulationContainer(parameter)$id
+          private$.variableParameters[[simId]][[
+            parameter$path
+          ]] <- paramValues[[idx]]
+        }
+      }
+
+      for (simId in names(private$.simulationBatches)) {
+        simBatch <- private$.simulationBatches[[simId]]
+        simBatch$addRunValues(
+          parameterValues = unlist(
+            private$.variableParameters[[simId]],
+            use.names = FALSE
+          ),
+          initialValues = unlist(
+            private$.variableMolecules[[simId]],
+            use.names = FALSE
+          )
+        )
+      }
+
+      batchResults <- ospsuite::runSimulationBatches(
+        simulationBatches = private$.simulationBatches,
+        simulationRunOptions = private$.configuration$simulationRunOptions
+      )
+
+      lapply(private$.pkMappings, function(mapping) {
+        simBatch <- private$.simulationBatches[[mapping$simId]]
+        simResult <- batchResults[[simBatch$id]][[1]]
+        pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)
+        pkParam <- tryCatch(
+          pkAnalysis$pKParameterFor(
+            quantityPath = mapping$quantity$path,
+            pkParameter = mapping$pkParameter
+          ),
+          error = function(e) {
+            stop(messages$errorPKParameterNotAvailable(
+              mapping$pkParameter,
+              mapping$quantity$path,
+              e$message
+            ))
+          }
+        )
+        vals <- pkParam$values
+        if (length(vals) == 0L) {
+          stop(messages$errorPKParameterNotAvailable(
+            mapping$pkParameter,
+            mapping$quantity$path
+          ))
+        }
+        if (length(vals) > 1L) {
+          stop(messages$errorPKMultiIndividualSimulation(
+            mapping$pkParameter,
+            mapping$quantity$path,
+            length(vals)
+          ))
+        }
+        vals
+      })
     },
 
     # Simulation Evaluation with Parameter Values
@@ -561,6 +583,92 @@ ParameterIdentification <- R6::R6Class(
       return(obsVsPredList)
     },
 
+    # Retrieve Output Mappings with Optional Bootstrap Resampling
+    #
+    # Returns the list of output mappings used during objective function evaluation.
+    # If no bootstrap seed is provided, the original mappings are returned.
+    # If a `bootstrapSeed` is provided and differs from the previously active
+    # seed, dataset weights and values are resampled accordingly.
+    #
+    # Strategy rationale:
+    # Bootstrap behavior is implemented by modifying dataset weights and, for
+    # aggregated data, replacing y-values with synthetic samples generated from
+    # GPR models.
+    #
+    # This method uses lazy initialization and avoids redundant recomputation:
+    # - The initial mapping state (weights and values) is extracted only once via
+    #   `.extractOutputMappingState()`.
+    # - GPR models are prepared for aggregated datasets only once via
+    #   `.prepareGPRModels()`.
+    # - On each new bootstrap seed, mappings are resampled using
+    #   `.resampleAndApplyMappingState()`, updating the internal `.outputMappings`.
+    #
+    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
+    #   returns the unmodified output mappings.
+    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
+    #   weights and values.
+    .getOutputMappings = function(bootstrapSeed = NULL) {
+      if (is.null(bootstrapSeed)) {
+        return(private$.outputMappings)
+      }
+
+      # First-time bootstrap setup: cache initial state and fit GPR models
+      if (is.null(private$.initialOutputMappingState)) {
+        private$.initialOutputMappingState <- .extractOutputMappingState(
+          private$.outputMappings
+        )
+      }
+
+      # Trigger resampling only if the seed has changed
+      if (
+        is.null(private$.activeBootstrapSeed) ||
+          private$.activeBootstrapSeed != bootstrapSeed
+      ) {
+        private$.activeBootstrapSeed <- bootstrapSeed
+        private$.outputMappings <- .resampleAndApplyMappingState(
+          private$.outputMappings,
+          private$.initialOutputMappingState,
+          private$.gprModels,
+          bootstrapSeed
+        )
+      }
+
+      return(private$.outputMappings)
+    },
+
+    # Restore Output Mapping State
+    #
+    # Restores `outputMappings` to their original state before bootstrap
+    # resampling, including both dataset weights and y-values. Clears
+    # bootstrap-related state.
+    .restoreOutputMappingsState = function() {
+      if (!is.null(private$.initialOutputMappingState)) {
+        private$.outputMappings <- .applyOutputMappingState(
+          private$.outputMappings,
+          private$.initialOutputMappingState
+        )
+      }
+      private$.initialOutputMappingState <- NULL
+      private$.activeBootstrapSeed <- NULL
+      private$.gprModels <- NULL
+    },
+
+    # Apply Identified Parameter Values
+    #
+    # Assigns the final optimized parameter values back to the respective
+    # `PIParameters` objects within the simulation, aligning with their order in
+    # the `$parameters` list.
+    #
+    # @param values Optimized parameter values to be applied.
+    .applyFinalValues = function(values) {
+      for (idx in seq_along(values)) {
+        # The order of the values corresponds to the order of PIParameters in
+        # `$parameters` list
+        piParameter <- private$.piParameters[[idx]]
+        piParameter$setValue(values[[idx]])
+      }
+    },
+
     # Execute Optimization Algorithm
     #
     # Runs the optimization algorithm defined in `PIConfiguration` using the
@@ -576,9 +684,15 @@ ParameterIdentification <- R6::R6Class(
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
+      fn <- if (!is.null(private$.pkMappings)) {
+        function(p, ...) private$.pkObjectiveFunction(p)
+      } else {
+        function(p, ...) private$.objectiveFunction(p, ...)
+      }
+
       optimResult <- optimizer$run(
         par = startValues,
-        fn = function(p, ...) private$.objectiveFunction(p, ...),
+        fn = fn,
         lower = lower,
         upper = upper
       )
@@ -604,40 +718,44 @@ ParameterIdentification <- R6::R6Class(
     #'   new configuration if omitted. See
     #'   [`ospsuite.parameteridentification::PIConfiguration`] for configuration
     #'   options.
-    #' @param outputMappings A `PIOutputMapping` or list of `PIOutputMapping`
-    #'   objects mapping model outputs (represented by `Quantity` objects) to
-    #'   observed data. #' See
-    #'   [`ospsuite.parameteridentification::PIOutputMapping`] for details.
+    #' @param outputMappings (Optional) A `PIOutputMapping` or list of
+    #'   `PIOutputMapping` objects mapping model outputs to observed data.
+    #'   Mutually exclusive with `pkOutputMappings`.
+    #' @param pkOutputMappings (Optional) A `PKOutputMapping` or list of
+    #'   `PKOutputMapping` objects for PK metric optimization. Mutually
+    #'   exclusive with `outputMappings`.
     #'
     #' @return A `ParameterIdentification` object ready to run parameter
     #'   estimation.
     initialize = function(
       simulations,
       parameters,
-      outputMappings,
+      outputMappings = NULL,
+      pkOutputMappings = NULL,
       configuration = NULL
     ) {
       ospsuite.utils::validateIsOfType(simulations, "Simulation")
       ospsuite.utils::validateIsOfType(parameters, "PIParameters")
-      ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
       ospsuite.utils::validateIsOfType(
         configuration,
         "PIConfiguration",
         nullAllowed = TRUE
       )
 
+      hasPI <- !is.null(outputMappings)
+      hasPK <- !is.null(pkOutputMappings)
+      if (hasPI && hasPK) {
+        stop(messages$errorPIMixedMappings())
+      }
+      if (!hasPI && !hasPK) {
+        stop(messages$errorPINoMappings())
+      }
+
       private$.configuration <- configuration %||% PIConfiguration$new()
 
       simulations <- ospsuite.utils::toList(simulations)
       parameters <- ospsuite.utils::toList(parameters)
-      outputMappings <- ospsuite.utils::toList(outputMappings)
 
-      .validateOutputMappingHasData(outputMappings)
-
-      # We have to use the id of the root container of the simulation instead of
-      # the id of the simulation itself, because later we have to find the
-      # simulations based on the id of the root when assigning quantities to
-      # simulations
       ids <- vector("list", length(simulations))
       private$.simulations <- vector("list", length(simulations))
       for (idx in seq_along(simulations)) {
@@ -645,12 +763,9 @@ ParameterIdentification <- R6::R6Class(
         private$.simulations[[idx]] <- simulation
         ids[[idx]] <- simulation$root$id
       }
-
-      .validateSimulationIds(ids, parameters, outputMappings)
-
       names(private$.simulations) <- ids
+
       private$.piParameters <- parameters
-      private$.outputMappings <- c(outputMappings)
 
       private$.variableMolecules <-
         private$.variableParameters <-
@@ -661,6 +776,22 @@ ParameterIdentification <- R6::R6Class(
         names(private$.variableParameters) <-
           names(private$.simulationBatches) <-
             names(private$.steadyStateBatches) <- ids
+
+      if (hasPI) {
+        outputMappings <- ospsuite.utils::toList(outputMappings)
+        ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
+        .validateOutputMappingHasData(outputMappings)
+        .validateSimulationIds(ids, parameters, outputMappings)
+        private$.outputMappings <- outputMappings
+      } else {
+        pkOutputMappings <- ospsuite.utils::toList(pkOutputMappings)
+        ospsuite.utils::validateIsOfType(pkOutputMappings, "PKOutputMapping")
+        mappingSimIds <- unique(sapply(pkOutputMappings, `[[`, "simId"))
+        if (!all(mappingSimIds %in% unlist(ids))) {
+          stop(messages$errorPKMappingSimulationMismatch())
+        }
+        private$.pkMappings <- pkOutputMappings
+      }
     },
 
     #' Executes Parameter Identification
@@ -677,6 +808,13 @@ ParameterIdentification <- R6::R6Class(
       private$.savedSimulationState <- .storeSimulationState(
         private$.simulations
       )
+      on.exit(
+        .restoreSimulationState(
+          private$.simulations,
+          private$.savedSimulationState
+        ),
+        add = TRUE
+      )
       # Every time the user starts an optimization run, new batches should be
       # created, because `simulateSteadyState` flag can change and defines the
       # variables of the batches.
@@ -692,30 +830,40 @@ ParameterIdentification <- R6::R6Class(
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()
       private$.lastOptimResult <- optimResult
-      # Reset simulation output intervals and output selections
+
+      achievedPKValues <- if (!is.null(private$.pkMappings)) {
+        tryCatch(
+          private$.getPKValues(optimResult$par),
+          error = function(e) {
+            as.list(rep(NA_real_, length(private$.pkMappings)))
+          }
+        )
+      } else {
+        NULL
+      }
+
       .restoreSimulationState(
         private$.simulations,
         private$.savedSimulationState
       )
-
-      # Apply identified values to the parameter objects. Should be an option?
       private$.applyFinalValues(values = optimResult$par)
-      # Since the batches have been initialized already, this will not be
-      # required before plotting current results
       private$.needBatchInitialization <- FALSE
-
-      # Trigger .NET gc
       ospsuite::clearMemory()
 
-      # Estimate confidence intervals if configured
-      ciResult <- NULL
-      if (private$.configuration$autoEstimateCI) {
+      if (!is.null(private$.pkMappings)) {
+        piResult <- PKResult$new(
+          optimResult = optimResult,
+          piParameters = private$.piParameters,
+          pkMappings = private$.pkMappings,
+          achievedPKValues = achievedPKValues
+        )
+      } else if (private$.configuration$autoEstimateCI) {
         piResult <- self$estimateCI()
       } else {
         message(messages$statusAutoEstimateCI())
         piResult <- PIResult$new(
           optimResult = optimResult,
-          ciResult = ciResult,
+          ciResult = NULL,
           costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
@@ -738,6 +886,10 @@ ParameterIdentification <- R6::R6Class(
       # Stop if executed before optimization
       if (is.null(private$.lastOptimResult)) {
         stop(messages$errorMissingOptimizationResult())
+      }
+
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode("estimateCI"))
       }
 
       # Store simulation outputs and time intervals to reset them at the end
@@ -766,9 +918,11 @@ ParameterIdentification <- R6::R6Class(
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
+      fn <- function(p, ...) private$.objectiveFunction(p, ...)
+
       ciResult <- optimizer$estimateCI(
         par = currValues,
-        fn = function(p, ...) private$.objectiveFunction(p, ...),
+        fn = fn,
         lower = lower,
         upper = upper,
         resetFn = function() private$.fnEvaluations <- 0
@@ -808,6 +962,9 @@ ParameterIdentification <- R6::R6Class(
     #' - Predicted vs. observed values
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode("plotResults"))
+      }
       simulationState <- NULL
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
@@ -940,6 +1097,10 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsLogical(logScaleFlag)
       ospsuite.utils::validateIsNumeric(totalEvaluations)
       ospsuite.utils::validateIsLogical(setStartValue)
+
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode("gridSearch"))
+      }
 
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
@@ -1083,6 +1244,10 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode("calculateOFVProfiles"))
+      }
+
       # Store simulation outputs and time intervals to reset them at the end.
       private$.savedSimulationState <- .storeSimulationState(
         private$.simulations
@@ -1153,20 +1318,23 @@ ParameterIdentification <- R6::R6Class(
     #' @description Prints a summary of `ParameterIdentification` instance.
     print = function() {
       ospsuite.utils::ospPrintClass(self)
-      ospsuite.utils::ospPrintItems(list(
-        "Number of parameters" = length(private$.piParameters)
-      ))
+      if (!is.null(private$.pkMappings)) {
+        ospsuite.utils::ospPrintItems(list(
+          "Number of parameters" = length(private$.piParameters),
+          "Number of PK output mappings" = length(private$.pkMappings)
+        ))
+      } else {
+        ospsuite.utils::ospPrintItems(list(
+          "Number of parameters" = length(private$.piParameters)
+        ))
+      }
       ospsuite.utils::ospPrintItems(
         unlist(
-          lapply(private$.simulations, function(x) {
-            x$sourceFile
-          }),
+          lapply(private$.simulations, function(x) x$sourceFile),
           use.names = FALSE
         ),
         title = "Simulations"
       )
-      # private$printLine("Simulate to steady-state", private$.configuration$simulateSteadyState)
-      # private$printLine("Steady-state time [min]", private$.configuration$steadyStateTime)
     }
   )
 )

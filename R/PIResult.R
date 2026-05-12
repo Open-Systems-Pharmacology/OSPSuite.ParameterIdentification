@@ -98,19 +98,11 @@ PIResult <- R6::R6Class(
         }
       )
 
-      # Validate if parameter names match data
-      paramNames <- tryCatch(
-        {
-          if (!is.null(private$.parameters)) {
-            dplyr::distinct(private$.parameters, group, .keep_all = TRUE)$name
-          } else {
-            paste0("par", seq_along(optimResult$par))
-          }
-        },
-        error = function(e) {
-          paste0("par", seq_along(optimResult$par))
-        }
-      )
+      paramNames <- if (!is.null(private$.parameters)) {
+        dplyr::distinct(private$.parameters, group, .keep_all = TRUE)$name
+      } else {
+        paste0("par", seq_along(optimResult$par))
+      }
 
       # Construct results list
       ciResult <- ciResult %||% list()
@@ -157,6 +149,8 @@ PIResult <- R6::R6Class(
     #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
     #' - `initialValue`: Initial parameter value used for optimization
     toDataFrame = function() {
+      x <- private$.result
+
       if (is.null(private$.parameters)) {
         stop(messages$errorParameterMetadataMissing())
       }
@@ -167,13 +161,13 @@ PIResult <- R6::R6Class(
         name = params$name,
         path = params$path,
         unit = params$unit,
-        estimate = private$.result$finalParameters[group_idx],
-        sd = private$.result$sd[group_idx],
-        cv = private$.result$cv[group_idx],
-        lowerCI = private$.result$lowerCI[group_idx],
-        upperCI = private$.result$upperCI[group_idx],
-        ciType = private$.result$ciType[group_idx],
-        initialValue = private$.result$initialParameters[group_idx],
+        estimate = x$finalParameters[group_idx],
+        sd = x$sd[group_idx],
+        cv = x$cv[group_idx],
+        lowerCI = x$lowerCI[group_idx],
+        upperCI = x$upperCI[group_idx],
+        ciType = x$ciType[group_idx],
+        initialValue = x$initialParameters[group_idx],
         stringsAsFactors = FALSE
       )
     },

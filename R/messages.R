@@ -284,6 +284,91 @@ messages$warningUnknownOptions <- function(keys, fieldName) {
   )
 }
 
+messages$errorNAValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must not be {.val NA}."
+  )
+}
+
+messages$errorNonPositiveValue <- function(argName) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argName}} must be greater than zero."
+  )
+}
+
+messages$errorPKMappingUnitConversion <- function(
+  pkParameter,
+  unit,
+  dimension,
+  detail
+) {
+  ospsuite.utils::cliFormat(
+    "Incompatible {.arg targetUnit} {.val {unit}} for {.val {pkParameter}} (dimension: {.val {dimension}}). Detail: {detail}"
+  )
+}
+
+messages$errorPKParameterNotAvailable <- function(
+  pkParameter,
+  quantityPath,
+  detail = NULL
+) {
+  if (is.null(detail)) {
+    ospsuite.utils::cliFormat(
+      "{.val {pkParameter}} cannot be computed from simulated data for {.val {quantityPath}}."
+    )
+  } else {
+    ospsuite.utils::cliFormat(
+      "{.val {pkParameter}} cannot be computed from simulated data for {.val {quantityPath}}.\nDetail: {detail}"
+    )
+  }
+}
+
+messages$errorPIMixedMappings <- function() {
+  ospsuite.utils::cliFormat(
+    "Provide either {.arg outputMappings} or {.arg pkOutputMappings}, not both."
+  )
+}
+
+messages$errorPINoMappings <- function() {
+  ospsuite.utils::cliFormat(
+    "Provide either {.arg outputMappings} or {.arg pkOutputMappings}."
+  )
+}
+
+messages$errorMethodNotApplicableInPKMode <- function(methodName) {
+  ospsuite.utils::cliFormat(
+    "{.fn {methodName}} is not applicable for PK metric optimization."
+  )
+}
+
+messages$errorPKMappingSimulationMismatch <- function() {
+  ospsuite.utils::cliFormat(
+    "All {.cls PKOutputMapping} objects must belong to the simulation passed to {.cls ParameterIdentification}."
+  )
+}
+
+messages$errorPKMultiIndividualSimulation <- function(
+  pkParameter,
+  quantityPath,
+  n
+) {
+  ospsuite.utils::cliFormat(
+    "Multi-individual simulation results are not supported in PK mode. Expected 1 value for {.val {pkParameter}} at {.val {quantityPath}}, got {n}."
+  )
+}
+
+messages$errorPKZeroTarget <- function(pkParameter, quantityPath) {
+  ospsuite.utils::cliFormat(
+    "Target value for {.val {pkParameter}} at {.val {quantityPath}} is zero or negative. Cannot compute relative cost."
+  )
+}
+
+messages$errorPKResultMultipleParameters <- function() {
+  ospsuite.utils::cliFormat(
+    "{.fn toDataFrame} is not supported when multiple parameters were optimized in PK mode. Use a single parameter or access results via {.fn toList}."
+  )
+}
+
 messages$warningNoValidErrorValues <- function() {
   ospsuite.utils::cliFormat(
     "Some error values are invalid and will use unit weights (equivalent to {.val none})."
