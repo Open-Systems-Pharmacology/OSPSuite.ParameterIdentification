@@ -369,12 +369,6 @@ messages$errorPKZeroTarget <- function(pkParameter, quantityPath) {
   )
 }
 
-messages$errorPKResultMultipleParameters <- function() {
-  ospsuite.utils::cliFormat(
-    "{.fn toDataFrame} is not supported when multiple parameters were optimized in PK mode. Use a single parameter or access results via {.fn toList}."
-  )
-}
-
 messages$warnAchievedPKValuesFailure <- function(detail) {
   ospsuite.utils::cliFormat(
     "Post-optimization PK value computation failed. {.field achievedValue} will be {.val NA}. Detail: {detail}"

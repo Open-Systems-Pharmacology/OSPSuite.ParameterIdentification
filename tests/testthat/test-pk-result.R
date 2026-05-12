@@ -40,7 +40,7 @@ test_that("PKResult can be initialized without error", {
   )
 })
 
-test_that("PKResult$toDataFrame() returns correct 7-column schema for single mapping", {
+test_that("PKResult$toDataFrame() returns correct 9-column schema for single mapping", {
   result <- PKResult$new(
     optimResult = mockPKOptimResult(),
     pkMappings = list(pkMapping1),
@@ -56,7 +56,9 @@ test_that("PKResult$toDataFrame() returns correct 7-column schema for single map
       "targetUnit",
       "achievedValue",
       "estimatedValue",
-      "parameterUnit"
+      "parameterUnit",
+      "parameterIndex",
+      "parameterPath"
     )
   )
   expect_equal(nrow(df), 1L)
@@ -65,6 +67,8 @@ test_that("PKResult$toDataFrame() returns correct 7-column schema for single map
   expect_equal(df$achievedValue, 28.5)
   expect_equal(df$estimatedValue, 0.0005)
   expect_true(is.na(df$parameterUnit))
+  expect_equal(df$parameterIndex, 1L)
+  expect_true(is.na(df$parameterPath))
 })
 
 test_that("PKResult$toDataFrame() repeats estimatedValue for multiple mappings", {
@@ -120,17 +124,53 @@ test_that("PKResult$toDataFrame() propagates NA alongside finite value in multi-
   expect_equal(df$achievedValue[[2]], 1.5)
 })
 
-test_that("PKResult$toDataFrame() errors when multiple parameters were optimized", {
+test_that("PKResult$toDataFrame() produces N*M rows for N=2 parameters and M=1 mapping", {
   result <- PKResult$new(
     optimResult = mockPKOptimResult(nPar = 2),
     pkMappings = list(pkMapping1),
     achievedPKValues = list(28.5)
   )
-  expect_error(
-    result$toDataFrame(),
-    regexp = messages$errorPKResultMultipleParameters(),
-    fixed = TRUE
+  df <- result$toDataFrame()
+  expect_equal(nrow(df), 2L)
+  expect_equal(df$parameterIndex, c(1L, 2L))
+  expect_equal(df$estimatedValue, c(0.0005, 0.0005))
+  expect_equal(df$achievedValue, c(28.5, 28.5))
+})
+
+test_that("PKResult$toDataFrame() produces N*M rows for N=2 parameters and M=2 mappings", {
+  result <- PKResult$new(
+    optimResult = mockPKOptimResult(nPar = 2),
+    pkMappings = list(pkMapping1, pkMapping2),
+    achievedPKValues = list(28.5, 48.1)
   )
+  df <- result$toDataFrame()
+  expect_equal(nrow(df), 4L)
+  expect_equal(df$parameterIndex, c(1L, 1L, 2L, 2L))
+  expect_equal(df$estimatedValue, rep(0.0005, 4))
+  expect_equal(df$achievedValue, c(28.5, 48.1, 28.5, 48.1))
+})
+
+test_that("PKResult$toDataFrame() parameterPath is NA when piParameters not provided", {
+  result <- PKResult$new(
+    optimResult = mockPKOptimResult(),
+    pkMappings = list(pkMapping1),
+    achievedPKValues = list(28.5)
+  )
+  df <- result$toDataFrame()
+  expect_true(is.na(df$parameterPath))
+})
+
+test_that("PKResult$toDataFrame() parameterPath populated when piParameters provided", {
+  piParam <- testPKParameters(sim)
+  result <- PKResult$new(
+    optimResult = mockPKOptimResult(),
+    piParameters = list(piParam),
+    pkMappings = list(pkMapping1),
+    achievedPKValues = list(28.5)
+  )
+  df <- result$toDataFrame()
+  expect_false(is.na(df$parameterPath))
+  expect_type(df$parameterPath, "character")
 })
 
 test_that("PKResult$toDataFrame() includes parameterUnit when piParameters provided", {
@@ -143,6 +183,18 @@ test_that("PKResult$toDataFrame() includes parameterUnit when piParameters provi
   )
   df <- result$toDataFrame()
   expect_false(is.na(df$parameterUnit))
+})
+
+test_that("PKResult sets convergence=FALSE when objectiveValue is non-finite", {
+  nonFiniteResult <- mockPKOptimResult()
+  nonFiniteResult$value <- Inf
+  nonFiniteResult$convergence <- TRUE
+  result <- PKResult$new(
+    optimResult = nonFiniteResult,
+    pkMappings = list(pkMapping1),
+    achievedPKValues = list(28.5)
+  )
+  expect_equal(result$toList()$convergence, FALSE)
 })
 
 test_that("PKResult$toList() contains expected fields", {

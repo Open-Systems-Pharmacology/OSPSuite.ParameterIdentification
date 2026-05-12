@@ -72,7 +72,9 @@ PKResult <- R6::R6Class(
         achievedPKValues = achievedPKValues
       )
     },
-    #' @description Export PKResult to a `data.frame`.
+    #' @description Export PKResult to a `data.frame` in long format. Produces
+    #'   N * M rows, where N is the number of optimized parameters and M is the
+    #'   number of PK mappings.
     #'
     #' @return A data frame with the following columns:
     #'
@@ -82,45 +84,64 @@ PKResult <- R6::R6Class(
     #' - `targetUnit`: Unit of the target value
     #' - `achievedValue`: PK value achieved at the optimized parameter
     #' - `estimatedValue`: Optimized parameter value
-    #' - `parameterUnit`: Unit of the estimated parameter
+    #' - `parameterUnit`: Unit of the estimated parameter (`NA` when
+    #'   `piParameters` was not provided)
+    #' - `parameterIndex`: Integer index of the optimized parameter (1..N)
+    #' - `parameterPath`: Path of the optimized parameter in the simulation
+    #'   (`NA` when `piParameters` was not provided)
     toDataFrame = function() {
       x <- private$.result
-      if (length(x$finalParameters) != 1L) {
-        stop(messages$errorPKResultMultipleParameters())
-      }
-      n <- length(x$pkMappings)
-      paramUnit <- if (!is.null(private$.parameters)) {
-        private$.parameters$unit[[1L]]
+      m <- length(x$pkMappings)
+      p <- length(x$finalParameters)
+
+      paramInfo <- if (!is.null(private$.parameters)) {
+        params <- private$.parameters
+        lapply(seq_len(p), function(i) {
+          rows <- params[params$group == as.character(i), , drop = FALSE]
+          list(path = rows$path[[1L]], unit = rows$unit[[1L]])
+        })
       } else {
-        NA_character_
+        lapply(seq_len(p), function(i) {
+          list(path = NA_character_, unit = NA_character_)
+        })
       }
+      paramPaths <- sapply(paramInfo, `[[`, "path")
+      paramUnits <- sapply(paramInfo, `[[`, "unit")
+
+      achievedVals <- mapply(
+        function(mapping, val) {
+          if (anyNA(val)) {
+            return(NA_real_)
+          }
+          dim <- ospsuite::pkParameterByName(
+            mapping$pkParameter,
+            stopIfNotFound = TRUE
+          )$dimension
+          val /
+            ospsuite::toBaseUnit(
+              quantityOrDimension = dim,
+              values = 1,
+              unit = mapping$targetUnit
+            )
+        },
+        x$pkMappings,
+        x$achievedPKValues,
+        SIMPLIFY = TRUE
+      )
+
+      mappingIdx <- rep(seq_len(m), times = p)
+      paramIdx <- rep(seq_len(p), each = m)
+
       data.frame(
-        quantityPath = sapply(x$pkMappings, `[[`, "quantityPath"),
-        pkParameter = sapply(x$pkMappings, `[[`, "pkParameter"),
-        targetValue = sapply(x$pkMappings, `[[`, "targetValue"),
-        targetUnit = sapply(x$pkMappings, `[[`, "targetUnit"),
-        achievedValue = mapply(
-          function(m, val) {
-            if (anyNA(val)) {
-              return(NA_real_)
-            }
-            dim <- ospsuite::pkParameterByName(
-              m$pkParameter,
-              stopIfNotFound = TRUE
-            )$dimension
-            val /
-              ospsuite::toBaseUnit(
-                quantityOrDimension = dim,
-                values = 1,
-                unit = m$targetUnit
-              )
-          },
-          x$pkMappings,
-          x$achievedPKValues,
-          SIMPLIFY = TRUE
-        ),
-        estimatedValue = rep(x$finalParameters[[1L]], n),
-        parameterUnit = rep(paramUnit, n),
+        quantityPath = sapply(x$pkMappings, `[[`, "quantityPath")[mappingIdx],
+        pkParameter = sapply(x$pkMappings, `[[`, "pkParameter")[mappingIdx],
+        targetValue = sapply(x$pkMappings, `[[`, "targetValue")[mappingIdx],
+        targetUnit = sapply(x$pkMappings, `[[`, "targetUnit")[mappingIdx],
+        achievedValue = achievedVals[mappingIdx],
+        estimatedValue = x$finalParameters[paramIdx],
+        parameterUnit = paramUnits[paramIdx],
+        parameterIndex = paramIdx,
+        parameterPath = paramPaths[paramIdx],
         stringsAsFactors = FALSE
       )
     },

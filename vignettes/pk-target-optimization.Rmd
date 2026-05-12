@@ -84,7 +84,7 @@ If the PK metric has a different physical dimension than the quantity (e.g. `"AU
 
 ### Running the optimization
 
-Pass the mapping via `pkOutputMappings` to `ParameterIdentification`. Before calling the optimizer, `$run()` executes the simulation once at the parameter's start value and uses the result to estimate a proportionally scaled initial guess, reducing the number of iterations needed.
+Pass the mapping via `pkOutputMappings` to `ParameterIdentification`.
 
 ```{r run}
 pi <- ParameterIdentification$new(

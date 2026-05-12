@@ -804,18 +804,17 @@ ParameterIdentification <- R6::R6Class(
     #'   containing estimated parameters, diagnostics, and (optionally)
     #'   confidence intervals.
     #'
-    #' @return A [`PIResult`] object containing the optimization results.
+    #' @return A [`PIResult`] object in standard mode, or a `PKResult` object
+    #'   (internal) when `pkOutputMappings` was provided.
     run = function() {
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       private$.savedSimulationState <- .storeSimulationState(
         private$.simulations
       )
+      savedState <- private$.savedSimulationState
       on.exit(
-        .restoreSimulationState(
-          private$.simulations,
-          private$.savedSimulationState
-        ),
+        .restoreSimulationState(private$.simulations, savedState),
         add = TRUE
       )
       # Every time the user starts an optimization run, new batches should be
@@ -846,10 +845,6 @@ ParameterIdentification <- R6::R6Class(
         NULL
       }
 
-      .restoreSimulationState(
-        private$.simulations,
-        private$.savedSimulationState
-      )
       private$.applyFinalValues(values = optimResult$par)
       private$.needBatchInitialization <- FALSE
       ospsuite::clearMemory()

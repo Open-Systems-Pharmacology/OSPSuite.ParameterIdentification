@@ -125,6 +125,7 @@ testPiTask <- function() {
 resetTestFactories <- function() {
   testSimulation <<- getTestSimulation()
   testParameters <<- getTestParameters()
+  testPKParameters <<- getTestPKParameters()
   testOutputMapping <<- getTestOutputMapping()
 }
 

@@ -110,7 +110,9 @@ test_that("PKResult$toDataFrame() returns mapping-centric frame for pkOutputMapp
       "targetUnit",
       "achievedValue",
       "estimatedValue",
-      "parameterUnit"
+      "parameterUnit",
+      "parameterIndex",
+      "parameterPath"
     )
   )
   expect_equal(nrow(df), 1L)
