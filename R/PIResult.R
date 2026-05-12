@@ -98,11 +98,16 @@ PIResult <- R6::R6Class(
         }
       )
 
-      paramNames <- if (!is.null(private$.parameters)) {
-        dplyr::distinct(private$.parameters, group, .keep_all = TRUE)$name
-      } else {
-        paste0("par", seq_along(optimResult$par))
-      }
+      paramNames <- tryCatch(
+        if (!is.null(private$.parameters)) {
+          dplyr::distinct(private$.parameters, group, .keep_all = TRUE)$name
+        } else {
+          paste0("par", seq_along(optimResult$par))
+        },
+        error = function(e) {
+          paste0("par", seq_along(optimResult$par))
+        }
+      )
 
       # Construct results list
       ciResult <- ciResult %||% list()

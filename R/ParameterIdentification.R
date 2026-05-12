@@ -48,6 +48,16 @@ ParameterIdentification <- R6::R6Class(
       } else {
         stop(messages$errorPropertyReadOnly("outputMappings"))
       }
+    },
+
+    #' @field pkOutputMappings A list of `PKOutputMapping` objects for PK
+    #'   metric optimization. `NULL` in standard PI mode. Read-only.
+    pkOutputMappings = function(value) {
+      if (missing(value)) {
+        private$.pkMappings
+      } else {
+        stop(messages$errorPropertyReadOnly("pkOutputMappings"))
+      }
     }
   ),
   private = list(
@@ -391,13 +401,14 @@ ParameterIdentification <- R6::R6Class(
         }
       )
 
-      if (any(vapply(pkValues, anyNA, logical(1)))) {
+      if (any(!vapply(pkValues, is.finite, logical(1)))) {
         message(messages$simulationError())
         return(.Machine$double.xmax)
       }
 
       cost <- 0
       for (i in seq_along(private$.pkMappings)) {
+        stopifnot(length(pkValues[[i]]) == 1L)
         target <- private$.pkMappings[[i]]$targetValueInBaseUnit
         if (target <= 0) {
           stop(messages$errorPKZeroTarget(
@@ -788,6 +799,11 @@ ParameterIdentification <- R6::R6Class(
         if (length(pkOutputMappings) == 0L) {
           stop(messages$errorPKMappingsEmpty())
         }
+        if (
+          any(vapply(pkOutputMappings, inherits, logical(1), "PIConfiguration"))
+        ) {
+          stop(messages$errorPKMappingsReceivedConfiguration())
+        }
         ospsuite.utils::validateIsOfType(pkOutputMappings, "PKOutputMapping")
         mappingSimIds <- unique(sapply(pkOutputMappings, `[[`, "simId"))
         if (!all(mappingSimIds %in% unlist(ids))) {
@@ -896,6 +912,11 @@ ParameterIdentification <- R6::R6Class(
       private$.savedSimulationState <- .storeSimulationState(
         private$.simulations
       )
+      savedState <- private$.savedSimulationState
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
       # Initialize batches
       private$.batchInitialization()
       # Reset function evaluations counter
@@ -926,13 +947,6 @@ ParameterIdentification <- R6::R6Class(
         upper = upper,
         resetFn = function() private$.fnEvaluations <- 0
       )
-
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(
-          private$.simulations,
-          private$.savedSimulationState
-        )
-      }
 
       # Trigger .NET gc
       ospsuite::clearMemory()

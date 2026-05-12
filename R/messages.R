@@ -329,6 +329,12 @@ messages$errorPIMixedMappings <- function() {
   )
 }
 
+messages$errorPKMappingsReceivedConfiguration <- function() {
+  ospsuite.utils::cliFormat(
+    "{.arg pkOutputMappings} received a {.cls PIConfiguration} object. Did you mean to pass it as {.arg configuration}?"
+  )
+}
+
 messages$errorPINoMappings <- function() {
   ospsuite.utils::cliFormat(
     "Provide either {.arg outputMappings} or {.arg pkOutputMappings}."

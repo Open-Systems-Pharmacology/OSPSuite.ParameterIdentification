@@ -112,30 +112,6 @@ The data frame contains one row per output mapping with the estimated parameter 
 `$toList()` returns the full result including convergence status, number of iterations, elapsed time, and the algorithm used.
 
 
-### Target from observed data
-
-When observed concentration-time data is available, `PKOutputMapping` can compute the target metric directly from the dataset instead of requiring a pre-computed scalar. Pass a `DataSet` object to `observedData`; the metric is derived automatically.
-
-```{r observedData, eval = FALSE}
-filePath <- system.file(
-  "extdata", "Aciclovir_Profiles.xlsx",
-  package = "ospsuite.parameteridentification"
-)
-importConfig <- createImporterConfigurationForFile(filePath)
-importConfig$namingPattern <- "{Source}.{Sheet}.{Dose}"
-obsData <- loadDataSetsFromExcel(filePath, importConfig, importAllSheets = TRUE)
-
-obs <- obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`
-
-mappingFromData <- PKOutputMapping$new(
-  quantity    = plasmaConc,
-  pkParameter = "C_max",
-  observedData = obs   # C_max is derived from obs$yValues
-)
-```
-
-The supported metrics when deriving from a dataset are `C_max`, `C_tEnd`, `t_max`, and `AUC_tEnd`.
-
 
 ### Multiple output mappings
 
