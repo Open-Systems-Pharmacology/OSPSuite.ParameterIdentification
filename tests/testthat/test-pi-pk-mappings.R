@@ -73,6 +73,19 @@ test_that("ParameterIdentification errors when neither mapping type provided", {
   )
 })
 
+test_that("ParameterIdentification errors when pkOutputMappings is an empty list", {
+  sim <- testSimulation()
+  expect_error(
+    ParameterIdentification$new(
+      simulations = sim,
+      parameters = testPKParameters(sim),
+      pkOutputMappings = list()
+    ),
+    regexp = messages$errorPKMappingsEmpty(),
+    fixed = TRUE
+  )
+})
+
 test_that("ParameterIdentification$run() with pkOutputMappings returns PKResult", {
   result <- testPKTask()$run()
   expect_s3_class(result, "PKResult")

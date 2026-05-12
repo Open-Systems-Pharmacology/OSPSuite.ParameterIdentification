@@ -785,6 +785,9 @@ ParameterIdentification <- R6::R6Class(
         private$.outputMappings <- outputMappings
       } else {
         pkOutputMappings <- ospsuite.utils::toList(pkOutputMappings)
+        if (length(pkOutputMappings) == 0L) {
+          stop(messages$errorPKMappingsEmpty())
+        }
         ospsuite.utils::validateIsOfType(pkOutputMappings, "PKOutputMapping")
         mappingSimIds <- unique(sapply(pkOutputMappings, `[[`, "simId"))
         if (!all(mappingSimIds %in% unlist(ids))) {

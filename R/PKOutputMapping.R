@@ -38,8 +38,15 @@ PKOutputMapping <- R6::R6Class(
           value,
           names(ospsuite::StandardPKParameter)
         )
+        old <- private$.pkParameter
         private$.pkParameter <- value
-        private$.recomputeTarget()
+        tryCatch(
+          private$.recomputeTarget(),
+          error = function(e) {
+            private$.pkParameter <- old
+            stop(e)
+          }
+        )
       }
     },
 

@@ -181,6 +181,17 @@ test_that("PKOutputMapping targetValue setter errors on NA value", {
   )
 })
 
+test_that("PKOutputMapping pkParameter setter rolls back to original value when unit is incompatible", {
+  mapping <- PKOutputMapping$new(
+    quantity = testQuantity(),
+    pkParameter = "C_max",
+    targetValue = 0.5,
+    targetUnit = "µmol/l"
+  )
+  expect_error(mapping$pkParameter <- "t_max")
+  expect_equal(mapping$pkParameter, "C_max")
+})
+
 test_that("PKOutputMapping$print() does not error", {
   mapping <- PKOutputMapping$new(
     quantity = testQuantity(),

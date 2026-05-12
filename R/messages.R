@@ -335,6 +335,12 @@ messages$errorPINoMappings <- function() {
   )
 }
 
+messages$errorPKMappingsEmpty <- function() {
+  ospsuite.utils::cliFormat(
+    "{.arg pkOutputMappings} must contain at least one mapping."
+  )
+}
+
 messages$errorMethodNotApplicableInPKMode <- function(methodName) {
   ospsuite.utils::cliFormat(
     "{.fn {methodName}} is not applicable for PK metric optimization."
