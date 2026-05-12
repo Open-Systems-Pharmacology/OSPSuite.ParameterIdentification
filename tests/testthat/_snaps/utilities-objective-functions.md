@@ -44,14 +44,6 @@
 
     677.3903
 
-# calculateCostMetrics with residualWeightingMethod `std` returns expected results
-
-    18576.1565
-
-# calculateCostMetrics with residualWeightingMethod `mean` returns expected results
-
-    36738.0871
-
 # calculateCostMetrics with residualWeightingMethod `error` returns expected results
 
     642.4931

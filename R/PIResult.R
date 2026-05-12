@@ -157,19 +157,23 @@ PIResult <- R6::R6Class(
     #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
     #' - `initialValue`: Initial parameter value used for optimization
     toDataFrame = function() {
-      params <- dplyr::distinct(private$.parameters, group, .keep_all = TRUE)
+      if (is.null(private$.parameters)) {
+        stop(messages$errorParameterMetadataMissing())
+      }
+      params <- private$.parameters
+      group_idx <- as.integer(params$group)
       data.frame(
         group = params$group,
         name = params$name,
         path = params$path,
         unit = params$unit,
-        estimate = private$.result$finalParameters,
-        sd = private$.result$sd,
-        cv = private$.result$cv,
-        lowerCI = private$.result$lowerCI,
-        upperCI = private$.result$upperCI,
-        ciType = private$.result$ciType,
-        initialValue = private$.result$initialParameters,
+        estimate = private$.result$finalParameters[group_idx],
+        sd = private$.result$sd[group_idx],
+        cv = private$.result$cv[group_idx],
+        lowerCI = private$.result$lowerCI[group_idx],
+        upperCI = private$.result$upperCI[group_idx],
+        ciType = private$.result$ciType[group_idx],
+        initialValue = private$.result$initialParameters[group_idx],
         stringsAsFactors = FALSE
       )
     },

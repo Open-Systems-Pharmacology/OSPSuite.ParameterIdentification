@@ -140,9 +140,8 @@ ParameterIdentification <- R6::R6Class(
         #   }
         # }
 
-        # Clear output intervals and output quantities of all simulations
+        # Clear output quantities of all simulations
         for (simulation in private$.simulations) {
-          ospsuite::clearOutputIntervals(simulation)
           ospsuite::clearOutputs(simulation)
         }
 
@@ -347,10 +346,14 @@ ParameterIdentification <- R6::R6Class(
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
-        # Convert units to base units for unified comparison
-        obsVsPredDf <- ospsuite:::.unitConverter(obsVsPredList[[
-          idx
-        ]]$toDataFrame())
+        # Convert all columns to base units for consistent residual calculation
+        obsVsPredDf <- ospsuite:::.unitConverter(
+          obsVsPredList[[idx]]$toDataFrame(),
+          xUnit = ospsuite::getBaseUnit("Time"),
+          yUnit = ospsuite::getBaseUnit(
+            outputMappings[[idx]]$quantity$dimension
+          )
+        )
         # Apply LLOQ handling for LSQ
         if (
           private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
@@ -533,11 +536,10 @@ ParameterIdentification <- R6::R6Class(
         # In each iteration, only one values set per simulation batch is simulated.
         # Therefore we always need the first results entry
         resultObject <- simulationResults[[simBatch$id]][[1]]
-        resultId <- names(simulationResults[[simBatch$id]])[[1]]
         obsVsPred$addSimulationResults(
           resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = resultId,
+          names = groupName,
           groups = groupName
         )
 
@@ -768,7 +770,8 @@ ParameterIdentification <- R6::R6Class(
         par = currValues,
         fn = function(p, ...) private$.objectiveFunction(p, ...),
         lower = lower,
-        upper = upper
+        upper = upper,
+        resetFn = function() private$.fnEvaluations <- 0
       )
 
       if (!is.null(private$.savedSimulationState)) {
@@ -800,9 +803,9 @@ ParameterIdentification <- R6::R6Class(
     #'
     #' @param par Optional parameter values for simulations, in the order of
     #'   `ParameterIdentification$parameters`. Use current values if `NULL`.
-    #' @return A list of `ggplot2` plots (one per output mapping), showing:
+    #' @return A list of `patchwork` objects (one per output mapping), showing:
     #' - Individual time profiles
-    #' - Observed vs. simulated values
+    #' - Predicted vs. observed values
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
       simulationState <- NULL
@@ -823,35 +826,74 @@ ParameterIdentification <- R6::R6Class(
       }
       dataCombined <- private$.evaluate(parValues)
 
-      # Create figures and plot
-      plotConfiguration <- ospsuite::DefaultPlotConfiguration$new()
+      previousTheme <- ggplot2::theme_get()
+      on.exit(ggplot2::theme_set(previousTheme), add = TRUE)
+      ggplot2::theme_update(legend.title = ggplot2::element_blank())
+
+      # ospsuite.plots sets explicit guide titles via guide_legend(title = ...),
+      # which override theme(legend.title). Strip them with labs(NULL) so the
+      # collected legend has no title, and drop redundant aesthetic legends so
+      # the three sub-plots can be merged into a single legend.
+      stripGuides <- ggplot2::labs(
+        colour = NULL,
+        fill = NULL,
+        shape = NULL,
+        linetype = NULL
+      )
+
       multiPlot <- lapply(seq_along(dataCombined), function(idx) {
         scaling <- private$.outputMappings[[idx]]$scaling
-        plotConfiguration$yAxisScale <- scaling
-        plotConfiguration$legendPosition <- NULL
-        indivTimeProfile <- ospsuite::plotIndividualTimeProfile(
+        axisScale <- if (scaling == "lin") "linear" else "log"
+
+        # Drop the name-based legend entries (which duplicate the same
+        # path label across all sub-plots via the linetype aesthetic),
+        # and keep only one copy of the group-based legend on the
+        # time-profile. The residual plot needs no legend at all; the
+        # predicted-vs-observed plot keeps only the identity / 2-fold
+        # comparison-line legend (linetype).
+        indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
-          plotConfiguration
-        )
-        plotConfiguration$legendPosition <- "none"
-        plotConfiguration$xAxisScale <- scaling
-        obsVsSim <- ospsuite::plotObservedVsSimulated(
+          yScale = axisScale
+        ) +
+          stripGuides +
+          ggplot2::guides(linetype = "none")
+        predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
-          plotConfiguration
-        )
-        plotConfiguration$xAxisScale <- "lin"
-        plotConfiguration$yAxisScale <- "lin"
-        resVsTime <- ospsuite::plotResidualsVsTime(
+          xyScale = axisScale
+        ) +
+          stripGuides +
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            shape = "none"
+          )
+        resVsTime <- ospsuite::plotResidualsVsCovariate(
           dataCombined[[idx]],
-          plotConfiguration
-        )
-        plotGridConfiguration <- ospsuite::PlotGridConfiguration$new()
-        plotGridConfiguration$addPlots(list(
-          indivTimeProfile,
-          obsVsSim,
-          resVsTime
-        ))
-        return(ospsuite::plotGrid(plotGridConfiguration))
+          xAxis = "time",
+          residualScale = axisScale
+        ) +
+          stripGuides +
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            shape = "none",
+            linetype = "none"
+          )
+
+        patchwork::wrap_plots(
+          list(indivTimeProfile, predVsObs, resVsTime),
+          ncol = 1
+        ) +
+          patchwork::plot_layout(guides = "collect") &
+          ggplot2::theme(
+            legend.position = "top",
+            legend.title = ggplot2::element_blank(),
+            legend.box = "vertical",
+            legend.direction = "horizontal",
+            legend.spacing.y = ggplot2::unit(0, "pt"),
+            legend.margin = ggplot2::margin(0, 0, 0, 0),
+            aspect.ratio = 0.4
+          )
       })
 
       if (!is.null(private$.savedSimulationState)) {
@@ -984,19 +1026,54 @@ ParameterIdentification <- R6::R6Class(
 
     #' Calculate Objective Function Value (OFV) Profiles
     #'
-    #' Generates OFV profiles by varying each parameter independently while
-    #' holding others constant.
+    #' @description
+    #' Generates OFV profiles by varying each `PIParameter` independently while
+    #' holding the others fixed at `par`. Useful as a post-optimization
+    #' diagnostic: around a (local) minimum the OFV is expected to be roughly
+    #' convex along each axis.
     #'
-    #' @param par Numeric vector of parameter values, one for each parameter.
-    #'   Defaults to current parameter values if `NULL`, invalid or mismatched.
-    #' @param boundFactor Numeric value. A value of 0.1 means `lower` is 10%
-    #'   below `par` and `upper` is 10% above `par`. Default is `0.1`.
-    #' @param totalEvaluations Integer specifying the total number of grid
-    #'   points across each parameter profile. Default is 20.
+    #' @details
+    #' For each parameter `i` a one-dimensional grid of `totalEvaluations`
+    #' equally spaced points is built between `lower[i]` and `upper[i]`, with
+    #' the bounds derived from `par[i]` and `boundFactor`:
     #'
-    #' @return A list of tibbles, one for each parameter, showing how the
-    #'   objective function value (OFV) changes when varying that parameter
-    #'   while keeping the others fixed.
+    #' - `par[i] >= 0`: `lower[i] = (1 - boundFactor) * par[i]`,
+    #'   `upper[i] = (1 + boundFactor) * par[i]`.
+    #' - `par[i] <  0`: bounds are mirrored so that `lower < upper` is preserved.
+    #'
+    #' The objective function is evaluated along each axis with all other
+    #' parameters held at their `par` values. Failed simulations contribute
+    #' `Inf` to the corresponding `ofv` cell.
+    #'
+    #' @param par Numeric vector of parameter values, one for each
+    #'   `PIParameter`. Defaults to current parameter values if `NULL`,
+    #'   not numeric, or of mismatched length.
+    #' @param boundFactor Numeric scalar. A value of `0.1` (default) means
+    #'   bounds extend ±10% around `par` for each parameter.
+    #' @param totalEvaluations Integer specifying the number of grid points
+    #'   per parameter profile. Default is `20`.
+    #'
+    #' @return A named list of tibbles, one element per `PIParameter`. List
+    #'   names are the parameter paths (taken from `parameters[[1]]$path`).
+    #'   Each tibble has two columns:
+    #'   - a column named after the parameter path, holding the grid values;
+    #'   - `ofv`, holding the matching objective function values.
+    #'
+    #'   Pass the returned list to `plotOFVProfiles()` to visualize the
+    #'   profiles.
+    #'
+    #' @examples
+    #' # piTask is a configured ParameterIdentification instance
+    #' # Default: +/-10% around current values, 20 grid points per parameter
+    #' # ofvProfiles <- piTask$calculateOFVProfiles()
+    #'
+    #' # Wider neighborhood, finer grid
+    #' # ofvProfiles <- piTask$calculateOFVProfiles(
+    #' #   boundFactor = 0.5,
+    #' #   totalEvaluations = 50
+    #' # )
+    #'
+    #' # plotOFVProfiles(ofvProfiles)[[1]]
     calculateOFVProfiles = function(
       par = NULL,
       boundFactor = 0.1,
@@ -1005,6 +1082,11 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(par, nullAllowed = TRUE)
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
+
+      # Store simulation outputs and time intervals to reset them at the end.
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
 
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
@@ -1018,7 +1100,9 @@ ParameterIdentification <- R6::R6Class(
       lower <- ifelse(par < 0, (1 + boundFactor) * par, (1 - boundFactor) * par)
       upper <- ifelse(par < 0, (1 - boundFactor) * par, (1 + boundFactor) * par)
 
-      # Create default grid with constant values for each parameter
+      # Default grid (one row per evaluation, one column per parameter).
+      # Indexed by position throughout to stay safe when parameter paths
+      # collide (e.g. same path in two simulations).
       parameterNames <- sapply(
         private$.piParameters,
         function(x) x$parameters[[1]]$path
@@ -1029,10 +1113,8 @@ ParameterIdentification <- R6::R6Class(
         ncol = nrOfParameters,
         byrow = TRUE
       )
-      colnames(defaultGrid) <- parameterNames
-      defaultGrid <- tibble::as_tibble(defaultGrid)
 
-      # Calculate ORF profile with parameter-specific grid
+      # Calculate OFV profile with parameter-specific grid
       profileList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         parameterName <- parameterNames[idx]
@@ -1040,13 +1122,12 @@ ParameterIdentification <- R6::R6Class(
         # Generate and update grid for the current parameter
         grid <- seq(lower[[idx]], upper[[idx]], length.out = totalEvaluations)
         currentGrid <- defaultGrid
-        currentGrid[[parameterName]] <- grid
+        currentGrid[, idx] <- grid
 
         # Calculate OFV for each grid row
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
-          row <- as.numeric(currentGrid[gridIdx, ])
-          ofv <- private$.objectiveFunction(row)
+          ofv <- private$.objectiveFunction(currentGrid[gridIdx, ])
           ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 

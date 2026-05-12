@@ -67,7 +67,7 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
   expect_silent(
     piConfiguration$objectiveFunctionOptions <- list(
       objectiveFunctionType = "m3",
-      residualWeightingMethod = "std",
+      residualWeightingMethod = "error",
       robustMethod = "huber",
       scaleVar = TRUE,
       linScaleCV = 0.5,
@@ -80,7 +80,7 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
   )
   expect_equal(
     piConfiguration$objectiveFunctionOptions$residualWeightingMethod,
-    "std"
+    "error"
   )
   expect_equal(
     piConfiguration$objectiveFunctionOptions$robustMethod,
@@ -131,6 +131,18 @@ test_that("objectiveFunctionOptions rejects invalid values", {
   expect_error(
     piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "invalid",
     regexp = "objectiveFunctionType"
+  )
+})
+
+test_that("objectiveFunctionOptions rejects removed weighting methods std and mean", {
+  piConfiguration <- PIConfiguration$new()
+  expect_error(
+    piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "std",
+    regexp = "residualWeightingMethod"
+  )
+  expect_error(
+    piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "mean",
+    regexp = "residualWeightingMethod"
   )
 })
 
@@ -217,7 +229,7 @@ test_that("algorithmOptions reset to NULL clears overrides", {
 test_that("changing algorithm resets algorithmOptions with message", {
   piConfiguration <- PIConfiguration$new()
   piConfiguration$algorithmOptions$maxeval <- 500L
-  
+
   expect_message(
     piConfiguration$algorithm <- "HJKB",
     messages$messageOptionsReset(
@@ -263,12 +275,11 @@ test_that("ciOptions single-field assignment is validated", {
   expect_equal(piConfiguration$ciOptions$confLevel, 0.9)
 })
 
-test_that("ciOptions rejects invalid confLevel", {
+test_that("ciOptions rejects invalid values", {
   piConfiguration <- PIConfiguration$new()
-  expect_error(
-    piConfiguration$ciOptions$confLevel <- 1.5,
-    regexp = "confLevel"
-  )
+  expect_error(piConfiguration$ciOptions$confLevel <- 1.5, regexp = "confLevel")
+  expect_error(piConfiguration$ciOptions <- list(r = 1L), regexp = "r")
+  expect_error(piConfiguration$ciOptions <- list(d = 0), regexp = "d")
 })
 
 test_that("ciOptions warns and ignores unknown keys", {
@@ -326,7 +337,8 @@ test_that("ciOptions bootstrap: nBootstrap validated and seed allows NULL", {
   piConfiguration$ciOptions <- list(nBootstrap = 500L)
   expect_equal(piConfiguration$ciOptions$nBootstrap, 500L)
   expect_error(
-    piConfiguration$ciOptions <- list(nBootstrap = 0L), regexp = "nBootstrap"
+    piConfiguration$ciOptions <- list(nBootstrap = 0L),
+    regexp = "nBootstrap"
   )
   piConfiguration$ciOptions <- list(seed = 42L)
   expect_equal(piConfiguration$ciOptions$seed, 42L)

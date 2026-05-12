@@ -80,7 +80,7 @@ testOutputMappingWithoutObsData <- getTestOutputMapping(
 )
 
 
-createPiTask <- function() {
+testPiTask <- function() {
   testSimulation <- getTestSimulation()
   sim <- testSimulation()
   testParameters <- getTestParameters()
@@ -236,6 +236,14 @@ testModifiedTask <- function() {
 
 # General Helpers
 
+parseFnevals <- function(output) {
+  text <- paste0(output, collapse = "\n")
+  as.integer(regmatches(
+    text,
+    gregexpr("(?<=fneval: )\\d+", text, perl = TRUE)
+  )[[1]])
+}
+
 getTestDataFilePath <- function(fileName) {
   dataPath <- testthat::test_path("../data")
   file.path(dataPath, fileName, fsep = .Platform$file.sep)
@@ -287,13 +295,13 @@ piParameterLipo_250mg <- PIParameters$new(
 )
 piParameterCl_250mg <- PIParameters$new(
   parameters = getParameter(
-    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_250mg
   )
 )
 piParameterCl_500mg <- PIParameters$new(
   parameters = getParameter(
-    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS|TSspec",
+    path = "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec",
     container = sim_500mg
   )
 )

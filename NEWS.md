@@ -1,8 +1,25 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- `residualWeightingMethod` values `"std"` and `"mean"` have been removed from `residualWeightingOptions`. Use `outputMapping$scaling = "log"` for proportional error handling or `"error"` for inverse-variance weighting.
+
 ## Major changes
 
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
+- `ParameterIdentification$plotResults()` migrated from the soft-deprecated `{tlf}`-based `ospsuite` plotting functions (`plotIndividualTimeProfile()`, `plotObservedVsSimulated()`, `plotResidualsVsTime()`) to the new `{ospsuite.plots}`-based equivalents (`plotTimeProfile()`, `plotPredictedVsObserved()`, `plotResidualsVsCovariate()`). The `DefaultPlotConfiguration` object is no longer used; axis scales are derived directly from each `PIOutputMapping$scaling`, and the residual sub-plot now matches the mapping's scale instead of being hard-coded to linear. Visual output of `plotResults()` changes accordingly.
+- Sub-plot composition in `plotResults()` switched from `ospsuite::plotGrid()` to `patchwork::wrap_plots()`; the returned objects are now `patchwork` objects rather than the previous `ospsuite` plot-grid objects.
+
+## Minor improvements and bug fixes
+
+- `CIOptions_hessian` gains `r` and `d` options to tune the post-hoc Hessian CI step. `r` controls the number of iterations (minimum `2`, default `4`) and `d` the fractional step size (default `0.1`). Reducing `r` lowers the number of objective function evaluations at the cost of accuracy (#215).
+- `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (#255).
+- Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
+- New `Imports`: `patchwork` (used to compose the sub-plots produced by `plotResults()`).
+- `ParameterIdentification$estimateCI()` now resets the objective function evaluation counter before each bootstrap iteration and each profile likelihood step, so `printEvaluationFeedback` output restarts from 1 for every sub-optimization (#238).
+- `ParameterIdentification` now converts observed and simulated data to OSPSuite base units before computing residuals, ensuring consistent and reproducible OFV values (#229, #237).
+- `PIResult$toDataFrame()` now returns one row per parameter path for grouped `PIParameters`, instead of only the first path (#230).
+- Removed `clearOutputIntervals()` call from `ParameterIdentification` initialization, which could lead to wrong simulation results when events are triggered in time intervals without observed data (#226).
 
 # ospsuite.parameteridentification 2.1.1
 
@@ -13,7 +30,7 @@
 ## Minor improvements and bug fixes
 
 - Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to `NA` and `ciType` is set to `one-sided` (#217).
-- Allow dataSet with a single observation (`#221`)
+- Allow dataSet with a single observation (#221)
 
 # ospsuite.parameteridentification 2.1.0
 

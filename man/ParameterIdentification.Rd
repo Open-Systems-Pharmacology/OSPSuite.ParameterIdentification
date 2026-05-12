@@ -139,10 +139,10 @@ data.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A list of \code{ggplot2} plots (one per output mapping), showing:
+A list of \code{patchwork} objects (one per output mapping), showing:
 \itemize{
 \item Individual time profiles
-\item Observed vs. simulated values
+\item Predicted vs. observed values
 \item Residuals vs. time
 Perform a Parameter Grid Search
 }
