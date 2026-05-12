@@ -37,6 +37,30 @@ test_that("ParameterIdentification errors when both outputMappings and pkOutputM
   )
 })
 
+test_that("ParameterIdentification errors when pkOutputMapping belongs to a different simulation", {
+  sim1 <- testSimulation()
+  sim2 <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  mapping_from_sim2 <- PKOutputMapping$new(
+    quantity = testQuantity(sim2),
+    pkParameter = "C_max",
+    targetValue = 30,
+    targetUnit = testQuantity(sim2)$unit
+  )
+  expect_error(
+    ParameterIdentification$new(
+      simulations = sim1,
+      parameters = testPKParameters(sim1),
+      pkOutputMappings = mapping_from_sim2
+    ),
+    regexp = messages$errorPKMappingSimulationMismatch(),
+    fixed = TRUE
+  )
+})
+
 test_that("ParameterIdentification errors when neither mapping type provided", {
   sim <- testSimulation()
   expect_error(

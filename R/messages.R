@@ -369,6 +369,12 @@ messages$errorPKResultMultipleParameters <- function() {
   )
 }
 
+messages$warnAchievedPKValuesFailure <- function(detail) {
+  ospsuite.utils::cliFormat(
+    "Post-optimization PK value computation failed. {.field achievedValue} will be {.val NA}. Detail: {detail}"
+  )
+}
+
 messages$warningNoValidErrorValues <- function() {
   ospsuite.utils::cliFormat(
     "Some error values are invalid and will use unit weights (equivalent to {.val none})."

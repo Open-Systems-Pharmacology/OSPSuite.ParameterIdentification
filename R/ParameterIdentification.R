@@ -835,6 +835,7 @@ ParameterIdentification <- R6::R6Class(
         tryCatch(
           private$.getPKValues(optimResult$par),
           error = function(e) {
+            warning(messages$warnAchievedPKValuesFailure(e$message))
             as.list(rep(NA_real_, length(private$.pkMappings)))
           }
         )
