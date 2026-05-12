@@ -33,6 +33,7 @@ reference:
       - ParameterIdentification
       - PIConfiguration
       - PIOutputMapping
+      - PKOutputMapping
       - PIParameters
       - PIResult
   - title: Diagnostics
@@ -68,3 +69,4 @@ articles:
       - optimization-algorithms
       - confidence-intervals
       - error-calculation
+      - pk-target-optimization
