@@ -79,6 +79,25 @@ test_that("PKResult$toDataFrame() repeats estimatedValue for multiple mappings",
   expect_equal(df$achievedValue, c(28.5, 48.1))
 })
 
+test_that("PKResult$toDataFrame() achievedValue is converted to targetUnit display units", {
+  sim <- testSimulation()
+  q <- testQuantity(sim)
+  mapping <- PKOutputMapping$new(
+    quantity = q,
+    pkParameter = "C_max",
+    targetValue = 500,
+    targetUnit = "nmol/l"
+  )
+  # 500 nmol/l = 0.5 µmol/l in base units; supply base-unit value as achievedPKValues
+  result <- PKResult$new(
+    optimResult = mockPKOptimResult(),
+    pkMappings = list(mapping),
+    achievedPKValues = list(0.5)
+  )
+  df <- result$toDataFrame()
+  expect_equal(df$achievedValue, 500)
+})
+
 test_that("PKResult$toDataFrame() propagates NA in achievedPKValues", {
   result <- PKResult$new(
     optimResult = mockPKOptimResult(),
@@ -138,6 +157,24 @@ test_that("PKResult$toList() contains expected fields", {
   expect_equal(lst$pkMappings[[1]]$pkParameter, "C_max")
   expect_equal(lst$pkMappings[[1]]$targetValue, 30)
   expect_equal(lst$achievedPKValues, list(28.5))
+})
+
+test_that("PKResult$print() shows achieved value in targetUnit display units", {
+  sim <- testSimulation()
+  q <- testQuantity(sim)
+  mapping <- PKOutputMapping$new(
+    quantity = q,
+    pkParameter = "C_max",
+    targetValue = 500,
+    targetUnit = "nmol/l"
+  )
+  result <- PKResult$new(
+    optimResult = mockPKOptimResult(),
+    pkMappings = list(mapping),
+    achievedPKValues = list(0.45) # 0.45 µmol/l base units = 450 nmol/l
+  )
+  output <- capture.output(result$print())
+  expect_true(any(grepl("Achieved = 450", output)))
 })
 
 test_that("PKResult$print() does not error", {

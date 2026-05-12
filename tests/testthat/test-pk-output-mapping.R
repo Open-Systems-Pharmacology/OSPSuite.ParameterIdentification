@@ -181,6 +181,40 @@ test_that("PKOutputMapping targetValue setter errors on NA value", {
   )
 })
 
+test_that("PKOutputMapping targetValue setter rejects vectors", {
+  mapping <- PKOutputMapping$new(
+    quantity = testQuantity(),
+    pkParameter = "C_max",
+    targetValue = 0.5,
+    targetUnit = "µmol/l"
+  )
+  expect_error(mapping$targetValue <- c(0.5, 1.0))
+})
+
+test_that("PKOutputMapping errors with errorPKMappingUnitConversion when targetUnit incompatible", {
+  expect_error(
+    PKOutputMapping$new(
+      quantity = testQuantity(),
+      pkParameter = "C_max",
+      targetValue = 0.5,
+      targetUnit = "min"
+    ),
+    regexp = "Incompatible.*targetUnit.*min",
+    fixed = FALSE
+  )
+})
+
+test_that("PKOutputMapping targetUnit setter rolls back to original value when unit is incompatible", {
+  mapping <- PKOutputMapping$new(
+    quantity = testQuantity(),
+    pkParameter = "C_max",
+    targetValue = 0.5,
+    targetUnit = "µmol/l"
+  )
+  expect_error(mapping$targetUnit <- "min")
+  expect_equal(mapping$targetUnit, "µmol/l")
+})
+
 test_that("PKOutputMapping pkParameter setter rolls back to original value when unit is incompatible", {
   mapping <- PKOutputMapping$new(
     quantity = testQuantity(),

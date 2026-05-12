@@ -99,7 +99,26 @@ PKResult <- R6::R6Class(
         pkParameter = sapply(x$pkMappings, `[[`, "pkParameter"),
         targetValue = sapply(x$pkMappings, `[[`, "targetValue"),
         targetUnit = sapply(x$pkMappings, `[[`, "targetUnit"),
-        achievedValue = unlist(x$achievedPKValues),
+        achievedValue = mapply(
+          function(m, val) {
+            if (anyNA(val)) {
+              return(NA_real_)
+            }
+            dim <- ospsuite::pkParameterByName(
+              m$pkParameter,
+              stopIfNotFound = TRUE
+            )$dimension
+            val /
+              ospsuite::toBaseUnit(
+                quantityOrDimension = dim,
+                values = 1,
+                unit = m$targetUnit
+              )
+          },
+          x$pkMappings,
+          x$achievedPKValues,
+          SIMPLIFY = TRUE
+        ),
         estimatedValue = rep(x$finalParameters[[1L]], n),
         parameterUnit = rep(paramUnit, n),
         stringsAsFactors = FALSE
@@ -133,7 +152,22 @@ PKResult <- R6::R6Class(
           " ",
           m$targetUnit,
           ", Achieved = ",
-          .formatValues(x$achievedPKValues[[i]])
+          .formatValues(
+            if (anyNA(x$achievedPKValues[[i]])) {
+              NA_real_
+            } else {
+              dim <- ospsuite::pkParameterByName(
+                m$pkParameter,
+                stopIfNotFound = TRUE
+              )$dimension
+              x$achievedPKValues[[i]] /
+                ospsuite::toBaseUnit(
+                  quantityOrDimension = dim,
+                  values = 1,
+                  unit = m$targetUnit
+                )
+            }
+          )
         )
       })
       names(pkSummaries) <- sapply(x$pkMappings, `[[`, "pkParameter")

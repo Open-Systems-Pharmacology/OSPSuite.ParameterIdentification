@@ -67,6 +67,7 @@ PKOutputMapping <- R6::R6Class(
         private$.targetValue
       } else {
         ospsuite.utils::validateIsNumeric(value)
+        ospsuite.utils::validateIsOfLength(value, 1L)
         if (anyNA(value)) {
           stop(messages$errorNAValue("targetValue"))
         }
@@ -86,8 +87,15 @@ PKOutputMapping <- R6::R6Class(
         private$.targetUnit
       } else {
         ospsuite.utils::validateIsString(value)
+        old <- private$.targetUnit
         private$.targetUnit <- value
-        private$.recomputeTarget()
+        tryCatch(
+          private$.recomputeTarget(),
+          error = function(e) {
+            private$.targetUnit <- old
+            stop(e)
+          }
+        )
       }
     }
   ),
@@ -164,6 +172,7 @@ PKOutputMapping <- R6::R6Class(
         names(ospsuite::StandardPKParameter)
       )
       ospsuite.utils::validateIsNumeric(targetValue)
+      ospsuite.utils::validateIsOfLength(targetValue, 1L)
       if (anyNA(targetValue)) {
         stop(messages$errorNAValue("targetValue"))
       }
