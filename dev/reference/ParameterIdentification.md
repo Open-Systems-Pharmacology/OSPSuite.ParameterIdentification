@@ -30,7 +30,7 @@ methods.
 
 ### Public methods
 
-- [`ParameterIdentification$new()`](#method-ParameterIdentification-new)
+- [`ParameterIdentification$new()`](#method-ParameterIdentification-initialize)
 
 - [`ParameterIdentification$run()`](#method-ParameterIdentification-run)
 
@@ -46,7 +46,7 @@ methods.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `ParameterIdentification$new()`
 
 Initializes a `ParameterIdentification` instance.
 
@@ -99,7 +99,7 @@ Executes Parameter Identification
 
 ------------------------------------------------------------------------
 
-### Method `run()`
+### `ParameterIdentification$run()`
 
 Runs parameter identification using the configured optimization
 algorithm. Returns a structured `piResults`object containing estimated
@@ -118,7 +118,7 @@ Intervals
 
 ------------------------------------------------------------------------
 
-### Method `estimateCI()`
+### `ParameterIdentification$estimateCI()`
 
 Computes confidence intervals for the optimized parameters using the
 method defined in the associated `PIConfiguration`. Intended for
@@ -138,7 +138,7 @@ interval estimates. Plot Parameter Estimation Results
 
 ------------------------------------------------------------------------
 
-### Method `plotResults()`
+### `ParameterIdentification$plotResults()`
 
 Re-runs model simulations using the current or specified parameter
 values and generates plots comparing predictions to observed data.
@@ -173,7 +173,7 @@ initialize better starting values.
 
 ------------------------------------------------------------------------
 
-### Method `gridSearch()`
+### `ParameterIdentification$gridSearch()`
 
 #### Usage
 
@@ -217,12 +217,14 @@ A tibble where each row is a parameter combination and the corresponding
 objective function value (`ofv`). Calculate Objective Function Value
 (OFV) Profiles
 
-Generates OFV profiles by varying each parameter independently while
-holding others constant.
-
 ------------------------------------------------------------------------
 
-### Method `calculateOFVProfiles()`
+### `ParameterIdentification$calculateOFVProfiles()`
+
+Generates OFV profiles by varying each `PIParameter` independently while
+holding the others fixed at `par`. Useful as a post-optimization
+diagnostic: around a (local) minimum the OFV is expected to be roughly
+convex along each axis.
 
 #### Usage
 
@@ -236,31 +238,91 @@ holding others constant.
 
 - `par`:
 
-  Numeric vector of parameter values, one for each parameter. Defaults
-  to current parameter values if `NULL`, invalid or mismatched.
+  Numeric vector of parameter values, one for each `PIParameter`.
+  Defaults to current parameter values if `NULL`, not numeric, or of
+  mismatched length.
 
 - `boundFactor`:
 
-  Numeric value. A value of 0.1 means `lower` is 10% below `par` and
-  `upper` is 10% above `par`. Default is `0.1`.
+  Numeric scalar. A value of `0.1` (default) means bounds extend ±10%
+  around `par` for each parameter.
 
 - `totalEvaluations`:
 
-  Integer specifying the total number of grid points across each
-  parameter profile. Default is 20.
+  Integer specifying the number of grid points per parameter profile.
+  Default is `20`.
+
+#### Details
+
+For each parameter `i` a one-dimensional grid of `totalEvaluations`
+equally spaced points is built between `lower[i]` and `upper[i]`, with
+the bounds derived from `par[i]` and `boundFactor`:
+
+- `par[i] >= 0`: `lower[i] = (1 - boundFactor) * par[i]`,
+  `upper[i] = (1 + boundFactor) * par[i]`.
+
+- `par[i] < 0`: bounds are mirrored so that `lower < upper` is
+  preserved.
+
+The objective function is evaluated along each axis with all other
+parameters held at their `par` values. Failed simulations contribute
+`Inf` to the corresponding `ofv` cell.
 
 #### Returns
 
-A list of tibbles, one for each parameter, showing how the objective
-function value (OFV) changes when varying that parameter while keeping
-the others fixed.
+A named list of tibbles, one element per `PIParameter`. List names are
+the parameter paths (taken from `parameters[[1]]$path`). Each tibble has
+two columns:
+
+- a column named after the parameter path, holding the grid values;
+
+- `ofv`, holding the matching objective function values.
+
+Pass the returned list to
+[`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plotOFVProfiles.md)
+to visualize the profiles.
+
+#### Examples
+
+    # piTask is a configured ParameterIdentification instance
+    # Default: +/-10% around current values, 20 grid points per parameter
+    # ofvProfiles <- piTask$calculateOFVProfiles()
+
+    # Wider neighborhood, finer grid
+    # ofvProfiles <- piTask$calculateOFVProfiles(
+    #   boundFactor = 0.5,
+    #   totalEvaluations = 50
+    # )
+
+    # plotOFVProfiles(ofvProfiles)[[1]]
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `ParameterIdentification$print()`
 
 Prints a summary of `ParameterIdentification` instance.
 
 #### Usage
 
     ParameterIdentification$print()
+
+## Examples
+
+``` r
+
+## ------------------------------------------------
+## Method `ParameterIdentification$calculateOFVProfiles()`
+## ------------------------------------------------
+
+# piTask is a configured ParameterIdentification instance
+# Default: +/-10% around current values, 20 grid points per parameter
+# ofvProfiles <- piTask$calculateOFVProfiles()
+
+# Wider neighborhood, finer grid
+# ofvProfiles <- piTask$calculateOFVProfiles(
+#   boundFactor = 0.5,
+#   totalEvaluations = 50
+# )
+
+# plotOFVProfiles(ofvProfiles)[[1]]
+```

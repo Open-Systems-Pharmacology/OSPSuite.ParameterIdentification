@@ -37,10 +37,10 @@ options map directly to `method.args` of that function.
   `0.95` (95% confidence intervals).
 
 - **`r`**: Number of Richardson iterations. Controls the trade-off
-  between accuracy and computation time: `(N^2 + N)*r + 1` objective
-  function evaluations are performed, where `N` is the number of free
-  parameters. Must be at least `2`. Default is `NULL`, which uses
-  `numDeriv`'s default of `4`.
+  between accuracy and computation time: approximately `(N^2 + N)*r`
+  objective function evaluations are performed, where `N` is the number
+  of free parameters. Must be at least `2`. Default is `NULL`, which
+  uses `numDeriv`'s default of `4`.
 
 - **`d`**: Fractional step size. Smaller values reduce the step size
   relative to the parameter value. Default is `NULL`, which uses
