@@ -1,5 +1,5 @@
-Package: ospsuite.parameteridentification
 Type: Package
+Package: ospsuite.parameteridentification
 Title: Open Systems Pharmacology Parameter Identification package
 Version: 2.1.1.9016
 Authors@R: 
@@ -27,10 +27,9 @@ License: GPL-2 | file LICENSE
 URL: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification,
      https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification
 BugReports: https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues
-Encoding: UTF-8
 Depends:
-    R (>= 4.1),
-    ospsuite (>= 12.4.2)
+    R (>= 4.4),
+    ospsuite (>= 12.4.0)
 Imports:
     DEoptim,
     DiceKriging,
@@ -43,21 +42,21 @@ Imports:
     patchwork,
     purrr,
     R6,
-    tibble
+    stats,
+    tibble,
+    utils
 Suggests:
     devtools,
     knitr,
     mockthat,
-    rmarkdown,
     readr,
-    showtext,
-    sysfonts,
+    rmarkdown,
     testthat (>= 3.0.0),
     vdiffr
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
-Config/testthat/edition: 3
-Remotes: 
-    ospsuite=Open-Systems-Pharmacology/OSPSuite-R,
-    ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils
 Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3
+Encoding: UTF-8
+Remotes:
+    ospsuite=Open-Systems-Pharmacology/OSPSuite-R
