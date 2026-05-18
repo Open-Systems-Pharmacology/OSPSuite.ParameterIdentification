@@ -123,7 +123,7 @@ The data frame contains one row per output mapping with the estimated parameter 
 
 When multiple `PKOutputMapping` objects are supplied, the optimizer minimises the sum of normalised squared differences across all mappings simultaneously.
 
-```{r multiMapping, eval = FALSE}
+```{r multiMapping}
 pkOutputMappingCmax <- PKOutputMapping$new(
   quantity = plasmaConc,
   pkParameter = "C_max",
@@ -143,6 +143,19 @@ piTaskMulti <- ParameterIdentification$new(
   parameters = piParameterDose,
   pkOutputMappings = list(pkOutputMappingCmax, pkOutputMappingAuc)
 )
+
+piResultMulti <- piTaskMulti$run()
+
+print(piResultMulti)
+
+piResultMulti$toDataFrame()[, c(
+  "pkParameter",
+  "targetValue",
+  "targetUnit",
+  "achievedValue",
+  "estimatedValue",
+  "parameterUnit"
+)]
 ```
 
 
