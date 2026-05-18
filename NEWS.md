@@ -2,6 +2,7 @@
 
 ## Breaking changes
 
+- Minimum required R version is now 4.4, consistent with `ospsuite`.
 - `residualWeightingMethod` values `"std"` and `"mean"` have been removed from `residualWeightingOptions`. Use `outputMapping$scaling = "log"` for proportional error handling or `"error"` for inverse-variance weighting.
 
 ## Major changes
