@@ -2,7 +2,6 @@
 #' @docType class
 #' @description Maps a simulation output quantity to a target PK parameter for use
 #'   in [`ParameterIdentification`] optimization.
-#' @import R6 ospsuite.utils ospsuite
 #' @export
 #' @format NULL
 PKOutputMapping <- R6::R6Class(

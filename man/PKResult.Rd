@@ -36,7 +36,7 @@ including optimization results, achieved PK values, and mapping metadata.
       \item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
 the optimization.}
       \item{\code{pkMappings}}{A list of \code{PKOutputMapping} objects.}
-      \item{\code{achievedPKValues}}{A list of numeric scalars with the PK metric
+      \item{\code{achievedPKValues}}{A list of numeric scalars with the PK parameter
 values achieved at the optimized parameter estimate.}
     }
     \if{html}{\out{</div>}}
@@ -47,7 +47,9 @@ values achieved at the optimized parameter estimate.}
 \if{html}{\out{<a id="method-PKResult-toDataFrame"></a>}}
 \if{latex}{\out{\hypertarget{method-PKResult-toDataFrame}{}}}
 \subsection{\code{PKResult$toDataFrame()}}{
-  Export PKResult to a \code{data.frame}.
+  Export PKResult to a \code{data.frame} in long format. Produces
+N * M rows, where N is the number of optimized parameters and M is the
+number of PK mappings.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PKResult$toDataFrame()}
@@ -62,7 +64,11 @@ values achieved at the optimized parameter estimate.}
 \item \code{targetUnit}: Unit of the target value
 \item \code{achievedValue}: PK value achieved at the optimized parameter
 \item \code{estimatedValue}: Optimized parameter value
-\item \code{parameterUnit}: Unit of the estimated parameter
+\item \code{parameterUnit}: Unit of the estimated parameter (\code{NA} when
+\code{piParameters} was not provided)
+\item \code{parameterIndex}: Integer index of the optimized parameter (1..N)
+\item \code{parameterPath}: Path of the optimized parameter in the simulation
+(\code{NA} when \code{piParameters} was not provided)
 }
   }
 }

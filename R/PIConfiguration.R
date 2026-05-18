@@ -2,7 +2,6 @@
 #' @docType class
 #' @description Encapsulates configurations such as optimization algorithm
 #'   choice, and evaluation settings for parameter identification.
-#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIConfiguration <- R6::R6Class(
@@ -80,7 +79,7 @@ PIConfiguration <- R6::R6Class(
         if (length(value) == 0) {
           return(invisible(NULL))
         }
-        validateIsOption(
+        ospsuite.utils::validateIsOption(
           value,
           ObjectiveFunctionSpecs[names(value)]
         )
@@ -200,7 +199,7 @@ PIConfiguration <- R6::R6Class(
           )
           value <- value[names(value) %in% validKeys]
         }
-        validateIsOption(
+        ospsuite.utils::validateIsOption(
           value,
           CIOptionSpecs[[private$.ciMethod]][names(value)]
         )

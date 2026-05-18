@@ -5,7 +5,7 @@
 \alias{PKOutputMapping}
 \title{PKOutputMapping}
 \description{
-Maps a simulation output quantity to a target PK metric for use
+Maps a simulation output quantity to a target PK parameter for use
 in \code{\link{ParameterIdentification}} optimization.
 }
 \examples{
@@ -35,7 +35,7 @@ mapping <- PKOutputMapping$new(
 
     \item{\code{simId}}{ID of the root simulation container. Read-only.}
 
-    \item{\code{pkParameter}}{Name of the PK metric to target. Must be one of
+    \item{\code{pkParameter}}{Name of the PK parameter to target. Must be one of
 \code{\link[ospsuite:StandardPKParameter]{ospsuite::StandardPKParameter}}.}
 
     \item{\code{targetValueInBaseUnit}}{Target value in base units. Computed from
@@ -73,7 +73,7 @@ assignment.}
     \describe{
       \item{\code{quantity}}{An ospsuite \code{Quantity} object from the simulation whose
 PK profile will be analyzed.}
-      \item{\code{pkParameter}}{Character string specifying the PK metric to target.
+      \item{\code{pkParameter}}{Character string specifying the PK parameter to target.
 Must be one of \code{\link[ospsuite:StandardPKParameter]{ospsuite::StandardPKParameter}} (e.g., \code{"C_max"},
 \code{"AUC_tEnd"}).}
       \item{\code{targetValue}}{Numeric scalar target value in units of \code{targetUnit}.}
@@ -112,6 +112,9 @@ mapping <- PKOutputMapping$new(
     \if{html}{\out{<div class="r">}}
     \preformatted{PKOutputMapping$print()}
     \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Called for its side effect of printing. Returns \code{invisible(self)}.
   }
 }
 

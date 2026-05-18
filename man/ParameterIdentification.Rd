@@ -41,6 +41,9 @@ estimation, and objective function options.}
 
     \item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping
 observed datasets to simulated outputs.}
+
+    \item{\code{pkOutputMappings}}{A list of \code{PKOutputMapping} objects for PK
+metric optimization. \code{NULL} in standard PI mode. Read-only.}
   }
   \if{html}{\out{</div>}}
 }
@@ -118,7 +121,8 @@ confidence intervals.
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{\link{PIResult}} object containing the optimization results.
+    A \code{\link{PIResult}} object in standard mode, or a \code{PKResult} object
+(internal) when \code{pkOutputMappings} was provided.
 Estimate Confidence Intervals
   }
 }
