@@ -67,6 +67,8 @@ Main classes for running parameter identification
   : PIConfiguration
 - [`PIOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.md)
   : PIOutputMapping
+- [`PKOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PKOutputMapping.md)
+  : PKOutputMapping
 - [`PIParameters`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.md)
   : PIParameters
 - [`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md)
@@ -135,3 +137,5 @@ Main classes for running parameter identification
   intervals](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.md):
 - [Error
   calculation](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/error-calculation.md):
+- [Fitting to PK parameter
+  targets](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/pk-target-optimization.md):

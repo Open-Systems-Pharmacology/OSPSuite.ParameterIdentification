@@ -11,7 +11,7 @@ methods."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9017</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ methods."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
     <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
     <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/pk-target-optimization.html">Fitting to PK parameter targets</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -78,6 +79,11 @@ estimation, and objective function options.</p></dd>
 observed datasets to simulated outputs.</p></dd>
 
 
+    <dt><code>pkOutputMappings</code></dt>
+<dd><p>A list of <code>PKOutputMapping</code> objects for PK
+metric optimization. <code>NULL</code> in standard PI mode. Read-only.</p></dd>
+
+
 </dl><p></p></div>
     </div>
     <div class="section level2">
@@ -99,7 +105,8 @@ observed datasets to simulated outputs.</p></dd>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/ParameterIdentification.html">ParameterIdentification</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  <span class="va">simulations</span>,</span>
 <span>  <span class="va">parameters</span>,</span>
-<span>  <span class="va">outputMappings</span>,</span>
+<span>  outputMappings <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pkOutputMappings <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  configuration <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
@@ -117,10 +124,14 @@ may group one or more underlying model parameters. See
 <code><a href="PIParameters.html">PIParameters</a></code> for details.</p></dd>
 
       <dt><code>outputMappings</code></dt>
-<dd><p>A <code>PIOutputMapping</code> or list of <code>PIOutputMapping</code>
-objects mapping model outputs (represented by <code>Quantity</code> objects) to
-observed data. #' See
-<code><a href="PIOutputMapping.html">PIOutputMapping</a></code> for details.</p></dd>
+<dd><p>(Optional) A <code>PIOutputMapping</code> or list of
+<code>PIOutputMapping</code> objects mapping model outputs to observed data.
+Mutually exclusive with <code>pkOutputMappings</code>.</p></dd>
+
+      <dt><code>pkOutputMappings</code></dt>
+<dd><p>(Optional) A <code>PKOutputMapping</code> or list of
+<code>PKOutputMapping</code> objects for PK metric optimization. Mutually
+exclusive with <code>outputMappings</code>.</p></dd>
 
       <dt><code>configuration</code></dt>
 <dd><p>(Optional) A <code>PIConfiguration</code> object specifying
@@ -150,7 +161,8 @@ confidence intervals.</p><div class="section">
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">run</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
 <h4 id="returns-1">Returns<a class="anchor" aria-label="anchor" href="#returns-1"></a></h4>
-<p>A <code><a href="PIResult.html">PIResult</a></code> object containing the optimization results.
+<p>A <code><a href="PIResult.html">PIResult</a></code> object in standard mode, or a <code>PKResult</code> object
+(internal) when <code>pkOutputMappings</code> was provided.
 Estimate Confidence Intervals</p>
 </div>
 

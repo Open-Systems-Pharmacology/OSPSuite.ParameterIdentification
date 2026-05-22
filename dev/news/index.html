@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9017</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
     <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
     <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/pk-target-optimization.html">Fitting to PK parameter targets</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -55,6 +56,8 @@
 <div class="section level3">
 <h3 id="major-changes-development-version">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-development-version"></a></h3>
 <ul><li>
+<code>PKOutputMapping</code> adds PK-metric optimization to <code>ParameterIdentification</code>: fit one or more parameters to target PK metrics (C_max, AUC_tEnd, etc.) supplied as scalar values or computed from observed <code>DataSet</code> objects. PK-metric mode and observed time-series mode (via <code>PIOutputMapping</code>) are mutually exclusive within a single <code>ParameterIdentification</code> run.</li>
+<li>
 <code>PIConfiguration</code> active bindings (<code>objectiveFunctionOptions</code>, <code>algorithmOptions</code>, <code>ciOptions</code>) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing <code>algorithm</code> or <code>ciMethod</code> resets the corresponding options and emits a message (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228" class="external-link">#228</a>).</li>
 <li>
 <code>ParameterIdentification$plotResults()</code> migrated from the soft-deprecated <a href="https://github.com/open-systems-pharmacology/tlf-library" class="external-link">tlf</a>-based <code>ospsuite</code> plotting functions (<code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotIndividualTimeProfile.html" class="external-link">plotIndividualTimeProfile()</a></code>, <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotObservedVsSimulated.html" class="external-link">plotObservedVsSimulated()</a></code>, <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsTime.html" class="external-link">plotResidualsVsTime()</a></code>) to the new <a href="https://www.open-systems-pharmacology.org/OSPSuite.Plots/" class="external-link">ospsuite.plots</a>-based equivalents (<code>plotTimeProfile()</code>, <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotPredictedVsObserved.html" class="external-link">plotPredictedVsObserved()</a></code>, <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsCovariate.html" class="external-link">plotResidualsVsCovariate()</a></code>). The <code>DefaultPlotConfiguration</code> object is no longer used; axis scales are derived directly from each <code>PIOutputMapping$scaling</code>, and the residual sub-plot now matches the mapping’s scale instead of being hard-coded to linear. Visual output of <code>plotResults()</code> changes accordingly.</li>

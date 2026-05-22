@@ -12,6 +12,12 @@
 
 ### Major changes
 
+- `PKOutputMapping` adds PK-metric optimization to
+  `ParameterIdentification`: fit one or more parameters to target PK
+  metrics (C_max, AUC_tEnd, etc.) supplied as scalar values or computed
+  from observed `DataSet` objects. PK-metric mode and observed
+  time-series mode (via `PIOutputMapping`) are mutually exclusive within
+  a single `ParameterIdentification` run.
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`,
   `algorithmOptions`, `ciOptions`) now validate input at assignment
   time, warn on unknown keys, and merge partial lists with current

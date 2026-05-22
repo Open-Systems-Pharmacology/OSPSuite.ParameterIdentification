@@ -15,3 +15,5 @@
   intervals](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.md):
 - [Error
   calculation](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/error-calculation.md):
+- [Fitting to PK parameter
+  targets](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/pk-target-optimization.md):

@@ -10,6 +10,8 @@ Main classes for running parameter identification
   : PIConfiguration
 - [`PIOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.md)
   : PIOutputMapping
+- [`PKOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PKOutputMapping.md)
+  : PKOutputMapping
 - [`PIParameters`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.md)
   : PIParameters
 - [`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md)

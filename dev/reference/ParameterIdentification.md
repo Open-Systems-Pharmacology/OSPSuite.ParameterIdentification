@@ -26,6 +26,11 @@ methods.
   A list of `PIOutputMapping` objects mapping observed datasets to
   simulated outputs.
 
+- `pkOutputMappings`:
+
+  A list of `PKOutputMapping` objects for PK metric optimization. `NULL`
+  in standard PI mode. Read-only.
+
 ## Methods
 
 ### Public methods
@@ -55,7 +60,8 @@ Initializes a `ParameterIdentification` instance.
     ParameterIdentification$new(
       simulations,
       parameters,
-      outputMappings,
+      outputMappings = NULL,
+      pkOutputMappings = NULL,
       configuration = NULL
     )
 
@@ -79,10 +85,14 @@ Initializes a `ParameterIdentification` instance.
 
 - `outputMappings`:
 
-  A `PIOutputMapping` or list of `PIOutputMapping` objects mapping model
-  outputs (represented by `Quantity` objects) to observed data. \#' See
-  [`PIOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIOutputMapping.md)
-  for details.
+  (Optional) A `PIOutputMapping` or list of `PIOutputMapping` objects
+  mapping model outputs to observed data. Mutually exclusive with
+  `pkOutputMappings`.
+
+- `pkOutputMappings`:
+
+  (Optional) A `PKOutputMapping` or list of `PKOutputMapping` objects
+  for PK metric optimization. Mutually exclusive with `outputMappings`.
 
 - `configuration`:
 
@@ -113,8 +123,8 @@ parameters, diagnostics, and (optionally) confidence intervals.
 
 A
 [`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md)
-object containing the optimization results. Estimate Confidence
-Intervals
+object in standard mode, or a `PKResult` object (internal) when
+`pkOutputMappings` was provided. Estimate Confidence Intervals
 
 ------------------------------------------------------------------------
 

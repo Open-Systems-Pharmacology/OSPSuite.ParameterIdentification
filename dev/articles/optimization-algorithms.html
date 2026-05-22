@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9017</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.1.1.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,7 @@
     <li><a class="dropdown-item" href="../articles/optimization-algorithms.html">Optimization algorithms</a></li>
     <li><a class="dropdown-item" href="../articles/confidence-intervals.html">Confidence intervals</a></li>
     <li><a class="dropdown-item" href="../articles/error-calculation.html">Error calculation</a></li>
+    <li><a class="dropdown-item" href="../articles/pk-target-optimization.html">Fitting to PK parameter targets</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -143,7 +144,9 @@ correctness.</li>
 </ul>
 <p>Example usage:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification" class="external-link">ospsuite.parameteridentification</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">piConfiguration</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/PIConfiguration.html">PIConfiguration</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithm</span> <span class="op">&lt;-</span> <span class="st">"BOBYQA"</span></span>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithmOptions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  stopval <span class="op">=</span> <span class="op">-</span><span class="fl">1e-06</span></span>

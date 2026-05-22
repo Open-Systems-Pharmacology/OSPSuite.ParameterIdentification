@@ -34,6 +34,8 @@ To apply an error model, set the `targetFunctionType` attribute in
 
 ``` r
 
+library(ospsuite.parameteridentification)
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq" # or "m3"
 ```

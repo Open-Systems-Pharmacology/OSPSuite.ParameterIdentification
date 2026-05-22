@@ -59,6 +59,8 @@ Example usage:
 
 ``` r
 
+library(ospsuite.parameteridentification)
+
 piConfiguration <- PIConfiguration$new()
 piConfiguration$algorithm <- "BOBYQA"
 piConfiguration$algorithmOptions <- list(
