@@ -1,42 +1,47 @@
 #' @noRd
 CIOptionSpecs <- list(
   hessian = list(
-    epsilon = numericOption(
+    epsilon = ospsuite.utils::numericOption(
       min = .Machine$double.eps,
       nullAllowed = TRUE,
       expectedLength = NULL
     ),
-    r = integerOption(min = 2L, nullAllowed = TRUE),
-    d = numericOption(min = .Machine$double.eps, nullAllowed = TRUE),
-    confLevel = numericOption(min = 0, max = 1)
+    r = ospsuite.utils::integerOption(min = 2L, nullAllowed = TRUE),
+    d = ospsuite.utils::numericOption(
+      min = .Machine$double.eps,
+      nullAllowed = TRUE
+    ),
+    confLevel = ospsuite.utils::numericOption(min = 0, max = 1)
   ),
   PL = list(
-    epsilon = numericOption(
+    epsilon = ospsuite.utils::numericOption(
       min = .Machine$double.eps,
       nullAllowed = TRUE,
       expectedLength = NULL
     ),
-    confLevel = numericOption(min = 0, max = 1),
-    maxIter = integerOption(min = 1L)
+    confLevel = ospsuite.utils::numericOption(min = 0, max = 1),
+    maxIter = ospsuite.utils::integerOption(min = 1L)
   ),
   bootstrap = list(
-    nBootstrap = integerOption(min = 1L),
-    confLevel = numericOption(min = 0, max = 1),
-    seed = integerOption(nullAllowed = TRUE)
+    nBootstrap = ospsuite.utils::integerOption(min = 1L),
+    confLevel = ospsuite.utils::numericOption(min = 0, max = 1),
+    seed = ospsuite.utils::integerOption(nullAllowed = TRUE)
   )
 )
 
 #' @noRd
 ObjectiveFunctionSpecs <- list(
-  objectiveFunctionType = characterOption(allowedValues = c("lsq", "m3")),
-  residualWeightingMethod = characterOption(
+  objectiveFunctionType = ospsuite.utils::characterOption(
+    allowedValues = c("lsq", "m3")
+  ),
+  residualWeightingMethod = ospsuite.utils::characterOption(
     allowedValues = c("none", "error")
   ),
-  robustMethod = characterOption(
+  robustMethod = ospsuite.utils::characterOption(
     allowedValues = c("none", "huber", "bisquare")
   ),
-  scaleVar = logicalOption(),
-  scaling = characterOption(allowedValues = c("lin", "log")),
-  linScaleCV = numericOption(min = 1e-9, max = 1),
-  logScaleSD = numericOption(min = 1e-9)
+  scaleVar = ospsuite.utils::logicalOption(),
+  scaling = ospsuite.utils::characterOption(allowedValues = c("lin", "log")),
+  linScaleCV = ospsuite.utils::numericOption(min = 1e-9, max = 1),
+  logScaleSD = ospsuite.utils::numericOption(min = 1e-9)
 )

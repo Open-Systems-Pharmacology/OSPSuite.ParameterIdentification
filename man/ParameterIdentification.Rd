@@ -41,6 +41,9 @@ estimation, and objective function options.}
 
     \item{\code{outputMappings}}{A list of \code{PIOutputMapping} objects mapping
 observed datasets to simulated outputs.}
+
+    \item{\code{pkOutputMappings}}{A list of \code{PKOutputMapping} objects for PK
+metric optimization. \code{NULL} in standard PI mode. Read-only.}
   }
   \if{html}{\out{</div>}}
 }
@@ -66,7 +69,8 @@ observed datasets to simulated outputs.}
     \preformatted{ParameterIdentification$new(
   simulations,
   parameters,
-  outputMappings,
+  outputMappings = NULL,
+  pkOutputMappings = NULL,
   configuration = NULL
 )}
     \if{html}{\out{</div>}}
@@ -82,10 +86,12 @@ parameters specified in \code{parameters}. Use
 specifying the model parameters to optimize. Each \code{PIParameters} object
 may group one or more underlying model parameters. See
 \code{\link{PIParameters}} for details.}
-      \item{\code{outputMappings}}{A \code{PIOutputMapping} or list of \code{PIOutputMapping}
-objects mapping model outputs (represented by \code{Quantity} objects) to
-observed data. #' See
-\code{\link{PIOutputMapping}} for details.}
+      \item{\code{outputMappings}}{(Optional) A \code{PIOutputMapping} or list of
+\code{PIOutputMapping} objects mapping model outputs to observed data.
+Mutually exclusive with \code{pkOutputMappings}.}
+      \item{\code{pkOutputMappings}}{(Optional) A \code{PKOutputMapping} or list of
+\code{PKOutputMapping} objects for PK metric optimization. Mutually
+exclusive with \code{outputMappings}.}
       \item{\code{configuration}}{(Optional) A \code{PIConfiguration} object specifying
 algorithm, CI method, and objective function settings. Defaults to a
 new configuration if omitted. See
@@ -115,7 +121,8 @@ confidence intervals.
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{\link{PIResult}} object containing the optimization results.
+    A \code{\link{PIResult}} object in standard mode, or a \code{PKResult} object
+(internal) when \code{pkOutputMappings} was provided.
 Estimate Confidence Intervals
   }
 }

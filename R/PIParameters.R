@@ -2,7 +2,6 @@
 #' @docType class
 #' @description A parameter to be optimized in a parameter identification
 #'   routine
-#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIParameters <- R6::R6Class(
@@ -23,7 +22,7 @@ PIParameters <- R6::R6Class(
     #'   specified by `$unit`.
     currValue = function(value) {
       if (missing(value)) {
-        toUnit(
+        ospsuite::toUnit(
           quantityOrDimension = private$.parameters[[1]],
           values = private$.parameters[[1]]$value,
           targetUnit = private$.unit

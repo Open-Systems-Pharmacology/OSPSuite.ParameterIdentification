@@ -3,7 +3,6 @@
 #' @description Establishes connections between simulated quantities and
 #'   corresponding observed data sets. Utilized within `ParameterIdentification`
 #'   instances to align and compare simulation outputs with empirical data.
-#' @import R6 ospsuite.utils
 #' @export
 #' @format NULL
 PIOutputMapping <- R6::R6Class(

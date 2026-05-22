@@ -7,6 +7,7 @@
 
 ## Major changes
 
+- `PKOutputMapping` adds PK-metric optimization to `ParameterIdentification`: fit one or more parameters to target PK metrics (C_max, AUC_tEnd, etc.) supplied as scalar values or computed from observed `DataSet` objects. PK-metric mode and observed time-series mode (via `PIOutputMapping`) are mutually exclusive within a single `ParameterIdentification` run.
 - `PIConfiguration` active bindings (`objectiveFunctionOptions`, `algorithmOptions`, `ciOptions`) now validate input at assignment time, warn on unknown keys, and merge partial lists with current settings. Changing `algorithm` or `ciMethod` resets the corresponding options and emits a message (#228).
 - `ParameterIdentification$plotResults()` migrated from the soft-deprecated `{tlf}`-based `ospsuite` plotting functions (`plotIndividualTimeProfile()`, `plotObservedVsSimulated()`, `plotResidualsVsTime()`) to the new `{ospsuite.plots}`-based equivalents (`plotTimeProfile()`, `plotPredictedVsObserved()`, `plotResidualsVsCovariate()`). The `DefaultPlotConfiguration` object is no longer used; axis scales are derived directly from each `PIOutputMapping$scaling`, and the residual sub-plot now matches the mapping's scale instead of being hard-coded to linear. Visual output of `plotResults()` changes accordingly.
 - Sub-plot composition in `plotResults()` switched from `ospsuite::plotGrid()` to `patchwork::wrap_plots()`; the returned objects are now `patchwork` objects rather than the previous `ospsuite` plot-grid objects.
