@@ -25,6 +25,8 @@ Parameter identification typically fits a model to a full time profile. In some 
 
 `PKOutputMapping` supports this by linking a simulation quantity to a scalar PK metric target. The optimizer adjusts the free parameter until the simulated metric matches the target. Any parameter that has a monotonic effect on the metric can be used.
 
+PK-metric optimization is a separate mode from standard observed time-series fitting. A `ParameterIdentification` run accepts either `pkOutputMappings` or `outputMappings` (observed data via `PIOutputMapping`), not both simultaneously.
+
 
 ### Workflow
 
