@@ -9,10 +9,6 @@ results are compared to observed data.
 ScalingOptions
 ```
 
-## Format
-
-An object of class `list` of length 2.
-
 ## Details
 
 Available scaling options:

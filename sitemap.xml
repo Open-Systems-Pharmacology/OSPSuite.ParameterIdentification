@@ -6,6 +6,7 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/error-calculation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/optimization-algorithms.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/pk-target-optimization.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles/user-guide.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/authors.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/index.html</loc></url>
@@ -15,11 +16,12 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIMethods.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionSpecs.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIConfiguration.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIOutputMapping.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIParameters.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIResult.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PKOutputMapping.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PKResult.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ParameterIdentification.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ScalingOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-applyLogTransformation.html</loc></url>
@@ -40,6 +42,7 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/index.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ospsuitePIRSettingNames.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/plot.modelCost.html</loc></url>
+<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/plotOFVProfiles.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/residualWeightingOptions.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/robustMethodOptions.html</loc></url>
 </urlset>

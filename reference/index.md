@@ -10,10 +10,17 @@ Main classes for running parameter identification
   : PIConfiguration
 - [`PIOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIOutputMapping.md)
   : PIOutputMapping
+- [`PKOutputMapping`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PKOutputMapping.md)
+  : PKOutputMapping
 - [`PIParameters`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIParameters.md)
   : PIParameters
 - [`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PIResult.md)
   : PIResult
+
+## Diagnostics
+
+- [`plotOFVProfiles()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/plotOFVProfiles.md)
+  : Plot Objective Function Value (OFV) Profiles
 
 ## Configuration options
 
@@ -22,11 +29,10 @@ Main classes for running parameter identification
 - [`AlgorithmOptions_HJKB`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.md)
   [`AlgorithmOptions_BOBYQA`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.md)
   [`AlgorithmOptions_DEoptim`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.md)
+  [`AlgorithmDefaults`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/AlgorithmOptions.md)
   : Algorithm Options for Optimization Algorithms
 - [`ObjectiveFunctionOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionOptions.md)
   : Objective Function Options for Model Fit Assessment
-- [`ObjectiveFunctionSpecs`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ObjectiveFunctionSpecs.md)
-  : Objective Function Specifications
 - [`residualWeightingOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/residualWeightingOptions.md)
   : Residual Weighting Methods for Cost Function
 - [`robustMethodOptions`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/robustMethodOptions.md)
@@ -38,6 +44,7 @@ Main classes for running parameter identification
 - [`CIOptions_hessian`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.md)
   [`CIOptions_PL`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.md)
   [`CIOptions_bootstrap`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.md)
+  [`CIDefaults`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/CIOptions.md)
   : Confidence Interval Estimation Options
 
 ## Internal functions

@@ -79,6 +79,7 @@ The example below shows how the Hessian method is selected and its
 default options adjusted:
 
 ``` r
+
 piConfiguration <- PIConfiguration$new()
 
 # select CI method
@@ -94,6 +95,7 @@ optimization run (`autoEstimateCI = TRUE`). To disable this behaviour
 and perform CI estimation later, set the flag to `FALSE`:
 
 ``` r
+
 piConfiguration$autoEstimateCI <- FALSE
 ```
 
@@ -102,6 +104,7 @@ triggered explicitly when needed, for example to review results before
 running the more time-consuming CI calculation.
 
 ``` r
+
 piResult <- piTask$run()
 piResult <- piTask$estimateCI()
 ```
@@ -117,6 +120,7 @@ For programmatic access, the results of a PI run can be exported either
 as a data frame or as a list:
 
 ``` r
+
 df <- piResult$toDataFrame() # tidy table with estimates, sd, cv, lowerCI, upperCI, ciType, etc.
 lst <- piResult$toList() # full details including cost information and CI-specific details
 ```

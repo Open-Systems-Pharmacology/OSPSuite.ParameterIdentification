@@ -41,7 +41,7 @@ to align and compare simulation outputs with empirical data.
 
 ### Public methods
 
-- [`PIOutputMapping$new()`](#method-PIOutputMapping-new)
+- [`PIOutputMapping$new()`](#method-PIOutputMapping-initialize)
 
 - [`PIOutputMapping$addObservedDataSets()`](#method-PIOutputMapping-addObservedDataSets)
 
@@ -57,7 +57,7 @@ to align and compare simulation outputs with empirical data.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `PIOutputMapping$new()`
 
 Initialize a new instance of the class.
 
@@ -73,12 +73,13 @@ Initialize a new instance of the class.
 
 #### Returns
 
-A new `PIOutputMapping` object. Adds or updates observed data using
-`DataSet` objects.
+A new `PIOutputMapping` object.
 
 ------------------------------------------------------------------------
 
-### Method `addObservedDataSets()`
+### `PIOutputMapping$addObservedDataSets()`
+
+Adds or updates observed data using `DataSet` objects.
 
 #### Usage
 
@@ -102,7 +103,7 @@ Replaces any existing dataset with the same label.
 
 ------------------------------------------------------------------------
 
-### Method `removeObservedDataSet()`
+### `PIOutputMapping$removeObservedDataSet()`
 
 Removes specified observed data series.
 
@@ -118,7 +119,7 @@ Removes specified observed data series.
 
 ------------------------------------------------------------------------
 
-### Method `setDataTransformations()`
+### `PIOutputMapping$setDataTransformations()`
 
 Configures transformations for datasets.
 
@@ -157,7 +158,7 @@ Configures transformations for datasets.
 
 ------------------------------------------------------------------------
 
-### Method `setDataWeights()`
+### `PIOutputMapping$setDataWeights()`
 
 Assigns weights to observed data sets for residual weighting during
 parameter identification.
@@ -187,7 +188,7 @@ parameter identification.
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `PIOutputMapping$print()`
 
 Prints a summary of the PIOutputMapping.
 
@@ -197,7 +198,7 @@ Prints a summary of the PIOutputMapping.
 
 ------------------------------------------------------------------------
 
-### Method `clone()`
+### `PIOutputMapping$clone()`
 
 The objects of this class are cloneable with this method.
 

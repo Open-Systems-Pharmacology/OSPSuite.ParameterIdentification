@@ -35,7 +35,7 @@ A parameter to be optimized in a parameter identification routine
 
 ### Public methods
 
-- [`PIParameters$new()`](#method-PIParameters-new)
+- [`PIParameters$new()`](#method-PIParameters-initialize)
 
 - [`PIParameters$setValue()`](#method-PIParameters-setValue)
 
@@ -47,7 +47,7 @@ A parameter to be optimized in a parameter identification routine
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `PIParameters$new()`
 
 Initialize a new instance of the class. The initial start value is
 derived from the first parameter upon creation, modifiable via
@@ -70,7 +70,7 @@ A new `PIParameters` object.
 
 ------------------------------------------------------------------------
 
-### Method `setValue()`
+### `PIParameters$setValue()`
 
 Updates parameter(s) value. Value is specified in units of `$unit`.
 
@@ -86,7 +86,7 @@ Updates parameter(s) value. Value is specified in units of `$unit`.
 
 ------------------------------------------------------------------------
 
-### Method `toDataFrame()`
+### `PIParameters$toDataFrame()`
 
 Export parameter metadata and configuration to a data frame. Returns one
 row per internal model parameter wrapped by the `PIParameters` object.
@@ -107,7 +107,7 @@ A `data.frame` with one row per internal parameter.
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `PIParameters$print()`
 
 Prints a summary of the PIParameters.
 
@@ -117,7 +117,7 @@ Prints a summary of the PIParameters.
 
 ------------------------------------------------------------------------
 
-### Method `clone()`
+### `PIParameters$clone()`
 
 The objects of this class are cloneable with this method.
 

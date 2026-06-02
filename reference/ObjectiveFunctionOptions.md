@@ -12,10 +12,6 @@ options are configured via the `PIConfiguration` class.
 ObjectiveFunctionOptions
 ```
 
-## Format
-
-An object of class `list` of length 6.
-
 ## Details
 
 Settings include:

@@ -10,10 +10,6 @@ Confidence interval estimation methods supported in the
 CIMethods
 ```
 
-## Format
-
-An object of class `list` of length 3.
-
 ## Details
 
 Supported methods:

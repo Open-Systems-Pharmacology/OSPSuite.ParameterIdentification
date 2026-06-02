@@ -8,7 +8,7 @@ configuration.
 
 ### Public methods
 
-- [`PIResult$new()`](#method-PIResult-new)
+- [`PIResult$new()`](#method-PIResult-initialize)
 
 - [`PIResult$toDataFrame()`](#method-PIResult-toDataFrame)
 
@@ -20,7 +20,7 @@ configuration.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `PIResult$new()`
 
 Initializes a `PIResult` instance. For internal use only.
 
@@ -76,7 +76,7 @@ configuration.
 
 ------------------------------------------------------------------------
 
-### Method `toDataFrame()`
+### `PIResult$toDataFrame()`
 
 Export PIResult to a `data.frame`.
 
@@ -113,7 +113,7 @@ A data frame with the following columns:
 
 ------------------------------------------------------------------------
 
-### Method `toList()`
+### `PIResult$toList()`
 
 Returns the full internal result list.
 
@@ -127,7 +127,7 @@ A named list containing all result values.
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `PIResult$print()`
 
 Prints a summary of `PIResult`
 
@@ -137,7 +137,7 @@ Prints a summary of `PIResult`
 
 ------------------------------------------------------------------------
 
-### Method `clone()`
+### `PIResult$clone()`
 
 The objects of this class are cloneable with this method.
 

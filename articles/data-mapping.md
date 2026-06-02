@@ -25,6 +25,7 @@ The quantity itself is retrieved from a loaded simulation via
 In the following we use the Aciclovir example simulation:
 
 ``` r
+
 library(ospsuite.parameteridentification)
 #> Loading required package: ospsuite
 
@@ -63,6 +64,7 @@ data](https://www.open-systems-pharmacology.org/OSPSuite-R/articles/observed-dat
 article in the {ospsuite} documentation.
 
 ``` r
+
 filePath <- system.file("extdata", "Aciclovir_Profiles.xlsx",
                         package = "ospsuite.parameteridentification")
 
@@ -74,6 +76,14 @@ obsData <- loadDataSetsFromExcel(
   importerConfigurationOrPath = importConfig,
   importAllSheets = TRUE
 )
+#> Warning: The `importAllSheets` argument of `loadDataSetsFromExcel()` is deprecated as of
+#> ospsuite 12.4.2.
+#> ℹ Please use the `sheets` argument instead.
+#> ℹ Use `sheets = NULL` to load all sheets. This parameter will be removed in
+#>   version 14.
+#> This warning is displayed once per session.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
 
 # Attach one or more datasets to the mapping (labels come from the naming pattern)
 outputMapping$addObservedDataSets(
@@ -89,6 +99,7 @@ logarithmic scaling (`"log"`) can be selected to emphasize relative
 differences when data span several orders of magnitude.
 
 ``` r
+
 outputMapping$scaling <- "log"
 ```
 
@@ -107,6 +118,7 @@ Weights can be attached at the time of adding datasets. This allows
 entire datasets to be up- or down-weighted in one step.
 
 ``` r
+
 ## Not run: example only
 exampleMapping$addObservedDataSets(
   data = list("Study A" = dsA, "Study B" = dsB),
@@ -126,6 +138,7 @@ In the Aciclovir example only one dataset is mapped. A vector of weights
 is used, with one weight per data point:
 
 ``` r
+
 # number of observed points
 nPoints <- length(obsData$`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`$yValues)
 
@@ -143,6 +156,7 @@ the output path and the labels of attached datasets, the labels where
 weights were applied, and the selected scaling:
 
 ``` r
+
 print(outputMapping)
 #> <PIOutputMapping>
 #>   • Output path: Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral
@@ -156,6 +170,7 @@ The assigned weights can also be accessed directly via the dataWeights
 field, which is useful for validation:
 
 ``` r
+
 outputMapping$dataWeights
 #> $`Aciclovir_Profiles.Vergin 1995.Iv.250 mg`
 #>  [1] 0.3 0.3 0.3 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0
@@ -175,6 +190,7 @@ specified.
 A scalar weight is broadcast to all points of a dataset:
 
 ``` r
+
 ## Not run: example only
 outputMapping$setDataWeights(
   list(
@@ -190,6 +206,7 @@ outputMapping$setDataWeights(
 A numeric vector with the same length as the dataset’s y-values:
 
 ``` r
+
 ## Not run: example only
 outputMapping$setDataWeights(list(
   "StudyB" = c(0.25, 0.25, 0.25, rep(1.0, 7))  # lower weight on first 3 points
@@ -202,6 +219,7 @@ Dataset- and point-level effects can be combined by multiplying them
 before passing to `setDataWeights()`:
 
 ``` r
+
 ## Not run: example only
 baseWeight <- 0.6
 pointWeights <- ifelse(seq_along(dataSetB$yValues) <= 3, 0.3, 1.0)
@@ -222,6 +240,7 @@ example to account for systematic shifts between experiments or to align
 starting points across datasets.
 
 ``` r
+
 outputMapping$setDataTransformations(
   labels   = "Aciclovir_Profiles.Vergin 1995.Iv.250 mg",
   xOffsets = 0.5, yOffsets = 0,

@@ -9,10 +9,6 @@ calculation during parameter optimization.
 robustMethodOptions
 ```
 
-## Format
-
-An object of class `list` of length 3.
-
 ## Details
 
 The available methods are:
