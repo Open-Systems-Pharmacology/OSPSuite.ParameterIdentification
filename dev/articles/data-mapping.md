@@ -28,12 +28,6 @@ In the following we use the Aciclovir example simulation:
 
 library(ospsuite.parameteridentification)
 #> Loading required package: ospsuite
-#> The option 'ospsuite.plots.watermarkEnabled' is not set.
-#> To enable watermarks, add the following to your .Rprofile:
-#>   options(ospsuite.plots.watermarkEnabled = TRUE)
-#> To disable watermarks, add:
-#>   options(ospsuite.plots.watermarkEnabled = FALSE)
-#> You can edit your .Rprofile with usethis::edit_r_profile()
 
 # Load example simulation
 simulation <- loadSimulation(

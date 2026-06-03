@@ -2,6 +2,8 @@
 
 ## ospsuite.parameteridentification (development version)
 
+## ospsuite.parameteridentification 2.2.0
+
 ### Breaking changes
 
 - Minimum required R version is now 4.4, consistent with `ospsuite`.
