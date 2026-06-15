@@ -306,7 +306,7 @@ ParameterIdentification <- R6::R6Class(
       }
 
       if (buildObsCache) {
-        private$.obsVsPredDfCache <- vector("list", length(outputMappings))
+        obsVsPredDfCache <- vector("list", length(outputMappings))
       }
 
       # Evaluate cost per output mapping
@@ -316,7 +316,7 @@ ParameterIdentification <- R6::R6Class(
         if (buildObsCache) {
           # First evaluation: df holds simulated and observed rows. Cache the
           # observed rows (still in display units) for reuse.
-          private$.obsVsPredDfCache[[idx]] <- df[
+          obsVsPredDfCache[[idx]] <- df[
             df$dataType == "observed",
             ,
             drop = FALSE
@@ -388,6 +388,11 @@ ParameterIdentification <- R6::R6Class(
 
         costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
+      }
+      # Publish the cache only after every mapping built successfully, so a
+      # mid-loop error leaves it NULL and forces a full rebuild on retry.
+      if (buildObsCache) {
+        private$.obsVsPredDfCache <- obsVsPredDfCache
       }
       rm(obsVsPredList)
 
