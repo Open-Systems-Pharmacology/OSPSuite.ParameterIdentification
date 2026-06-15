@@ -241,6 +241,82 @@ test_that("calculateCostMetrics handles infinite values in xValues and yValues c
   expect_silent(.calculateCostMetrics(obsVsPredDfInf))
 })
 
+# observed-data caching
+
+currStartValues <- function(task) {
+  vapply(task$parameters, function(p) p$startValue, numeric(1))
+}
+
+test_that(".evaluate omits observed data when includeObserved = FALSE", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  dcList <- priv$.evaluate(currStartValues(task), includeObserved = FALSE)
+  df <- dcList[[1]]$toDataFrame()
+
+  expect_true("simulated" %in% df$dataType)
+  expect_false("observed" %in% df$dataType)
+})
+
+test_that(".evaluate includes observed data by default", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  dcList <- priv$.evaluate(currStartValues(task))
+  df <- dcList[[1]]$toDataFrame()
+
+  expect_true(all(c("simulated", "observed") %in% df$dataType))
+})
+
+test_that("objective function builds an observed-data cache and reuses it", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  currVals <- currStartValues(task)
+
+  expect_null(priv$.obsVsPredDfCache)
+
+  cost1 <- priv$.objectiveFunction(currVals)
+  expect_false(is.null(priv$.obsVsPredDfCache))
+
+  cost2 <- priv$.objectiveFunction(currVals)
+  expect_equal(cost2$modelCost, cost1$modelCost)
+})
+
+test_that("cached observed rows match the observed rows of a full evaluation", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  currVals <- currStartValues(task)
+
+  full <- priv$.evaluate(currVals, includeObserved = TRUE)[[1]]$toDataFrame()
+  fullObs <- full[full$dataType == "observed", , drop = FALSE]
+
+  priv$.objectiveFunction(currVals)
+  cached <- priv$.obsVsPredDfCache[[1]]
+
+  expect_equal(
+    as.data.frame(cached, stringsAsFactors = FALSE),
+    as.data.frame(fullObs, stringsAsFactors = FALSE)
+  )
+})
+
+test_that("observed-data cache is invalidated when the bootstrap seed changes", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  currVals <- currStartValues(task)
+
+  priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
+  priv$.objectiveFunction(currVals, bootstrapSeed = 1L)
+  expect_false(is.null(priv$.obsVsPredDfCache))
+
+  priv$.getOutputMappings(bootstrapSeed = 2L)
+  expect_null(priv$.obsVsPredDfCache)
+})
+
 # .computeErrorWeights
 
 test_that(".computeErrorWeights uses exact lognormal SD formula for GeometricStdDev", {
