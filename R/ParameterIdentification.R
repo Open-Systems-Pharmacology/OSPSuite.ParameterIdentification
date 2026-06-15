@@ -918,7 +918,6 @@ ParameterIdentification <- R6::R6Class(
 
       private$.applyFinalValues(values = optimResult$par)
       private$.needBatchInitialization <- FALSE
-      ospsuite::clearMemory()
 
       if (!is.null(private$.pkMappings)) {
         piResult <- PKResult$new(
@@ -1000,9 +999,6 @@ ParameterIdentification <- R6::R6Class(
         upper = upper,
         resetFn = function() private$.fnEvaluations <- 0
       )
-
-      # Trigger .NET gc
-      ospsuite::clearMemory()
 
       piResult <- PIResult$new(
         optimResult = private$.lastOptimResult,

@@ -331,9 +331,6 @@ Optimizer <- R6::R6Class(
         costNew <- 0.5 * optimResult$value # fn(optimResult$par)
         paramHistory[[i]] <- c(p, i, newPar[p], costNew)
 
-        # Trigger .NET gc
-        ospsuite::clearMemory()
-
         # Stop when cost threshold is crossed
         if (costNew > costThreshold) {
           break
@@ -394,9 +391,6 @@ Optimizer <- R6::R6Class(
         )
 
         bootstrapResults[i, ] <- optimResult$par
-
-        # Trigger .NET gc
-        ospsuite::clearMemory()
       }
 
       bootstrapResults <- bootstrapResults[
