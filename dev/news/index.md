@@ -2,6 +2,14 @@
 
 ## ospsuite.parameteridentification (development version)
 
+### Minor improvements and bug fixes
+
+- `ParameterIdentification` now reads observed data once per
+  optimization (and per bootstrap replicate) and caches it, instead of
+  re-reading it from the underlying datasets on every objective function
+  evaluation. This removes the dominant source of R heap growth during
+  long optimizations and bootstrap runs.
+
 ## ospsuite.parameteridentification 2.2.0
 
 ### Breaking changes
