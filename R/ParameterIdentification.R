@@ -891,6 +891,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
+      private$.bestCostSummary <- NULL
       private$.lastCostSummary <- NULL
       # Reset observed-data cache for a fresh run
       private$.obsVsPredDfCache <- NULL
