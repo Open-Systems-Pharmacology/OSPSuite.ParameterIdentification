@@ -84,6 +84,8 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
+    # Cached observed-data rows per output mapping
+    .obsVsPredDfCache = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from the best objective function evaluation
@@ -268,9 +270,18 @@ ParameterIdentification <- R6::R6Class(
 
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
+      # Observed data is static within an optimization (and bootstrap replicate).
+      # Read it once into the cache, then reuse it on subsequent evaluations so
+      # the .NET DataSet objects are not re-read every function evaluation.
+      buildObsCache <- is.null(private$.obsVsPredDfCache)
+
       # Run simulation and catch errors
       obsVsPredList <- tryCatch(
-        private$.evaluate(currVals, bootstrapSeed = bootstrapSeed),
+        private$.evaluate(
+          currVals,
+          bootstrapSeed = bootstrapSeed,
+          includeObserved = buildObsCache
+        ),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
@@ -294,12 +305,30 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
 
+      if (buildObsCache) {
+        obsVsPredDfCache <- vector("list", length(outputMappings))
+      }
+
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
+        df <- obsVsPredList[[idx]]$toDataFrame()
+        if (buildObsCache) {
+          # First evaluation: df holds simulated and observed rows. Cache the
+          # observed rows (still in display units) for reuse.
+          obsVsPredDfCache[[idx]] <- df[
+            df$dataType == "observed",
+            ,
+            drop = FALSE
+          ]
+        } else {
+          # Reuse cached observed rows with the freshly simulated rows.
+          df <- dplyr::bind_rows(df, private$.obsVsPredDfCache[[idx]])
+        }
+
         # Convert all columns to base units for consistent residual calculation
         obsVsPredDf <- ospsuite:::.unitConverter(
-          obsVsPredList[[idx]]$toDataFrame(),
+          df,
           xUnit = ospsuite::getBaseUnit("Time"),
           yUnit = ospsuite::getBaseUnit(
             outputMappings[[idx]]$quantity$dimension
@@ -360,6 +389,12 @@ ParameterIdentification <- R6::R6Class(
         costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
       }
+      # Publish the cache only after every mapping built successfully, so a
+      # mid-loop error leaves it NULL and forces a full rebuild on retry.
+      if (buildObsCache) {
+        private$.obsVsPredDfCache <- obsVsPredDfCache
+      }
+      rm(obsVsPredList)
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
@@ -504,8 +539,17 @@ ParameterIdentification <- R6::R6Class(
     # each output mapping, encapsulating both simulated and observed data.
     #
     # @param currVals Vector of parameter values for simulation.
+    # @param includeObserved If TRUE (default), observed data is attached to each
+    #   `DataCombined`. If FALSE, only simulated results are attached, leaving the
+    #   observed data to be supplied from the cache by the caller. The objective
+    #   function uses FALSE on the hot path to avoid re-reading static observed
+    #   data every evaluation.
     # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals, bootstrapSeed = NULL) {
+    .evaluate = function(
+      currVals,
+      bootstrapSeed = NULL,
+      includeObserved = TRUE
+    ) {
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
       obsVsPredList <- vector("list", length(outputMappings))
@@ -582,20 +626,23 @@ ParameterIdentification <- R6::R6Class(
           groups = groupName
         )
 
-        obsVsPred$addDataSets(
-          currOutputMapping$observedDataSets,
-          groups = groupName
-        )
-        # apply data transformations stored in corresponding `outputMapping`
-        obsVsPred$setDataTransformations(
-          forNames = names(outputMappings[[idx]]$observedDataSets),
-          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
-          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
-          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
-          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
-        )
+        if (includeObserved) {
+          obsVsPred$addDataSets(
+            currOutputMapping$observedDataSets,
+            groups = groupName
+          )
+          # apply data transformations stored in corresponding `outputMapping`
+          obsVsPred$setDataTransformations(
+            forNames = names(outputMappings[[idx]]$observedDataSets),
+            xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
+            xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
+            yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
+            yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
+          )
+        }
         obsVsPredList[[idx]] <- obsVsPred
       }
+      rm(simulationResults)
 
       return(obsVsPredList)
     },
@@ -648,6 +695,8 @@ ParameterIdentification <- R6::R6Class(
           private$.gprModels,
           bootstrapSeed
         )
+        # Observed data changed, so the cache must be rebuilt
+        private$.obsVsPredDfCache <- NULL
       }
 
       return(private$.outputMappings)
@@ -668,6 +717,8 @@ ParameterIdentification <- R6::R6Class(
       private$.initialOutputMappingState <- NULL
       private$.activeBootstrapSeed <- NULL
       private$.gprModels <- NULL
+      # Observed data restored to its original state, so rebuild the cache
+      private$.obsVsPredDfCache <- NULL
     },
 
     # Apply Identified Parameter Values
@@ -845,7 +896,10 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
+      private$.bestCostSummary <- NULL
       private$.lastCostSummary <- NULL
+      # Reset observed-data cache for a fresh run
+      private$.obsVsPredDfCache <- NULL
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
