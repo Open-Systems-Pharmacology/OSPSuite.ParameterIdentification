@@ -294,7 +294,7 @@ ParameterIdentification <- R6::R6Class(
           stop(messages$initialSimulationError())
         } else {
           message(messages$simulationError())
-          return(.createErrorCostStructure(infinite = TRUE))
+          return(.createErrorCostStructure())
         }
       }
 
@@ -381,12 +381,12 @@ ParameterIdentification <- R6::R6Class(
           residualWeightingMethod = costControl$residualWeightingMethod,
           robustMethod = costControl$robustMethod,
           scaleVar = costControl$scaleVar,
+          index = idx,
           linScaleCV = costControl$linScaleCV,
           logScaleSD = costControl$logScaleSD,
           scaling = costControl$scaling
         )
 
-        costSummary$residualDetails$index <- idx
         costSummaryList[[idx]] <- costSummary
       }
       # Publish the cache only after every mapping built successfully, so a

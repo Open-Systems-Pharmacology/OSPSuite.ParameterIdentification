@@ -4,21 +4,18 @@
 \alias{.createErrorCostStructure}
 \title{Constructs Model Cost Summary for Error Handling}
 \usage{
-.createErrorCostStructure(infinite = FALSE)
+.createErrorCostStructure(index = NA_real_)
 }
 \arguments{
-\item{infinite}{Logical flag indicating if the structure should contain
-infinite values (TRUE) or zeros (FALSE).}
+\item{index}{Output-mapping index stored on the \code{residualDetails} row.
+Defaults to \code{NA_real_}.}
 }
 \value{
-A model cost summary structured identically to the output of
-\code{.calculateCostMetrics}, with fields for model cost, minimum log
-probability, statistical measures, and detailed residuals, tailored for
-failure scenarios or initial setup.
+A \code{modelCost} object filled with infinite cost values.
 }
 \description{
-Creates a model cost summary compatible with the structure returned by
-\code{.calculateCostMetrics}, filled with either infinite values (for simulation
-failures) or zeros (for objective function failures).
+Creates an infinite-cost \code{modelCost} object for simulation or objective
+function failures, routed through \code{.newModelCost()} so it shares the
+canonical schema.
 }
 \keyword{internal}
