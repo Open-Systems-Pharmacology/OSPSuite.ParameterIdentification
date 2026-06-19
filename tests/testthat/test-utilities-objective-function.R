@@ -155,8 +155,8 @@ test_that(".newModelCost fills a single NA residual row when per-observation vec
   )
 
   expect_equal(nrow(result$residualDetails), 1)
-  expect_true(is.na(result$residualDetails$x))
-  expect_true(is.na(result$residualDetails$index))
+  expect_equal(result$residualDetails$x, NA_real_)
+  expect_equal(result$residualDetails$index, NA_real_)
 })
 
 # .createErrorCostStructure
@@ -176,13 +176,22 @@ test_that(".createErrorCostStructure shares the canonical schema with kernel out
   expect_equal(errorOut$modelCost, Inf)
 })
 
+test_that(".createErrorCostStructure stamps a non-NA index onto the residual row", {
+  errorOut <- .createErrorCostStructure(index = 2)
+  expect_equal(errorOut$residualDetails$index, 2)
+})
+
 test_that(".summarizeCostLists aggregates a kernel output and an error structure without error", {
   kernelOut <- .calculateCostMetrics(obsVsPredDf)
   errorOut <- .createErrorCostStructure()
 
   merged <- .summarizeCostLists(kernelOut, errorOut)
 
-  expect_equal(merged$modelCost, kernelOut$modelCost + Inf)
+  expect_equal(merged$modelCost, Inf)
+  expect_equal(
+    names(merged$costVariables),
+    names(kernelOut$costVariables)
+  )
   expect_equal(
     nrow(merged$residualDetails),
     nrow(kernelOut$residualDetails) + nrow(errorOut$residualDetails)
@@ -257,6 +266,30 @@ test_that("calculateCostMetrics returns expected cost metrics for valid input da
 test_that("calculateCostMetrics returns correct cost metric values for default parameters", {
   result <- .calculateCostMetrics(obsVsPredDf)
   expect_snapshot_value(result, style = "deparse")
+})
+
+test_that("calculateCostMetrics stamps the supplied index onto every residual row", {
+  result <- .calculateCostMetrics(obsVsPredDf, index = 7)
+  expect_equal(
+    result$residualDetails$index,
+    rep(7, result$costVariables$nObservations)
+  )
+})
+
+test_that("calculateCostMetrics returns the indexed error structure when the cost is NA", {
+  # Push one observed time beyond the simulated range so interpolation yields
+  # NA, which propagates to an NA model cost and triggers the fallback.
+  obsVsPredDfNA <- obsVsPredDf
+  firstObs <- which(obsVsPredDfNA$dataType == "observed")[1]
+  obsVsPredDfNA$xValues[firstObs] <- max(obsVsPredDfNA$xValues) * 10
+
+  expect_warning(
+    result <- .calculateCostMetrics(obsVsPredDfNA, index = 5),
+    regexp = "Invalid model cost"
+  )
+  expect_s3_class(result, "modelCost")
+  expect_equal(result$modelCost, Inf)
+  expect_equal(result$residualDetails$index, 5)
 })
 
 test_that("calculateCostMetrics with residualWeightingMethod `none` returns expected results", {
