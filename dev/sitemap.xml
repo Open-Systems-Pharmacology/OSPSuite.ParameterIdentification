@@ -27,7 +27,6 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateBisquareWeights.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateCensoredContribution.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateHuberWeights.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-createErrorCostStructure.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-getSimulationContainer.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-isSameDimension.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-removeFormulaPaths.html</loc></url>

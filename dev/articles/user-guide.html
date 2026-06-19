@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9004</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -485,8 +485,8 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 112</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 112</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 21.59 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 9.328 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 22.63 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 10.25 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
@@ -528,8 +528,9 @@ estimates and related fields:</li>
 <span><span class="co">#&gt; 4     0.941241</span></span></code></pre></div>
 <ul>
 <li>Use <code>$toList()</code> to export full details, including
-diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>SSR</code>,
-<code>residuals</code>, <code>errorWeights</code>,
+diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>rawSSR</code>,
+<code>weightedSSR</code>, <code>rawResiduals</code>,
+<code>weightedResiduals</code>, <code>errorWeights</code>,
 <code>userWeights</code>, <code>yObserved</code>, and
 <code>ySimulated</code>:</li>
 </ul>

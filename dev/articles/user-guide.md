@@ -484,8 +484,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 21.59 s
-#>   • Elapsed (CI): 9.328 s
+#>   • Elapsed (optimization): 22.63 s
+#>   • Elapsed (CI): 10.25 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -529,8 +529,9 @@ piResult$toDataFrame()
 
 - Use `$toList()` to export full details, including diagnostics, cost
   metrics, and residuals.  
-  `costDetails` includes items such as `SSR`, `residuals`,
-  `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
+  `costDetails` includes items such as `rawSSR`, `weightedSSR`,
+  `rawResiduals`, `weightedResiduals`, `errorWeights`, `userWeights`,
+  `yObserved`, and `ySimulated`:
 
 ``` r
 
