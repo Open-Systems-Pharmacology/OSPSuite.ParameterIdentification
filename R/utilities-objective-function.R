@@ -18,6 +18,8 @@
 #'   residuals. Options include `"none"` (default), `"huber"`, and `"bisquare"`.
 #' @param scaleVar A boolean indicating whether to scale residuals by the number
 #'   of observations. Defaults to `FALSE`.
+#' @param index Output-mapping index stored on every `residualDetails` row.
+#'   Defaults to `NA_real_`.
 #' @param ... Additional arguments passed to `.calculateCensoredContribution`,
 #'   including `scaling`, `linScaleCV`, and `logScaleSD`.
 #'
@@ -28,7 +30,7 @@
 #' @return A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
-#' - `costDetails`: A dataframe with details on the cost calculations.
+#' - `costVariables`: A dataframe with details on the cost calculations.
 #' - `residualDetails`: A dataframe with the calculated residuals and their weights.
 #' The summary has the class `modelCost`.
 #'
@@ -53,6 +55,7 @@
   residualWeightingMethod = "none",
   robustMethod = "none",
   scaleVar = FALSE,
+  index = NA_real_,
   ...
 ) {
   additionalArgs <- list(...)
@@ -173,8 +176,23 @@
   totalWeights <- errorWeights * userWeights * robustWeights
   weightedResiduals <- normalizedResiduals * totalWeights
 
-  residualsData <- data.frame(
-    index = NA_real_,
+  weightedSSR <- sum(weightedResiduals^2)
+
+  # Calculating log probability to evaluate model fit
+  logProbability <- -sum(stats::dnorm(
+    simulatedYValApprox,
+    observedYVal,
+    1 / totalWeights,
+    log = TRUE
+  ))
+
+  modelCost <- .newModelCost(
+    modelCost = weightedSSR + censoredContribution,
+    minLogProbability = logProbability,
+    nObservations = length(rawResiduals),
+    M3Contribution = censoredContribution,
+    rawSSR = sum(rawResiduals^2),
+    weightedSSR = weightedSSR,
     x = observedXVal,
     yObserved = observedYVal,
     ySimulated = simulatedYValApprox,
@@ -184,32 +202,8 @@
     userWeights = userWeights,
     totalWeights = round(totalWeights, 2),
     rawResiduals = rawResiduals,
-    weightedResiduals = weightedResiduals
-  )
-
-  # Compiling cost variables based on residuals
-  costVariables <- data.frame(
-    # scaleFactor = scaleFactor,
-    nObservations = length(rawResiduals),
-    M3Contribution = censoredContribution,
-    rawSSR = sum(rawResiduals^2),
-    weightedSSR = sum(weightedResiduals^2)
-  )
-
-  # Calculating log probability to evaluate model fit
-  logProbability <- -sum(stats::dnorm(
-    residualsData$ySimulated,
-    residualsData$yObserved,
-    1 / residualsData$totalWeights,
-    log = TRUE
-  ))
-
-  # Organizing output with model evaluation metrics
-  modelCost <- list(
-    modelCost = costVariables$weightedSSR + censoredContribution,
-    minLogProbability = logProbability,
-    costVariables = costVariables,
-    residualDetails = residualsData
+    weightedResiduals = weightedResiduals,
+    index = index
   )
 
   # Ensure that the modelCost calculation does not result in NA
@@ -217,11 +211,83 @@
     warning(
       "Invalid model cost detected (NA). Returning infinite error cost structure."
     )
-    return(.createErrorCostStructure(infinite = TRUE))
-  } else {
-    class(modelCost) <- "modelCost"
-    return(modelCost)
+    return(.createErrorCostStructure(index = index))
   }
+
+  return(modelCost)
+}
+
+#' Construct a canonical `modelCost` object
+#'
+#' Single constructor for the `modelCost` schema. Every producer (the kernel
+#' happy path and the error/failure substitute) routes through it so
+#' `costVariables` and `residualDetails` always share one fixed column set,
+#' which keeps `.summarizeCostLists()` safe to aggregate. The constructor owns
+#' the `index` field.
+#'
+#' @param modelCost Total scalar cost the optimizer minimizes.
+#' @param minLogProbability Scalar negative log probability of the fit.
+#' @param nObservations Number of observations entering the cost.
+#' @param weightedSSR Weighted sum of squared residuals.
+#' @param rawSSR Unweighted sum of squared residuals.
+#' @param M3Contribution Censored-data contribution to the cost.
+#' @param x,yObserved,ySimulated,scaleFactor,errorWeights,robustWeights,userWeights,totalWeights,rawResiduals,weightedResiduals
+#'   Per-observation vectors forming `residualDetails`. Default to `NA_real_` for
+#'   the failure substitute.
+#' @param index Output-mapping index stored on every `residualDetails` row.
+#' @return A `modelCost` object: a list with `modelCost`, `minLogProbability`,
+#'   `costVariables`, and `residualDetails`.
+#' @keywords internal
+#' @noRd
+.newModelCost <- function(
+  modelCost,
+  minLogProbability,
+  nObservations,
+  weightedSSR,
+  rawSSR = NA_real_,
+  M3Contribution = 0,
+  x = NA_real_,
+  yObserved = NA_real_,
+  ySimulated = NA_real_,
+  scaleFactor = NA_real_,
+  errorWeights = NA_real_,
+  robustWeights = NA_real_,
+  userWeights = NA_real_,
+  totalWeights = NA_real_,
+  rawResiduals = NA_real_,
+  weightedResiduals = NA_real_,
+  index = NA_real_
+) {
+  costVariables <- data.frame(
+    nObservations = nObservations,
+    M3Contribution = M3Contribution,
+    rawSSR = rawSSR,
+    weightedSSR = weightedSSR
+  )
+
+  residualDetails <- data.frame(
+    index = index,
+    x = x,
+    yObserved = yObserved,
+    ySimulated = ySimulated,
+    scaleFactor = scaleFactor,
+    errorWeights = errorWeights,
+    robustWeights = robustWeights,
+    userWeights = userWeights,
+    totalWeights = totalWeights,
+    rawResiduals = rawResiduals,
+    weightedResiduals = weightedResiduals
+  )
+
+  structure(
+    list(
+      modelCost = modelCost,
+      minLogProbability = minLogProbability,
+      costVariables = costVariables,
+      residualDetails = residualDetails
+    ),
+    class = "modelCost"
+  )
 }
 
 #' Compute error-based residual weights
@@ -361,53 +427,25 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Constructs Model Cost Summary for Error Handling
 #'
-#' Creates a model cost summary compatible with the structure returned by
-#' `.calculateCostMetrics`, filled with either infinite values (for simulation
-#' failures) or zeros (for objective function failures).
+#' Creates an infinite-cost `modelCost` object for simulation or objective
+#' function failures, routed through `.newModelCost()` so it shares the
+#' canonical schema.
 #'
-#' @param infinite Logical flag indicating if the structure should contain
-#'   infinite values (TRUE) or zeros (FALSE).
-#' @return A model cost summary structured identically to the output of
-#'   `.calculateCostMetrics`, with fields for model cost, minimum log
-#'   probability, statistical measures, and detailed residuals, tailored for
-#'   failure scenarios or initial setup.
+#' @param index Output-mapping index stored on the `residualDetails` row.
+#'   Defaults to `NA_real_`.
+#' @return A `modelCost` object filled with infinite cost values.
 #' @keywords internal
-.createErrorCostStructure <- function(infinite = FALSE) {
-  if (infinite) {
-    costValue <- Inf
-    logProbability <- Inf
-    nObservations <- 1
-  } else {
-    costValue <- 0
-    logProbability <- 0
-    nObservations <- 0
-  }
-
-  errorCostStructure <- list(
-    modelCost = costValue,
-    minLogProbability = logProbability,
-    costVariables = data.frame(
-      scaleFactor = 1,
-      nObservations = nObservations,
-      M3Contribution = costValue,
-      SSR = costValue,
-      weightedSSR = costValue,
-      normalizedSSR = costValue,
-      robustSSR = costValue
-    ),
-    residualDetails = data.frame(
-      x = NA,
-      yObserved = NA,
-      ySimulated = NA,
-      weight = NA,
-      residuals = NA,
-      weightedResiduals = NA,
-      normalizedResiduals = NA,
-      robustWeightedResiduals = NA
-    )
+#' @noRd
+.createErrorCostStructure <- function(index = NA_real_) {
+  .newModelCost(
+    modelCost = Inf,
+    minLogProbability = Inf,
+    nObservations = 1,
+    weightedSSR = Inf,
+    rawSSR = Inf,
+    M3Contribution = Inf,
+    index = index
   )
-  class(errorCostStructure) <- "modelCost"
-  return(errorCostStructure)
 }
 
 #' Apply Log Transformation to Data Frame
