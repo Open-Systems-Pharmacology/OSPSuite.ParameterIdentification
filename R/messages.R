@@ -386,3 +386,9 @@ messages$warningNoValidErrorValues <- function() {
     "Some error values are invalid and will use unit weights (equivalent to {.val none})."
   )
 }
+
+messages$errorNoResidualsToPlot <- function() {
+  ospsuite.utils::cliFormat(
+    "No residuals to plot: this {.cls modelCost} has no finite residuals."
+  )
+}

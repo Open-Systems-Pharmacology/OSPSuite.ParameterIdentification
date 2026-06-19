@@ -343,8 +343,8 @@
 
 #' Plot Model Cost Residuals
 #'
-#' Plots raw residuals and, if different, weighted and robust weighted residuals
-#' from a `modelCost` object.
+#' Plots raw residuals and, if different, weighted residuals from a `modelCost`
+#' object.
 #'
 #' @param x A `modelCost` object containing residuals to plot.
 #' @param legpos Position of the legend; default is "topright". Use NA to omit
@@ -370,10 +370,19 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Extracting residuals data
   residualsData <- x$residualDetails
 
+  if (all(is.na(residualsData$rawResiduals))) {
+    stop(messages$errorNoResidualsToPlot())
+  }
+
+  showWeighted <- any(
+    residualsData$rawResiduals != residualsData$weightedResiduals,
+    na.rm = TRUE
+  )
+
   # Setup base plot
   plot(
     residualsData$x,
-    residualsData$residuals,
+    residualsData$rawResiduals,
     xlab = "x",
     ylab = "Residuals",
     pch = 16,
@@ -381,8 +390,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     ...
   )
 
-  # Add weightedResiduals if different from rawResiduals
-  if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
+  if (showWeighted) {
     graphics::points(
       residualsData$x,
       residualsData$weightedResiduals,
@@ -392,36 +400,19 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     )
   }
 
-  # Add robustWeightedResiduals if different from rawResiduals
-  if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
-    graphics::points(
-      residualsData$x,
-      residualsData$robustWeightedResiduals,
-      pch = 18,
-      col = "blue",
-      ...
-    )
-  }
-
   # Legend
-  legends <- c("Raw Residuals")
-  colors <- c("black")
-  pch_values <- c(16)
+  legends <- "Raw Residuals"
+  colors <- "black"
+  pchValues <- 16
 
-  if (!all(residualsData$residuals == residualsData$weightedResiduals)) {
+  if (showWeighted) {
     legends <- c(legends, "Weighted Residuals")
     colors <- c(colors, "red")
-    pch_values <- c(pch_values, 17)
-  }
-
-  if (!all(residualsData$residuals == residualsData$robustWeightedResiduals)) {
-    legends <- c(legends, "Robust Weighted Residuals")
-    colors <- c(colors, "blue")
-    pch_values <- c(pch_values, 18)
+    pchValues <- c(pchValues, 17)
   }
 
   if (!is.na(legpos)) {
-    graphics::legend(legpos, legend = legends, col = colors, pch = pch_values)
+    graphics::legend(legpos, legend = legends, col = colors, pch = pchValues)
   }
 }
 

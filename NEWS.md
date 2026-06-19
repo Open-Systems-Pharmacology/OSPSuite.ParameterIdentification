@@ -2,7 +2,8 @@
 
 ## Minor improvements and bug fixes
 
-- `ParameterIdentification` now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs.
+- `ParameterIdentification` now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).
+- `plot.modelCost()` now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (#275).
 
 # ospsuite.parameteridentification 2.2.0
 
