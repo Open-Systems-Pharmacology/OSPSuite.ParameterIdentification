@@ -310,7 +310,7 @@ piResult$toDataFrame()
 ```
 
 -   Use `$toList()` to export full details, including diagnostics, cost metrics, and residuals.\
-    `costDetails` includes items such as `SSR`, `residuals`, `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
+    `costDetails` includes items such as `rawSSR`, `weightedSSR`, `rawResiduals`, `weightedResiduals`, `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
 
 ```{r}
 names(piResult$toList())

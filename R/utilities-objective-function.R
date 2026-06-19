@@ -435,6 +435,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'   Defaults to `NA_real_`.
 #' @return A `modelCost` object filled with infinite cost values.
 #' @keywords internal
+#' @noRd
 .createErrorCostStructure <- function(index = NA_real_) {
   .newModelCost(
     modelCost = Inf,
