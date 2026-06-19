@@ -1,7 +1,7 @@
 Type: Package
 Package: ospsuite.parameteridentification
 Title: Open Systems Pharmacology Parameter Identification package
-Version: 2.2.0.9005
+Version: 2.2.0.9006
 Authors@R:
     c(person(given = "Open-Systems-Pharmacology Community",
              role = "cph"),
