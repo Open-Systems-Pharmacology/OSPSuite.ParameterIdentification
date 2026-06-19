@@ -202,6 +202,32 @@ test_that(".summarizeCostLists aggregates a kernel output and an error structure
   )
 })
 
+# plot.modelCost
+
+test_that("plot.modelCost shows only the raw series when weighting leaves residuals unchanged", {
+  result <- .calculateCostMetrics(obsVsPredDf, index = 1)
+  # Default weighting is inert, so weighted == raw and the overlay is skipped.
+  expect_true(all(
+    result$residualDetails$rawResiduals ==
+      result$residualDetails$weightedResiduals
+  ))
+  expect_silent(plot.modelCost(result, legpos = NA))
+})
+
+test_that("plot.modelCost overlays the weighted series when weighting changes the residuals", {
+  result <- .calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
+  # Mirror the predicate that gates the overlay: the weighted series is drawn
+  # only when it differs from the raw series.
+  expect_false(all(
+    result$residualDetails$rawResiduals ==
+      result$residualDetails$weightedResiduals
+  ))
+  vdiffr::expect_doppelganger(
+    "model-cost-raw-and-weighted-residuals",
+    function() plot.modelCost(result)
+  )
+})
+
 # .applyLogTransformation
 
 test_that(".applyLogTransformation correctly log-transforms `yValues` and `lloq`", {
