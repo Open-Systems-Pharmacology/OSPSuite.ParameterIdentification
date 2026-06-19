@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9005</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9006</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,9 @@
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
 <ul><li>
-<code>ParameterIdentification</code> now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs.</li>
+<code>ParameterIdentification</code> now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/271" class="external-link">#271</a>).</li>
+<li>
+<code><a href="../reference/plot.modelCost.html">plot.modelCost()</a></code> now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/275" class="external-link">#275</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">

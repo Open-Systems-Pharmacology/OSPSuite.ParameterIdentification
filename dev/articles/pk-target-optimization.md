@@ -127,7 +127,7 @@ print(piResult)
 #>   • Objective value: 0.00e+00
 #>   • Iterations: 13
 #>   • Function evaluations: 13
-#>   • Elapsed: 2.753 s
+#>   • Elapsed: 2.708 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 30.00 µmol/l
 ```
@@ -192,7 +192,7 @@ print(piResultMulti)
 #>   • Objective value: 5.90e-05
 #>   • Iterations: 13
 #>   • Function evaluations: 13
-#>   • Elapsed: 2.656 s
+#>   • Elapsed: 2.730 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 29.84 µmol/l
 #>   • AUC_tEnd: Target = 2400. µmol*min/l, Achieved = 2413. µmol*min/l

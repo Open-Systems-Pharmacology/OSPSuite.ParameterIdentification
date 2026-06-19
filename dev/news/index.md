@@ -8,7 +8,13 @@
   optimization (and per bootstrap replicate) and caches it, instead of
   re-reading it from the underlying datasets on every objective function
   evaluation. This removes the dominant source of R heap growth during
-  long optimizations and bootstrap runs.
+  long optimizations and bootstrap runs
+  ([\#271](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/271)).
+- [`plot.modelCost()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/plot.modelCost.md)
+  now reads the residual columns produced by the cost kernel, so it
+  correctly plots raw residuals against time and overlays the weighted
+  residuals
+  ([\#275](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/275)).
 
 ## ospsuite.parameteridentification 2.2.0
 
