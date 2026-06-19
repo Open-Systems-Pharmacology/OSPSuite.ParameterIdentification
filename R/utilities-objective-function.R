@@ -370,6 +370,10 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   # Extracting residuals data
   residualsData <- x$residualDetails
 
+  if (all(is.na(residualsData$rawResiduals))) {
+    stop(messages$errorNoResidualsToPlot())
+  }
+
   showWeighted <- any(
     residualsData$rawResiduals != residualsData$weightedResiduals,
     na.rm = TRUE

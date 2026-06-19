@@ -228,6 +228,16 @@ test_that("plot.modelCost overlays the weighted series when weighting changes th
   )
 })
 
+test_that("plot.modelCost errors on a failed-evaluation cost object with no finite residuals", {
+  errorCost <- .createErrorCostStructure()
+  expect_true(all(is.na(errorCost$residualDetails$rawResiduals)))
+  expect_error(
+    plot.modelCost(errorCost),
+    regexp = messages$errorNoResidualsToPlot(),
+    fixed = TRUE
+  )
+})
+
 # .applyLogTransformation
 
 test_that(".applyLogTransformation correctly log-transforms `yValues` and `lloq`", {
