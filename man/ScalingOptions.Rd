@@ -13,8 +13,8 @@ results are compared to observed data.
 \details{
 Available scaling options:
 \itemize{
-\item \strong{\code{lin}} – Linear scaling (default).
-\item \strong{\code{log}} – Logarithmic scaling, used when data spans several orders of
+\item \strong{\code{lin}} - Linear scaling (default).
+\item \strong{\code{log}} - Logarithmic scaling, used when data spans several orders of
 magnitude.
 }
 }

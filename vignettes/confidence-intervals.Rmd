@@ -151,7 +151,7 @@ the analysis with `bootstrap`.
 and residual weighting. Poorly chosen settings in these areas often prevent 
 reliable CI estimation.  
 
-- For `bootstrap`, begin with a small number of resamples (for example 100–200) 
+- For `bootstrap`, begin with a small number of resamples (for example 100-200) 
 to test the setup, then increase as needed. Always set a `seed` if reproducible 
 results are required.  
 
