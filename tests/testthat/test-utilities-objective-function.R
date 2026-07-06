@@ -380,19 +380,27 @@ test_that("robust methods (huber, bisquare) modify the residuals appropriately",
   expect_equal(resultBisquare$modelCost, 4.929464, tolerance = 1e-4)
 })
 
-test_that("least squares and M3 methods produce different model costs", {
+test_that("M3 and least-squares kernel costs match recorded values and differ from each other", {
   obsVsPredDf$lloq <- 2.5
   result_lsq <- .calculateCostMetrics(
-    obsVsPredDf,
-    objectiveFunctionType = "lsq"
+    df = obsVsPredDf,
+    blqMethod = "none"
   )
   result_m3 <- .calculateCostMetrics(
-    obsVsPredDf,
-    objectiveFunctionType = "m3",
+    df = obsVsPredDf,
+    blqMethod = "m3",
     scaling = "lin",
     linScaleCV = 0.2
   )
+  expect_equal(result_lsq$modelCost, 677.3902833227, tolerance = 1e-4)
+  expect_equal(result_m3$modelCost, 677.9181354224, tolerance = 1e-4)
   expect_true(result_lsq$modelCost != result_m3$modelCost)
+})
+
+test_that(".calculateCostMetrics defaults to no censored contribution", {
+  result_default <- .calculateCostMetrics(df = obsVsPredDf)
+  result_none <- .calculateCostMetrics(df = obsVsPredDf, blqMethod = "none")
+  expect_equal(result_default$modelCost, result_none$modelCost)
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {

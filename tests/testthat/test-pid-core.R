@@ -40,9 +40,9 @@ test_that("ParameterIdentification configuration can be modified without errors"
     "huber"
   )
   expect_no_error(
-    piTask$configuration$objectiveFunctionOptions$linScaleCV <- 0.3
+    piTask$configuration$blqOptions$linScaleCV <- 0.3
   )
-  expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
+  expect_equal(piTask$configuration$blqOptions$linScaleCV, 0.3)
 })
 
 test_that("ParameterIdentification instance prints expected output", {
@@ -155,6 +155,32 @@ test_that("ParameterIdentification returns infinite value if simulation fails", 
   expect_identical(piResult$objectiveValue, Inf)
   expect_false(piResult$convergence)
   expect_true(is.na(piResult$sd))
+})
+
+test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ data", {
+  # Substitution path: default blqMethod = "lloqHalf" (blqMethod != "m3" gate)
+  taskSub <- testPiTask()
+  privSub <- taskSub$.__enclos_env__$private
+  privSub$.batchInitialization()
+  dsSub <- privSub$.outputMappings[[1]]$observedDataSets[[1]]
+  dsSub$LLOQ <- 2.5
+  svSub <- sapply(privSub$.piParameters, `[[`, "startValue")
+  costSub <- privSub$.objectiveFunction(svSub)$modelCost
+  expect_equal(costSub, 870.9881520191, tolerance = 1e-4)
+
+  # M3 path: blqMethod = "m3" with blqOptions sourcing linScaleCV
+  taskM3 <- testPiTask()
+  privM3 <- taskM3$.__enclos_env__$private
+  privM3$.batchInitialization()
+  dsM3 <- privM3$.outputMappings[[1]]$observedDataSets[[1]]
+  dsM3$LLOQ <- 2.5
+  taskM3$configuration$blqMethod <- "m3"
+  taskM3$configuration$blqOptions <- list(linScaleCV = 0.2)
+  svM3 <- sapply(privM3$.piParameters, `[[`, "startValue")
+  costM3 <- privM3$.objectiveFunction(svM3)$modelCost
+  expect_equal(costM3, 843.0572708008, tolerance = 1e-4)
+
+  expect_true(costSub != costM3)
 })
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
