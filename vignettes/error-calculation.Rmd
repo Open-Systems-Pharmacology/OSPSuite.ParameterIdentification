@@ -31,14 +31,6 @@ The error model scores how far the simulation is from the observed data.
 
 The `lsq` method minimizes the sum of the squared differences between observed and simulated values. It is a widely used, straightforward, and intuitive error calculation for pharmacokinetic modeling, and is currently the only available `objectiveFunctionType`.
 
-For a single `PIOutputMapping` with observations $y_i$ measured at times $t_i$ ($i = 1, \dots, n$), the cost is
-
-$$
-E = \sum_{i=1}^{n} \left( \hat{y}(t_i) - y_i \right)^2 ,
-$$
-
-where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$, and BLQ handling can substitute $\hat{y}(t_i)$ or $y_i$ before the difference is taken.
-
 Set it via the `objectiveFunctionType` attribute in `objectiveFunctionOptions`:
 
 ```{r, eval=FALSE}
@@ -61,15 +53,6 @@ A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfigu
 - **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The `blqOptions` field (`linScaleCV`, `logScaleSD`) parameterises this censored contribution.
 
 `blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run.
-
-These settings implement the standard strategies catalogued by Beal (2001), where each method is identified by an M-number:
-
-- **M1** (discard all BLQ): `blqRemove = "always"`.
-- **M3** (censored likelihood): `blqMethod = "m3"`.
-- **M5** (substitute LLOQ/2): `blqMethod = "lloqHalf"`.
-- **M6** (drop trailing BLQ): `blqRemove = "trailingSingle"`.
-
-The publication is listed in the References section.
 
 ```{r, eval=FALSE}
 piConfiguration$blqMethod <- "m3"

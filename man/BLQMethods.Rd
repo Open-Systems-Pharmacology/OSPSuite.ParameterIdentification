@@ -24,6 +24,3 @@ distinguished at runtime. All three apply the same half-LLOQ substitution;
 \code{m3} is the only method with distinct behavior. The \code{lloq} clamp and the
 \code{none} pass-through are differentiated in a later release.
 }
-\seealso{
-The \code{error-calculation} vignette for the Beal (2001) method taxonomy.
-}
