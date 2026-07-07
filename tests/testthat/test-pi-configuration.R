@@ -342,8 +342,6 @@ test_that("blqRemove and blqMethod have expected defaults", {
 })
 
 test_that("blqRemove accepts valid modes and rejects invalid ones", {
-  # blqRemove filtering is not yet applied at runtime (added in a later step);
-  # these tests cover the validation surface only.
   piConfiguration <- PIConfiguration$new()
   piConfiguration$blqRemove <- "always"
   expect_equal(piConfiguration$blqRemove, "always")

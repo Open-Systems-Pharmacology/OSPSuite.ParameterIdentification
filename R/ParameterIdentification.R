@@ -321,15 +321,23 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(outputMappings)) {
         df <- obsVsPredList[[idx]]$toDataFrame()
         if (buildObsCache) {
-          # First evaluation: df holds simulated and observed rows. Cache the
-          # observed rows (still in display units) for reuse.
-          obsVsPredDfCache[[idx]] <- df[
-            df$dataType == "observed",
-            ,
-            drop = FALSE
-          ]
+          # First evaluation: df holds simulated and observed rows. Apply the
+          # blqRemove filter to the observed rows (still in display units) once,
+          # cache the survivors, and rebuild df from the simulated rows plus the
+          # filtered observed rows so this scored build evaluation and every
+          # reuse iteration score the identical row set.
+          observedRows <- .applyBlqRemove(
+            df[df$dataType == "observed", , drop = FALSE],
+            private$.configuration$blqRemove
+          )
+          obsVsPredDfCache[[idx]] <- observedRows
+          df <- dplyr::bind_rows(
+            df[df$dataType == "simulated", , drop = FALSE],
+            observedRows
+          )
         } else {
-          # Reuse cached observed rows with the freshly simulated rows.
+          # Reuse the already-filtered cached observed rows with the freshly
+          # simulated rows.
           df <- dplyr::bind_rows(df, private$.obsVsPredDfCache[[idx]])
         }
 

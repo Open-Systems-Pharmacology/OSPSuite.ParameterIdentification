@@ -236,10 +236,6 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' - **`always`** - Remove all BLQ observations (Beal M1, PK-Sim "Always").
 #' - **`trailingSingle`** - Keep the first point of each trailing BLQ run per
 #'   dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
-#'
-#' Note: in the current release `blqRemove` is validated and stored but not yet
-#' applied at runtime. Setting `always` or `trailingSingle` does not yet remove
-#' any observations; the removal logic is added in a later release.
 BLQRemoveModes <- ospsuite.utils::enum(c(
   "none",
   "always",

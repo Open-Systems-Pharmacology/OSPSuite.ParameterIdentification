@@ -183,6 +183,57 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   expect_true(costSub != costM3)
 })
 
+test_that("blqRemove = 'none' leaves the cost unchanged (no regression)", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+  ds$LLOQ <- 2.5
+  sv <- sapply(priv$.piParameters, `[[`, "startValue")
+  cost <- priv$.objectiveFunction(sv)$modelCost
+  expect_equal(cost, 870.9881520191, tolerance = 1e-4)
+})
+
+test_that("blqRemove = 'always' reduces nObservations relative to 'none'", {
+  taskNone <- testPiTask()
+  privNone <- taskNone$.__enclos_env__$private
+  privNone$.batchInitialization()
+  dsNone <- privNone$.outputMappings[[1]]$observedDataSets[[1]]
+  dsNone$LLOQ <- 2.5
+  svNone <- sapply(privNone$.piParameters, `[[`, "startValue")
+  costNone <- privNone$.objectiveFunction(svNone)
+
+  taskAlways <- testPiTask()
+  privAlways <- taskAlways$.__enclos_env__$private
+  privAlways$.batchInitialization()
+  dsAlways <- privAlways$.outputMappings[[1]]$observedDataSets[[1]]
+  dsAlways$LLOQ <- 2.5
+  taskAlways$configuration$blqRemove <- "always"
+  svAlways <- sapply(privAlways$.piParameters, `[[`, "startValue")
+  costAlways <- privAlways$.objectiveFunction(svAlways)
+
+  expect_lt(
+    costAlways$costVariables$nObservations,
+    costNone$costVariables$nObservations
+  )
+})
+
+test_that("blqRemove filters the observed cache once and reuses it", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+  ds$LLOQ <- 2.5
+  task$configuration$blqRemove <- "always"
+  sv <- sapply(priv$.piParameters, `[[`, "startValue")
+
+  priv$.objectiveFunction(sv)
+  rows1 <- nrow(priv$.obsVsPredDfCache[[1]])
+  priv$.objectiveFunction(sv)
+  rows2 <- nrow(priv$.obsVsPredDfCache[[1]])
+  expect_equal(rows1, rows2)
+})
+
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
 # sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))
 # modelParameter <- ospsuite::getParameter(path = "Organism|IR_I_P_Inter_tHalf", container = sim)

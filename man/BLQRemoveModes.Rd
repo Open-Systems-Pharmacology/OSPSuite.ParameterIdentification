@@ -18,8 +18,4 @@ The available modes are:
 \item \strong{\code{trailingSingle}} - Keep the first point of each trailing BLQ run per
 dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
 }
-
-Note: in the current release \code{blqRemove} is validated and stored but not yet
-applied at runtime. Setting \code{always} or \code{trailingSingle} does not yet remove
-any observations; the removal logic is added in a later release.
 }
