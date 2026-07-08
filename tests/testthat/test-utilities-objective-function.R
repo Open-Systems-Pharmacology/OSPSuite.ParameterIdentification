@@ -381,13 +381,14 @@ test_that("robust methods (huber, bisquare) modify the residuals appropriately",
 })
 
 test_that("M3 and least-squares kernel costs match recorded values and differ from each other", {
-  obsVsPredDf$lloq <- 2.5
+  obsVsPredDfLLOQ <- obsVsPredDf
+  obsVsPredDfLLOQ$lloq <- 2.5
   result_lsq <- .calculateCostMetrics(
-    df = obsVsPredDf,
+    df = obsVsPredDfLLOQ,
     blqMethod = "none"
   )
   result_m3 <- .calculateCostMetrics(
-    df = obsVsPredDf,
+    df = obsVsPredDfLLOQ,
     blqMethod = "m3",
     scaling = "lin",
     linScaleCV = 0.2
