@@ -43,7 +43,11 @@
 #' @param observedDf Observed-rows data frame with a `name` column identifying
 #'   datasets.
 #' @return The data frame with each dataset's maximal contiguous trailing BLQ
-#'   run reduced to its first point.
+#'   run reduced to its first point. Rows are regrouped by `name` and ordered by
+#'   `xValues`, so their order can differ from the input (unlike the `none` and
+#'   `always` modes, which preserve input order). This is safe because the
+#'   downstream cost pairs observed to simulated by `name` and `xValues`, not by
+#'   row position.
 #' @keywords internal
 #' @noRd
 .removeTrailingBlq <- function(observedDf) {

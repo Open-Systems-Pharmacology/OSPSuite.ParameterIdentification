@@ -191,6 +191,9 @@ test_that("blqRemove = 'none' leaves the cost unchanged (no regression)", {
   ds$LLOQ <- 2.5
   sv <- sapply(priv$.piParameters, `[[`, "startValue")
   cost <- priv$.objectiveFunction(sv)$modelCost
+  # Same baseline the substitution test above (".objectiveFunction preserves
+  # the substitution and M3 costs") asserts: blqRemove = "none" must reproduce
+  # the pre-Step-4 default-config cost at startValue with LLOQ = 2.5 exactly.
   expect_equal(cost, 870.9881520191, tolerance = 1e-4)
 })
 
