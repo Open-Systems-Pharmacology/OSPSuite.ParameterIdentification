@@ -112,6 +112,17 @@ ParameterIdentification <- R6::R6Class(
     # resampling
     .gprModels = NULL,
 
+    # Routes a parameter value into the correct variable bucket for the
+    # simulation batch. State-variable (RHS-defined) parameters must be
+    # registered as molecules; all others as parameters.
+    .setVariableValue = function(simId, parameter, value) {
+      if (parameter$isStateVariable) {
+        private$.variableMolecules[[simId]][[parameter$path]] <- value
+      } else {
+        private$.variableParameters[[simId]][[parameter$path]] <- value
+      }
+    },
+
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -201,15 +212,12 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Add parameters that will be optimized to variable parameters
+        # Register each optimization parameter in the correct batch bucket:
+        # state-variable parameters as molecules, all others as parameters.
         for (piParameter in private$.piParameters) {
           for (parameter in piParameter$parameters) {
             simId <- .getSimulationContainer(parameter)$id
-            # Set the current value of this parameter to the start value of the
-            # PIParameter.
-            private$.variableParameters[[simId]][[
-              parameter$path
-            ]] <- piParameter$startValue
+            private$.setVariableValue(simId, parameter, piParameter$startValue)
           }
         }
 

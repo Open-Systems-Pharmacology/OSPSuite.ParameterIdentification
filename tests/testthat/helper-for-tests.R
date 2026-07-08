@@ -351,3 +351,76 @@ outputMapping_250mg$addObservedDataSets(
 outputMapping_500mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
+
+# State-variable parameter fixtures (issue #156)
+
+# Aciclovir state-variable (RHS-defined) parameter, dimension Volume (~0.045 L).
+stateVariableParameterPath <- "Organism|Lumen|Stomach|Liquid"
+
+# PI task mixing one state-variable parameter with one constant parameter.
+# Two separate PIParameters objects are required because a single group must
+# share a dimension (Volume vs dimensionless).
+testStateVariableMixedTask <- function() {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+
+  stateVarParam <- PIParameters$new(
+    parameters = list(getParameter(stateVariableParameterPath, container = sim))
+  )
+  stateVarParam$minValue <- 0.01
+  stateVarParam$maxValue <- 0.1
+
+  constParam <- PIParameters$new(
+    parameters = list(getParameter("Aciclovir|Lipophilicity", container = sim))
+  )
+  constParam$minValue <- -10
+  constParam$maxValue <- 10
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(
+      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+      container = sim
+    )
+  )
+  mapping$addObservedDataSets(
+    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
+
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = list(stateVarParam, constParam),
+    outputMappings = mapping
+  )
+}
+
+# PI task whose only optimization parameter is state-variable, so that
+# .variableParameters stays empty for the simulation (empty-parametersOrPaths
+# shadow path).
+testStateVariableOnlyTask <- function() {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+
+  stateVarParam <- PIParameters$new(
+    parameters = list(getParameter(stateVariableParameterPath, container = sim))
+  )
+  stateVarParam$minValue <- 0.01
+  stateVarParam$maxValue <- 0.1
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(
+      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+      container = sim
+    )
+  )
+  mapping$addObservedDataSets(
+    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
+
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = stateVarParam,
+    outputMappings = mapping
+  )
+}

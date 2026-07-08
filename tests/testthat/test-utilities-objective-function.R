@@ -414,6 +414,42 @@ currStartValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
+# state-variable parameter routing (issue #156)
+
+test_that("fixture state-variable path is classified as a state variable", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  expect_true(
+    getParameter(stateVariableParameterPath, container = sim)$isStateVariable
+  )
+  expect_false(
+    getParameter("Aciclovir|Lipophilicity", container = sim)$isStateVariable
+  )
+})
+
+test_that(".batchInitialization routes state-variable parameters to molecules", {
+  task <- testStateVariableMixedTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  simId <- names(priv$.simulations)[[1]]
+
+  expect_true(
+    stateVariableParameterPath %in% names(priv$.variableMolecules[[simId]])
+  )
+  expect_false(
+    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
+  )
+
+  expect_true(
+    "Aciclovir|Lipophilicity" %in% names(priv$.variableParameters[[simId]])
+  )
+  expect_false(
+    "Aciclovir|Lipophilicity" %in% names(priv$.variableMolecules[[simId]])
+  )
+})
+
 test_that(".evaluate omits observed data when includeObserved = FALSE", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
