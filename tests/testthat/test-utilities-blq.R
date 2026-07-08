@@ -115,6 +115,21 @@ test_that("always on a multi-dataset frame keeps the surviving dataset's rows", 
   expect_equal(result$xValues, c(1, 2))
 })
 
+test_that("trailingSingle keeps rows with an NA name instead of dropping them", {
+  # split() silently drops NA-name rows; none and always keep them, so
+  # trailingSingle must keep them too (all rows here are above the LLOQ).
+  df <- data.frame(
+    name = c("d1", "d1", NA_character_),
+    xValues = c(1, 2, 1),
+    yValues = c(10, 5, 8),
+    lloq = 2.5,
+    stringsAsFactors = FALSE
+  )
+  result <- .applyBlqRemove(df, "trailingSingle")
+  expect_equal(nrow(result), 3)
+  expect_true(any(is.na(result$name)))
+})
+
 test_that("unsorted input still identifies the trailing run correctly", {
   df <- blqSingleDataset()[c(3, 1, 4, 2), ]
   result <- .applyBlqRemove(df, "trailingSingle")

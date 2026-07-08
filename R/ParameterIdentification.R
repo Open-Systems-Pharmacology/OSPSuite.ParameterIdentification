@@ -326,11 +326,15 @@ ParameterIdentification <- R6::R6Class(
           # cache the survivors, and rebuild df from the simulated rows plus the
           # filtered observed rows so this scored build evaluation and every
           # reuse iteration score the identical row set.
+          observedBeforeBlq <- df[df$dataType == "observed", , drop = FALSE]
           observedRows <- .applyBlqRemove(
-            df[df$dataType == "observed", , drop = FALSE],
+            observedBeforeBlq,
             private$.configuration$blqRemove
           )
-          if (nrow(observedRows) == 0L) {
+          # Attribute an emptied mapping to blqRemove only when the filter
+          # actually removed rows. An already-empty observed set falls through
+          # to the kernel's generic "No observed data found" error instead.
+          if (nrow(observedRows) == 0L && nrow(observedBeforeBlq) > 0L) {
             stop(messages$errorObservedDataRemovedByBlq(
               outputMappings[[idx]]$quantity$path,
               private$.configuration$blqRemove

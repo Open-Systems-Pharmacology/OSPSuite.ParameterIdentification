@@ -50,7 +50,9 @@
   if (nrow(observedDf) == 0L) {
     return(observedDf)
   }
-  groups <- split(observedDf, observedDf$name)
+  # addNA keeps rows with an NA name in their own group; plain split() would
+  # silently drop them, diverging from the none/always modes.
+  groups <- split(observedDf, addNA(observedDf$name, ifany = TRUE))
   keptGroups <- vector("list", length(groups))
   for (g in seq_along(groups)) {
     grp <- groups[[g]]
