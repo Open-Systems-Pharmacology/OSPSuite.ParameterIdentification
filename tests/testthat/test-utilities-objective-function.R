@@ -485,6 +485,43 @@ test_that("objective function runs with only a state-variable parameter", {
   expect_true(is.finite(cost$modelCost))
 })
 
+test_that("state-variable initial value reaches the solver through evaluate", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  svQuantity <- getQuantity(stateVariableParameterPath, container = sim)
+
+  stateVar <- stateVarPIParameter(sim)
+
+  # Map the output to the state variable's own quantity so its simulated
+  # trajectory is observable. Observed values are placeholders in the state
+  # variable's (Volume) dimension.
+  obs <- DataSet$new(name = "obs")
+  obs$yDimension <- svQuantity$dimension
+  obs$setValues(xValues = c(0, 1, 2), yValues = c(0.05, 0.05, 0.05))
+  mapping <- PIOutputMapping$new(quantity = svQuantity)
+  mapping$addObservedDataSets(obs)
+
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = stateVar,
+    outputMappings = mapping
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  simulatedInitialValue <- function(startValue) {
+    df <- priv$.evaluate(startValue, includeObserved = FALSE)[[1]]$toDataFrame()
+    df$yValues[which.min(df$xValues)]
+  }
+
+  # Two distinct initial values must reach the solver and appear as the
+  # simulated initial value, proving the molecule value is consumed downstream
+  # (via addRunValues) and not merely stored in the R-side bucket.
+  expect_equal(simulatedInitialValue(0.02), 0.02, tolerance = 1e-4)
+  expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
+})
+
 test_that(".evaluate omits observed data when includeObserved = FALSE", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private

@@ -212,8 +212,7 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Register each optimization parameter in the correct batch bucket:
-        # state-variable parameters as molecules, all others as parameters.
+        # Seed each optimization parameter's start value into its variable bucket.
         for (piParameter in private$.piParameters) {
           for (parameter in piParameter$parameters) {
             simId <- .getSimulationContainer(parameter)$id
@@ -480,9 +479,7 @@ ParameterIdentification <- R6::R6Class(
         piParameter <- private$.piParameters[[idx]]
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[
-            parameter$path
-          ]] <- paramValues[[idx]]
+          private$.setVariableValue(simId, parameter, paramValues[[idx]])
         }
       }
 

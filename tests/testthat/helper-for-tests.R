@@ -357,6 +357,17 @@ outputMapping_500mg$addObservedDataSets(
 # Aciclovir state-variable (RHS-defined) parameter, dimension Volume (~0.045 L).
 stateVariableParameterPath <- "Organism|Lumen|Stomach|Liquid"
 
+# Bounded `PIParameters` wrapping the state-variable parameter, reused by the
+# state-variable fixtures and tests.
+stateVarPIParameter <- function(sim) {
+  param <- PIParameters$new(
+    parameters = list(getParameter(stateVariableParameterPath, container = sim))
+  )
+  param$minValue <- 0.01
+  param$maxValue <- 0.1
+  param
+}
+
 # PI task mixing one state-variable parameter with one constant parameter.
 # Two separate PIParameters objects are required because a single group must
 # share a dimension (Volume vs dimensionless).
@@ -365,11 +376,7 @@ testStateVariableMixedTask <- function() {
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
 
-  stateVarParam <- PIParameters$new(
-    parameters = list(getParameter(stateVariableParameterPath, container = sim))
-  )
-  stateVarParam$minValue <- 0.01
-  stateVarParam$maxValue <- 0.1
+  stateVarParam <- stateVarPIParameter(sim)
 
   constParam <- PIParameters$new(
     parameters = list(getParameter("Aciclovir|Lipophilicity", container = sim))
@@ -402,11 +409,7 @@ testStateVariableOnlyTask <- function() {
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
 
-  stateVarParam <- PIParameters$new(
-    parameters = list(getParameter(stateVariableParameterPath, container = sim))
-  )
-  stateVarParam$minValue <- 0.01
-  stateVarParam$maxValue <- 0.1
+  stateVarParam <- stateVarPIParameter(sim)
 
   mapping <- PIOutputMapping$new(
     quantity = getQuantity(

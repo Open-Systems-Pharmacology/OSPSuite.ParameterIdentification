@@ -237,3 +237,41 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
     info = "sim2 has 10x lower clearance so its C_max must differ from sim1's"
   )
 })
+
+test_that(".getPKValues routes a state-variable parameter as a molecule (#156)", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+
+  stateVarParam <- stateVarPIParameter(sim)
+
+  quantity <- getQuantity(
+    "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+    container = sim
+  )
+  pkMapping <- PKOutputMapping$new(
+    quantity = quantity,
+    pkParameter = "C_max",
+    targetValue = 30,
+    targetUnit = quantity$unit
+  )
+
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = stateVarParam,
+    pkOutputMappings = pkMapping
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  simId <- names(priv$.simulations)[[1]]
+
+  pkValues <- priv$.getPKValues(stateVarParam$startValue)
+
+  expect_true(
+    stateVariableParameterPath %in% names(priv$.variableMolecules[[simId]])
+  )
+  expect_false(
+    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
+  )
+  expect_true(is.finite(pkValues[[1]]))
+})
