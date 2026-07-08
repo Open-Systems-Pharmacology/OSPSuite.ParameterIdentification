@@ -227,11 +227,34 @@ test_that("blqRemove filters the observed cache once and reuses it", {
   task$configuration$blqRemove <- "always"
   sv <- sapply(priv$.piParameters, `[[`, "startValue")
 
-  priv$.objectiveFunction(sv)
+  cost1 <- priv$.objectiveFunction(sv)
   rows1 <- nrow(priv$.obsVsPredDfCache[[1]])
-  priv$.objectiveFunction(sv)
+  cost2 <- priv$.objectiveFunction(sv)
   rows2 <- nrow(priv$.obsVsPredDfCache[[1]])
   expect_equal(rows1, rows2)
+  # The build (first) and reuse evaluations must score the identical filtered
+  # row set, so their cost is equal at the same parameter values.
+  expect_equal(cost2$modelCost, cost1$modelCost)
+})
+
+test_that("blqRemove = 'trailingSingle' removes between none and always", {
+  nObsForMode <- function(mode) {
+    task <- testPiTask()
+    priv <- task$.__enclos_env__$private
+    priv$.batchInitialization()
+    ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+    ds$LLOQ <- 2.5
+    task$configuration$blqRemove <- mode
+    sv <- sapply(priv$.piParameters, `[[`, "startValue")
+    priv$.objectiveFunction(sv)$costVariables$nObservations
+  }
+  nNone <- nObsForMode("none")
+  nTrailing <- nObsForMode("trailingSingle")
+  nAlways <- nObsForMode("always")
+  # trailingSingle keeps the first point of each trailing BLQ run, so it drops
+  # at least as many as none (zero) and at most as many as always.
+  expect_lte(nAlways, nTrailing)
+  expect_lt(nTrailing, nNone)
 })
 
 test_that("blqRemove = 'always' errors when it empties a mapping", {
