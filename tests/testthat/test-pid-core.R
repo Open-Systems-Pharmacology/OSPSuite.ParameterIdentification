@@ -234,6 +234,18 @@ test_that("blqRemove filters the observed cache once and reuses it", {
   expect_equal(rows1, rows2)
 })
 
+test_that("blqRemove = 'always' errors when it empties a mapping", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+  # Set the LLOQ above every observed value so all rows are BLQ.
+  ds$LLOQ <- max(ds$yValues) * 10
+  task$configuration$blqRemove <- "always"
+  sv <- sapply(priv$.piParameters, `[[`, "startValue")
+  expect_snapshot(priv$.objectiveFunction(sv), error = TRUE)
+})
+
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))
 # sim <- loadSimulation(paste0(modelFolder, "/IR_model_doseResponse.pkml"))
 # modelParameter <- ospsuite::getParameter(path = "Organism|IR_I_P_Inter_tHalf", container = sim)

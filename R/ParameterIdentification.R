@@ -330,6 +330,12 @@ ParameterIdentification <- R6::R6Class(
             df[df$dataType == "observed", , drop = FALSE],
             private$.configuration$blqRemove
           )
+          if (nrow(observedRows) == 0L) {
+            stop(messages$errorObservedDataRemovedByBlq(
+              outputMappings[[idx]]$quantity$path,
+              private$.configuration$blqRemove
+            ))
+          }
           obsVsPredDfCache[[idx]] <- observedRows
           df <- dplyr::bind_rows(
             df[df$dataType == "simulated", , drop = FALSE],

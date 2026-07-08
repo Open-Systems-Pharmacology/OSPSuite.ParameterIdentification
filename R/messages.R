@@ -404,3 +404,9 @@ messages$errorNoResidualsToPlot <- function() {
     "No residuals to plot: this {.cls modelCost} has no finite residuals."
   )
 }
+
+messages$errorObservedDataRemovedByBlq <- function(quantityPath, blqRemove) {
+  ospsuite.utils::cliFormat(
+    "All observed data for {.val {quantityPath}} was removed by {.arg blqRemove} = {.val {blqRemove}}. No observations remain to fit this mapping."
+  )
+}
