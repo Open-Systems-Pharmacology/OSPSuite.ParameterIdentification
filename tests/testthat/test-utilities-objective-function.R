@@ -450,6 +450,41 @@ test_that(".batchInitialization routes state-variable parameters to molecules", 
   )
 })
 
+test_that("objective function delivers the state-variable value into the molecule bucket", {
+  task <- testStateVariableMixedTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  simId <- names(priv$.simulations)[[1]]
+
+  # currVals order matches the parameters list: state-variable first, constant
+  # second. Values differ from the start values so we can confirm the update
+  # is routed into the molecule bucket rather than silently dropped.
+  cost <- priv$.objectiveFunction(c(0.06, -0.1))
+
+  expect_true(is.finite(cost$modelCost))
+  expect_equal(
+    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.06
+  )
+  expect_equal(
+    priv$.variableParameters[[simId]][["Aciclovir|Lipophilicity"]],
+    -0.1
+  )
+})
+
+test_that("objective function runs with only a state-variable parameter", {
+  task <- testStateVariableOnlyTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  # .variableParameters is empty for this simulation (empty parametersOrPaths).
+  simId <- names(priv$.simulations)[[1]]
+  expect_length(priv$.variableParameters[[simId]], 0L)
+
+  cost <- priv$.objectiveFunction(currStartValues(task))
+  expect_true(is.finite(cost$modelCost))
+})
+
 test_that(".evaluate omits observed data when includeObserved = FALSE", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private

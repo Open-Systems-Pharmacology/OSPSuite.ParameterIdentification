@@ -62,6 +62,17 @@ test_that("run() stores best running cost in costDetails", {
   expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
 })
 
+test_that("run() succeeds with a state-variable optimization parameter (#156)", {
+  piTask <- testStateVariableMixedTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  piTask$configuration$autoEstimateCI <- FALSE
+
+  suppressMessages(
+    expect_no_error(piResults <- piTask$run())
+  )
+  expect_true(is.finite(piResults$toList()$objectiveValue))
+})
+
 
 # HJBK Algorithm
 

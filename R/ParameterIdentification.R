@@ -561,17 +561,14 @@ ParameterIdentification <- R6::R6Class(
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
       obsVsPredList <- vector("list", length(outputMappings))
-      # Iterate through the values and update current parameter values
+      # Iterate through the values and update current parameter values. The
+      # order of the values corresponds to the order of `PIParameters` in the
+      # parameters list.
       for (idx in seq_along(currVals)) {
-        # The order of the values corresponds to the order of `PIParameters` in
-        # parameters list
         piParameter <- private$.piParameters[[idx]]
-        # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[
-            idx
-          ]]
+          private$.setVariableValue(simId, parameter, currVals[[idx]])
         }
       }
 
