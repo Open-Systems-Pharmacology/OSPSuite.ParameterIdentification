@@ -1069,18 +1069,22 @@ ParameterIdentification <- R6::R6Class(
         scaling <- private$.outputMappings[[idx]]$scaling
         axisScale <- if (scaling == "lin") "linear" else "log"
 
-        # Drop the name-based legend entries (which duplicate the same
-        # path label across all sub-plots via the linetype aesthetic),
-        # and keep only one copy of the group-based legend on the
-        # time-profile. The residual plot needs no legend at all; the
-        # predicted-vs-observed plot keeps only the identity / 2-fold
-        # comparison-line legend (linetype).
+        # The simulated line (linetype = name) and observed point (shape =
+        # name) each carry their own clean, specifically-labelled legend guide.
+        # Show those and hide the redundant colour/group guide (whose key mixes
+        # line and point). Pin the two guides' order so the collected legend is
+        # deterministic, which ggplot otherwise leaves unstable across runs.
         indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
           yScale = axisScale
         ) +
           stripGuides +
-          ggplot2::guides(linetype = "none")
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            linetype = ggplot2::guide_legend(order = 1),
+            shape = ggplot2::guide_legend(order = 2)
+          )
         predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
           xyScale = axisScale
