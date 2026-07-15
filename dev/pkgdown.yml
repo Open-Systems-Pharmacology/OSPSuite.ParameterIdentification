@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   confidence-intervals: confidence-intervals.html
@@ -8,7 +8,7 @@ articles:
   optimization-algorithms: optimization-algorithms.html
   pk-target-optimization: pk-target-optimization.html
   user-guide: user-guide.html
-last_built: 2026-06-19T10:22Z
+last_built: 2026-07-15T10:43Z
 urls:
   reference: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference
   article: https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/articles

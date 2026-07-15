@@ -15,6 +15,9 @@
   correctly plots raw residuals against time and overlays the weighted
   residuals
   ([\#275](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/275)).
+- `ParameterIdentification` can now optimize state-variable parameters
+  (those defined by a right-hand-side formula), which previously crashed
+  ([\#280](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/280)).
 
 ## ospsuite.parameteridentification 2.2.0
 
