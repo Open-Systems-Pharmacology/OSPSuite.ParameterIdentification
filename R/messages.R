@@ -296,6 +296,12 @@ messages$errorNonPositiveValue <- function(argName) {
   )
 }
 
+messages$errorZeroStartValueBounds <- function() {
+  ospsuite.utils::cliFormat(
+    "Cannot derive optimization bounds from a start value of {.val {0}}. Provide explicit {.arg minValue} and {.arg maxValue} when creating the {.cls PIParameters}."
+  )
+}
+
 messages$errorPKMappingUnitConversion <- function(
   pkParameter,
   unit,

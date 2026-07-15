@@ -48,13 +48,17 @@ value is derived from the first parameter upon creation, modifiable via
 unified value.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{PIParameters$new(parameters)}
+    \preformatted{PIParameters$new(parameters, minValue = NULL, maxValue = NULL)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{parameters}}{List of \code{Parameter} class objects to be optimized.}
+      \item{\code{minValue}}{Optional lower bound. Defaults to \code{NULL}, auto-generated
+from the start value. Required when the start value is zero.}
+      \item{\code{maxValue}}{Optional upper bound. Defaults to \code{NULL}, auto-generated
+from the start value. Required when the start value is zero.}
     }
     \if{html}{\out{</div>}}
   }

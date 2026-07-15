@@ -31,3 +31,11 @@
           startValue     minValue     maxValue
       1 1.764167e-05 1.764167e-06 0.0001764167
 
+# Zero start value without explicit bounds errors
+
+    Code
+      PIParameters$new(zeroParam)
+    Condition
+      Error in `initialize()`:
+      ! Cannot derive optimization bounds from a start value of 0. Provide explicit `minValue` and `maxValue` when creating the <PIParameters>.
+

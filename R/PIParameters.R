@@ -112,22 +112,31 @@ PIParameters <- R6::R6Class(
     #'   `PIParameters$startValue`. All parameters are optimized using this
     #'   unified value.
     #' @param parameters List of `Parameter` class objects to be optimized.
+    #' @param minValue Optional lower bound. Defaults to `NULL`, auto-generated
+    #'   from the start value. Required when the start value is zero.
+    #' @param maxValue Optional upper bound. Defaults to `NULL`, auto-generated
+    #'   from the start value. Required when the start value is zero.
     #' @return A new `PIParameters` object.
-    initialize = function(parameters) {
+    initialize = function(parameters, minValue = NULL, maxValue = NULL) {
       parameters <- c(parameters)
       ospsuite.utils::validateIsOfType(parameters, "Parameter")
       .validateIsSameDimension(parameters)
 
       private$.parameters <- parameters
       private$.startValue <- parameters[[1]]$value
-      if (private$.startValue > 0) {
-        private$.minValue <- private$.startValue * 0.1
-        private$.maxValue <- private$.startValue * 10
-      } else {
-        private$.minValue <- private$.startValue * 10
-        private$.maxValue <- private$.startValue * 0.1
-      }
       private$.unit <- parameters[[1]]$unit
+
+      if (is.null(minValue) || is.null(maxValue)) {
+        if (private$.startValue == 0) {
+          stop(messages$errorZeroStartValueBounds())
+        }
+        scale <- if (private$.startValue > 0) c(0.1, 10) else c(10, 0.1)
+        minValue <- minValue %||% (private$.startValue * scale[[1]])
+        maxValue <- maxValue %||% (private$.startValue * scale[[2]])
+      }
+
+      self$minValue <- minValue
+      self$maxValue <- maxValue
     },
 
     #' @description Updates parameter(s) value. Value is specified in units of

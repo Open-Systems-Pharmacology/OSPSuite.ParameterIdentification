@@ -151,3 +151,45 @@ test_that("Unit can be changed correctly", {
     fixed = TRUE
   )
 })
+
+test_that("Zero start value without explicit bounds errors", {
+  zeroParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- zeroParam$value
+  zeroParam$setValue(0)
+  on.exit(zeroParam$setValue(origValue))
+
+  expect_snapshot(PIParameters$new(zeroParam), error = TRUE)
+})
+
+test_that("Zero start value with explicit bounds is accepted", {
+  zeroParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- zeroParam$value
+  zeroParam$setValue(0)
+  on.exit(zeroParam$setValue(origValue))
+
+  piParam <- PIParameters$new(zeroParam, minValue = -1, maxValue = 1)
+  expect_equal(piParam$startValue, 0)
+  expect_equal(piParam$minValue, -1)
+  expect_equal(piParam$maxValue, 1)
+})
+
+test_that("Negative start value auto-generates ordered bounds", {
+  negParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- negParam$value
+  negParam$setValue(-2)
+  on.exit(negParam$setValue(origValue))
+
+  piParam <- PIParameters$new(negParam)
+  expect_equal(piParam$startValue, -2)
+  expect_equal(piParam$minValue, -20)
+  expect_equal(piParam$maxValue, -0.2)
+})
