@@ -414,6 +414,114 @@ currStartValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
+# state-variable parameter routing (issue #156)
+
+test_that("fixture state-variable path is classified as a state variable", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  expect_true(
+    getParameter(stateVariableParameterPath, container = sim)$isStateVariable
+  )
+  expect_false(
+    getParameter("Aciclovir|Lipophilicity", container = sim)$isStateVariable
+  )
+})
+
+test_that(".batchInitialization routes state-variable parameters to molecules", {
+  task <- testStateVariableMixedTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  simId <- names(priv$.simulations)[[1]]
+
+  expect_true(
+    stateVariableParameterPath %in% names(priv$.variableMolecules[[simId]])
+  )
+  expect_false(
+    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
+  )
+
+  expect_true(
+    "Aciclovir|Lipophilicity" %in% names(priv$.variableParameters[[simId]])
+  )
+  expect_false(
+    "Aciclovir|Lipophilicity" %in% names(priv$.variableMolecules[[simId]])
+  )
+})
+
+test_that("objective function delivers the state-variable value into the molecule bucket", {
+  task <- testStateVariableMixedTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  simId <- names(priv$.simulations)[[1]]
+
+  # currVals order matches the parameters list: state-variable first, constant
+  # second. Values differ from the start values so we can confirm the update
+  # is routed into the molecule bucket rather than silently dropped.
+  cost <- priv$.objectiveFunction(c(0.06, -0.1))
+
+  expect_true(is.finite(cost$modelCost))
+  expect_equal(
+    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.06
+  )
+  expect_equal(
+    priv$.variableParameters[[simId]][["Aciclovir|Lipophilicity"]],
+    -0.1
+  )
+})
+
+test_that("objective function runs with only a state-variable parameter", {
+  task <- testStateVariableOnlyTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  # .variableParameters is empty for this simulation (empty parametersOrPaths).
+  simId <- names(priv$.simulations)[[1]]
+  expect_length(priv$.variableParameters[[simId]], 0L)
+
+  cost <- priv$.objectiveFunction(currStartValues(task))
+  expect_true(is.finite(cost$modelCost))
+})
+
+test_that("state-variable initial value reaches the solver through evaluate", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  svQuantity <- getQuantity(stateVariableParameterPath, container = sim)
+
+  stateVar <- stateVarPIParameter(sim)
+
+  # Map the output to the state variable's own quantity so its simulated
+  # trajectory is observable. Observed values are placeholders in the state
+  # variable's (Volume) dimension.
+  obs <- DataSet$new(name = "obs")
+  obs$yDimension <- svQuantity$dimension
+  obs$setValues(xValues = c(0, 1, 2), yValues = c(0.05, 0.05, 0.05))
+  mapping <- PIOutputMapping$new(quantity = svQuantity)
+  mapping$addObservedDataSets(obs)
+
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = stateVar,
+    outputMappings = mapping
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  simulatedInitialValue <- function(startValue) {
+    df <- priv$.evaluate(startValue, includeObserved = FALSE)[[1]]$toDataFrame()
+    df$yValues[which.min(df$xValues)]
+  }
+
+  # Two distinct initial values must reach the solver and appear as the
+  # simulated initial value, proving the molecule value is consumed downstream
+  # (via addRunValues) and not merely stored in the R-side bucket.
+  expect_equal(simulatedInitialValue(0.02), 0.02, tolerance = 1e-4)
+  expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
+})
+
 test_that(".evaluate omits observed data when includeObserved = FALSE", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
