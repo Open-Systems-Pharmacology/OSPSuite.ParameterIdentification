@@ -302,6 +302,12 @@ messages$errorZeroStartValueBounds <- function() {
   )
 }
 
+messages$errorInvalidBound <- function(value, startValue) {
+  ospsuite.utils::cliFormat(
+    "{.arg minValue} and {.arg maxValue} must bracket the start value ({.val {startValue}}) with {.arg minValue} < {.arg maxValue}. Provided bound: {.val {value}}."
+  )
+}
+
 messages$errorPKMappingUnitConversion <- function(
   pkParameter,
   unit,

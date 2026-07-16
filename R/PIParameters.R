@@ -51,16 +51,11 @@ PIParameters <- R6::R6Class(
         private$.minValue
       } else {
         ospsuite.utils::validateIsNumeric(value)
-        if (value > private$.startValue) {
-          stop(paste0(
-            "The minimal value cannot be greater than the start value!
-          Provided minimal value: ",
-            value,
-            ". Current start value: ",
-            private$.startValue
-          ))
+        if (
+          value > private$.startValue || value >= (private$.maxValue %||% Inf)
+        ) {
+          stop(messages$errorInvalidBound(value, private$.startValue))
         }
-
         private$.minValue <- value
       }
     },
@@ -71,16 +66,11 @@ PIParameters <- R6::R6Class(
         private$.maxValue
       } else {
         ospsuite.utils::validateIsNumeric(value)
-        if (value < private$.startValue) {
-          stop(paste0(
-            "The maximal value cannot be smaller than the start value!
-          Provided maximal value: ",
-            value,
-            ". Current start value: ",
-            private$.startValue
-          ))
+        if (
+          value < private$.startValue || value <= (private$.minValue %||% -Inf)
+        ) {
+          stop(messages$errorInvalidBound(value, private$.startValue))
         }
-
         private$.maxValue <- value
       }
     },
