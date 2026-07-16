@@ -112,10 +112,14 @@ PIParameters <- R6::R6Class(
     #'   `PIParameters$startValue`. All parameters are optimized using this
     #'   unified value.
     #' @param parameters List of `Parameter` class objects to be optimized.
-    #' @param minValue Optional lower bound. Defaults to `NULL`, auto-generated
-    #'   from the start value. Required when the start value is zero.
-    #' @param maxValue Optional upper bound. Defaults to `NULL`, auto-generated
-    #'   from the start value. Required when the start value is zero.
+    #' @param minValue Optional lower bound. Defaults to `NULL`, in which case it
+    #'   is derived from the start value as `start * 0.1` (or `start * 10` when
+    #'   the start value is negative, so the bound stays below the start value).
+    #'   Required when the start value is zero.
+    #' @param maxValue Optional upper bound. Defaults to `NULL`, in which case it
+    #'   is derived from the start value as `start * 10` (or `start * 0.1` when
+    #'   the start value is negative, so the bound stays above the start value).
+    #'   Required when the start value is zero.
     #' @return A new `PIParameters` object.
     initialize = function(parameters, minValue = NULL, maxValue = NULL) {
       parameters <- c(parameters)

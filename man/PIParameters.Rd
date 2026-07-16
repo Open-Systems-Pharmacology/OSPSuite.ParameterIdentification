@@ -55,10 +55,14 @@ unified value.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{parameters}}{List of \code{Parameter} class objects to be optimized.}
-      \item{\code{minValue}}{Optional lower bound. Defaults to \code{NULL}, auto-generated
-from the start value. Required when the start value is zero.}
-      \item{\code{maxValue}}{Optional upper bound. Defaults to \code{NULL}, auto-generated
-from the start value. Required when the start value is zero.}
+      \item{\code{minValue}}{Optional lower bound. Defaults to \code{NULL}, in which case it
+is derived from the start value as \code{start * 0.1} (or \code{start * 10} when
+the start value is negative, so the bound stays below the start value).
+Required when the start value is zero.}
+      \item{\code{maxValue}}{Optional upper bound. Defaults to \code{NULL}, in which case it
+is derived from the start value as \code{start * 10} (or \code{start * 0.1} when
+the start value is negative, so the bound stays above the start value).
+Required when the start value is zero.}
     }
     \if{html}{\out{</div>}}
   }
