@@ -112,6 +112,17 @@ ParameterIdentification <- R6::R6Class(
     # resampling
     .gprModels = NULL,
 
+    # Routes a parameter value into the correct variable bucket for the
+    # simulation batch. State-variable (RHS-defined) parameters must be
+    # registered as molecules; all others as parameters.
+    .setVariableValue = function(simId, parameter, value) {
+      if (parameter$isStateVariable) {
+        private$.variableMolecules[[simId]][[parameter$path]] <- value
+      } else {
+        private$.variableParameters[[simId]][[parameter$path]] <- value
+      }
+    },
+
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -201,15 +212,11 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Add parameters that will be optimized to variable parameters
+        # Seed each optimization parameter's start value into its variable bucket.
         for (piParameter in private$.piParameters) {
           for (parameter in piParameter$parameters) {
             simId <- .getSimulationContainer(parameter)$id
-            # Set the current value of this parameter to the start value of the
-            # PIParameter.
-            private$.variableParameters[[simId]][[
-              parameter$path
-            ]] <- piParameter$startValue
+            private$.setVariableValue(simId, parameter, piParameter$startValue)
           }
         }
 
@@ -469,9 +476,7 @@ ParameterIdentification <- R6::R6Class(
         piParameter <- private$.piParameters[[idx]]
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[
-            parameter$path
-          ]] <- paramValues[[idx]]
+          private$.setVariableValue(simId, parameter, paramValues[[idx]])
         }
       }
 
@@ -550,17 +555,14 @@ ParameterIdentification <- R6::R6Class(
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
       obsVsPredList <- vector("list", length(outputMappings))
-      # Iterate through the values and update current parameter values
+      # Iterate through the values and update current parameter values. The
+      # order of the values corresponds to the order of `PIParameters` in the
+      # parameters list.
       for (idx in seq_along(currVals)) {
-        # The order of the values corresponds to the order of `PIParameters` in
-        # parameters list
         piParameter <- private$.piParameters[[idx]]
-        # Update the values of the parameters
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.variableParameters[[simId]][[parameter$path]] <- currVals[[
-            idx
-          ]]
+          private$.setVariableValue(simId, parameter, currVals[[idx]])
         }
       }
 
@@ -1064,18 +1066,22 @@ ParameterIdentification <- R6::R6Class(
         scaling <- private$.outputMappings[[idx]]$scaling
         axisScale <- if (scaling == "lin") "linear" else "log"
 
-        # Drop the name-based legend entries (which duplicate the same
-        # path label across all sub-plots via the linetype aesthetic),
-        # and keep only one copy of the group-based legend on the
-        # time-profile. The residual plot needs no legend at all; the
-        # predicted-vs-observed plot keeps only the identity / 2-fold
-        # comparison-line legend (linetype).
+        # The simulated line (linetype = name) and observed point (shape =
+        # name) each carry their own clean, specifically-labelled legend guide.
+        # Show those and hide the redundant colour/group guide (whose key mixes
+        # line and point). Pin the two guides' order so the collected legend is
+        # deterministic, which ggplot otherwise leaves unstable across runs.
         indivTimeProfile <- ospsuite::plotTimeProfile(
           dataCombined[[idx]],
           yScale = axisScale
         ) +
           stripGuides +
-          ggplot2::guides(linetype = "none")
+          ggplot2::guides(
+            colour = "none",
+            fill = "none",
+            linetype = ggplot2::guide_legend(order = 1),
+            shape = ggplot2::guide_legend(order = 2)
+          )
         predVsObs <- ospsuite::plotPredictedVsObserved(
           dataCombined[[idx]],
           xyScale = axisScale
