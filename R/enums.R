@@ -236,6 +236,12 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' - **`always`** - Remove all BLQ observations (Beal M1, PK-Sim "Always").
 #' - **`trailingSingle`** - Keep the first point of each trailing BLQ run per
 #'   dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
+#'
+#' Note: in the current release `blqRemove` is validated and stored but not yet
+#' applied at runtime. Setting `always` or `trailingSingle` does not yet remove
+#' any observations; the removal logic is added in a later release.
+#'
+#' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQRemoveModes <- ospsuite.utils::enum(c(
   "none",
   "always",
@@ -259,6 +265,8 @@ BLQRemoveModes <- ospsuite.utils::enum(c(
 #' distinguished at runtime. All three apply the same half-LLOQ substitution;
 #' `m3` is the only method with distinct behavior. The `lloq` clamp and the
 #' `none` pass-through are differentiated in a later release.
+#'
+#' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQMethods <- ospsuite.utils::enum(c(
   "none",
   "lloq",

@@ -19,3 +19,6 @@ The available modes are:
 dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
 }
 }
+\seealso{
+The \code{error-calculation} vignette for the Beal (2001) method taxonomy.
+}
