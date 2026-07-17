@@ -31,6 +31,14 @@ The error model scores how far the simulation is from the observed data.
 
 The `lsq` method minimizes the sum of the squared differences between observed and simulated values. It is a widely used, straightforward, and intuitive error calculation for pharmacokinetic modeling, and is currently the only available `objectiveFunctionType`.
 
+For a single `PIOutputMapping` with observations $y_i$ measured at times $t_i$ ($i = 1, \dots, n$), the cost is
+
+$$
+E = \sum_{i=1}^{n} \left( \hat{y}(t_i) - y_i \right)^2 ,
+$$
+
+where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$, and BLQ handling can substitute $\hat{y}(t_i)$ or $y_i$ before the difference is taken.
+
 Set it via the `objectiveFunctionType` attribute in `objectiveFunctionOptions`:
 
 ```{r, eval=FALSE}
