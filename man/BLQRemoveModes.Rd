@@ -23,3 +23,6 @@ Note: in the current release \code{blqRemove} is validated and stored but not ye
 applied at runtime. Setting \code{always} or \code{trailingSingle} does not yet remove
 any observations; the removal logic is added in a later release.
 }
+\seealso{
+The \code{error-calculation} vignette for the Beal (2001) method taxonomy.
+}

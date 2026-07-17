@@ -62,6 +62,15 @@ A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfigu
 
 `blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run.
 
+These settings implement the standard strategies catalogued by Beal (2001), where each method is identified by an M-number:
+
+- **M1** (discard all BLQ): `blqRemove = "always"`.
+- **M3** (censored likelihood): `blqMethod = "m3"`.
+- **M5** (substitute LLOQ/2): `blqMethod = "lloqHalf"`.
+- **M6** (drop trailing BLQ): `blqRemove = "trailingSingle"`.
+
+The publication is listed in the References section.
+
 ```{r, eval=FALSE}
 piConfiguration$blqMethod <- "m3"
 piConfiguration$blqOptions <- list(linScaleCV = 0.2)
