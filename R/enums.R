@@ -289,7 +289,7 @@ BLQMethods <- ospsuite.utils::enum(c(
 #'   derived from a coefficient of variation of `0.2`.
 BLQOptions <- ospsuite.utils::enum(list(
   linScaleCV = 0.2,
-  logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
+  logScaleSD = sqrt(log(1 + 0.2^2)) / log(10)
 ))
 
 #' Residual Weighting Methods for Cost Function
