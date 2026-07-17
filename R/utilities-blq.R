@@ -85,3 +85,38 @@
   rownames(result) <- NULL
   result
 }
+
+#' Apply the blqMethod substitution to observed values
+#'
+#' Substitutes below-LLOQ observed values against the per-point LLOQ. The
+#' simulated prediction is never modified: substitution is observed-only, as is
+#' standard in the community/Beal taxonomy (agreement between a censored
+#' observation and the prediction below the LLOQ is `m3`'s job, not this
+#' function's). Quantifiable observations (at or above the LLOQ) are never
+#' touched. A pure function of the observed values, called from the kernel
+#' after interpolation so a per-point LLOQ is available. `none` and `m3` are
+#' passthrough (`m3` is scored by the censored path).
+#'
+#' @param observedValues Numeric vector of observed values (kernel scale).
+#' @param lloq Numeric vector of per-point LLOQ, aligned with `observedValues`.
+#'   In log scaling this already holds `ln(LLOQ)`.
+#' @param blqMethod A `BLQMethods` value: `"none"`, `"lloq"`, `"lloqHalf"`, `"m3"`.
+#' @param scaling A `ScalingOptions` value: `"lin"` or `"log"`. Governs the
+#'   `lloqHalf` target (`LLOQ/2` in lin, `ln(LLOQ) - ln(2)` in log).
+#' @return The observed values, with BLQ observations substituted per
+#'   `blqMethod`.
+#' @keywords internal
+#' @noRd
+.applyBlqSubstitution <- function(observedValues, lloq, blqMethod, scaling) {
+  target <- switch(
+    blqMethod,
+    none = return(observedValues),
+    m3 = return(observedValues),
+    lloq = lloq,
+    lloqHalf = if (scaling == "log") lloq - log(2) else lloq / 2,
+    ospsuite.utils::validateEnumValue(blqMethod, BLQMethods)
+  )
+  obsBelow <- !is.na(lloq) & !is.na(observedValues) & observedValues < lloq
+  observedValues[obsBelow] <- target[obsBelow]
+  observedValues
+}

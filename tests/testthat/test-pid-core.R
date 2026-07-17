@@ -166,7 +166,7 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   dsSub$LLOQ <- 2.5
   svSub <- sapply(privSub$.piParameters, `[[`, "startValue")
   costSub <- privSub$.objectiveFunction(svSub)$modelCost
-  expect_equal(costSub, 870.9881520191, tolerance = 1e-4)
+  expect_equal(costSub, 1174.3753775818, tolerance = 1e-4)
 
   # M3 path: blqMethod = "m3" with blqOptions sourcing linScaleCV
   taskM3 <- testPiTask()
@@ -178,12 +178,36 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   taskM3$configuration$blqOptions <- list(linScaleCV = 0.2)
   svM3 <- sapply(privM3$.piParameters, `[[`, "startValue")
   costM3 <- privM3$.objectiveFunction(svM3)$modelCost
-  expect_equal(costM3, 843.0572708008, tolerance = 1e-4)
+  # Was 843.0572708008 before the M3 rework: the pre-fix kernel double counted
+  # the 8 censored rows (both in weightedSSR and in the censored term) and
+  # used a log10 penalty. Excluding them from weightedSSR (now 47.8419672186
+  # over the 3 uncensored rows) dominates the natural-log censored term
+  # (149.5022980540), netting a large drop to 197.3442652726.
+  expect_equal(costM3, 197.3442652726, tolerance = 1e-4)
 
   expect_true(costSub != costM3)
 })
 
-test_that("blqRemove = 'none' leaves the cost unchanged (no regression)", {
+test_that("lloqHalf, lloq, and none produce distinct costs on BLQ data", {
+  costFor <- function(method) {
+    task <- testPiTask()
+    priv <- task$.__enclos_env__$private
+    priv$.batchInitialization()
+    ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+    ds$LLOQ <- 2.5
+    task$configuration$blqMethod <- method
+    sv <- sapply(priv$.piParameters, `[[`, "startValue")
+    priv$.objectiveFunction(sv)$modelCost
+  }
+  cNone <- costFor("none")
+  cLloq <- costFor("lloq")
+  cHalf <- costFor("lloqHalf")
+  expect_false(isTRUE(all.equal(cNone, cLloq)))
+  expect_false(isTRUE(all.equal(cLloq, cHalf)))
+  expect_false(isTRUE(all.equal(cNone, cHalf)))
+})
+
+test_that("blqRemove = 'none' matches the default lloqHalf baseline cost", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
@@ -191,10 +215,9 @@ test_that("blqRemove = 'none' leaves the cost unchanged (no regression)", {
   ds$LLOQ <- 2.5
   sv <- sapply(priv$.piParameters, `[[`, "startValue")
   cost <- priv$.objectiveFunction(sv)$modelCost
-  # Same baseline the substitution test above (".objectiveFunction preserves
-  # the substitution and M3 costs") asserts: blqRemove = "none" must reproduce
-  # the pre-Step-4 default-config cost at startValue with LLOQ = 2.5 exactly.
-  expect_equal(cost, 870.9881520191, tolerance = 1e-4)
+  # Verify that the default configuration's cost equals the blqMethod = "lloqHalf"
+  # / blqRemove = "none" baseline (the sibling substitution-cost test).
+  expect_equal(cost, 1174.3753775818, tolerance = 1e-4)
 })
 
 test_that("blqRemove = 'always' reduces nObservations relative to 'none'", {

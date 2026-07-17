@@ -143,3 +143,76 @@ test_that("an unrecognized mode errors at the default switch arm", {
     error = TRUE
   )
 })
+
+# .applyBlqSubstitution
+
+test_that("none returns the observed values unchanged even with below-LLOQ values", {
+  obs <- c(10, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.5), "none", "lin")
+  expect_equal(res, obs)
+})
+
+test_that("lloq (lin) substitutes a BLQ observation with the per-point LLOQ", {
+  obs <- c(10, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.5), "lloq", "lin")
+  expect_equal(res, c(10, 0.5))
+})
+
+test_that("lloq (lin) never modifies a quantifiable observation", {
+  # Both points are at or above their LLOQ, so neither is substituted.
+  obs <- c(10, 5)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 5), "lloq", "lin")
+  expect_equal(res, obs)
+})
+
+test_that("lloqHalf (lin) substitutes a BLQ observation with half the per-point LLOQ", {
+  obs <- c(10, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.5), "lloqHalf", "lin")
+  expect_equal(res, c(10, 0.25))
+})
+
+test_that("lloqHalf (log) substitutes with ln(LLOQ/2) = lloq - log(2)", {
+  # In log space the lloq column already holds ln(LLOQ). A BLQ observation is
+  # substituted with ln(LLOQ) - ln(2) = ln(LLOQ/2).
+  lnLloq <- log(0.5)
+  obs <- c(log(10), log(0.2))
+  res <- .applyBlqSubstitution(obs, lloq = c(lnLloq, lnLloq), "lloqHalf", "log")
+  expect_equal(res, c(log(10), lnLloq - log(2)))
+})
+
+test_that("each element uses its own per-point LLOQ", {
+  obs <- c(0.3, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.2), "lloq", "lin")
+  # First point (LLOQ 0.5): 0.3 < 0.5 -> substituted with 0.5. Second (LLOQ 0.2): 0.3 >= 0.2 -> kept.
+  expect_equal(res, c(0.5, 0.3))
+})
+
+test_that("NA lloq is never substituted", {
+  obs <- c(0.3, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(NA_real_, 0.5), "lloq", "lin")
+  expect_equal(res, c(0.3, 0.5))
+})
+
+test_that("NA observed value is never substituted", {
+  obs <- c(NA_real_, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.5), "lloq", "lin")
+  expect_equal(res, c(NA_real_, 0.5))
+})
+
+test_that("a value exactly at the LLOQ is not substituted (strict <)", {
+  res <- .applyBlqSubstitution(0.5, lloq = 0.5, "lloqHalf", "lin")
+  expect_equal(res, 0.5)
+})
+
+test_that("m3 returns the observed values unchanged (passthrough)", {
+  obs <- c(10, 0.3)
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 0.5), "m3", "lin")
+  expect_equal(res, obs)
+})
+
+test_that("an unrecognized method errors at the default switch arm", {
+  expect_snapshot(
+    .applyBlqSubstitution(1, lloq = 0.5, "sometimes", "lin"),
+    error = TRUE
+  )
+})

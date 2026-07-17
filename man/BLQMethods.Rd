@@ -8,21 +8,20 @@ BLQMethods
 }
 \description{
 Methods selecting how the retained BLQ observations contribute to the cost.
+Substitution is observed-only: the simulated prediction is never modified,
+and quantifiable observations (at or above the LLOQ) are never touched.
+Agreement between a censored observation and a prediction below the LLOQ is
+\code{m3}'s job, not the substitution methods'.
 }
 \details{
 The available methods are:
 \itemize{
 \item \strong{\code{none}} - Use the BLQ value as stored, with no special handling.
-\item \strong{\code{lloq}} - Clamp both observed and simulated values to the LLOQ (PK-Sim
-default).
-\item \strong{\code{lloqHalf}} - Substitute the observed value with half the LLOQ (Beal M5).
+\item \strong{\code{lloq}} - Substitute a BLQ observation with the LLOQ (PK-Sim default).
+\item \strong{\code{lloqHalf}} - Substitute a BLQ observation with half the LLOQ (Beal
+M5).
 \item \strong{\code{m3}} - Add the censored-likelihood contribution (Beal M3).
 }
-
-Note: in the current release \code{none}, \code{lloq}, and \code{lloqHalf} are not yet
-distinguished at runtime. All three apply the same half-LLOQ substitution;
-\code{m3} is the only method with distinct behavior. The \code{lloq} clamp and the
-\code{none} pass-through are differentiated in a later release.
 }
 \seealso{
 The \code{error-calculation} vignette for the Beal (2001) method taxonomy.

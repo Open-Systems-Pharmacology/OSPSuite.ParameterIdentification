@@ -8,15 +8,48 @@ obsVsPredDf <- readr::read_csv(
 obsDf <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
 predDf <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
 
+.blqKernelFixture <- function() {
+  # 4 simulated points spanning the observed times; 4 observed points, one of
+  # which (yValues 1 at LLOQ 2.5) is censored, the other three uncensored.
+  tibble::tibble(
+    dataType = c(rep("simulated", 4), rep("observed", 4)),
+    xValues = c(1, 2, 3, 4, 1, 2, 3, 4),
+    yValues = c(9, 6, 3, 1.5, 10, 5, 4, 1),
+    xUnit = "min",
+    yUnit = "mol/l",
+    xDimension = "Time",
+    yDimension = "Concentration (molar)",
+    lloq = c(rep(NA_real_, 4), rep(2.5, 4)),
+    weights = NA_real_
+  )
+}
+
+.blqAllCensoredFixture <- function() {
+  # Same shape, but every observed value is below LLOQ 2.5 (all censored).
+  df <- .blqKernelFixture()
+  df$yValues[df$dataType == "observed"] <- c(2, 1.5, 1, 0.5)
+  df
+}
+
 test_that(".calculateCensoredContribution correctly calculates result with linear scaling", {
-  obsDf$lloq <- 2.5
+  censored <- obsDf$yValues <= 2.5
+  lloq <- rep(2.5, sum(censored))
+  simCensored <- predDf$yValues[match(obsDf$xValues[censored], predDf$xValues)]
+  expected <- sum(
+    -2 * log(stats::pnorm((lloq - simCensored) / abs(0.25 * lloq)))
+  )
   result <- .calculateCensoredContribution(
-    observed = obsDf,
-    simulated = predDf,
+    lloq = lloq,
+    simulated = simCensored,
     scaling = "lin",
     linScaleCV = 0.25
   )
-  expect_equal(result, 0.545702, tolerance = 1e-4)
+  expect_equal(result, expected)
+  # Changes from the old 0.545702: the old code applied `log(p, base = 10)`
+  # unconditionally (even on the "lin" path), so the sqrt/square round-trip
+  # was not a no-op with respect to log base. The natural-log fix moves this
+  # to 0.545702 * log(10) = 1.256526.
+  expect_equal(result, 1.256526, tolerance = 1e-4)
 })
 
 test_that(".calculateCensoredContribution correctly calculates result with logarithmic scaling", {
@@ -25,72 +58,159 @@ test_that(".calculateCensoredContribution correctly calculates result with logar
   obsVsPredDfLog <- .applyLogTransformation(obsVsPredDfLloq)
   obsDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "observed", ]
   predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
+  censored <- obsDfLog$yValues <= obsDfLog$lloq
+  lloq <- obsDfLog$lloq[censored]
+  simCensored <- predDfLog$yValues[
+    match(obsDfLog$xValues[censored], predDfLog$xValues)
+  ]
+  sd <- sqrt(log(1 + 0.2^2))
+  expected <- sum(-2 * log(stats::pnorm((lloq - simCensored) / sd)))
   result <- .calculateCensoredContribution(
-    observed = obsDfLog,
-    simulated = predDfLog,
+    lloq = lloq,
+    simulated = simCensored,
     scaling = "log",
-    logScaleSD = 0.086
+    logScaleSD = sd
   )
-  expect_equal(result, 0.437086, tolerance = 1e-4)
+  expect_equal(result, expected)
+  # Old value 0.437086 used the log10-CV sigma (0.086) and a base-10 log
+  # penalty; the natural-log sigma (sqrt(log(1.04)) ~= 0.198) and natural-log
+  # penalty together move this to 1.210831.
+  expect_equal(result, 1.210831, tolerance = 1e-4)
 })
 
-test_that(".calculateCensoredContribution can handle a minimal dataset with a single censored observation", {
-  obsDf$lloq <- 2.5
-  obsDfSingle <- obsDf[1, , drop = FALSE]
-  predDfSingle <- predDf[1, , drop = FALSE]
+test_that(".calculateCensoredContribution returns 0 when no rows are censored", {
+  # obsDf[1, ] has yValues above the LLOQ, so nothing is censored.
+  censored <- obsDf$yValues[1] <= 2.5
+  lloq <- rep(2.5, sum(censored))
+  simCensored <- predDf$yValues[1][censored]
   result <- .calculateCensoredContribution(
-    observed = obsDfSingle,
-    simulated = predDfSingle,
+    lloq = lloq,
+    simulated = simCensored,
     scaling = "lin",
     linScaleCV = 0.2
   )
   expect_equal(result, 0, tolerance = 1e-4)
 })
 
-test_that(".calculateCensoredContribution throws an error when LLOQ values are missing in the observed data", {
-  obsDf$lloq <- NA
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "lin",
+test_that(".calculateCensoredContribution throws errors on invalid options", {
+  lloq <- rep(2.5, 3)
+  simCensored <- c(1.9, 0.7, 0.1)
+  expect_snapshot(
+    error = TRUE,
+    .calculateCensoredContribution(
+      lloq = lloq,
+      simulated = simCensored,
+      scaling = "invalidOption",
       linScaleCV = 0.2
     )
   )
-  obsDf$lloq <- NULL
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
+  expect_snapshot(
+    error = TRUE,
+    .calculateCensoredContribution(
+      lloq = lloq,
+      simulated = simCensored,
+      scaling = "lin",
+      logScaleSD = 0.086
+    )
+  )
+  expect_snapshot(
+    error = TRUE,
+    .calculateCensoredContribution(
+      lloq = lloq,
+      simulated = simCensored,
+      scaling = "log",
+      linScaleCV = 0.2
+    )
+  )
+})
+
+test_that("m3 excludes censored rows from weightedSSR (no double count)", {
+  # Build a small combined frame: 3 uncensored + 1 censored observed point,
+  # with a simple simulated curve. weightedSSR must equal the SSR over the 3
+  # uncensored rows only.
+  df <- .blqKernelFixture()
+  cost <- .calculateCostMetrics(
+    df,
+    blqMethod = "m3",
+    scaling = "lin",
+    linScaleCV = 0.2
+  )
+  uncCost <- .calculateCostMetrics(
+    df[
+      df$dataType == "simulated" |
+        (df$dataType == "observed" & df$yValues > 2.5),
+    ],
+    blqMethod = "none",
+    scaling = "lin"
+  )
+  expect_equal(
+    cost$costVariables$weightedSSR,
+    uncCost$costVariables$weightedSSR
+  )
+  expect_equal(
+    cost$costVariables$nObservations,
+    uncCost$costVariables$nObservations
+  )
+})
+
+test_that("m3 censored contribution uses per-row lin sigma abs(linScaleCV * lloq)", {
+  # Two censored points with different LLOQs; expected sigma is per row.
+  lloq <- c(2.5, 5)
+  sim <- c(1.0, 2.0)
+  expected <- sum(-2 * log(stats::pnorm((lloq - sim) / abs(0.2 * lloq))))
+  expect_equal(
+    .calculateCensoredContribution(lloq, sim, "lin", linScaleCV = 0.2),
+    expected
+  )
+})
+
+test_that("m3 log-scale censored term uses natural-log sigma", {
+  lloq <- log(c(2.5))
+  sim <- log(c(1.0))
+  sd <- sqrt(log(1 + 0.2^2))
+  expected <- sum(-2 * log(stats::pnorm((lloq - sim) / sd)))
+  expect_equal(
+    .calculateCensoredContribution(lloq, sim, "log", logScaleSD = sd),
+    expected
+  )
+})
+
+test_that("all-censored m3 mapping does not error and cost is the censored term", {
+  df <- .blqAllCensoredFixture()
+  cost <- .calculateCostMetrics(
+    df,
+    blqMethod = "m3",
+    scaling = "lin",
+    linScaleCV = 0.2
+  )
+  expect_equal(cost$costVariables$weightedSSR, 0)
+  expect_equal(cost$costVariables$nObservations, 0)
+  expect_equal(cost$modelCost, cost$costVariables$M3Contribution)
+})
+
+test_that("m3 guard errors when a mapping's LLOQ is entirely NA", {
+  obsVsPredDfNoLloq <- obsVsPredDf
+  obsVsPredDfNoLloq$lloq <- NA_real_
+  expect_snapshot(
+    error = TRUE,
+    .calculateCostMetrics(
+      obsVsPredDfNoLloq,
+      blqMethod = "m3",
       scaling = "lin",
       linScaleCV = 0.2
     )
   )
 })
 
-test_that(".calculateCensoredContribution throws errors on invalid options", {
-  obsDf$lloq <- 2.5
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "invalidOption",
-      linScaleCV = 0.2
-    )
-  )
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
+test_that("m3 guard errors when a mapping's LLOQ column is absent", {
+  obsVsPredDfNoLloqCol <- obsVsPredDf
+  obsVsPredDfNoLloqCol$lloq <- NULL
+  expect_snapshot(
+    error = TRUE,
+    .calculateCostMetrics(
+      obsVsPredDfNoLloqCol,
+      blqMethod = "m3",
       scaling = "lin",
-      logScaleSD = 0.086
-    )
-  )
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "log",
       linScaleCV = 0.2
     )
   )
@@ -395,7 +515,11 @@ test_that("M3 and least-squares kernel costs match recorded values and differ fr
     linScaleCV = 0.2
   )
   expect_equal(result_lsq$modelCost, 677.3902833227, tolerance = 1e-4)
-  expect_equal(result_m3$modelCost, 677.9181354224, tolerance = 1e-4)
+  # Was 677.9181354224 before the M3 rework (double-counted censored rows in
+  # weightedSSR, log10 penalty). Now weightedSSR excludes the 3 censored rows
+  # (677.1065441631 over 8 uncensored rows) plus the natural-log censored term
+  # (1.2154243761), for 678.3219685393.
+  expect_equal(result_m3$modelCost, 678.3219685393, tolerance = 1e-4)
   expect_true(result_lsq$modelCost != result_m3$modelCost)
 })
 

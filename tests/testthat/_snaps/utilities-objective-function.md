@@ -1,3 +1,51 @@
+# .calculateCensoredContribution throws errors on invalid options
+
+    Code
+      .calculateCensoredContribution(lloq = lloq, simulated = simCensored, scaling = "invalidOption",
+        linScaleCV = 0.2)
+    Condition
+      Error in `ospsuite.utils::validateEnumValue()`:
+      ! invalidOption is not a valid value in `ScalingOptions`.
+      All valid values can be found using `ScalingOptions`
+
+---
+
+    Code
+      .calculateCensoredContribution(lloq = lloq, simulated = simCensored, scaling = "lin",
+        logScaleSD = 0.086)
+    Condition
+      Error in `.calculateCensoredContribution()`:
+      ! Scaling method and scaling parameters are not compatible.
+
+---
+
+    Code
+      .calculateCensoredContribution(lloq = lloq, simulated = simCensored, scaling = "log",
+        linScaleCV = 0.2)
+    Condition
+      Error in `.calculateCensoredContribution()`:
+      ! Scaling method and scaling parameters are not compatible.
+
+# m3 guard errors when a mapping's LLOQ is entirely NA
+
+    Code
+      .calculateCostMetrics(obsVsPredDfNoLloq, blqMethod = "m3", scaling = "lin",
+        linScaleCV = 0.2)
+    Condition
+      Error in `.calculateCostMetrics()`:
+      ! LLOQ value not provided with the data.
+
+# m3 guard errors when a mapping's LLOQ column is absent
+
+    Code
+      .calculateCostMetrics(obsVsPredDfNoLloqCol, blqMethod = "m3", scaling = "lin",
+        linScaleCV = 0.2)
+    Condition
+      Warning:
+      Unknown or uninitialised column: `lloq`.
+      Error in `.calculateCostMetrics()`:
+      ! LLOQ value not provided with the data.
+
 # .applyLogTransformation correctly log-transforms `yValues` and `lloq`
 
     c(-46.0517018598809, 3.57700696819377, 2.93470564516249, 2.62663228242601, 

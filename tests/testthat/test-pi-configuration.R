@@ -370,7 +370,7 @@ test_that("blqOptions defaults match BLQOptions", {
   expect_equal(piConfiguration$blqOptions$linScaleCV, 0.2)
   expect_equal(
     piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+    sqrt(log(1 + 0.2^2))
   )
 })
 
@@ -380,7 +380,7 @@ test_that("blqOptions can be set and merged partially", {
   expect_equal(piConfiguration$blqOptions$linScaleCV, 0.3)
   expect_equal(
     piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+    sqrt(log(1 + 0.2^2))
   )
 })
 

@@ -359,19 +359,6 @@ ParameterIdentification <- R6::R6Class(
             outputMappings[[idx]]$quantity$dimension
           )
         )
-        # Apply LLOQ handling for the substitution BLQ methods (all but M3)
-        if (private$.configuration$blqMethod != "m3") {
-          # replace values < LLOQ with LLOQ/2 in simulated data
-          if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
-            lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[
-              (obsVsPredDf$dataType == "simulated" &
-                obsVsPredDf$yValues < lloq),
-              "yValues"
-            ] <- lloq / 2
-          }
-        }
-
         # Apply log transformation if requested
         if (outputMappings[[idx]]$scaling == "log") {
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)

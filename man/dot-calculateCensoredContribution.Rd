@@ -5,7 +5,7 @@
 \title{Calculate Contribution of Censored Data}
 \usage{
 .calculateCensoredContribution(
-  observed,
+  lloq,
   simulated,
   scaling,
   linScaleCV = NULL,
@@ -13,11 +13,10 @@
 )
 }
 \arguments{
-\item{observed}{Data frame containing observed data, must include 'lloq',
-'xValues', 'xUnit', 'xDimension', and 'yValues' columns.}
+\item{lloq}{Numeric vector of the per-row LLOQ for the censored rows only.}
 
-\item{simulated}{Data frame containing simulated data, must include
-'xValues', 'xUnit', 'xDimension', and 'yValues' columns.}
+\item{simulated}{Numeric vector of (interpolated) simulated values, aligned
+element-for-element with \code{lloq}.}
 
 \item{scaling}{Character string specifying the scaling method; should be one
 of the predefined scaling options.}
@@ -29,8 +28,8 @@ for linear scaling, applied to 'lloq' values.}
 applied uniformly to all censored observations.}
 }
 \value{
-Numeric value representing the sum of squared errors for censored
-observations, contributing to the model's total cost.
+Numeric value representing the censored-likelihood contribution,
+contributing to the model's total cost.
 }
 \description{
 Evaluates the impact of censored data (below quantification limit, BQL) on
@@ -43,7 +42,7 @@ enhancing overall model cost assessment with respect to detection limits.
 }
 \examples{
 \dontrun{
-.calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
+.calculateCensoredContribution(lloq, simulated, scaling = "lin", linScaleCV = 0.2)
 }
 }
 \keyword{internal}
