@@ -216,3 +216,10 @@ test_that("an unrecognized method errors at the default switch arm", {
     error = TRUE
   )
 })
+
+test_that("a length-mismatched lloq errors instead of silently corrupting observed values", {
+  expect_snapshot(
+    .applyBlqSubstitution(c(0.3, 0.2), lloq = 0.5, "lloqHalf", "lin"),
+    error = TRUE
+  )
+})

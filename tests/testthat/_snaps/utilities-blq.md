@@ -16,3 +16,11 @@
       ! sometimes is not a valid value in `BLQMethods`.
       All valid values can be found using `BLQMethods`
 
+# a length-mismatched lloq errors instead of silently corrupting observed values
+
+    Code
+      .applyBlqSubstitution(c(0.3, 0.2), lloq = 0.5, "lloqHalf", "lin")
+    Condition
+      Error in `ospsuite.utils::validateIsSameLength()`:
+      ! Arguments "observedValues, lloq" must have the same length, but they don't!
+

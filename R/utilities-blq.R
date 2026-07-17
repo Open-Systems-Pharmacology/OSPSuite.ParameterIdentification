@@ -99,7 +99,9 @@
 #'
 #' @param observedValues Numeric vector of observed values (kernel scale).
 #' @param lloq Numeric vector of per-point LLOQ, aligned with `observedValues`.
-#'   In log scaling this already holds `ln(LLOQ)`.
+#'   In log scaling this already holds `ln(LLOQ)`. For `blqMethod` values that
+#'   substitute (`"lloq"`, `"lloqHalf"`), a length mismatch errors rather than
+#'   silently recycling and corrupting `observedValues`.
 #' @param blqMethod A `BLQMethods` value: `"none"`, `"lloq"`, `"lloqHalf"`, `"m3"`.
 #' @param scaling A `ScalingOptions` value: `"lin"` or `"log"`. Governs the
 #'   `lloqHalf` target (`LLOQ/2` in lin, `ln(LLOQ) - ln(2)` in log).
@@ -116,6 +118,7 @@
     lloqHalf = if (scaling == "log") lloq - log(2) else lloq / 2,
     ospsuite.utils::validateEnumValue(blqMethod, BLQMethods)
   )
+  ospsuite.utils::validateIsSameLength(observedValues, lloq)
   obsBelow <- !is.na(lloq) & !is.na(observedValues) & observedValues < lloq
   observedValues[obsBelow] <- target[obsBelow]
   observedValues

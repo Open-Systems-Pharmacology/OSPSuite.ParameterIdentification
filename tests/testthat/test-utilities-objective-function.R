@@ -529,6 +529,24 @@ test_that(".calculateCostMetrics defaults to no censored contribution", {
   expect_equal(result_default$modelCost, result_none$modelCost)
 })
 
+test_that("lloqHalf substitution reaches the kernel on the log scale", {
+  # Row x=4 (yValues 1) is BLQ at lloq 2.5. Log-transform first, mirroring the
+  # log-scale .calculateCensoredContribution fixture above, so the kernel's
+  # `lloq` column already holds ln(LLOQ); the substituted target is then
+  # ln(LLOQ) - ln(2) = ln(LLOQ / 2).
+  dfLog <- .applyLogTransformation(.blqKernelFixture())
+  result <- .calculateCostMetrics(
+    dfLog,
+    blqMethod = "lloqHalf",
+    scaling = "log"
+  )
+  blqRow <- result$residualDetails$x == 4
+  expect_equal(
+    result$residualDetails$yObserved[blqRow],
+    log(2.5) - log(2)
+  )
+})
+
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
   result_scaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = TRUE)
   result_unscaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = FALSE)
