@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,8 @@
 <code><a href="../reference/plot.modelCost.html">plot.modelCost()</a></code> now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/275" class="external-link">#275</a>).</li>
 <li>
 <code>ParameterIdentification</code> can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/280" class="external-link">#280</a>).</li>
+<li>
+<code>PIParameters$new()</code> accepts optional <code>minValue</code>/<code>maxValue</code>, errors on a zero start value when no bounds are supplied, and rejects zero-width bounds (<code>minValue == maxValue</code>) that leave nothing to optimize (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/282" class="external-link">#282</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">

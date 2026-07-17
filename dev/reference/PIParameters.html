@@ -9,7 +9,7 @@ routine"><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9007</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9008</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,11 +102,23 @@ value is derived from the first parameter upon creation, modifiable via
 <code>PIParameters$startValue</code>. All parameters are optimized using this
 unified value.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">parameters</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/PIParameters.html">PIParameters</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">parameters</span>, minValue <span class="op">=</span> <span class="cn">NULL</span>, maxValue <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>parameters</code></dt>
 <dd><p>List of <code>Parameter</code> class objects to be optimized.</p></dd>
+
+      <dt><code>minValue</code></dt>
+<dd><p>Optional lower bound. Defaults to <code>NULL</code>, in which case it
+is derived from the start value as <code>start * 0.1</code> (or <code>start * 10</code> when
+the start value is negative, so the bound stays below the start value).
+Required when the start value is zero.</p></dd>
+
+      <dt><code>maxValue</code></dt>
+<dd><p>Optional upper bound. Defaults to <code>NULL</code>, in which case it
+is derived from the start value as <code>start * 10</code> (or <code>start * 0.1</code> when
+the start value is negative, so the bound stays above the start value).
+Required when the start value is zero.</p></dd>
 
 
 </dl><p></p></div>

@@ -56,13 +56,27 @@ unified value.
 
 #### Usage
 
-    PIParameters$new(parameters)
+    PIParameters$new(parameters, minValue = NULL, maxValue = NULL)
 
 #### Arguments
 
 - `parameters`:
 
   List of `Parameter` class objects to be optimized.
+
+- `minValue`:
+
+  Optional lower bound. Defaults to `NULL`, in which case it is derived
+  from the start value as `start * 0.1` (or `start * 10` when the start
+  value is negative, so the bound stays below the start value). Required
+  when the start value is zero.
+
+- `maxValue`:
+
+  Optional upper bound. Defaults to `NULL`, in which case it is derived
+  from the start value as `start * 10` (or `start * 0.1` when the start
+  value is negative, so the bound stays above the start value). Required
+  when the start value is zero.
 
 #### Returns
 

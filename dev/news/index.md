@@ -18,6 +18,10 @@
 - `ParameterIdentification` can now optimize state-variable parameters
   (those defined by a right-hand-side formula), which previously crashed
   ([\#280](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/280)).
+- `PIParameters$new()` accepts optional `minValue`/`maxValue`, errors on
+  a zero start value when no bounds are supplied, and rejects zero-width
+  bounds (`minValue == maxValue`) that leave nothing to optimize
+  ([\#282](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/282)).
 
 ## ospsuite.parameteridentification 2.2.0
 
