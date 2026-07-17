@@ -20,8 +20,9 @@ test_that(".calculateCensoredContribution correctly calculates result with linea
 })
 
 test_that(".calculateCensoredContribution correctly calculates result with logarithmic scaling", {
-  obsVsPredDf$lloq <- 2.5
-  obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
+  obsVsPredDfLloq <- obsVsPredDf
+  obsVsPredDfLloq$lloq <- 2.5
+  obsVsPredDfLog <- .applyLogTransformation(obsVsPredDfLloq)
   obsDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "observed", ]
   predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
   result <- .calculateCensoredContribution(
