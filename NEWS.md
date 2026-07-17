@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- `PIConfiguration` gains `blqMethod`, `blqRemove`, and `blqOptions` fields for handling data below the limit of quantification (BLQ). `objectiveFunctionType` no longer accepts `"m3"`; select censored-likelihood (M3) handling with `blqMethod = "m3"` instead, and the `linScaleCV` and `logScaleSD` parameters move from `objectiveFunctionOptions` to `blqOptions`. Existing least-squares results are numerically unchanged (#248).
+
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification` now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).

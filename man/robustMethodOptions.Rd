@@ -13,8 +13,8 @@ during parameter optimization.
 \details{
 The available methods are:
 \itemize{
-\item \strong{\code{none}} – No robust weighting applied.
-\item \strong{\code{huber}} – Huber weighting for moderate outliers.
-\item \strong{\code{bisquare}} – Bisquare (Tukey's biweight) weighting for severe outliers.
+\item \strong{\code{none}} - No robust weighting applied.
+\item \strong{\code{huber}} - Huber weighting for moderate outliers.
+\item \strong{\code{bisquare}} - Bisquare (Tukey's biweight) weighting for severe outliers.
 }
 }

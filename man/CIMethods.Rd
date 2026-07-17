@@ -15,8 +15,8 @@ Confidence interval estimation methods supported in the
 Supported methods:
 \itemize{
 \item \strong{\code{hessian}} - Hessian-based approximation using the Fisher Information Matrix.
-\item \strong{\code{PL}} – Profile likelihood estimation, iterating over each parameter.
-\item \strong{\code{bootstrap}} – Bootstrap resampling to estimate parameter uncertainty.
+\item \strong{\code{PL}} - Profile likelihood estimation, iterating over each parameter.
+\item \strong{\code{bootstrap}} - Bootstrap resampling to estimate parameter uncertainty.
 
 These methods can be specified and configured within the \code{PIConfiguration}
 class to customize confidence interval estimation.

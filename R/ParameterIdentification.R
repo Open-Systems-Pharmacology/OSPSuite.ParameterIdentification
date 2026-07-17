@@ -341,11 +341,8 @@ ParameterIdentification <- R6::R6Class(
             outputMappings[[idx]]$quantity$dimension
           )
         )
-        # Apply LLOQ handling for LSQ
-        if (
-          private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
-            "lsq"
-        ) {
+        # Apply LLOQ handling for the substitution BLQ methods (all but M3)
+        if (private$.configuration$blqMethod != "m3") {
           # replace values < LLOQ with LLOQ/2 in simulated data
           if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
             lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
@@ -375,23 +372,23 @@ ParameterIdentification <- R6::R6Class(
 
         # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
-        costControl$scaling <- outputMappings[[idx]]$scaling
         ospsuite.utils::validateIsOption(
           options = costControl,
-          validOptions = ObjectiveFunctionSpecs
+          validOptions = ObjectiveFunctionSpecs[names(costControl)]
         )
+        blqOptions <- private$.configuration$blqOptions
 
         # Compute cost for current output mapping
         costSummary <- .calculateCostMetrics(
           df = obsVsPredDf,
-          objectiveFunctionType = costControl$objectiveFunctionType,
+          blqMethod = private$.configuration$blqMethod,
           residualWeightingMethod = costControl$residualWeightingMethod,
           robustMethod = costControl$robustMethod,
           scaleVar = costControl$scaleVar,
           index = idx,
-          linScaleCV = costControl$linScaleCV,
-          logScaleSD = costControl$logScaleSD,
-          scaling = costControl$scaling
+          linScaleCV = blqOptions$linScaleCV,
+          logScaleSD = blqOptions$logScaleSD,
+          scaling = outputMappings[[idx]]$scaling
         )
 
         costSummaryList[[idx]] <- costSummary

@@ -9,9 +9,9 @@
 #'   `yValues`, and optionally `yErrorValues` and `yErrorType` if
 #'   `residualWeightingMethod = "error"`. The error type must be one of
 #'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
-#' @param objectiveFunctionType A string indicating the objective function type
-#'   for calculating model cost. Options include `"lsq"` (least squares,
-#'   default) and `"m3"` for handling censored data.
+#' @param blqMethod A string selecting how retained BLQ observations contribute
+#'   to the cost. `"m3"` adds the censored-likelihood contribution; any other
+#'   value applies no censored handling.
 #' @param residualWeightingMethod A string indicating the method to weight the
 #'   residuals. Options include `"none"` (default) and `"error"`.
 #' @param robustMethod A string indicating the robust method to apply to the
@@ -51,7 +51,7 @@
 #' @noRd
 .calculateCostMetrics <- function(
   df,
-  objectiveFunctionType = "lsq",
+  blqMethod = "none",
   residualWeightingMethod = "none",
   robustMethod = "none",
   scaleVar = FALSE,
@@ -114,7 +114,7 @@
 
   # Applying M3 method for censored error calculation
   censoredContribution <- 0
-  if (objectiveFunctionType == "m3") {
+  if (blqMethod == "m3") {
     censoredContribution <- .calculateCensoredContribution(
       observed = observedData,
       simulated = simulatedData,
