@@ -24,19 +24,13 @@ test_that("PIParameters can export to data.frame", {
   expect_snapshot(piParam$toDataFrame())
 })
 
-test_that("Start, min, and max values are set correctly", {
+test_that("Start, min, and max values are set correctly (single parameter)", {
   piParam <- PIParameters$new(testParam)
   newStartValue <- refVal * 2
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
-  expect_error(
-    piParam$minValue <- (newStartValue * 2),
-    "minimal value cannot be greater"
-  )
-  expect_error(
-    piParam$maxValue <- (newStartValue / 2),
-    "maximal value cannot be smaller"
-  )
+  expect_snapshot(piParam$minValue <- (newStartValue * 2), error = TRUE)
+  expect_snapshot(piParam$maxValue <- (newStartValue / 2), error = TRUE)
   piParam$minValue <- (newStartValue / 2)
   piParam$maxValue <- (newStartValue * 2)
   expect_equal(piParam$minValue, newStartValue / 2)
@@ -101,19 +95,13 @@ test_that("PIParameters with multiple parameters can export to data.frame", {
   expect_snapshot(piParam$toDataFrame())
 })
 
-test_that("Start, min, and max values are set correctly", {
+test_that("Start, min, and max values are set correctly (multiple parameters)", {
   piParam <- PIParameters$new(testParamsList)
   newStartValue <- refVal * 2
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
-  expect_error(
-    piParam$minValue <- (newStartValue * 2),
-    "minimal value cannot be greater"
-  )
-  expect_error(
-    piParam$maxValue <- (newStartValue / 2),
-    "maximal value cannot be smaller"
-  )
+  expect_snapshot(piParam$minValue <- (newStartValue * 2), error = TRUE)
+  expect_snapshot(piParam$maxValue <- (newStartValue / 2), error = TRUE)
   piParam$minValue <- (newStartValue / 2)
   piParam$maxValue <- (newStartValue * 2)
   expect_equal(piParam$minValue, newStartValue / 2)
@@ -150,4 +138,95 @@ test_that("Unit can be changed correctly", {
     messages$errorUnitNotSupported("invalidUnit", "Volume"),
     fixed = TRUE
   )
+})
+
+test_that("Zero start value without explicit bounds errors", {
+  zeroParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- zeroParam$value
+  zeroParam$setValue(0)
+  on.exit(zeroParam$setValue(origValue))
+
+  expect_snapshot(PIParameters$new(zeroParam), error = TRUE)
+})
+
+test_that("Zero start value with explicit bounds is accepted", {
+  zeroParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- zeroParam$value
+  zeroParam$setValue(0)
+  on.exit(zeroParam$setValue(origValue))
+
+  piParam <- PIParameters$new(zeroParam, minValue = -1, maxValue = 1)
+  expect_equal(piParam$startValue, 0)
+  expect_equal(piParam$minValue, -1)
+  expect_equal(piParam$maxValue, 1)
+})
+
+test_that("Negative start value auto-generates ordered bounds", {
+  negParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- negParam$value
+  negParam$setValue(-2)
+  on.exit(negParam$setValue(origValue))
+
+  piParam <- PIParameters$new(negParam)
+  expect_equal(piParam$startValue, -2)
+  expect_equal(piParam$minValue, -20)
+  expect_equal(piParam$maxValue, -0.2)
+})
+
+test_that("Zero-width bounds are rejected at a zero start value", {
+  zeroParam <- ospsuite::getParameter(
+    "Aciclovir|Permeability",
+    testSimulation()
+  )
+  origValue <- zeroParam$value
+  zeroParam$setValue(0)
+  on.exit(zeroParam$setValue(origValue))
+
+  expect_snapshot(
+    PIParameters$new(zeroParam, minValue = 0, maxValue = 0),
+    error = TRUE
+  )
+})
+
+test_that("Zero-width bounds are rejected at a non-zero start value", {
+  param <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
+  origValue <- param$value
+  param$setValue(5)
+  on.exit(param$setValue(origValue))
+
+  expect_snapshot(
+    PIParameters$new(param, minValue = 5, maxValue = 5),
+    error = TRUE
+  )
+})
+
+test_that("A narrow but positive-width range is accepted", {
+  param <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
+  origValue <- param$value
+  param$setValue(5)
+  on.exit(param$setValue(origValue))
+
+  piParam <- PIParameters$new(param, minValue = 5 - 1e-4, maxValue = 5 + 1e-4)
+  expect_equal(piParam$minValue, 5 - 1e-4)
+  expect_equal(piParam$maxValue, 5 + 1e-4)
+})
+
+test_that("Setters cannot collapse the range to zero width", {
+  param <- ospsuite::getParameter("Aciclovir|Permeability", testSimulation())
+  origValue <- param$value
+  param$setValue(5)
+  on.exit(param$setValue(origValue))
+
+  piParam <- PIParameters$new(param)
+  piParam$minValue <- 5
+  expect_snapshot(piParam$maxValue <- 5, error = TRUE)
 })
