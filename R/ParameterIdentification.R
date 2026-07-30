@@ -123,6 +123,21 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # Applies a vector of optimizer values, one entry per `PIParameters` group,
+    # to every underlying model parameter. Values arrive in each group's
+    # `$unit`; `addRunValues()` reads base units, so they are converted here.
+    # This is the only place that writes into the variable buckets.
+    .applyParameterValues = function(values) {
+      for (idx in seq_along(values)) {
+        piParameter <- private$.piParameters[[idx]]
+        baseValue <- .toBaseValue(piParameter, values[[idx]])
+        for (parameter in piParameter$parameters) {
+          simId <- .getSimulationContainer(parameter)$id
+          private$.setVariableValue(simId, parameter, baseValue)
+        }
+      }
+    },
+
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -213,13 +228,9 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Seed each optimization parameter's start value into its variable bucket.
-        for (piParameter in private$.piParameters) {
-          baseValue <- .toBaseValue(piParameter, piParameter$startValue)
-          for (parameter in piParameter$parameters) {
-            simId <- .getSimulationContainer(parameter)$id
-            private$.setVariableValue(simId, parameter, baseValue)
-          }
-        }
+        private$.applyParameterValues(
+          vapply(private$.piParameters, function(p) p$startValue, numeric(1))
+        )
 
         # Create simulation batches for identification runs
         for (simulation in private$.simulations) {
@@ -476,14 +487,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     .getPKValues = function(paramValues) {
-      for (idx in seq_along(paramValues)) {
-        piParameter <- private$.piParameters[[idx]]
-        baseValue <- .toBaseValue(piParameter, paramValues[[idx]])
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, baseValue)
-        }
-      }
+      private$.applyParameterValues(paramValues)
 
       for (simId in names(private$.simulationBatches)) {
         simBatch <- private$.simulationBatches[[simId]]
@@ -563,14 +567,7 @@ ParameterIdentification <- R6::R6Class(
       # Iterate through the values and update current parameter values. The
       # order of the values corresponds to the order of `PIParameters` in the
       # parameters list.
-      for (idx in seq_along(currVals)) {
-        piParameter <- private$.piParameters[[idx]]
-        baseValue <- .toBaseValue(piParameter, currVals[[idx]])
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, baseValue)
-        }
-      }
+      private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
       # # Simulate steady-states if specified
