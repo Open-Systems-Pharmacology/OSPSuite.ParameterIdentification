@@ -151,19 +151,15 @@
   # (which reads observedData$yValues) sees the same values as the residuals.
   observedData$yValues <- observedYVal
 
-  # M3 censored handling: impute a missing LLOQ (m3-only rule), compute one
-  # shared BLQ mask, score the censored rows via the censored likelihood, and
-  # exclude them from the least-squares term so they are not double counted.
+  # M3 censored handling: compute one shared BLQ mask, score the censored rows
+  # via the censored likelihood, and exclude them from the least-squares term so
+  # they are not double counted. A row whose own LLOQ is missing is not censored,
+  # the same rule `blqRemove` applied upstream, so both stages classify the
+  # identical row set. Only a mapping with no LLOQ at all is a misconfiguration.
   censoredContribution <- 0
   if (blqMethod == "m3") {
     if (all(is.na(observedData$lloq))) {
       stop("LLOQ value not provided with the data.")
-    }
-    if (any(is.na(observedData$lloq))) {
-      observedData$lloq[is.na(observedData$lloq)] <- min(
-        observedData$lloq,
-        na.rm = TRUE
-      )
     }
     censoredMask <- .isBlq(observedData)
     censoredContribution <- .calculateCensoredContribution(

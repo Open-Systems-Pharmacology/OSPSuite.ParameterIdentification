@@ -368,9 +368,13 @@ test_that("blqMethod accepts m3 without an objectiveType constraint", {
 test_that("blqOptions defaults match BLQOptions", {
   piConfiguration <- PIConfiguration$new()
   expect_equal(piConfiguration$blqOptions$linScaleCV, 0.2)
+  # Pinned as a literal, not as a re-spelling of the formula in the enum: the
+  # value is a natural-log sigma, matching the natural-log transform applied by
+  # `.applyLogTransformation()`. Asserting the formula would pass for any
+  # consistent pair of wrong values, including the log10 sigma 0.0860086348330568.
   expect_equal(
     piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2))
+    0.1980422004353651
   )
 })
 

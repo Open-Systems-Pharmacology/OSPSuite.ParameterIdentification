@@ -137,6 +137,25 @@ test_that("unsorted input still identifies the trailing run correctly", {
   expect_equal(sort(result$xValues), c(1, 2, 3))
 })
 
+test_that("trailingSingle on a zero-row frame returns it unchanged", {
+  df <- blqSingleDataset()[0, ]
+  expect_equal(.applyBlqRemove(df, "trailingSingle"), df)
+})
+
+test_that("a row with a missing lloq is not BLQ, so no mode removes it", {
+  # A missing LLOQ means "not censored" everywhere, so blqRemove and the m3
+  # censoring mask classify the same rows. Only x = 4 is BLQ here.
+  df <- data.frame(
+    name = "d1",
+    xValues = c(1, 2, 3, 4),
+    yValues = c(10, 0.5, 0.5, 0.5),
+    lloq = c(2.5, NA_real_, NA_real_, 2.5),
+    stringsAsFactors = FALSE
+  )
+  expect_equal(.isBlq(df), c(FALSE, FALSE, FALSE, TRUE))
+  expect_equal(.applyBlqRemove(df, "always")$xValues, c(1, 2, 3))
+})
+
 test_that("an unrecognized mode errors at the default switch arm", {
   expect_snapshot(
     .applyBlqRemove(blqSingleDataset(), "sometimes"),
@@ -159,9 +178,11 @@ test_that("lloq (lin) substitutes a BLQ observation with the per-point LLOQ", {
 })
 
 test_that("lloq (lin) never modifies a quantifiable observation", {
-  # Both points are at or above their LLOQ, so neither is substituted.
+  # Both points are strictly above their LLOQ, so neither is substituted. The
+  # second LLOQ is 4 rather than 5 so that the assertion cannot pass by
+  # coincidence: at lloq 5 the point would be BLQ and substituted back to 5.
   obs <- c(10, 5)
-  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 5), "lloq", "lin")
+  res <- .applyBlqSubstitution(obs, lloq = c(0.5, 4), "lloq", "lin")
   expect_equal(res, obs)
 })
 
@@ -199,9 +220,29 @@ test_that("NA observed value is never substituted", {
   expect_equal(res, c(NA_real_, 0.5))
 })
 
-test_that("a value exactly at the LLOQ is not substituted (strict <)", {
+test_that("a value exactly at the LLOQ is substituted, matching .isBlq", {
   res <- .applyBlqSubstitution(0.5, lloq = 0.5, "lloqHalf", "lin")
-  expect_equal(res, 0.5)
+  expect_equal(res, 0.25)
+})
+
+test_that("removal and substitution agree on a value exactly at the LLOQ", {
+  df <- data.frame(
+    name = "d1",
+    xValues = 1,
+    yValues = 2.5,
+    lloq = 2.5,
+    stringsAsFactors = FALSE
+  )
+  atLloqIsRemoved <- nrow(.applyBlqRemove(df, "always")) == 0L
+  atLloqIsSubstituted <- .applyBlqSubstitution(
+    df$yValues,
+    df$lloq,
+    "lloq",
+    "lin"
+  ) ==
+    df$lloq
+  expect_true(atLloqIsRemoved)
+  expect_true(atLloqIsSubstituted)
 })
 
 test_that("m3 returns the observed values unchanged (passthrough)", {

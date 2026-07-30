@@ -4,16 +4,37 @@
 # quantification (BLQ) rows enter the objective function. Pure function of the
 # observed data, applied once when the observed-data cache is built.
 
+#' Test observed values against their LLOQ
+#'
+#' The single definition of "below the limit of quantification" in the package.
+#' Every BLQ path (removal, censoring, substitution) resolves through this
+#' predicate, so no two of them can classify a row differently. An observation
+#' exactly at the LLOQ counts as BLQ, because an aggregated profile commonly
+#' records a below-LLOQ timepoint at the study LLOQ itself.
+#'
+#' @param yValues Numeric vector of observed values.
+#' @param lloq Numeric vector of per-point LLOQ, aligned element-for-element
+#'   with `yValues`.
+#' @return Logical vector, `TRUE` where the observation is below the limit of
+#'   quantification. Never `NA`: entries with an `NA` `lloq` or an `NA`
+#'   observed value are treated as not-BLQ.
+#' @keywords internal
+#' @noRd
+.isBlqValues <- function(yValues, lloq) {
+  !is.na(lloq) & !is.na(yValues) & yValues <= lloq
+}
+
 #' Identify BLQ observed rows
+#'
+#' Data-frame wrapper over [.isBlqValues()].
 #'
 #' @param df Observed-rows data frame with `yValues` and `lloq` columns.
 #' @return Logical vector, `TRUE` where the row is below the limit of
-#'   quantification. Never `NA`: rows with `NA` `lloq` or `NA` `yValues` are
-#'   treated as not-BLQ.
+#'   quantification.
 #' @keywords internal
 #' @noRd
 .isBlq <- function(df) {
-  !is.na(df$lloq) & !is.na(df$yValues) & df$yValues <= df$lloq
+  .isBlqValues(df$yValues, df$lloq)
 }
 
 #' Apply the blqRemove filter to observed rows
@@ -46,8 +67,9 @@
 #'   run reduced to its first point. Rows are regrouped by `name` and ordered by
 #'   `xValues`, so their order can differ from the input (unlike the `none` and
 #'   `always` modes, which preserve input order). This is safe because the
-#'   downstream cost pairs observed to simulated by `name` and `xValues`, not by
-#'   row position.
+#'   downstream cost pairs observed to simulated by interpolating on `xValues`
+#'   alone, and because the observed values travel in the same frame as their
+#'   `weights`, so reordering cannot desynchronise a value from its weight.
 #' @keywords internal
 #' @noRd
 .removeTrailingBlq <- function(observedDf) {
@@ -92,7 +114,7 @@
 #' simulated prediction is never modified: substitution is observed-only, as is
 #' standard in the community/Beal taxonomy (agreement between a censored
 #' observation and the prediction below the LLOQ is `m3`'s job, not this
-#' function's). Quantifiable observations (at or above the LLOQ) are never
+#' function's). Quantifiable observations (strictly above the LLOQ) are never
 #' touched. A pure function of the observed values, called from the kernel
 #' after interpolation so a per-point LLOQ is available. `none` and `m3` are
 #' passthrough (`m3` is scored by the censored path).
@@ -119,7 +141,7 @@
     ospsuite.utils::validateEnumValue(blqMethod, BLQMethods)
   )
   ospsuite.utils::validateIsSameLength(observedValues, lloq)
-  obsBelow <- !is.na(lloq) & !is.na(observedValues) & observedValues < lloq
+  obsBelow <- .isBlqValues(observedValues, lloq)
   observedValues[obsBelow] <- target[obsBelow]
   observedValues
 }
