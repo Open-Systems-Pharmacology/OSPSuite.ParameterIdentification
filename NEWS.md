@@ -2,13 +2,20 @@
 
 ## Breaking changes
 
-- `PIConfiguration` gains `blqMethod`, `blqRemove`, and `blqOptions` fields for handling data below the limit of quantification (BLQ). `objectiveFunctionType` no longer accepts `"m3"`; select censored-likelihood (M3) handling with `blqMethod = "m3"` instead, and the `linScaleCV` and `logScaleSD` parameters move from `objectiveFunctionOptions` to `blqOptions`. Existing least-squares results are numerically unchanged (#248).
+- `PIConfiguration` gains `blqMethod`, `blqRemove`, and `blqOptions` fields for handling data below the limit of quantification (BLQ). `objectiveFunctionType` no longer accepts `"m3"`; select censored-likelihood (M3) handling with `blqMethod = "m3"` instead, and the `linScaleCV` and `logScaleSD` parameters move from `objectiveFunctionOptions` to `blqOptions` (#248).
+- BLQ substitution now modifies the observed value using that point's own LLOQ, and `none`, `lloq`, and `lloqHalf` now behave differently from one another. The objective function previously clamped simulated values below `min(lloq)` to `LLOQ/2` instead, so least-squares fits on data carrying an LLOQ change, including under the default configuration (#250).
+- `blqMethod = "m3"` no longer counts a censored observation in both the least-squares sum and the censored term, and its censored-likelihood scoring changed in several further respects. M3 objective values are not comparable with earlier versions (#251).
+- The default `blqOptions$logScaleSD` changes from 0.086 to 0.198 (a factor of ln(10)), so that the standard deviation is in the natural-log units used by `scaling = "log"` (#288).
+
+## Major changes
+
+- `ParameterIdentification` now applies the `blqRemove` setting when scoring the fit: `always` removes all below-LLOQ (BLQ) observations and `trailingSingle` keeps only the first point of each trailing BLQ run, while the default `none` keeps every observation and leaves results unchanged (#249).
 
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification` now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).
 - `plot.modelCost()` now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (#275).
-- `ParameterIdentification` now applies the `blqRemove` setting when scoring the fit: `always` removes all below-LLOQ (BLQ) observations and `trailingSingle` keeps only the first point of each trailing BLQ run, while the default `none` keeps every observation and leaves results unchanged (#249).
+- `PIParameters$new()` accepts optional `minValue`/`maxValue`, errors on a zero start value when no bounds are supplied, and rejects zero-width bounds (`minValue == maxValue`) that leave nothing to optimize (#282).
 - `ParameterIdentification` can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (#280).
 
 # ospsuite.parameteridentification 2.2.0
