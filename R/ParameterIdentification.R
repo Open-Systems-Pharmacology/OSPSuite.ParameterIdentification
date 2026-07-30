@@ -214,9 +214,10 @@ ParameterIdentification <- R6::R6Class(
 
         # Seed each optimization parameter's start value into its variable bucket.
         for (piParameter in private$.piParameters) {
+          baseValue <- .toBaseValue(piParameter, piParameter$startValue)
           for (parameter in piParameter$parameters) {
             simId <- .getSimulationContainer(parameter)$id
-            private$.setVariableValue(simId, parameter, piParameter$startValue)
+            private$.setVariableValue(simId, parameter, baseValue)
           }
         }
 
@@ -477,9 +478,10 @@ ParameterIdentification <- R6::R6Class(
     .getPKValues = function(paramValues) {
       for (idx in seq_along(paramValues)) {
         piParameter <- private$.piParameters[[idx]]
+        baseValue <- .toBaseValue(piParameter, paramValues[[idx]])
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, paramValues[[idx]])
+          private$.setVariableValue(simId, parameter, baseValue)
         }
       }
 
@@ -563,9 +565,10 @@ ParameterIdentification <- R6::R6Class(
       # parameters list.
       for (idx in seq_along(currVals)) {
         piParameter <- private$.piParameters[[idx]]
+        baseValue <- .toBaseValue(piParameter, currVals[[idx]])
         for (parameter in piParameter$parameters) {
           simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, currVals[[idx]])
+          private$.setVariableValue(simId, parameter, baseValue)
         }
       }
 
