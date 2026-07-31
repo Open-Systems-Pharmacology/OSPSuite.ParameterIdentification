@@ -20,16 +20,16 @@ knitr::opts_knit$set(
 
 ## Introduction
 
-In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` and `blqRemove` control how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
+In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveType` selects the scoring mode that turns residuals into a single objective value, while `blqMethod` and `blqRemove` control how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
 
 
 ## Error Model
 
-The error model scores how far the simulation is from the observed data.
+The error model scores how far the simulation is from the observed data. `objectiveType` selects between two scoring modes, `lsq` (the default) and `mle`.
 
 ### LSQ - Least Squares Error
 
-The `lsq` method minimizes the sum of the squared differences between observed and simulated values. It is a widely used, straightforward, and intuitive error calculation for pharmacokinetic modeling, and is currently the only available `objectiveFunctionType`.
+The `lsq` method minimizes the sum of the squared differences between observed and simulated values. It is a widely used, straightforward, and intuitive error calculation for pharmacokinetic modeling.
 
 For a single `PIOutputMapping` with observations $y_i$ measured at times $t_i$ ($i = 1, \dots, n$), the cost is
 
@@ -39,14 +39,48 @@ $$
 
 where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$. BLQ substitution (`blqMethod = "lloq"` or `"lloqHalf"`) runs after interpolation and is observed-only: it substitutes $y_i$ when that point's own LLOQ, checked against $y_i$, shows it is BLQ, but never modifies $\hat{y}(t_i)$.
 
-Set it via the `objectiveFunctionType` attribute in `objectiveFunctionOptions`:
+`lsq` is the default and needs no explicit setting, but can be set via `objectiveType`:
 
 ```{r, eval=FALSE}
 library(ospsuite.parameteridentification)
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
+piConfiguration$objectiveType <- "lsq"
 ```
+
+### MLE - Maximum Likelihood Error
+
+The `mle` method minimizes the negative log-likelihood (NLL) of the observations under a Gaussian error model, rather than the raw sum of squares. Each observation is assumed to be normally distributed about the simulated value with a per-observation standard deviation $\sigma_i$:
+
+$$
+y_i \sim \text{Normal}\!\left( \hat{y}(t_i), \sigma_i^2 \right),
+$$
+
+which gives the negative log-likelihood
+
+$$
+\text{NLL} = \frac{n}{2} \ln(2\pi) + \sum_{i=1}^{n} \ln \sigma_i + \sum_{i=1}^{n} \frac{\left( \hat{y}(t_i) - y_i \right)^2}{2 \sigma_i^2} .
+$$
+
+The third term is a weighted sum of squares with weights $1/\sigma_i$, so least squares is exactly this negative log-likelihood with the first two terms dropped, which is legitimate only when $\sigma_i$ does not depend on the parameters being estimated. `mle` and `lsq` are therefore two values of one scoring axis rather than two unrelated methods.
+
+`objectiveType` does not take $\sigma_i$ as a separate setting. It is derived from the existing `residualWeightingMethod`:
+
+- **`residualWeightingMethod = "none"`**: the spread is constant across observations and not measured by the data, so $\sigma_i = c / w_i$ for a shape $w_i$ built from the scale factor and the weights already in play, and the unknown scale $c$ is concentrated at its maximum-likelihood value, $c^2 = E / n$ (using the total weighted sum of squares $E$ and the total observation count $n$ aggregated across all mappings). Substituting this closed-form estimate back gives
+  $$
+  \text{NLL} = \frac{n}{2} \ln(2\pi) + \frac{n}{2} \ln\!\left( \frac{E}{n} \right) + \frac{n}{2} .
+  $$
+- **`residualWeightingMethod = "error"`**: the observed data supply a measured standard deviation per point (see Residual Weighting below), so $\sigma_i$ is fixed rather than estimated.
+
+Because `lsq` minimizes $E$ directly and, under the constant spread above, $\text{NLL}$ is a strictly increasing function of $E$ for fixed $n$, `mle` and `lsq` reach the **same parameter estimates** under a matching `residualWeightingMethod`. Their objective **values** differ, since one is a sum of squares and the other a likelihood, so objective values are not comparable across `objectiveType`.
+
+```{r, eval=FALSE}
+piConfiguration$objectiveType <- "mle"
+```
+
+`mle` places two restrictions on the rest of the configuration. `robustMethod` must stay `"none"`, because a robust weight that reaches exactly zero makes the likelihood infinite at every parameter vector rather than merely differently weighted. And with `residualWeightingMethod = "error"`, every observation scored by the fit must carry a usable standard deviation. `lsq` falls back to unit weighting for a row with a missing or invalid error value; `mle` cannot, because that would silently assert a fabricated $\sigma_i = 1$, so it stops with an error naming the offending mapping instead.
+
+Analytic (Hessian-based) confidence intervals under `mle` do not yet account for the likelihood scale correctly and should not be relied on; bootstrap confidence intervals are unaffected, since they re-optimize the same objective rather than reading its curvature.
 
 
 ## Handling Data Below the Quantification Limit (BLQ)
@@ -58,7 +92,7 @@ A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfigu
 - **`lloqHalf`** (default): substitute a BLQ observation with half the LLOQ.
 - **`lloq`**: substitute a BLQ observation with the LLOQ (PK-Sim default).
 - **`none`**: use the stored value unchanged, no substitution.
-- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The `blqOptions` field (`linScaleCV`, `logScaleSD`) parameterises this censored contribution.
+- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The `blqOptions` field (`linScaleCV`, `logScaleSD`) parameterises this censored contribution. Because censoring is a likelihood operation, `m3` requires `objectiveType = "mle"`.
 
 `blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run.
 
@@ -72,17 +106,20 @@ These settings implement the standard strategies catalogued by Beal (2001), wher
 The publication is listed in the References section.
 
 ```{r, eval=FALSE}
+piConfiguration$objectiveType <- "mle"
 piConfiguration$blqMethod <- "m3"
 piConfiguration$blqOptions <- list(linScaleCV = 0.2)
 ```
 
-Under `m3`, rows flagged as BLQ are excluded from the least-squares sum $E$ above, so they are not counted twice, and instead each contributes a censored-likelihood penalty
+Under `m3`, rows flagged as BLQ are excluded from the uncensored objective above, so they are not counted twice, and instead each contributes a censored-likelihood penalty
 
 $$
 P_j = -2 \ln \Phi\!\left( \frac{\text{LLOQ}_j - \hat{y}(t_j)}{\sigma_j} \right),
 $$
 
-summed over the censored points $j$ and added to $E$ to give the total mapping cost. $\Phi$ is the standard normal CDF and $\ln$ the natural logarithm. The per-point standard deviation $\sigma_j$ is $\lvert \text{linScaleCV} \times \text{LLOQ}_j \rvert$ under linear scaling, or the fixed `logScaleSD` under logarithmic scaling. The default `logScaleSD` is derived from a coefficient of variation of 0.2 as $\sqrt{\ln(1 + \text{CV}^2)} = \sqrt{\ln(1.04)} \approx 0.198$, expressed in natural-log units to match the natural-log transform used by `scaling = "log"`.
+summed over the censored points $j$ and added to the uncensored objective to give the total mapping cost. $\Phi$ is the standard normal CDF and $\ln$ the natural logarithm. The per-point standard deviation $\sigma_j$ is $\lvert \text{linScaleCV} \times \text{LLOQ}_j \rvert$ under linear scaling, or the fixed `logScaleSD` under logarithmic scaling. The default `logScaleSD` is derived from a coefficient of variation of 0.2 as $\sqrt{\ln(1 + \text{CV}^2)} = \sqrt{\ln(1.04)} \approx 0.198$, expressed in natural-log units to match the natural-log transform used by `scaling = "log"`.
+
+The censored penalty $P_j$ is not yet on the same scale as the `mle` objective it is added to: it still draws its $\sigma_j$ from `blqOptions` rather than from the error model above, and it remains a fixed factor of two larger than a plain negative log-likelihood term. `m3` objective values are therefore interim and expected to change again once the two halves are put on a common scale; they should not be treated as a final answer for fitting production data.
 
 
 
@@ -97,6 +134,14 @@ summed over the censored points $j$ and added to $E$ to give the total mapping c
   *Limitation:* When the error field holds population SD for group means, the correct weight is `n / SD²`, not `1 / SD` (where `n` is the group size). Because `DataSet` does not store `n` per time point, this cannot be corrected automatically. Group mean observations will be under-weighted by `1 / √n` relative to the optimal value.
 
 For proportional error handling across outputs of different magnitudes, use `outputMapping$scaling = "log"` instead. Log residuals are dimensionless and automatically comparable across mappings spanning different concentration ranges.
+
+Combining `residualWeightingMethod = "error"` with `outputMapping$scaling = "log"` needs its own conversion, because the residual is then formed between log-transformed values, so the weight must reflect the standard deviation of the log-transformed observation rather than of the observation itself. Treating the observation as lognormal with coefficient of variation $\text{CV}_i = \text{SD}_i / y_i$ gives a log-scale standard deviation of
+
+$$
+\sigma_{\log, i} = \sqrt{\ln\!\left(1 + \text{CV}_i^2\right)} ,
+$$
+
+which is the conversion used for `ArithmeticStdDev` values. For a `GeometricStdDev` value, the reported quantity is already a multiplicative spread, so the log-scale standard deviation is simply $\ln(\text{GSD}_i)$ directly, with no further conversion. In both cases the weight applied to the log-scale residual is $1 / \sigma_{\log, i}$.
 
 To apply error-based residual weighting, set the `residualWeightingMethod` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 
