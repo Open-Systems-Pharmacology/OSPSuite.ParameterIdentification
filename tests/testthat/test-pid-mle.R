@@ -8,15 +8,15 @@ obsVsPredDf <- readr::read_csv(
 test_that("mle with the constant error model finds the same estimates as lsq", {
   # Section 2.5: with unit weights the NLL is a strictly increasing function of
   # weightedSSR, so the two objectives share a minimizer even though their
-  # values differ. `run()` permanently applies its fitted value onto the
-  # shared simulation (`ParameterIdentification$.applyFinalValues()`), and
-  # `PIParameters$new()` seeds `startValue` from that live value, so
-  # constructing the second task only after the first has run would seed its
-  # search from the first run's answer instead of an independent baseline.
-  # Both tasks are constructed here before either is run, so both capture the
-  # same unfitted start value. Both runs share algorithm, bounds, and start
-  # values, and the optimizer tolerance is an order of magnitude tighter than
-  # the comparison.
+  # values differ. `testPiTask()` builds a fresh `Simulation` on every call
+  # (`getTestSimulation()` returns a new memoized closure each time, so the
+  # two tasks below never share a live simulation), so the two fits are
+  # independent of each other's fitted values by construction. Both tasks are
+  # nevertheless constructed, with their configuration set, before either is
+  # run, so the shared unfitted baseline is explicit in the test rather than
+  # resting on that fixture detail. Both runs share algorithm, bounds, and
+  # start values, and the optimizer tolerance is an order of magnitude
+  # tighter than the parameter-level comparison below.
   taskLsq <- testPiTask()
   taskLsq$configuration$algorithm <- "BOBYQA"
   taskLsq$configuration$algorithmOptions <- list(xtol_rel = 1e-8, maxeval = 200)
@@ -29,6 +29,39 @@ test_that("mle with the constant error model finds the same estimates as lsq", {
   resultLsq <- taskLsq$run()
   resultMle <- taskMle$run()
 
+  # Primary assertion: cross-evaluate each objective at the other's estimate.
+  # Two independently-converged parameter values only ever agree up to
+  # simulation noise (observed gap ~6.4e-5 against a 1e-4 tolerance, a bare
+  # 1.6x margin), because that floor is set by the ODE solver, not by
+  # `xtol_rel` (four orders of magnitude tighter). Near a smooth optimum the
+  # objective is second-order flat in the parameter, so the same ~6.4e-5
+  # parameter gap becomes a far smaller, far more robust value gap. This is
+  # the theorem's actual claim: each minimizer is equally good under the
+  # other objective, not merely numerically close to it.
+  privLsq <- taskLsq$.__enclos_env__$private
+  privMle <- taskMle$.__enclos_env__$private
+  privLsq$.batchInitialization()
+  privMle$.batchInitialization()
+
+  mleAtLsqEstimate <- privMle$.objectiveFunction(
+    unname(resultLsq$toList()$finalParameters)
+  )$modelCost
+  lsqAtMleEstimate <- privLsq$.objectiveFunction(
+    unname(resultMle$toList()$finalParameters)
+  )$modelCost
+
+  expect_equal(
+    mleAtLsqEstimate,
+    resultMle$toList()$objectiveValue,
+    tolerance = 1e-6
+  )
+  expect_equal(
+    lsqAtMleEstimate,
+    resultLsq$toList()$objectiveValue,
+    tolerance = 1e-6
+  )
+
+  # Secondary assertion: the parameter-level comparison is kept for coverage.
   expect_equal(
     unname(resultMle$toList()$finalParameters),
     unname(resultLsq$toList()$finalParameters),
