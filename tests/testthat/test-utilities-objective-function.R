@@ -414,7 +414,7 @@ currStartValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
-# state-variable parameter routing (issue #156)
+# state-variable parameter routing
 
 test_that("fixture state-variable path is classified as a state variable", {
   sim <- loadSimulation(
@@ -472,7 +472,7 @@ test_that("objective function delivers the state-variable value into the molecul
   )
 })
 
-test_that("a non-base state-variable unit reaches the molecules bucket in base units (#298)", {
+test_that("a non-base state-variable unit reaches the molecules bucket in base units", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
     loadFromCache = FALSE,
@@ -486,9 +486,8 @@ test_that("a non-base state-variable unit reaches the molecules bucket in base u
     parameters = list(getParameter(stateVariableParameterPath, container = sim))
   )
   piParameter$unit <- ospUnits$Volume$ml
-  # Start value first, then max, then min: the bound setters cross-validate
-  # against startValue and against the base-unit bounds left from construction,
-  # because changing $unit does not rescale them (#246).
+  # Start, then max, then min: $unit does not rescale the values left from
+  # construction, and the bound setters cross-validate against them.
   piParameter$startValue <- 45
   piParameter$maxValue <- 450
   piParameter$minValue <- 4.5
@@ -528,6 +527,68 @@ test_that("a non-base state-variable unit reaches the molecules bucket in base u
   expect_false(
     stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
   )
+})
+
+test_that("a grouped parameter spanning two simulations is seeded in base units", {
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+
+  # Two separately loaded simulations get distinct IDs, so the single converted
+  # value fans out into two variable buckets. Own simulations, so that assigning
+  # $unit cannot leak into the shared module-level fixtures.
+  simulations <- replicate(
+    2,
+    loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    ),
+    simplify = FALSE
+  )
+
+  piParameter <- PIParameters$new(
+    parameters = lapply(simulations, function(sim) {
+      getParameter(clPath, container = sim)
+    })
+  )
+  piParameter$unit <- ospUnits$`Inversed time`$`1/h`
+  # Start, then max, then min: $unit does not rescale the values left from
+  # construction, and the bound setters cross-validate against them.
+  piParameter$startValue <- 6
+  piParameter$maxValue <- 60
+  piParameter$minValue <- 0.6
+
+  mappings <- lapply(simulations, function(sim) {
+    mapping <- PIOutputMapping$new(
+      quantity = getQuantity(outputPath, container = sim)
+    )
+    mapping$addObservedDataSets(
+      testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+    )
+    mapping
+  })
+
+  task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = piParameter,
+    outputMappings = mappings
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  simIds <- names(priv$.simulations)
+
+  expect_length(simIds, 2)
+  # Independent oracle: 1/h to 1/min is a factor of 60, so the start value of
+  # 6 1/h must reach both simulations as 0.1 1/min.
+  for (simId in simIds) {
+    expect_equal(priv$.variableParameters[[simId]][[clPath]], 0.1)
+  }
+
+  # .evaluate() deposits a trial value: 30 1/h is 0.5 1/min in both buckets.
+  suppressMessages(priv$.evaluate(30))
+  for (simId in simIds) {
+    expect_equal(priv$.variableParameters[[simId]][[clPath]], 0.5)
+  }
 })
 
 test_that("objective function runs with only a state-variable parameter", {

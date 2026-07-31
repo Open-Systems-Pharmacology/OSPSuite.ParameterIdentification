@@ -238,7 +238,7 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   )
 })
 
-test_that(".getPKValues routes a state-variable parameter as a molecule (#156)", {
+test_that(".getPKValues routes a state-variable parameter as a molecule", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -276,23 +276,21 @@ test_that(".getPKValues routes a state-variable parameter as a molecule (#156)",
   expect_true(is.finite(pkValues[[1]]))
 })
 
-test_that("run() applies a non-base parameter unit in PK mode (#298)", {
+test_that("run() applies a non-base parameter unit in PK mode", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   dosePath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 
-  # Each task loads its own simulation: earlier run()s in this file mutate the
-  # shared memoized simulation's Dose through .applyFinalValues(), which would
-  # invalidate the equality oracle.
+  # Own simulation per task: earlier run()s mutate the cached simulation's Dose
+  # via .applyFinalValues(), which would break the equality oracle.
   doseTask <- function(unit, startValue, minValue, maxValue) {
     sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
     piParameter <- PIParameters$new(
       parameters = list(getParameter(dosePath, container = sim))
     )
     piParameter$unit <- unit
-    # Start value first, then max, then min: the bound setters cross-validate
-    # against startValue and against the base-unit bounds left from
-    # construction, because changing $unit does not rescale them (#246).
+    # Start, then max, then min: $unit does not rescale the values left from
+    # construction, and the bound setters cross-validate against them.
     piParameter$startValue <- startValue
     piParameter$maxValue <- maxValue
     piParameter$minValue <- minValue

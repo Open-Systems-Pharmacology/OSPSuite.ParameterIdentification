@@ -16,7 +16,6 @@ test_that(".toBaseValue converts a value from a non-base unit to the base unit",
   piParameter <- clearancePiParameter()
   piParameter$unit <- ospUnits$`Inversed time`$`1/h`
 
-  # Independent oracle: 1/h to 1/min is a factor of 60 (T-6).
   expect_equal(.toBaseValue(piParameter, 60), 60 / 60)
 })
 

@@ -62,7 +62,7 @@ test_that("run() stores best running cost in costDetails", {
   expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
 })
 
-test_that("run() succeeds with a state-variable optimization parameter (#156)", {
+test_that("run() succeeds with a state-variable optimization parameter", {
   piTask <- testStateVariableMixedTask()
   piTask$configuration <- lowIterPiConfiguration()
   piTask$configuration$autoEstimateCI <- FALSE
@@ -170,7 +170,7 @@ test_that("run() works with two datasets and individual weights", {
 })
 
 test_that("run() reports the estimate in the declared unit and applies the matching base value", {
-  # Verifies the reporting contract, not the #298 conversion. The estimate is
+  # Verifies the reporting contract, not the unit conversion. The estimate is
   # reported in $unit and .applyFinalValues() writes the matching base value.
   # It cannot detect a conversion regression, because setValue() converts
   # correctly regardless. The conversion itself is covered by the gridSearch
@@ -190,9 +190,8 @@ test_that("run() reports the estimate in the declared unit and applies the match
     parameters = list(ospsuite::getParameter(clPath, container = sim))
   )
   piParameter$unit <- ospUnits$`Inversed time`$`1/h`
-  # Start value first, then max, then min: the bound setters cross-validate
-  # against startValue and against the base-unit bounds left from
-  # construction, because changing $unit does not rescale them (#246).
+  # Start, then max, then min: $unit does not rescale the values left from
+  # construction, and the bound setters cross-validate against them.
   piParameter$startValue <- 56.4
   piParameter$maxValue <- 100
   piParameter$minValue <- 10
