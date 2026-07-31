@@ -491,6 +491,131 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
   expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-3)
 })
 
+test_that(".applyLogTransformation preserves the linear observed values", {
+  df <- .blqKernelFixture()
+  transformed <- .applyLogTransformation(df)
+  expect_true("yValuesLinear" %in% colnames(transformed))
+  expect_equal(transformed$yValuesLinear, df$yValues)
+  expect_equal(transformed$yValues, log(df$yValues))
+})
+
+test_that(".computeErrorWeights converts an arithmetic SD to the log scale", {
+  # Section 2.7: sigma_log = sqrt(log(1 + (SD/y)^2)), weight = 1 / sigma_log.
+  yValues <- c(10, 4)
+  yErrorValues <- c(2, 1)
+  cv <- yErrorValues / yValues
+  expected <- 1 / sqrt(log(1 + cv^2))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that(".computeErrorWeights uses log(GSD) directly on the log scale", {
+  # Section 2.7: a geometric SD is already a multiplicative spread.
+  yValues <- c(10, 4)
+  gsd <- c(1.3, 1.5)
+  expected <- 1 / log(gsd)
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = gsd,
+      yErrorType = rep("GeometricStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that("the two error types agree on the log scale as they do on the linear scale", {
+  # Mirrors the existing linear-scale agreement test: for
+  # GSD = exp(sqrt(log(1 + CV^2))) both formulas must give the same weight.
+  yValues <- c(10, 4)
+  arithSd <- c(2, 1)
+  cv <- arithSd / yValues
+  gsd <- exp(sqrt(log(1 + cv^2)))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = arithSd,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = gsd,
+      yErrorType = rep("GeometricStdDev", 2),
+      scaling = "log"
+    )
+  )
+})
+
+test_that(".computeErrorWeights keeps the linear formula under linear scaling", {
+  yValues <- c(10, 4)
+  yErrorValues <- c(2, 1)
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "lin"
+    ),
+    1 / yErrorValues
+  )
+})
+
+test_that("observations below one still receive measured weights on the log scale", {
+  # The eligibility guard must be evaluated against the linear reference value.
+  # Reading a log-transformed yValues would exclude every row here, silently
+  # falling back to unit weights.
+  yValues <- c(0.5, 0.2)
+  yErrorValues <- c(0.1, 0.05)
+  cv <- yErrorValues / yValues
+  expected <- 1 / sqrt(log(1 + cv^2))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that("the kernel hands the linear reference value to the error weights", {
+  # This is the test that pins Step 5's wiring. Every other test in this task
+  # calls .computeErrorWeights() directly with linear values, so a skipped or
+  # mis-wired handover would leave them all passing while the kernel silently
+  # computed weights from log(y_i) — the exact defect spec section 8.1 exists
+  # to prevent.
+  df <- .blqKernelFixture()
+  df$yErrorValues <- 0.4
+  df$yErrorType <- "ArithmeticStdDev"
+  df$yErrorUnit <- df$yUnit
+  observed <- df[df$dataType == "observed", ]
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  # residualDetails stores errorWeights rounded to two decimals.
+  cv <- 0.4 / observed$yValues
+  expected <- round(1 / sqrt(log(1 + cv^2)), 2)
+  expect_equal(result$residualDetails$errorWeights, expected)
+  # A mis-wire would fall back to unit weights for every row whose
+  # log-transformed value is not positive.
+  expect_false(all(result$residualDetails$errorWeights == 1))
+})
+
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
   resultHuber <- .calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
   resultBisquare <- .calculateCostMetrics(

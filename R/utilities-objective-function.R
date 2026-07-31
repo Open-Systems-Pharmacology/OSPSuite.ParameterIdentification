@@ -193,9 +193,11 @@
       residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
-        yValues = observedData[["yValues"]],
+        yValues = observedData[["yValuesLinear"]] %||%
+          observedData[["yValues"]],
         yErrorValues = observedData[["yErrorValues"]],
-        yErrorType = observedData[["yErrorType"]]
+        yErrorType = observedData[["yErrorType"]],
+        scaling = scaling
       )
     )
 
@@ -330,10 +332,15 @@
 
 #' Compute error-based residual weights
 #'
-#' @param yValues Vector of y-values, required for conversion
+#' @param yValues Vector of y-values, required for conversion. Must be the
+#'   untransformed observed values even when the residuals are log-scaled.
 #' @param yErrorValues Vector of y-value errors
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
 #'   `GeometricStdDev`)
+#' @param scaling Character string specifying the scale the residual is on
+#'   (`"lin"` or `"log"`). Under `"log"`, the weight is the reciprocal of the
+#'   log-scale standard deviation, so it standardizes a natural-log residual.
+#'   Defaults to `"lin"`.
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
@@ -343,11 +350,13 @@
   yValues,
   yErrorValues,
   yErrorType,
+  scaling = "lin",
   defaultWeight = 1
 ) {
   ospsuite.utils::validateIsNumeric(yValues)
   ospsuite.utils::validateIsNumeric(yErrorValues)
   ospsuite.utils::validateIsCharacter(yErrorType)
+  ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
   ospsuite.utils::isSameLength(yValues, yErrorValues)
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
@@ -357,16 +366,28 @@
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
   if (length(idxArith) > 0) {
-    weights[idxArith] <- 1 / yErrorValues[idxArith]
+    weights[idxArith] <- if (scaling == "log") {
+      # A residual in natural-log units needs the log-scale spread of a
+      # lognormal observation with this coefficient of variation.
+      cv <- yErrorValues[idxArith] / yValues[idxArith]
+      1 / sqrt(log(1 + cv^2))
+    } else {
+      1 / yErrorValues[idxArith]
+    }
   }
 
   idxGSD <- which(
     yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
   )
   if (length(idxGSD) > 0) {
-    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
-    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
-    weights[idxGSD] <- 1 / stDev
+    weights[idxGSD] <- if (scaling == "log") {
+      # A geometric standard deviation is already a multiplicative spread.
+      1 / log(yErrorValues[idxGSD])
+    } else {
+      # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
+      stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+      1 / stDev
+    }
   }
 
   nEligible <- sum(
@@ -490,6 +511,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'   to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
+#'   The pre-transform observed values are preserved in `yValuesLinear`.
 #' @keywords internal
 #'
 #' @examples
@@ -512,6 +534,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     molWeight = 1
   )
 
+  df$yValuesLinear <- df$yValues
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
     epsilon = UNITS_EPSILON,
