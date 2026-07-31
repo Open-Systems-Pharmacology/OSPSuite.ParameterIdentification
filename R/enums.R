@@ -260,6 +260,19 @@ ObjectiveTypes <- ospsuite.utils::enum(c(
   "mle"
 ))
 
+#' Residual Error Models
+#'
+#' Rules defining the residual standard deviation consumed by the `mle`
+#' objective. Selected from `residualWeightingMethod` rather than configured
+#' directly.
+#'
+#' @keywords internal
+#' @noRd
+ErrorModels <- ospsuite.utils::enum(c(
+  "constant",
+  "dataError"
+))
+
 #' BLQ Handling Methods
 #'
 #' Methods selecting how the retained BLQ observations contribute to the cost.

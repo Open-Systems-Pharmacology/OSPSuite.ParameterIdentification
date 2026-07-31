@@ -440,3 +440,9 @@ messages$errorLsqStrandsM3 <- function() {
     "Set {.code blqMethod} to {.val none}, {.val lloq}, or {.val lloqHalf} first."
   )
 }
+
+messages$errorUnknownErrorModelSource <- function(residualWeightingMethod) {
+  ospsuite.utils::cliFormat(
+    "No error model is defined for {.code residualWeightingMethod = {.val {residualWeightingMethod}}}."
+  )
+}
