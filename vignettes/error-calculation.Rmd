@@ -62,14 +62,21 @@ $$
 \text{NLL} = \frac{n}{2} \ln(2\pi) + \sum_{i=1}^{n} \ln \sigma_i + \sum_{i=1}^{n} \frac{\left( \hat{y}(t_i) - y_i \right)^2}{2 \sigma_i^2} .
 $$
 
+Unlike the least-squares total, which is simply $E$ summed over mappings, this $\text{NLL}$ is evaluated once on the observation count $n$ and the weighted sum of squares aggregated across *all* output mappings jointly. It is not a sum of one likelihood value per mapping, because the residual scale is shared across mappings and cannot be concentrated separately within each one; a per-mapping sum of NLLs would not equal the joint likelihood.
+
 The third term is a weighted sum of squares with weights $1/\sigma_i$, so least squares is exactly this negative log-likelihood with the first two terms dropped, which is legitimate only when $\sigma_i$ does not depend on the parameters being estimated. `mle` and `lsq` are therefore two values of one scoring axis rather than two unrelated methods.
 
 `objectiveType` does not take $\sigma_i$ as a separate setting. It is derived from the existing `residualWeightingMethod`:
 
-- **`residualWeightingMethod = "none"`**: the spread is constant across observations and not measured by the data, so $\sigma_i = c / w_i$ for a shape $w_i$ built from the scale factor and the weights already in play, and the unknown scale $c$ is concentrated at its maximum-likelihood value, $c^2 = E / n$ (using the total weighted sum of squares $E$ and the total observation count $n$ aggregated across all mappings). Substituting this closed-form estimate back gives
+- **`residualWeightingMethod = "none"`**: the spread is constant across observations and not measured by the data, so $\sigma_i = c / w_i$ for a shape $w_i$ built from the scale factor and the weights already in play, and the unknown scale $c$ is concentrated at its maximum-likelihood value, $c^2 = E / n$ (using the total weighted sum of squares $E$ and the total observation count $n$ aggregated across all mappings). Writing $L_w = -\sum_{i=1}^{n} \ln w_i$ for the summed log of that known shape, substituting the concentrated scale back gives the general form
+  $$
+  \text{NLL} = \frac{n}{2} \ln(2\pi) + L_w + n \ln(\hat{c}) + \frac{n}{2}, \qquad \hat{c}^2 = \frac{E}{n} .
+  $$
+  $L_w$ is zero only when every $w_i = 1$ (unit dataset weights, `scaleVar = FALSE`), in which case the formula reduces to the simpler
   $$
   \text{NLL} = \frac{n}{2} \ln(2\pi) + \frac{n}{2} \ln\!\left( \frac{E}{n} \right) + \frac{n}{2} .
   $$
+  Forcing `robustMethod = "none"` under `mle` (below) does not make $L_w$ vanish: non-unit dataset weights or `scaleVar = TRUE` still contribute to it, so the general form is the one that applies unless weights are actually unit.
 - **`residualWeightingMethod = "error"`**: the observed data supply a measured standard deviation per point (see Residual Weighting below), so $\sigma_i$ is fixed rather than estimated.
 
 Because `lsq` minimizes $E$ directly and, under the constant spread above, $\text{NLL}$ is a strictly increasing function of $E$ for fixed $n$, `mle` and `lsq` reach the **same parameter estimates** under a matching `residualWeightingMethod`. Their objective **values** differ, since one is a sum of squares and the other a likelihood, so objective values are not comparable across `objectiveType`.
@@ -78,7 +85,7 @@ Because `lsq` minimizes $E$ directly and, under the constant spread above, $\tex
 piConfiguration$objectiveType <- "mle"
 ```
 
-`mle` places two restrictions on the rest of the configuration. `robustMethod` must stay `"none"`, because a robust weight that reaches exactly zero makes the likelihood infinite at every parameter vector rather than merely differently weighted. And with `residualWeightingMethod = "error"`, every observation scored by the fit must carry a usable standard deviation. `lsq` falls back to unit weighting for a row with a missing or invalid error value; `mle` cannot, because that would silently assert a fabricated $\sigma_i = 1$, so it stops with an error naming the offending mapping instead.
+`mle` places three restrictions on the rest of the configuration. `robustMethod` must stay `"none"`, because a robust weight that reaches exactly zero makes the likelihood infinite at every parameter vector rather than merely differently weighted. A dataset weight set via `PIOutputMapping$setDataWeights()` must be strictly positive: under `lsq` a weight of `0` is a legal way to drop a point from the sum of squares, but under a likelihood a zero weight asserts an infinite residual standard deviation for that observation rather than excluding it, so `mle` refuses the configuration rather than silently reinterpreting it; remove the observation instead, or use `blqRemove` if it is below the quantification limit. And with `residualWeightingMethod = "error"`, every observation scored by the fit must carry a usable standard deviation. `lsq` falls back to unit weighting for a row with a missing or invalid error value; `mle` cannot, because that would silently assert a fabricated $\sigma_i = 1$, so it stops with an error naming the offending mapping instead.
 
 Analytic (Hessian-based) confidence intervals under `mle` do not yet account for the likelihood scale correctly and should not be relied on; bootstrap confidence intervals are unaffected, since they re-optimize the same objective rather than reading its curvature.
 
