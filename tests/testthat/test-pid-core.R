@@ -174,6 +174,7 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   privM3$.batchInitialization()
   dsM3 <- privM3$.outputMappings[[1]]$observedDataSets[[1]]
   dsM3$LLOQ <- 2.5
+  taskM3$configuration$objectiveType <- "mle"
   taskM3$configuration$blqMethod <- "m3"
   taskM3$configuration$blqOptions <- list(linScaleCV = 0.2)
   svM3 <- sapply(privM3$.piParameters, `[[`, "startValue")

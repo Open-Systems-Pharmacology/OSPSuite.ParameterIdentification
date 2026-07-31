@@ -410,3 +410,33 @@ messages$errorObservedDataRemovedByBlq <- function(quantityPath, blqRemove) {
     "All observed data for {.val {quantityPath}} was removed by {.arg blqRemove} = {.val {blqRemove}}. No observations remain to fit this mapping."
   )
 }
+
+messages$errorObjectiveFunctionTypeRemoved <- function() {
+  ospsuite.utils::cliFormat(
+    "{.arg objectiveFunctionType} has been removed from {.field objectiveFunctionOptions}.",
+    "Use {.arg objectiveType} to select {.val lsq} or {.val mle} scoring.",
+    "For censored (M3) handling set {.code objectiveType = \"mle\"} together with {.code blqMethod = \"m3\"}."
+  )
+}
+
+messages$errorM3RequiresMle <- function(objectiveType) {
+  ospsuite.utils::cliFormat(
+    "{.code blqMethod = \"m3\"} requires {.code objectiveType = \"mle\"}, but {.arg objectiveType} is {.val {objectiveType}}.",
+    "Censoring is a likelihood operation, so it cannot be scored by least squares."
+  )
+}
+
+messages$errorMleRejectsRobust <- function(robustMethod) {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"mle\"} cannot be combined with {.code robustMethod = {.val {robustMethod}}}.",
+    "Robust weights can be exactly zero, which makes the likelihood infinite at every parameter value.",
+    "Set {.code robustMethod = \"none\"}, or use {.code objectiveType = \"lsq\"}."
+  )
+}
+
+messages$errorLsqStrandsM3 <- function() {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"lsq\"} is not allowed while {.code blqMethod = \"m3\"}.",
+    "Set {.code blqMethod} to {.val none}, {.val lloq}, or {.val lloqHalf} first."
+  )
+}

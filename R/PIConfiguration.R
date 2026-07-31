@@ -65,6 +65,16 @@ PIConfiguration <- R6::R6Class(
         private$.objectiveFunctionOptions
       } else {
         ospsuite.utils::validateIsOfType(value, "list")
+        if ("objectiveFunctionType" %in% names(value)) {
+          stop(messages$errorObjectiveFunctionTypeRemoved())
+        }
+        if (
+          !is.null(value$robustMethod) &&
+            value$robustMethod != "none" &&
+            private$.objectiveType == "mle"
+        ) {
+          stop(messages$errorMleRejectsRobust(value$robustMethod))
+        }
         unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
         if (length(unknownKeys) > 0) {
           warning(
@@ -87,6 +97,25 @@ PIConfiguration <- R6::R6Class(
           private$.objectiveFunctionOptions,
           value
         )
+      }
+    },
+
+    #' @field objectiveType Scoring mode for the objective function. See
+    #'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Defaults to `lsq`.
+    objectiveType = function(value) {
+      if (missing(value)) {
+        private$.objectiveType
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, ObjectiveTypes)
+        if (value == "lsq" && private$.blqMethod == "m3") {
+          stop(messages$errorLsqStrandsM3())
+        }
+        robustMethod <- private$.objectiveFunctionOptions$robustMethod
+        if (value == "mle" && robustMethod != "none") {
+          stop(messages$errorMleRejectsRobust(robustMethod))
+        }
+        private$.objectiveType <- value
       }
     },
 
@@ -113,6 +142,9 @@ PIConfiguration <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, BLQMethods)
+        if (value == "m3" && private$.objectiveType != "mle") {
+          stop(messages$errorM3RequiresMle(private$.objectiveType))
+        }
         private$.blqMethod <- value
       }
     },
@@ -293,6 +325,7 @@ PIConfiguration <- R6::R6Class(
     .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
     .objectiveFunctionOptions = NULL,
+    .objectiveType = NULL,
     .blqRemove = NULL,
     .blqMethod = NULL,
     .blqOptions = NULL,
@@ -311,6 +344,7 @@ PIConfiguration <- R6::R6Class(
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
+      private$.objectiveType <- "lsq"
       private$.blqRemove <- "none"
       private$.blqMethod <- "lloqHalf"
       private$.blqOptions <- BLQOptions
@@ -326,7 +360,7 @@ PIConfiguration <- R6::R6Class(
       ospsuite.utils::ospPrintItems(list(
         "Optimization algorithm" = private$.algorithm,
         "Confidence interval method" = private$.ciMethod,
-        "Objective function type" = private$.objectiveFunctionOptions$objectiveFunctionType,
+        "Objective type" = private$.objectiveType,
         "Residual weighting method" = private$.objectiveFunctionOptions$residualWeightingMethod,
         "Robust residual calculation method" = private$.objectiveFunctionOptions$robustMethod,
         "BLQ removal mode" = private$.blqRemove,

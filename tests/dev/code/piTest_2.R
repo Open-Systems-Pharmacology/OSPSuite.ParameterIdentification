@@ -42,7 +42,7 @@ names(simulations) <- simNames
 
 ########## Create PIConfiguration#############
 piConfiguration <- PIConfiguration$new()
-piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
+piConfiguration$objectiveType <- "lsq"
 piConfiguration$simulateSteadyState <- TRUE
 piConfiguration$steadyStateTime <- 1000
 

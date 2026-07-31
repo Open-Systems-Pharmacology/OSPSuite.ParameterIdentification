@@ -191,8 +191,6 @@ CIDefaults <- list(
 #' @export
 #' @name ObjectiveFunctionOptions
 #' @details Settings include:
-#' - **`objectiveFunctionType`** - Type of objective function used. Default is
-#'   `lsq` (least squares), influencing error calculation.
 #' - **`residualWeightingMethod`** - Method for residual weighting. Default is
 #'   `none`.
 #' - **`robustMethod`** - Method for robust outlier handling. Default is `none`
@@ -202,7 +200,6 @@ CIDefaults <- list(
 #'   These options are configurable in `PIConfiguration`, directly influencing
 #'   the `calculateCostMetrics` functionality for detailed model fit assessment.
 ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
-  objectiveFunctionType = "lsq",
   residualWeightingMethod = "none",
   robustMethod = "none",
   scaleVar = FALSE
@@ -242,6 +239,25 @@ BLQRemoveModes <- ospsuite.utils::enum(c(
   "none",
   "always",
   "trailingSingle"
+))
+
+#' Objective Function Types
+#'
+#' Scoring modes for the objective function. Least squares is the special case
+#' of the likelihood in which the residual standard deviation is constant.
+#'
+#' @export
+#' @name ObjectiveTypes
+#' @details The available types are:
+#' - **`lsq`** - Least squares. Minimizes the weighted sum of squared residuals.
+#'   The default.
+#' - **`mle`** - Maximum likelihood. Minimizes the negative log-likelihood, with
+#'   the residual standard deviation supplied by the error model.
+#'
+#' @seealso The `error-calculation` vignette for the scoring mathematics.
+ObjectiveTypes <- ospsuite.utils::enum(c(
+  "lsq",
+  "mle"
 ))
 
 #' BLQ Handling Methods
