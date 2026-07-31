@@ -196,8 +196,9 @@ print(piParameterCl_250mg)
 ```
 
 Setting the unit to `1/h` will cause the identification to start at
-`0.94 1/h`, while the current value is still `0.94 1/h` or
-`0.94 1/h * 60 min = 56.47 1/h`:
+`0.9412 1/h`, the same stored number simply relabeled, while the current
+value is correctly converted from `0.9412 1/min` to
+`0.9412 1/min * 60 min/h = 56.47 1/h`:
 
 ``` r
 
@@ -220,13 +221,12 @@ renal clearance to \[0, 10\] `1/min`:
 piParameterLipo$minValue <- -10
 piParameterLipo$maxValue <- 10
 
+piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
 piParameterCl_250mg$minValue <- 0
 piParameterCl_250mg$maxValue <- 10
-piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
 
 piParameterCl_500mg$minValue <- 0
 piParameterCl_500mg$maxValue <- 10
-piParameterCl_500mg$unit <- ospUnits$`Inversed time`$`1/min`
 
 print(piParameterLipo)
 #> <PIParameters>
@@ -253,6 +253,21 @@ print(piParameterCl_500mg)
 #>   • Max value: 10
 #>   • Unit: 1/min
 ```
+
+Values declared in `$unit` are converted to the parameter’s base unit
+before they are applied to the model, so an identification can be set up
+in any unit of the parameter’s dimension. The reset of
+`piParameterCl_250mg$unit` to `1/min` above is required because changing
+`$unit` relabels the stored numbers without rescaling them: without it,
+its bounds and start value would be interpreted as `1/h`, producing an
+interval that excludes the parameter’s own current value of
+`0.9412 1/min`.
+
+One caveat is algorithm-specific. `HJKB` probes with absolute step sizes
+in the declared unit, so the choice of `$unit` changes its search
+resolution. The search performed by `BOBYQA` and `DEoptim` is
+unaffected, because their step and population scales derive from the
+bounds.
 
 #### Mapping of model output to observed data
 
@@ -484,8 +499,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 16.50 s
-#>   • Elapsed (CI): 7.076 s
+#>   • Elapsed (optimization): 17.23 s
+#>   • Elapsed (CI): 7.458 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]

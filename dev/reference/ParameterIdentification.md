@@ -79,7 +79,8 @@ Initializes a `ParameterIdentification` instance.
 
   A `PIParameters` or list of `PIParameters` objects specifying the
   model parameters to optimize. Each `PIParameters` object may group one
-  or more underlying model parameters. See
+  or more underlying model parameters, and its values are converted from
+  its `$unit` to the base unit before they are applied to the model. See
   [`PIParameters`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIParameters.md)
   for details.
 
@@ -162,7 +163,9 @@ values and generates plots comparing predictions to observed data.
 - `par`:
 
   Optional parameter values for simulations, in the order of
-  `ParameterIdentification$parameters`. Use current values if `NULL`.
+  `ParameterIdentification$parameters`. Interpreted in each
+  `PIParameters$unit` and converted to the base unit before being
+  applied to the model. Use current values if `NULL`.
 
 #### Returns
 
@@ -199,13 +202,13 @@ initialize better starting values.
 
 - `lower`:
 
-  Numeric vector of parameter lower bounds, defaulting to `PIParameter`
-  minimum values.
+  Numeric vector of parameter lower bounds, defaulting to `PIParameters`
+  minimum values. Interpreted in each `PIParameters$unit`.
 
 - `upper`:
 
-  Numeric vector of parameter upper bounds, defaulting to `PIParameter`
-  maximum values.
+  Numeric vector of parameter upper bounds, defaulting to `PIParameters`
+  maximum values. Interpreted in each `PIParameters$unit`.
 
 - `logScaleFlag`:
 
@@ -218,7 +221,7 @@ initialize better starting values.
 
 - `setStartValue`:
 
-  Logical. If `TRUE`, updates `PIParameter` starting values to the best
+  Logical. If `TRUE`, updates `PIParameters` starting values to the best
   grid point. Default is `FALSE`.
 
 #### Returns
@@ -231,8 +234,8 @@ objective function value (`ofv`). Calculate Objective Function Value
 
 ### `ParameterIdentification$calculateOFVProfiles()`
 
-Generates OFV profiles by varying each `PIParameter` independently while
-holding the others fixed at `par`. Useful as a post-optimization
+Generates OFV profiles by varying each `PIParameters` independently
+while holding the others fixed at `par`. Useful as a post-optimization
 diagnostic: around a (local) minimum the OFV is expected to be roughly
 convex along each axis.
 
@@ -248,9 +251,9 @@ convex along each axis.
 
 - `par`:
 
-  Numeric vector of parameter values, one for each `PIParameter`.
-  Defaults to current parameter values if `NULL`, not numeric, or of
-  mismatched length.
+  Numeric vector of parameter values, one for each `PIParameters`,
+  interpreted in each `PIParameters$unit`. Defaults to current parameter
+  values if `NULL`, not numeric, or of mismatched length.
 
 - `boundFactor`:
 
@@ -280,7 +283,7 @@ parameters held at their `par` values. Failed simulations contribute
 
 #### Returns
 
-A named list of tibbles, one element per `PIParameter`. List names are
+A named list of tibbles, one element per `PIParameters`. List names are
 the parameter paths (taken from `parameters[[1]]$path`). Each tibble has
 two columns:
 

@@ -11,7 +11,7 @@ methods."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9008</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -120,7 +120,9 @@ parameters specified in <code>parameters</code>. Use
       <dt><code>parameters</code></dt>
 <dd><p>A <code>PIParameters</code> or list of <code>PIParameters</code> objects
 specifying the model parameters to optimize. Each <code>PIParameters</code> object
-may group one or more underlying model parameters. See
+may group one or more underlying model parameters, and its values are
+converted from its <code>$unit</code> to the base unit before they are applied to
+the model. See
 <code><a href="PIParameters.html">PIParameters</a></code> for details.</p></dd>
 
       <dt><code>outputMappings</code></dt>
@@ -196,7 +198,9 @@ data.</p><div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>par</code></dt>
 <dd><p>Optional parameter values for simulations, in the order of
-<code>ParameterIdentification$parameters</code>. Use current values if <code>NULL</code>.</p></dd>
+<code>ParameterIdentification$parameters</code>. Interpreted in each
+<code>PIParameters$unit</code> and converted to the base unit before being applied
+to the model. Use current values if <code>NULL</code>.</p></dd>
 
 
 </dl><p></p></div>
@@ -230,11 +234,11 @@ initialize better starting values.</p>
 <h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>lower</code></dt>
 <dd><p>Numeric vector of parameter lower bounds, defaulting to
-<code>PIParameter</code> minimum values.</p></dd>
+<code>PIParameters</code> minimum values. Interpreted in each <code>PIParameters$unit</code>.</p></dd>
 
       <dt><code>upper</code></dt>
 <dd><p>Numeric vector of parameter upper bounds, defaulting to
-<code>PIParameter</code> maximum values.</p></dd>
+<code>PIParameters</code> maximum values. Interpreted in each <code>PIParameters$unit</code>.</p></dd>
 
       <dt><code>logScaleFlag</code></dt>
 <dd><p>Logical scalar or vector; determines if grid points
@@ -245,7 +249,7 @@ are spaced logarithmically. Default is <code>FALSE</code>.</p></dd>
 is 50.</p></dd>
 
       <dt><code>setStartValue</code></dt>
-<dd><p>Logical. If <code>TRUE</code>, updates <code>PIParameter</code> starting
+<dd><p>Logical. If <code>TRUE</code>, updates <code>PIParameters</code> starting
 values to the best grid point. Default is <code>FALSE</code>.</p></dd>
 
 
@@ -261,7 +265,7 @@ Calculate Objective Function Value (OFV) Profiles</p>
 
 <p></p><hr><a id="method-ParameterIdentification-calculateOFVProfiles"></a><div class="section">
 <h3 id="parameteridentification-calculateofvprofiles-"><code>ParameterIdentification$calculateOFVProfiles()</code><a class="anchor" aria-label="anchor" href="#parameteridentification-calculateofvprofiles-"></a></h3>
-<p>Generates OFV profiles by varying each <code>PIParameter</code> independently while
+<p>Generates OFV profiles by varying each <code>PIParameters</code> independently while
 holding the others fixed at <code>par</code>. Useful as a post-optimization
 diagnostic: around a (local) minimum the OFV is expected to be roughly
 convex along each axis.</p><div class="section">
@@ -275,8 +279,9 @@ convex along each axis.</p><div class="section">
 <h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>par</code></dt>
 <dd><p>Numeric vector of parameter values, one for each
-<code>PIParameter</code>. Defaults to current parameter values if <code>NULL</code>,
-not numeric, or of mismatched length.</p></dd>
+<code>PIParameters</code>, interpreted in each <code>PIParameters$unit</code>. Defaults to
+current parameter values if <code>NULL</code>, not numeric, or of mismatched
+length.</p></dd>
 
       <dt><code>boundFactor</code></dt>
 <dd><p>Numeric scalar. A value of <code>0.1</code> (default) means
@@ -300,7 +305,7 @@ parameters held at their <code>par</code> values. Failed simulations contribute
 <code>Inf</code> to the corresponding <code>ofv</code> cell.</p>
 </div><p></p><div class="section">
 <h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
-<p>A named list of tibbles, one element per <code>PIParameter</code>. List
+<p>A named list of tibbles, one element per <code>PIParameters</code>. List
 names are the parameter paths (taken from <code>parameters[[1]]$path</code>).
 Each tibble has two columns:</p><ul><li><p>a column named after the parameter path, holding the grid values;</p></li>
 <li><p><code>ofv</code>, holding the matching objective function values.</p></li>

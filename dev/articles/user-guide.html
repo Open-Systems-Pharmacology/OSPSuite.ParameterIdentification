@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9008</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -254,8 +254,10 @@ start, min, and max values of the renal clearance parameter are given in
 <span><span class="co">#&gt;   • Max value: 9.412</span></span>
 <span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
 <p>Setting the unit to <code>1/h</code> will cause the identification to
-start at <code>0.94 1/h</code>, while the current value is still
-<code>0.94 1/h</code> or <code>0.94 1/h * 60 min = 56.47 1/h</code>:</p>
+start at <code>0.9412 1/h</code>, the same stored number simply
+relabeled, while the current value is correctly converted from
+<code>0.9412 1/min</code> to
+<code>0.9412 1/min * 60 min/h = 56.47 1/h</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/h`</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span>
@@ -272,13 +274,12 @@ renal clearance to [0, 10] <code>1/min</code>:</p>
 <code class="sourceCode R"><span><span class="va">piParameterLipo</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fl">10</span></span>
 <span><span class="va">piParameterLipo</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
 <span></span>
+<span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
-<span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span></span>
 <span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
-<span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterLipo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
@@ -304,6 +305,20 @@ renal clearance to [0, 10] <code>1/min</code>:</p>
 <span><span class="co">#&gt;   • Min value: 0</span></span>
 <span><span class="co">#&gt;   • Max value: 10</span></span>
 <span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
+<p>Values declared in <code>$unit</code> are converted to the
+parameter’s base unit before they are applied to the model, so an
+identification can be set up in any unit of the parameter’s dimension.
+The reset of <code>piParameterCl_250mg$unit</code> to <code>1/min</code>
+above is required because changing <code>$unit</code> relabels the
+stored numbers without rescaling them: without it, its bounds and start
+value would be interpreted as <code>1/h</code>, producing an interval
+that excludes the parameter’s own current value of
+<code>0.9412 1/min</code>.</p>
+<p>One caveat is algorithm-specific. <code>HJKB</code> probes with
+absolute step sizes in the declared unit, so the choice of
+<code>$unit</code> changes its search resolution. The search performed
+by <code>BOBYQA</code> and <code>DEoptim</code> is unaffected, because
+their step and population scales derive from the bounds.</p>
 </div>
 <div class="section level4">
 <h4 id="mapping-of-model-output-to-observed-data">Mapping of model output to observed data<a class="anchor" aria-label="anchor" href="#mapping-of-model-output-to-observed-data"></a>
@@ -485,8 +500,8 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 112</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 112</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 16.50 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 7.076 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 17.23 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 7.458 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>

@@ -29,7 +29,10 @@ A parameter to be optimized in a parameter identification routine
 - `unit`:
 
   Parameter value units. Changing the unit does NOT automatically adjust
-  min/max/start values.
+  min/max/start values. Values are converted from this unit to the
+  parameter's base unit before they are applied to the model. With the
+  `HJKB` algorithm, the declared unit also affects the search resolution
+  because `HJKB` probes with absolute step sizes.
 
 ## Methods
 

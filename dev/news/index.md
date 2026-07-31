@@ -2,6 +2,14 @@
 
 ## ospsuite.parameteridentification (development version)
 
+### Major changes
+
+- `ParameterIdentification` now converts parameter values from
+  `PIParameters$unit` to the base unit before applying them to the
+  model. Previously they were applied unconverted, so a non-base unit
+  silently optimized the wrong quantity
+  ([\#300](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/300)).
+
 ### Minor improvements and bug fixes
 
 - `ParameterIdentification` now reads observed data once per
