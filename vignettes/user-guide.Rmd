@@ -144,7 +144,7 @@ Each `PIParameter` has the following properties:
 print(piParameterCl_250mg)
 ```
 
-Setting the unit to `1/h` will cause the identification to start at `0.94 1/h`, the same stored number simply relabeled, while the current value is correctly converted from `0.94 1/min` to `0.94 1/min * 60 min/h = 56.47 1/h`:
+Setting the unit to `1/h` will cause the identification to start at `0.9412 1/h`, the same stored number simply relabeled, while the current value is correctly converted from `0.9412 1/min` to `0.9412 1/min * 60 min/h = 56.47 1/h`:
 
 ```{r}
 piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/h`
@@ -169,7 +169,7 @@ print(piParameterCl_250mg)
 print(piParameterCl_500mg)
 ```
 
-Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset of `piParameterCl_250mg$unit` to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, its bounds and start value would be interpreted as `1/h`, producing an interval that excludes the parameter's own current value of `0.94 1/min`.
+Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset of `piParameterCl_250mg$unit` to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, its bounds and start value would be interpreted as `1/h`, producing an interval that excludes the parameter's own current value of `0.9412 1/min`.
 
 One caveat is algorithm-specific. `HJKB` probes with absolute step sizes in the declared unit, so the choice of `$unit` changes its search resolution. The search performed by `BOBYQA` and `DEoptim` is unaffected, because their step and population scales derive from the bounds.
 
