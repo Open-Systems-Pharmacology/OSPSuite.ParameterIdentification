@@ -13,7 +13,7 @@ test_that(".errorModelFor rejects an unrecognized weighting method", {
 })
 
 test_that(".negLogLikelihood concentrates the scale under the constant model", {
-  # Section 2.3: NLL = (N/2) log(2 pi) + sumLogSigma + N log(c) + N/2,
+  # NLL = (N/2) log(2 pi) + sumLogSigma + N log(c) + N/2,
   # with c = sqrt(weightedSSR / N).
   # N = 4, weightedSSR = 8, sumLogSigma = 0  =>  c = sqrt(2)
   #   2 * log(2 pi) + 0 + 4 * log(sqrt(2)) + 2
@@ -44,7 +44,7 @@ test_that(".negLogLikelihood carries sumLogSigma into the constant model", {
 })
 
 test_that(".negLogLikelihood takes sigma as known under the data-error model", {
-  # Section 2.3: NLL = (N/2) log(2 pi) + sumLogSigma + weightedSSR / 2.
+  # NLL = (N/2) log(2 pi) + sumLogSigma + weightedSSR / 2.
   # N = 4, weightedSSR = 8, sumLogSigma = 1.5
   expected <- 2 * log(2 * pi) + 1.5 + 4
   expect_equal(
@@ -73,7 +73,7 @@ test_that(".negLogLikelihood handles a single observation", {
 })
 
 test_that(".negLogLikelihood returns zero when no observation carries information", {
-  # Section 5.1: N = 0 is reachable when every retained row is censored under m3.
+  # N = 0 is reachable when every retained row is censored under m3.
   # Returning 0 keeps modelCost equal to the censored contribution alone.
   expect_equal(
     .negLogLikelihood(
@@ -96,7 +96,7 @@ test_that(".negLogLikelihood returns zero when no observation carries informatio
 })
 
 test_that(".negLogLikelihood stays finite for an exact fit", {
-  # Section 5.1: weightedSSR = 0 would give N log(0) = -Inf, so the scale is
+  # weightedSSR = 0 would give N log(0) = -Inf, so the scale is
   # floored at .Machine$double.eps.
   floored <- sqrt(.Machine$double.eps)
   expected <- log(2 * pi) + 2 * log(floored) + 1
@@ -152,7 +152,7 @@ test_that(".finalizeObjective writes the likelihood into modelCost under mle", {
 })
 
 test_that(".finalizeObjective adds the censored contribution under mle", {
-  # Section 6: an implementation that overwrites modelCost with the NLL alone
+  # An implementation that overwrites modelCost with the NLL alone
   # would silently drop all censored scoring.
   obsVsPredDfLLOQ <- obsVsPredDf
   obsVsPredDfLLOQ$lloq <- 2.5
@@ -178,7 +178,7 @@ test_that(".finalizeObjective adds the censored contribution under mle", {
 })
 
 test_that(".finalizeObjective's non-finite guard actually gates the formula", {
-  # Section 6.1: without the guard, nObservations = 0 alone makes
+  # Without the guard, nObservations = 0 alone makes
   # .negLogLikelihood() return 0 regardless of weightedSSR (its own
   # nObservations == 0 short-circuit), so weightedSSR = Inf would be masked:
   # modelCost would become the finite 0 + M3Contribution instead of staying

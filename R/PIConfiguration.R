@@ -75,6 +75,17 @@ PIConfiguration <- R6::R6Class(
         ) {
           stop(messages$errorMleRejectsRobust(value$robustMethod))
         }
+        resolvedScaleVar <- value$scaleVar %||%
+          private$.objectiveFunctionOptions$scaleVar
+        resolvedResidualWeightingMethod <- value$residualWeightingMethod %||%
+          private$.objectiveFunctionOptions$residualWeightingMethod
+        if (
+          isTRUE(resolvedScaleVar) &&
+            resolvedResidualWeightingMethod == "error" &&
+            private$.objectiveType == "mle"
+        ) {
+          stop(messages$errorMleRejectsScaleVar())
+        }
         unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
         if (length(unknownKeys) > 0) {
           warning(
@@ -114,6 +125,13 @@ PIConfiguration <- R6::R6Class(
         robustMethod <- private$.objectiveFunctionOptions$robustMethod
         if (value == "mle" && robustMethod != "none") {
           stop(messages$errorMleRejectsRobust(robustMethod))
+        }
+        if (
+          value == "mle" &&
+            isTRUE(private$.objectiveFunctionOptions$scaleVar) &&
+            private$.objectiveFunctionOptions$residualWeightingMethod == "error"
+        ) {
+          stop(messages$errorMleRejectsScaleVar())
         }
         private$.objectiveType <- value
       }

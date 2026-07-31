@@ -47,3 +47,15 @@
       ! `objectiveType = "mle"` with `residualWeightingMethod = "error"` needs a usable standard deviation on every scored observation, and "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)" does not provide one everywhere.
       8 observations without a usable error value. Supply an error value for every observation, or set `residualWeightingMethod = "none"` to estimate a single residual standard deviation instead.
 
+# estimateCI() also resets the observed-data cache
+
+    Code
+      task$estimateCI()
+    Message
+      Starting confidence interval estimation using 'hessian' for parameter value(s):
+        -0.09700
+    Condition
+      Error in `private$.objectiveFunction()`:
+      ! `objectiveType = "mle"` with `residualWeightingMethod = "error"` needs a usable standard deviation on every scored observation, and "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)" does not provide one everywhere.
+      8 observations without a usable error value. Supply an error value for every observation, or set `residualWeightingMethod = "none"` to estimate a single residual standard deviation instead.
+

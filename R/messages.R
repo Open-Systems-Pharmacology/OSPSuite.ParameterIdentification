@@ -434,6 +434,14 @@ messages$errorMleRejectsRobust <- function(robustMethod) {
   )
 }
 
+messages$errorMleRejectsScaleVar <- function() {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"mle\"} cannot be combined with {.code scaleVar = TRUE} while {.code residualWeightingMethod = \"error\"}.",
+    "There is no concentrated scale for the scale factor to cancel against under a measured standard deviation, so it would inflate the measured standard deviation by the observation count.",
+    "Set {.code scaleVar = FALSE}, or use {.code residualWeightingMethod = \"none\"}."
+  )
+}
+
 messages$errorLsqStrandsM3 <- function() {
   ospsuite.utils::cliFormat(
     "{.code objectiveType = \"lsq\"} is not allowed while {.code blqMethod = \"m3\"}.",

@@ -50,6 +50,10 @@
     "constant" = {
       # An exact fit drives the concentrated scale to zero, where the
       # log-likelihood is unbounded. Floor it so the objective stays finite.
+      # The floor is an absolute constant in squared data units, so it only
+      # binds at a near-exact fit; with `scaleVar = TRUE` the weighted sum of
+      # squares is divided by `nObservations^2`, so the floor binds roughly
+      # `nObservations^2` times earlier.
       scaleSquared <- max(weightedSSR / nObservations, .Machine$double.eps)
       gaussianConstant +
         sumLogSigma +

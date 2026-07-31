@@ -6,7 +6,7 @@ obsVsPredDf <- readr::read_csv(
 )
 
 test_that("mle with the constant error model finds the same estimates as lsq", {
-  # Section 2.5: with unit weights the NLL is a strictly increasing function of
+  # With unit weights the NLL is a strictly increasing function of
   # weightedSSR, so the two objectives share a minimizer even though their
   # values differ. `testPiTask()` builds a fresh `Simulation` on every call
   # (`getTestSimulation()` returns a new memoized closure each time, so the
@@ -99,7 +99,7 @@ test_that("the mle objective value equals the likelihood of the reported statist
 })
 
 test_that("a shared scale is concentrated across mappings, not within them", {
-  # Section 2.4: the NLL is not additive across output mappings, which is why
+  # The NLL is not additive across output mappings, which is why
   # it is assembled after aggregation. Demonstrated on aggregated statistics.
   first <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
   second <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
@@ -203,8 +203,44 @@ test_that("mle names a non-positive observation rather than blaming its error va
   expect_snapshot(error = TRUE, priv$.objectiveFunction(startValues))
 })
 
+test_that("mle with lloqHalf substitution scores a BLQ zero rather than aborting", {
+  # Same shape as the pre-dose-zero test above, but the zero-valued point now
+  # carries an LLOQ, so under the default blqMethod = "lloqHalf" it is BLQ and
+  # gets substituted to LLOQ / 2 before the error weights ever see it. The
+  # precondition must recognize that a substituting blqMethod turns this row
+  # positive and let the run proceed instead of aborting.
+  base <- testObservedDataMultiple()$dataSet1
+  dataSet <- DataSet$new(name = "blqZero")
+  dataSet$setValues(
+    xValues = base$xValues,
+    yValues = replace(base$yValues, 1, 0),
+    yErrorValues = rep(1, length(base$yValues))
+  )
+  dataSet$yErrorType <- "ArithmeticStdDev"
+  dataSet$LLOQ <- 2.5
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(path = simOutputPath, container = sim_250mg)
+  )
+  mapping$addObservedDataSets(dataSet)
+  task <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = piParameterLipo_250mg,
+    outputMappings = mapping
+  )
+  task$configuration$objectiveType <- "mle"
+  task$configuration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValues <- sapply(priv$.piParameters, `[[`, "startValue")
+  cost <- priv$.objectiveFunction(startValues)
+  expect_true(is.finite(cost$modelCost))
+})
+
 test_that("mle rejects a dataset weight the user set to zero", {
-  # Section 5.3: unlike lsq, a likelihood reads a zero weight as an infinite
+  # Unlike lsq, a likelihood reads a zero weight as an infinite
   # residual standard deviation, not as an excluded point.
   task <- testPiTask()
   task$configuration$objectiveType <- "mle"
@@ -243,8 +279,29 @@ test_that("the mle preconditions run on every entry point, not only run()", {
   expect_snapshot(error = TRUE, task$gridSearch(totalEvaluations = 2))
 })
 
+test_that("estimateCI() also resets the observed-data cache", {
+  # Same defect as above, but for `estimateCI()`'s own reset. Appending
+  # `expect_snapshot(error = TRUE, task$estimateCI())` to the test above would
+  # not exercise it: `estimateCI()` first checks for a completed optimization
+  # result and stops before reaching the reset if `run()` was never called. So
+  # this task completes an lsq run first, filling both `.lastOptimResult` and
+  # the observed-data cache, before switching to mle with data that violates
+  # the data-error precondition.
+  task <- testPiTask()
+  task$configuration$algorithm <- "BOBYQA"
+  task$configuration$algorithmOptions <- list(maxeval = 2)
+  task$configuration$autoEstimateCI <- FALSE
+  task$run()
+
+  task$configuration$objectiveType <- "mle"
+  task$configuration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  expect_snapshot(error = TRUE, task$estimateCI())
+})
+
 test_that("the mle objective is finalized on the aggregate of all mappings", {
-  # Section 2.4: the likelihood is assembled once, after aggregation, because
+  # The likelihood is assembled once, after aggregation, because
   # the residual scale is shared across output mappings and cannot be
   # concentrated within each one. Verified on the real two-mapping pipeline with
   # deliberately unequal mappings, since identical mappings make the aggregate
@@ -314,7 +371,7 @@ test_that("the mle objective is finalized on the aggregate of all mappings", {
 })
 
 test_that("mle with the data-error model ranks parameter sets exactly as weighted lsq does", {
-  # Section 2.5: with a measured sigma the NLL is an increasing affine function
+  # With a measured sigma the NLL is an increasing affine function
   # of weightedSSR, so the two objectives induce the same ordering and
   # therefore the same minimizer. Verified directly on the transform, which
   # needs no optimizer run.

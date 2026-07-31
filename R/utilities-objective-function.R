@@ -157,6 +157,17 @@
   # Write the substituted observed values back so downstream error-weighting
   # (which reads observedData$yValues) sees the same values as the residuals.
   observedData$yValues <- observedYVal
+  # Under log scaling, error-weighting instead reads `yValuesLinear` (the
+  # pre-log-transform reference). Substitute it identically so both scalings
+  # agree on the observed value that defines the coefficient of variation.
+  if ("yValuesLinear" %in% colnames(observedData)) {
+    observedData$yValuesLinear <- .applyBlqSubstitution(
+      observedData$yValuesLinear,
+      if (scaling == "log") exp(observedData$lloq) else observedData$lloq,
+      blqMethod,
+      "lin"
+    )
+  }
 
   # M3 censored handling: compute one shared BLQ mask, score the censored rows
   # via the censored likelihood, and exclude them from the least-squares term so
@@ -230,7 +241,7 @@
 
   weightedSSR <- sum(weightedResiduals^2)
 
-  # Section 6: sigma_i is 1 / (scaleFactor * totalWeights_i) up to the error
+  # sigma_i is 1 / (scaleFactor * totalWeights_i) up to the error
   # model's scale, so sum(log(sigma_i)) is the negated sum below. A row whose
   # total weight is non-positive has infinite sigma and carries no likelihood
   # information, so it is dropped here rather than contributing -Inf. Under

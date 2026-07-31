@@ -61,6 +61,26 @@
       Robust weights can be exactly zero, which makes the likelihood infinite at every parameter value.
       Set `robustMethod = "none"`, or use `objectiveType = "lsq"`.
 
+# mle and scaleVar are mutually exclusive under data-error weighting
+
+    Code
+      piConfiguration$objectiveType <- "mle"
+    Condition
+      Error:
+      ! `objectiveType = "mle"` cannot be combined with `scaleVar = TRUE` while `residualWeightingMethod = "error"`.
+      There is no concentrated scale for the scale factor to cancel against under a measured standard deviation, so it would inflate the measured standard deviation by the observation count.
+      Set `scaleVar = FALSE`, or use `residualWeightingMethod = "none"`.
+
+---
+
+    Code
+      piConfigurationMle$objectiveFunctionOptions <- list(scaleVar = TRUE)
+    Condition
+      Error:
+      ! `objectiveType = "mle"` cannot be combined with `scaleVar = TRUE` while `residualWeightingMethod = "error"`.
+      There is no concentrated scale for the scale factor to cancel against under a measured standard deviation, so it would inflate the measured standard deviation by the observation count.
+      Set `scaleVar = FALSE`, or use `residualWeightingMethod = "none"`.
+
 # objectiveFunctionType is no longer an objectiveFunctionOptions key
 
     Code

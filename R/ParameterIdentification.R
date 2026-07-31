@@ -349,15 +349,16 @@ ParameterIdentification <- R6::R6Class(
               private$.configuration$blqRemove
             ))
           }
-          # Section 5.2: the dataError model asserts that sigma is measured, so
+          # The dataError model asserts that sigma is measured, so
           # the unit-weight fallback would fabricate sigma = 1 in the y-unit.
           # Censored rows never reach the error weights, so exclude them.
           if (
             private$.configuration$objectiveType == "mle" &&
               costControl$residualWeightingMethod == "error"
           ) {
+            blqMethod <- private$.configuration$blqMethod
             scoredRows <- observedRows
-            if (private$.configuration$blqMethod == "m3") {
+            if (blqMethod == "m3") {
               scoredRows <- scoredRows[!.isBlq(scoredRows), , drop = FALSE]
             }
             # Mirror the row filtering `.calculateCostMetrics()` performs before
@@ -386,8 +387,18 @@ ParameterIdentification <- R6::R6Class(
             # would silently fall back to the fabricated sigma = 1 as well. It
             # is a distinct cause, though: the coefficient of variation the
             # data-error model needs is undefined there, however good the
-            # reported standard deviation is.
-            nonPositiveValue <- scoredRows$yValues <= 0 & !noUsableError
+            # reported standard deviation is. A row that a substituting BLQ
+            # method (`lloq`, `lloqHalf`) will rewrite to a positive value
+            # before the kernel weights it is not such a case, so it is
+            # excluded here too.
+            substitutedBlq <- if (blqMethod %in% c("lloq", "lloqHalf")) {
+              .isBlq(scoredRows)
+            } else {
+              FALSE
+            }
+            nonPositiveValue <- scoredRows$yValues <= 0 &
+              !noUsableError &
+              !substitutedBlq
             if (any(noUsableError) || any(nonPositiveValue)) {
               stop(messages$errorUnusableErrorValues(
                 outputMappings[[idx]]$quantity$path,
@@ -397,7 +408,7 @@ ParameterIdentification <- R6::R6Class(
             }
           }
 
-          # Section 5.3: a zero dataset weight means sigma is infinite, which is
+          # A zero dataset weight means sigma is infinite, which is
           # an "exclude this point" idiom under lsq but not expressible under a
           # likelihood without changing what N means. Only a weight the user
           # configured carries that assertion. A bootstrap replicate multiplies

@@ -400,6 +400,25 @@ test_that("mle and robust residual weighting are mutually exclusive", {
   )
 })
 
+test_that("mle and scaleVar are mutually exclusive under data-error weighting", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error",
+    scaleVar = TRUE
+  )
+  expect_snapshot(error = TRUE, piConfiguration$objectiveType <- "mle")
+
+  piConfigurationMle <- PIConfiguration$new()
+  piConfigurationMle$objectiveType <- "mle"
+  piConfigurationMle$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  expect_snapshot(
+    error = TRUE,
+    piConfigurationMle$objectiveFunctionOptions <- list(scaleVar = TRUE)
+  )
+})
+
 test_that("objectiveFunctionType is no longer an objectiveFunctionOptions key", {
   piConfiguration <- PIConfiguration$new()
   expect_false(

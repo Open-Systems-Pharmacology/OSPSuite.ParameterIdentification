@@ -237,7 +237,7 @@ test_that("m3 guard errors when a mapping's LLOQ column is absent", {
 # sumLogSigma and objectiveType
 
 test_that("the kernel reports sumLogSigma as the negated log of the applied weights", {
-  # Section 6: sumLogSigma = -sum(log(s * w_i)), from the unrounded product
+  # sumLogSigma = -sum(log(s * w_i)), from the unrounded product
   # that forms the weighted residuals.
   df <- .blqKernelFixture()
   df$weights <- 2.5
@@ -616,7 +616,7 @@ test_that(".applyLogTransformation preserves the linear observed values", {
 })
 
 test_that(".computeErrorWeights converts an arithmetic SD to the log scale", {
-  # Section 2.7: sigma_log = sqrt(log(1 + (SD/y)^2)), weight = 1 / sigma_log.
+  # sigma_log = sqrt(log(1 + (SD/y)^2)), weight = 1 / sigma_log.
   yValues <- c(10, 4)
   yErrorValues <- c(2, 1)
   cv <- yErrorValues / yValues
@@ -633,7 +633,7 @@ test_that(".computeErrorWeights converts an arithmetic SD to the log scale", {
 })
 
 test_that(".computeErrorWeights uses log(GSD) directly on the log scale", {
-  # Section 2.7: a geometric SD is already a multiplicative spread.
+  # A geometric SD is already a multiplicative spread.
   yValues <- c(10, 4)
   gsd <- c(1.3, 1.5)
   expected <- 1 / log(gsd)
@@ -786,6 +786,35 @@ test_that("lloqHalf substitution reaches the kernel on the log scale", {
     result$residualDetails$yObserved[blqRow],
     log(2.5) - log(2)
   )
+})
+
+test_that("lloqHalf substitution also reaches yValuesLinear under GeometricStdDev weighting", {
+  # Row x=4 is reported as 0 (a common BLQ convention) at lloq 2.5. Before the
+  # substitution reached `yValuesLinear`, this row failed the `yValues > 0`
+  # eligibility test in `.computeErrorWeights()` and fell back to the
+  # fabricated unit weight; substitution restores LLOQ / 2 = 1.25, a genuine
+  # value the GeometricStdDev formula can use. Under log scaling the
+  # GeometricStdDev weight formula itself does not depend on the observed
+  # value, only the eligibility test does, so this pins the eligibility fix
+  # rather than the formula.
+  df <- .blqKernelFixture()
+  df$yValues[df$dataType == "observed" & df$xValues == 4] <- 0
+  df$yErrorValues <- 1.5
+  df$yErrorType <- "GeometricStdDev"
+  df$yErrorUnit <- df$yUnit
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    blqMethod = "lloqHalf",
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  blqRow <- result$residualDetails$x == 4
+  expected <- round(1 / log(1.5), 2)
+  expect_equal(result$residualDetails$errorWeights[blqRow], expected)
+  expect_false(result$residualDetails$errorWeights[blqRow] == 1)
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
