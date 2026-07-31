@@ -781,7 +781,9 @@ ParameterIdentification <- R6::R6Class(
     #'   [`ospsuite::loadSimulation()`] to load simulation files.
     #' @param parameters A `PIParameters` or list of `PIParameters` objects
     #'   specifying the model parameters to optimize. Each `PIParameters` object
-    #'   may group one or more underlying model parameters. See
+    #'   may group one or more underlying model parameters, and its values are
+    #'   converted from its `$unit` to the base unit before they are applied to
+    #'   the model. See
     #'   [`ospsuite.parameteridentification::PIParameters`] for details.
     #' @param configuration (Optional) A `PIConfiguration` object specifying
     #'   algorithm, CI method, and objective function settings. Defaults to a
@@ -1025,7 +1027,9 @@ ParameterIdentification <- R6::R6Class(
     #'   data.
     #'
     #' @param par Optional parameter values for simulations, in the order of
-    #'   `ParameterIdentification$parameters`. Use current values if `NULL`.
+    #'   `ParameterIdentification$parameters`. Interpreted in each
+    #'   `PIParameters$unit` and converted to the base unit before being applied
+    #'   to the model. Use current values if `NULL`.
     #' @return A list of `patchwork` objects (one per output mapping), showing:
     #' - Individual time profiles
     #' - Predicted vs. observed values
@@ -1144,9 +1148,9 @@ ParameterIdentification <- R6::R6Class(
     #' initialize better starting values.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
-    #'   `PIParameter` minimum values.
+    #'   `PIParameter` minimum values. Interpreted in each `PIParameters$unit`.
     #' @param upper Numeric vector of parameter upper bounds, defaulting to
-    #'   `PIParameter` maximum values.
+    #'   `PIParameter` maximum values. Interpreted in each `PIParameters$unit`.
     #' @param logScaleFlag Logical scalar or vector; determines if grid points
     #'   are spaced logarithmically. Default is `FALSE`.
     #' @param totalEvaluations Integer specifying the total grid points. Default
@@ -1275,8 +1279,9 @@ ParameterIdentification <- R6::R6Class(
     #' `Inf` to the corresponding `ofv` cell.
     #'
     #' @param par Numeric vector of parameter values, one for each
-    #'   `PIParameter`. Defaults to current parameter values if `NULL`,
-    #'   not numeric, or of mismatched length.
+    #'   `PIParameter`, interpreted in each `PIParameters$unit`. Defaults to
+    #'   current parameter values if `NULL`, not numeric, or of mismatched
+    #'   length.
     #' @param boundFactor Numeric scalar. A value of `0.1` (default) means
     #'   bounds extend ±10% around `par` for each parameter.
     #' @param totalEvaluations Integer specifying the number of grid points

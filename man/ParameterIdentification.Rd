@@ -84,7 +84,9 @@ parameters specified in \code{parameters}. Use
 \code{\link[ospsuite:loadSimulation]{ospsuite::loadSimulation()}} to load simulation files.}
       \item{\code{parameters}}{A \code{PIParameters} or list of \code{PIParameters} objects
 specifying the model parameters to optimize. Each \code{PIParameters} object
-may group one or more underlying model parameters. See
+may group one or more underlying model parameters, and its values are
+converted from its \verb{$unit} to the base unit before they are applied to
+the model. See
 \code{\link{PIParameters}} for details.}
       \item{\code{outputMappings}}{(Optional) A \code{PIOutputMapping} or list of
 \code{PIOutputMapping} objects mapping model outputs to observed data.
@@ -163,7 +165,9 @@ data.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{par}}{Optional parameter values for simulations, in the order of
-\code{ParameterIdentification$parameters}. Use current values if \code{NULL}.}
+\code{ParameterIdentification$parameters}. Interpreted in each
+\code{PIParameters$unit} and converted to the base unit before being applied
+to the model. Use current values if \code{NULL}.}
     }
     \if{html}{\out{</div>}}
   }
@@ -204,9 +208,9 @@ initialize better starting values.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
-\code{PIParameter} minimum values.}
+\code{PIParameter} minimum values. Interpreted in each \code{PIParameters$unit}.}
       \item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
-\code{PIParameter} maximum values.}
+\code{PIParameter} maximum values. Interpreted in each \code{PIParameters$unit}.}
       \item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
 are spaced logarithmically. Default is \code{FALSE}.}
       \item{\code{totalEvaluations}}{Integer specifying the total grid points. Default
@@ -244,8 +248,9 @@ convex along each axis.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{par}}{Numeric vector of parameter values, one for each
-\code{PIParameter}. Defaults to current parameter values if \code{NULL},
-not numeric, or of mismatched length.}
+\code{PIParameter}, interpreted in each \code{PIParameters$unit}. Defaults to
+current parameter values if \code{NULL}, not numeric, or of mismatched
+length.}
       \item{\code{boundFactor}}{Numeric scalar. A value of \code{0.1} (default) means
 bounds extend ±10\% around \code{par} for each parameter.}
       \item{\code{totalEvaluations}}{Integer specifying the number of grid points

@@ -24,7 +24,9 @@ specified by \verb{$unit}.}
     \item{\code{maxValue}}{Highest permissible parameter value.}
 
     \item{\code{unit}}{Parameter value units. Changing the unit does NOT
-automatically adjust min/max/start values.}
+automatically adjust min/max/start values. Values are converted from
+this unit to the parameter's base unit before they are applied to the
+model.}
   }
   \if{html}{\out{</div>}}
 }
