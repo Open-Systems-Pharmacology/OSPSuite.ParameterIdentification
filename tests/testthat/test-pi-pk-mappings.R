@@ -321,6 +321,7 @@ test_that("run() applies a non-base parameter unit in PK mode (#298)", {
     doseTask(ospUnits$Mass$mg, 250, 100, 1000)$run()
   )
 
+  expect_true(is.finite(baseResult$toDataFrame()$achievedValue))
   expect_equal(
     milligramResult$toDataFrame()$achievedValue,
     baseResult$toDataFrame()$achievedValue,

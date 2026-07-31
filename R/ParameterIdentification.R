@@ -125,7 +125,7 @@ ParameterIdentification <- R6::R6Class(
 
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
-    # `$unit`; `addRunValues()` reads base units, so they are converted here.
+    # `$unit`. `addRunValues()` reads base units, so they are converted here.
     # This is the only place that writes into the variable buckets.
     .applyParameterValues = function(values) {
       for (idx in seq_along(values)) {

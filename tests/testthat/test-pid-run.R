@@ -273,3 +273,62 @@ test_that("a non-base state-variable unit reaches the molecules bucket in base u
     stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
   )
 })
+
+test_that("run() reports the estimate in the declared unit and applies the matching base value", {
+  # Verifies the reporting contract, not the #298 conversion. The estimate is
+  # reported in $unit and .applyFinalValues() writes the matching base value.
+  # It cannot detect a conversion regression, because setValue() converts
+  # correctly regardless. The conversion itself is covered by the gridSearch
+  # and molecules bucket tests above.
+  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+
+  # Own simulation and PIParameters, so that assigning $unit cannot leak into
+  # the shared module-level fixtures used by unrelated snapshot tests.
+  sim <- ospsuite::loadSimulation(
+    pkmlPath,
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  piParameter <- PIParameters$new(
+    parameters = list(ospsuite::getParameter(clPath, container = sim))
+  )
+  piParameter$unit <- ospUnits$`Inversed time`$`1/h`
+  # Start value first, then max, then min: the bound setters cross-validate
+  # against startValue and against the base-unit bounds left from
+  # construction, because changing $unit does not rescale them (#246).
+  piParameter$startValue <- 56.4
+  piParameter$maxValue <- 100
+  piParameter$minValue <- 10
+
+  mapping <- PIOutputMapping$new(
+    quantity = ospsuite::getQuantity(outputPath, container = sim)
+  )
+  mapping$addObservedDataSets(
+    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
+
+  piTask <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter,
+    outputMappings = mapping,
+    configuration = lowIterPiConfiguration(iter = 1)
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+
+  suppressMessages(piResult <- piTask$run())
+  resultRow <- piResult$toDataFrame()
+  modelParameter <- ospsuite::getParameter(clPath, container = sim)
+
+  expect_equal(resultRow$unit, ospUnits$`Inversed time`$`1/h`)
+  expect_equal(
+    modelParameter$value,
+    ospsuite::toBaseUnit(
+      quantityOrDimension = modelParameter,
+      values = resultRow$estimate,
+      unit = resultRow$unit
+    ),
+    tolerance = 1e-6
+  )
+})
