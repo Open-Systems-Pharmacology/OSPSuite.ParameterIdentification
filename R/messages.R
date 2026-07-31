@@ -359,6 +359,12 @@ messages$errorPKMappingsEmpty <- function() {
   )
 }
 
+messages$errorParameterValuesLengthMismatch <- function(expected, actual) {
+  ospsuite.utils::cliFormat(
+    "Parameter values must supply one entry for each of the {expected} {.cls PIParameters} object{?s}, but {actual} {?was/were} given."
+  )
+}
+
 messages$errorMethodNotApplicableInPKMode <- function(methodName) {
   ospsuite.utils::cliFormat(
     "{.fn {methodName}} is not applicable for PK metric optimization."

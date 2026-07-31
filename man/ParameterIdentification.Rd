@@ -208,14 +208,14 @@ initialize better starting values.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{lower}}{Numeric vector of parameter lower bounds, defaulting to
-\code{PIParameter} minimum values. Interpreted in each \code{PIParameters$unit}.}
+\code{PIParameters} minimum values. Interpreted in each \code{PIParameters$unit}.}
       \item{\code{upper}}{Numeric vector of parameter upper bounds, defaulting to
-\code{PIParameter} maximum values. Interpreted in each \code{PIParameters$unit}.}
+\code{PIParameters} maximum values. Interpreted in each \code{PIParameters$unit}.}
       \item{\code{logScaleFlag}}{Logical scalar or vector; determines if grid points
 are spaced logarithmically. Default is \code{FALSE}.}
       \item{\code{totalEvaluations}}{Integer specifying the total grid points. Default
 is 50.}
-      \item{\code{setStartValue}}{Logical. If \code{TRUE}, updates \code{PIParameter} starting
+      \item{\code{setStartValue}}{Logical. If \code{TRUE}, updates \code{PIParameters} starting
 values to the best grid point. Default is \code{FALSE}.}
     }
     \if{html}{\out{</div>}}
@@ -231,7 +231,7 @@ Calculate Objective Function Value (OFV) Profiles
 \if{html}{\out{<a id="method-ParameterIdentification-calculateOFVProfiles"></a>}}
 \if{latex}{\out{\hypertarget{method-ParameterIdentification-calculateOFVProfiles}{}}}
 \subsection{\code{ParameterIdentification$calculateOFVProfiles()}}{
-  Generates OFV profiles by varying each \code{PIParameter} independently while
+  Generates OFV profiles by varying each \code{PIParameters} independently while
 holding the others fixed at \code{par}. Useful as a post-optimization
 diagnostic: around a (local) minimum the OFV is expected to be roughly
 convex along each axis.
@@ -248,7 +248,7 @@ convex along each axis.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{par}}{Numeric vector of parameter values, one for each
-\code{PIParameter}, interpreted in each \code{PIParameters$unit}. Defaults to
+\code{PIParameters}, interpreted in each \code{PIParameters$unit}. Defaults to
 current parameter values if \code{NULL}, not numeric, or of mismatched
 length.}
       \item{\code{boundFactor}}{Numeric scalar. A value of \code{0.1} (default) means
@@ -273,7 +273,7 @@ parameters held at their \code{par} values. Failed simulations contribute
 \code{Inf} to the corresponding \code{ofv} cell.
   }
   \subsection{Returns}{
-    A named list of tibbles, one element per \code{PIParameter}. List
+    A named list of tibbles, one element per \code{PIParameters}. List
 names are the parameter paths (taken from \code{parameters[[1]]$path}).
 Each tibble has two columns:
 \itemize{

@@ -19,6 +19,19 @@ test_that("plotResults() generates expected plot with parameter input", {
   vdiffr::expect_doppelganger("custom-parameter", piTask$plotResults(1.2)[[1]])
 })
 
+test_that("plotResults() errors when `par` length differs from parameter count", {
+  twoParameterTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  expect_snapshot(twoParameterTask$plotResults(1.2), error = TRUE)
+  expect_snapshot(
+    twoParameterTask$plotResults(c(1.2, 3.4, 5.6)),
+    error = TRUE
+  )
+})
+
 
 # Grid Search
 
@@ -83,7 +96,7 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   expect_snapshot(gridSearchResults$ofv)
 })
 
-test_that("gridSearch OFVs are invariant to a non-base parameter unit (#298)", {
+test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"

@@ -128,6 +128,12 @@ ParameterIdentification <- R6::R6Class(
     # `$unit`. `addRunValues()` reads base units, so they are converted here.
     # This is the only place that writes into the variable buckets.
     .applyParameterValues = function(values) {
+      if (length(values) != length(private$.piParameters)) {
+        stop(messages$errorParameterValuesLengthMismatch(
+          length(private$.piParameters),
+          length(values)
+        ))
+      }
       for (idx in seq_along(values)) {
         piParameter <- private$.piParameters[[idx]]
         baseValue <- .toBaseValue(piParameter, values[[idx]])
@@ -1148,14 +1154,14 @@ ParameterIdentification <- R6::R6Class(
     #' initialize better starting values.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
-    #'   `PIParameter` minimum values. Interpreted in each `PIParameters$unit`.
+    #'   `PIParameters` minimum values. Interpreted in each `PIParameters$unit`.
     #' @param upper Numeric vector of parameter upper bounds, defaulting to
-    #'   `PIParameter` maximum values. Interpreted in each `PIParameters$unit`.
+    #'   `PIParameters` maximum values. Interpreted in each `PIParameters$unit`.
     #' @param logScaleFlag Logical scalar or vector; determines if grid points
     #'   are spaced logarithmically. Default is `FALSE`.
     #' @param totalEvaluations Integer specifying the total grid points. Default
     #'   is 50.
-    #' @param setStartValue Logical. If `TRUE`, updates `PIParameter` starting
+    #' @param setStartValue Logical. If `TRUE`, updates `PIParameters` starting
     #'   values to the best grid point. Default is `FALSE`.
     #'
     #' @return A tibble where each row is a parameter combination and the
@@ -1260,7 +1266,7 @@ ParameterIdentification <- R6::R6Class(
     #' Calculate Objective Function Value (OFV) Profiles
     #'
     #' @description
-    #' Generates OFV profiles by varying each `PIParameter` independently while
+    #' Generates OFV profiles by varying each `PIParameters` independently while
     #' holding the others fixed at `par`. Useful as a post-optimization
     #' diagnostic: around a (local) minimum the OFV is expected to be roughly
     #' convex along each axis.
@@ -1279,7 +1285,7 @@ ParameterIdentification <- R6::R6Class(
     #' `Inf` to the corresponding `ofv` cell.
     #'
     #' @param par Numeric vector of parameter values, one for each
-    #'   `PIParameter`, interpreted in each `PIParameters$unit`. Defaults to
+    #'   `PIParameters`, interpreted in each `PIParameters$unit`. Defaults to
     #'   current parameter values if `NULL`, not numeric, or of mismatched
     #'   length.
     #' @param boundFactor Numeric scalar. A value of `0.1` (default) means
@@ -1287,7 +1293,7 @@ ParameterIdentification <- R6::R6Class(
     #' @param totalEvaluations Integer specifying the number of grid points
     #'   per parameter profile. Default is `20`.
     #'
-    #' @return A named list of tibbles, one element per `PIParameter`. List
+    #' @return A named list of tibbles, one element per `PIParameters`. List
     #'   names are the parameter paths (taken from `parameters[[1]]$path`).
     #'   Each tibble has two columns:
     #'   - a column named after the parameter path, holding the grid values;
