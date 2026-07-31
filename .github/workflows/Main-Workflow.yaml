@@ -20,11 +20,18 @@ jobs:
     if: ${{ !cancelled() }}
     needs: [bump-dev-version]
     uses: Open-Systems-Pharmacology/Workflows/.github/workflows/R-CMD-check-build.yaml@main
+    with:
+      # OSP r-universe provides prebuilt binaries for ospsuite.utils / ospsuite /
+      # tlf. Passing it lets pak resolve those without needing an entry per
+      # dependency in this package's own DESCRIPTION `Remotes:` field.
+      extra-repositories: https://open-systems-pharmacology.r-universe.dev
 
   test-coverage:
     if: ${{ !cancelled() }}
     needs: [bump-dev-version]
     uses: Open-Systems-Pharmacology/Workflows/.github/workflows/test-coverage.yaml@main
+    with:
+      extra-repositories: https://open-systems-pharmacology.r-universe.dev
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -33,3 +40,5 @@ jobs:
     if: ${{ !cancelled() }}
     needs: [bump-dev-version]
     uses:  Open-Systems-Pharmacology/Workflows/.github/workflows/pkgdown.yaml@main
+    with:
+      extra-repositories: https://open-systems-pharmacology.r-universe.dev

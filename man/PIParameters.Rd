@@ -24,7 +24,10 @@ specified by \verb{$unit}.}
     \item{\code{maxValue}}{Highest permissible parameter value.}
 
     \item{\code{unit}}{Parameter value units. Changing the unit does NOT
-automatically adjust min/max/start values.}
+automatically adjust min/max/start values. Values are converted from
+this unit to the parameter's base unit before they are applied to the
+model. With the \code{HJKB} algorithm, the declared unit also affects the
+search resolution because \code{HJKB} probes with absolute step sizes.}
   }
   \if{html}{\out{</div>}}
 }

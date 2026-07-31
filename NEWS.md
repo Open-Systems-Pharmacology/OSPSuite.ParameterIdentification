@@ -10,6 +10,7 @@
 ## Major changes
 
 - `ParameterIdentification` now applies the `blqRemove` setting when scoring the fit: `always` removes all below-LLOQ (BLQ) observations and `trailingSingle` keeps only the first point of each trailing BLQ run, while the default `none` keeps every observation and leaves results unchanged (#249).
+- `ParameterIdentification` now converts parameter values from `PIParameters$unit` to the base unit before applying them to the model. Previously they were applied unconverted, so a non-base unit silently optimized the wrong quantity (#300).
 
 ## Minor improvements and bug fixes
 

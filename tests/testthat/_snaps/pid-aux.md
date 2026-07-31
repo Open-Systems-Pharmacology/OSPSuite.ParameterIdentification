@@ -1,3 +1,19 @@
+# plotResults() errors when `par` length differs from parameter count
+
+    Code
+      twoParameterTask$plotResults(1.2)
+    Condition
+      Error in `private$.applyParameterValues()`:
+      ! Parameter values must supply one entry for each of the 2 <PIParameters> objects, but 1 was given.
+
+---
+
+    Code
+      twoParameterTask$plotResults(c(1.2, 3.4, 5.6))
+    Condition
+      Error in `private$.applyParameterValues()`:
+      ! Parameter values must supply one entry for each of the 2 <PIParameters> objects, but 3 were given.
+
 # gridSearch() works with multiple parameters and default settings
 
     Code
