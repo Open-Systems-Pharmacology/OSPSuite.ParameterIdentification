@@ -349,7 +349,7 @@ test_that("blqMethod accepts all four methods and rejects invalid ones", {
   expect_error(piConfiguration$blqMethod <- "censored")
 })
 
-test_that("blqMethod m3 and objectiveType mle can be unset in either order", {
+test_that("clearing blqMethod first unlocks returning objectiveType to lsq", {
   piConfiguration <- PIConfiguration$new()
   piConfiguration$objectiveType <- "mle"
   piConfiguration$blqMethod <- "m3"
