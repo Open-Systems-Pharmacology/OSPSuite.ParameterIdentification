@@ -169,111 +169,6 @@ test_that("run() works with two datasets and individual weights", {
   expect_equal(result$toList()$objectiveValue, 4486.392, tolerance = 0.1)
 })
 
-test_that("gridSearch OFVs are invariant to a non-base parameter unit (#298)", {
-  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
-  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
-  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
-  observed <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-
-  # Each task loads its own simulation and builds its own PIParameters, so that
-  # assigning $unit cannot leak into the shared module-level fixtures.
-  clearanceTask <- function(unit) {
-    sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
-    piParameter <- PIParameters$new(
-      parameters = list(getParameter(clPath, container = sim))
-    )
-    piParameter$unit <- unit
-
-    mapping <- PIOutputMapping$new(
-      quantity = getQuantity(outputPath, container = sim)
-    )
-    mapping$addObservedDataSets(observed)
-
-    ParameterIdentification$new(
-      simulations = sim,
-      parameters = piParameter,
-      outputMappings = mapping
-    )
-  }
-
-  # [1e-4, 1e-3] 1/min and [6e-3, 6e-2] 1/h are the same physical interval.
-  # Explicit bounds mean the stale base-unit min/max are never consulted.
-  baseGrid <- suppressMessages(
-    clearanceTask(ospUnits$`Inversed time`$`1/min`)$gridSearch(
-      lower = 1e-4,
-      upper = 1e-3,
-      totalEvaluations = 3
-    )
-  )
-  hourGrid <- suppressMessages(
-    clearanceTask(ospUnits$`Inversed time`$`1/h`)$gridSearch(
-      lower = 1e-4 * 60,
-      upper = 1e-3 * 60,
-      totalEvaluations = 3
-    )
-  )
-
-  expect_equal(hourGrid$ofv, baseGrid$ofv, tolerance = 1e-6)
-})
-
-test_that("a non-base state-variable unit reaches the molecules bucket in base units (#298)", {
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
-
-  # Organism|Lumen|Stomach|Liquid is RHS-defined, so .setVariableValue() routes
-  # it into the molecules bucket rather than the parameters bucket. Its base
-  # unit is l, so values declared in ml must arrive divided by 1000.
-  piParameter <- PIParameters$new(
-    parameters = list(getParameter(stateVariableParameterPath, container = sim))
-  )
-  piParameter$unit <- ospUnits$Volume$ml
-  # Start value first, then max, then min: the bound setters cross-validate
-  # against startValue and against the base-unit bounds left from construction,
-  # because changing $unit does not rescale them (#246).
-  piParameter$startValue <- 45
-  piParameter$maxValue <- 450
-  piParameter$minValue <- 4.5
-
-  mapping <- PIOutputMapping$new(
-    quantity = getQuantity(
-      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-      container = sim
-    )
-  )
-  mapping$addObservedDataSets(
-    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-  )
-
-  task <- ParameterIdentification$new(
-    simulations = sim,
-    parameters = piParameter,
-    outputMappings = mapping
-  )
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  simId <- names(priv$.simulations)[[1]]
-
-  # .batchInitialization() seeds the start value: 45 ml is 0.045 l.
-  expect_equal(
-    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
-    0.045
-  )
-
-  # .evaluate() deposits a trial value: 50 ml is 0.05 l.
-  suppressMessages(priv$.evaluate(50))
-  expect_equal(
-    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
-    0.05
-  )
-
-  expect_false(
-    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
-  )
-})
-
 test_that("run() reports the estimate in the declared unit and applies the matching base value", {
   # Verifies the reporting contract, not the #298 conversion. The estimate is
   # reported in $unit and .applyFinalValues() writes the matching base value.
@@ -322,13 +217,11 @@ test_that("run() reports the estimate in the declared unit and applies the match
   modelParameter <- ospsuite::getParameter(clPath, container = sim)
 
   expect_equal(resultRow$unit, ospUnits$`Inversed time`$`1/h`)
+  # Independent oracle: 1/h to 1/min is a factor of 60, computed here rather
+  # than by re-using the conversion the implementation delegates to (T-6).
   expect_equal(
     modelParameter$value,
-    ospsuite::toBaseUnit(
-      quantityOrDimension = modelParameter,
-      values = resultRow$estimate,
-      unit = resultRow$unit
-    ),
+    resultRow$estimate / 60,
     tolerance = 1e-6
   )
 })

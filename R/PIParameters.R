@@ -78,7 +78,10 @@ PIParameters <- R6::R6Class(
     #' @field unit Parameter value units. Changing the unit does NOT
     #'   automatically adjust min/max/start values. Values are converted from
     #'   this unit to the parameter's base unit before they are applied to the
-    #'   model.
+    #'   model. With the `HJKB` algorithm, the declared unit also affects the
+    #'   search resolution because `HJKB` probes with absolute step sizes. See
+    #'   `vignette("user-guide", package = "ospsuite.parameteridentification")`
+    #'   for detail.
     unit = function(value) {
       if (missing(value)) {
         private$.unit

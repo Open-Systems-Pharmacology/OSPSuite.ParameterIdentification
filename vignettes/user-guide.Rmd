@@ -161,7 +161,6 @@ piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
 piParameterCl_250mg$minValue <- 0
 piParameterCl_250mg$maxValue <- 10
 
-piParameterCl_500mg$unit <- ospUnits$`Inversed time`$`1/min`
 piParameterCl_500mg$minValue <- 0
 piParameterCl_500mg$maxValue <- 10
 
@@ -170,7 +169,7 @@ print(piParameterCl_250mg)
 print(piParameterCl_500mg)
 ```
 
-Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset of `piParameterCl_250mg$unit` to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, its bounds and start value would be interpreted as `1/h`, producing an interval that excludes the parameter's own current value of `0.94 1/min`. `piParameterCl_500mg` was never switched to `1/h`, so its reset to `1/min` is a no-op shown only for symmetry with `piParameterCl_250mg`.
+Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset of `piParameterCl_250mg$unit` to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, its bounds and start value would be interpreted as `1/h`, producing an interval that excludes the parameter's own current value of `0.94 1/min`.
 
 One caveat is algorithm-specific. `HJKB` probes with absolute step sizes in the declared unit, so the choice of `$unit` changes its search resolution. The search performed by `BOBYQA` and `DEoptim` is unaffected, because their step and population scales derive from the bounds.
 

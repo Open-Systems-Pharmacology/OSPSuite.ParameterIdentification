@@ -83,6 +83,53 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   expect_snapshot(gridSearchResults$ofv)
 })
 
+test_that("gridSearch OFVs are invariant to a non-base parameter unit (#298)", {
+  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+  observed <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+
+  # Each task loads its own simulation and builds its own PIParameters, so that
+  # assigning $unit cannot leak into the shared module-level fixtures.
+  clearanceTask <- function(unit) {
+    sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
+    piParameter <- PIParameters$new(
+      parameters = list(getParameter(clPath, container = sim))
+    )
+    piParameter$unit <- unit
+
+    mapping <- PIOutputMapping$new(
+      quantity = getQuantity(outputPath, container = sim)
+    )
+    mapping$addObservedDataSets(observed)
+
+    ParameterIdentification$new(
+      simulations = sim,
+      parameters = piParameter,
+      outputMappings = mapping
+    )
+  }
+
+  # [1e-4, 1e-3] 1/min and [6e-3, 6e-2] 1/h are the same physical interval.
+  # Explicit bounds mean the stale base-unit min/max are never consulted.
+  baseGrid <- suppressMessages(
+    clearanceTask(ospUnits$`Inversed time`$`1/min`)$gridSearch(
+      lower = 1e-4,
+      upper = 1e-3,
+      totalEvaluations = 3
+    )
+  )
+  hourGrid <- suppressMessages(
+    clearanceTask(ospUnits$`Inversed time`$`1/h`)$gridSearch(
+      lower = 1e-4 * 60,
+      upper = 1e-3 * 60,
+      totalEvaluations = 3
+    )
+  )
+
+  expect_equal(hourGrid$ofv, baseGrid$ofv, tolerance = 1e-6)
+})
+
 
 # Calculate OFV Profiles
 

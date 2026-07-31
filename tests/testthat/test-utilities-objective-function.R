@@ -472,6 +472,64 @@ test_that("objective function delivers the state-variable value into the molecul
   )
 })
 
+test_that("a non-base state-variable unit reaches the molecules bucket in base units (#298)", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+
+  # Organism|Lumen|Stomach|Liquid is RHS-defined, so .setVariableValue() routes
+  # it into the molecules bucket rather than the parameters bucket. Its base
+  # unit is l, so values declared in ml must arrive divided by 1000.
+  piParameter <- PIParameters$new(
+    parameters = list(getParameter(stateVariableParameterPath, container = sim))
+  )
+  piParameter$unit <- ospUnits$Volume$ml
+  # Start value first, then max, then min: the bound setters cross-validate
+  # against startValue and against the base-unit bounds left from construction,
+  # because changing $unit does not rescale them (#246).
+  piParameter$startValue <- 45
+  piParameter$maxValue <- 450
+  piParameter$minValue <- 4.5
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(
+      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
+      container = sim
+    )
+  )
+  mapping$addObservedDataSets(
+    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
+
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter,
+    outputMappings = mapping
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  simId <- names(priv$.simulations)[[1]]
+
+  # .batchInitialization() seeds the start value: 45 ml is 0.045 l.
+  expect_equal(
+    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.045
+  )
+
+  # .evaluate() deposits a trial value: 50 ml is 0.05 l.
+  suppressMessages(priv$.evaluate(50))
+  expect_equal(
+    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.05
+  )
+
+  expect_false(
+    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
+  )
+})
+
 test_that("objective function runs with only a state-variable parameter", {
   task <- testStateVariableOnlyTask()
   priv <- task$.__enclos_env__$private
