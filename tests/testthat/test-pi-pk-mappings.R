@@ -275,3 +275,55 @@ test_that(".getPKValues routes a state-variable parameter as a molecule (#156)",
   )
   expect_true(is.finite(pkValues[[1]]))
 })
+
+test_that("run() applies a non-base parameter unit in PK mode (#298)", {
+  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  dosePath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+
+  # Each task loads its own simulation: earlier run()s in this file mutate the
+  # shared memoized simulation's Dose through .applyFinalValues(), which would
+  # invalidate the equality oracle.
+  doseTask <- function(unit, startValue, minValue, maxValue) {
+    sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
+    piParameter <- PIParameters$new(
+      parameters = list(getParameter(dosePath, container = sim))
+    )
+    piParameter$unit <- unit
+    # Start value first, then max, then min: the bound setters cross-validate
+    # against startValue and against the base-unit bounds left from
+    # construction, because changing $unit does not rescale them (#246).
+    piParameter$startValue <- startValue
+    piParameter$maxValue <- maxValue
+    piParameter$minValue <- minValue
+
+    quantity <- getQuantity(outputPath, container = sim)
+    mapping <- PKOutputMapping$new(
+      quantity = quantity,
+      pkParameter = "C_max",
+      targetValue = 30,
+      targetUnit = quantity$unit
+    )
+
+    ParameterIdentification$new(
+      simulations = sim,
+      parameters = piParameter,
+      pkOutputMappings = mapping,
+      configuration = lowIterPiConfiguration(iter = 1)
+    )
+  }
+
+  # 2.5e-4 kg is 250 mg, and the bounds bracket it identically in both units.
+  baseResult <- suppressMessages(
+    doseTask(ospUnits$Mass$kg, 2.5e-4, 1e-4, 1e-3)$run()
+  )
+  milligramResult <- suppressMessages(
+    doseTask(ospUnits$Mass$mg, 250, 100, 1000)$run()
+  )
+
+  expect_equal(
+    milligramResult$toDataFrame()$achievedValue,
+    baseResult$toDataFrame()$achievedValue,
+    tolerance = 1e-6
+  )
+})
