@@ -9,5 +9,7 @@
         * Objective function type: lsq
         * Residual weighting method: none
         * Robust residual calculation method: none
+        * BLQ removal mode: none
+        * BLQ handling method: lloqHalf
         * Print feedback after each function evaluation: FALSE
 

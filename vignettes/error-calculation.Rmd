@@ -20,31 +20,69 @@ knitr::opts_knit$set(
 
 ## Introduction
 
-In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. The `ospsuite.parameteridentification` package offers two primary error models to quantify this difference: the least squares error (`lsq`) and the M3 method (`m3`) for handling data below the quantification limit (BQL).
+In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` and `blqRemove` control how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
 
 
-## Error Models
+## Error Model
+
+The error model scores how far the simulation is from the observed data.
 
 ### LSQ - Least Squares Error
 
-The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation. By default, selecting this method will transform BQL data by replacing it with LLOQ/2.
+The `lsq` method minimizes the sum of the squared differences between observed and simulated values. It is a widely used, straightforward, and intuitive error calculation for pharmacokinetic modeling, and is currently the only available `objectiveFunctionType`.
 
-### M3 - Extended Least Squares Error
+For a single `PIOutputMapping` with observations $y_i$ measured at times $t_i$ ($i = 1, \dots, n$), the cost is
 
-The `m3` method extends the least squares error by incorporating the likelihood of observed data being below the quantification limit. This method treats BQL data as censored, applying maximum likelihood estimation to include all data in the model fit, thus offering a more accurate and statistically robust approach to handling BQL observations.
+$$
+E = \sum_{i=1}^{n} \left( \hat{y}(t_i) - y_i \right)^2 ,
+$$
 
-### Configuring Error Models in PI
+where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$. BLQ substitution (`blqMethod = "lloq"` or `"lloqHalf"`) runs after interpolation and is observed-only: it substitutes $y_i$ when that point's own LLOQ, checked against $y_i$, shows it is BLQ, but never modifies $\hat{y}(t_i)$.
 
-To apply an error model, set the `targetFunctionType` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
+Set it via the `objectiveFunctionType` attribute in `objectiveFunctionOptions`:
 
 ```{r, eval=FALSE}
 library(ospsuite.parameteridentification)
 
 piConfiguration <- PIConfiguration$new()
-piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq" # or "m3"
+piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 ```
 
-The error calculation between simulated results and observer datasets within each `PIOutputMapping` directly affects the optimization process, aggregating errors across all mappings.
+
+## Handling Data Below the Quantification Limit (BLQ)
+
+A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfiguration` settings control how such observations are treated.
+
+`blqMethod` selects how a retained BLQ observation contributes to the error. The substitution methods (`lloq`, `lloqHalf`) are observed-only: a BLQ observation, compared against that point's own LLOQ, is substituted; the simulated prediction is never modified, and a quantifiable observation (at or above the LLOQ) is never touched. This is the standard community/Beal convention; agreement between a censored observation and a prediction below the LLOQ is `m3`'s job, not the substitution methods'.
+
+- **`lloqHalf`** (default): substitute a BLQ observation with half the LLOQ.
+- **`lloq`**: substitute a BLQ observation with the LLOQ (PK-Sim default).
+- **`none`**: use the stored value unchanged, no substitution.
+- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The `blqOptions` field (`linScaleCV`, `logScaleSD`) parameterises this censored contribution.
+
+`blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run.
+
+These settings implement the standard strategies catalogued by Beal (2001), where each method is identified by an M-number:
+
+- **M1** (discard all BLQ): `blqRemove = "always"`.
+- **M3** (censored likelihood): `blqMethod = "m3"`.
+- **M5** (substitute LLOQ/2): `blqMethod = "lloqHalf"`.
+- **M6** (drop trailing BLQ): `blqRemove = "trailingSingle"`.
+
+The publication is listed in the References section.
+
+```{r, eval=FALSE}
+piConfiguration$blqMethod <- "m3"
+piConfiguration$blqOptions <- list(linScaleCV = 0.2)
+```
+
+Under `m3`, rows flagged as BLQ are excluded from the least-squares sum $E$ above, so they are not counted twice, and instead each contributes a censored-likelihood penalty
+
+$$
+P_j = -2 \ln \Phi\!\left( \frac{\text{LLOQ}_j - \hat{y}(t_j)}{\sigma_j} \right),
+$$
+
+summed over the censored points $j$ and added to $E$ to give the total mapping cost. $\Phi$ is the standard normal CDF and $\ln$ the natural logarithm. The per-point standard deviation $\sigma_j$ is $\lvert \text{linScaleCV} \times \text{LLOQ}_j \rvert$ under linear scaling, or the fixed `logScaleSD` under logarithmic scaling. The default `logScaleSD` is derived from a coefficient of variation of 0.2 as $\sqrt{\ln(1 + \text{CV}^2)} = \sqrt{\ln(1.04)} \approx 0.198$, expressed in natural-log units to match the natural-log transform used by `scaling = "log"`.
 
 
 

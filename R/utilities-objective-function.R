@@ -9,9 +9,13 @@
 #'   `yValues`, and optionally `yErrorValues` and `yErrorType` if
 #'   `residualWeightingMethod = "error"`. The error type must be one of
 #'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
-#' @param objectiveFunctionType A string indicating the objective function type
-#'   for calculating model cost. Options include `"lsq"` (least squares,
-#'   default) and `"m3"` for handling censored data.
+#' @param blqMethod A string selecting how retained BLQ observations contribute
+#'   to the cost. `"lloq"`/`"lloqHalf"` substitute the observed BLQ value with
+#'   the LLOQ (or half the LLOQ) before the least-squares term; the simulated
+#'   prediction is never modified. `"m3"` excludes BLQ rows from the
+#'   least-squares term and instead adds their censored-likelihood
+#'   contribution; any other value applies no substitution or censored
+#'   handling.
 #' @param residualWeightingMethod A string indicating the method to weight the
 #'   residuals. Options include `"none"` (default) and `"error"`.
 #' @param robustMethod A string indicating the robust method to apply to the
@@ -20,8 +24,13 @@
 #'   of observations. Defaults to `FALSE`.
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #'   Defaults to `NA_real_`.
-#' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#'   including `scaling`, `linScaleCV`, and `logScaleSD`.
+#' @param scaling Character string specifying the scaling method for the BLQ
+#'   substitution target (lin vs log) for non-m3 methods and the censored
+#'   likelihood calculation. Defaults to `"lin"`.
+#' @param linScaleCV Numeric, coefficient of variation used in linear scaling
+#'   for the censored contribution calculation. Defaults to `NULL`.
+#' @param logScaleSD Numeric, standard deviation used in logarithmic scaling
+#'   for the censored contribution calculation. Defaults to `NULL`.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -51,15 +60,15 @@
 #' @noRd
 .calculateCostMetrics <- function(
   df,
-  objectiveFunctionType = "lsq",
+  blqMethod = "none",
   residualWeightingMethod = "none",
   robustMethod = "none",
   scaleVar = FALSE,
   index = NA_real_,
-  ...
+  scaling = "lin",
+  linScaleCV = NULL,
+  logScaleSD = NULL
 ) {
-  additionalArgs <- list(...)
-
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -112,18 +121,6 @@
     stop("No observed data found when calculating cost function.")
   }
 
-  # Applying M3 method for censored error calculation
-  censoredContribution <- 0
-  if (objectiveFunctionType == "m3") {
-    censoredContribution <- .calculateCensoredContribution(
-      observed = observedData,
-      simulated = simulatedData,
-      scaling = additionalArgs$scaling,
-      linScaleCV = additionalArgs$linScaleCV %||% NULL,
-      logScaleSD = additionalArgs$logScaleSD %||% NULL
-    )
-  }
-
   # Extracting values for interpolation or direct matching
   simulatedXVal <- simulatedData[["xValues"]]
   simulatedYVal <- simulatedData[["yValues"]]
@@ -139,6 +136,44 @@
     )$y
   } else {
     simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
+  }
+
+  # BLQ substitution (blqMethod none/lloq/lloqHalf): substitute below-LLOQ
+  # observed values against the per-point LLOQ. Observed-only; the simulated
+  # prediction is never modified. Passthrough for none and m3.
+  observedYVal <- .applyBlqSubstitution(
+    observedYVal,
+    observedData$lloq,
+    blqMethod,
+    scaling
+  )
+  # Write the substituted observed values back so downstream error-weighting
+  # (which reads observedData$yValues) sees the same values as the residuals.
+  observedData$yValues <- observedYVal
+
+  # M3 censored handling: compute one shared BLQ mask, score the censored rows
+  # via the censored likelihood, and exclude them from the least-squares term so
+  # they are not double counted. A row whose own LLOQ is missing is not censored,
+  # the same rule `blqRemove` applied upstream, so both stages classify the
+  # identical row set. Only a mapping with no LLOQ at all is a misconfiguration.
+  censoredContribution <- 0
+  if (blqMethod == "m3") {
+    if (all(is.na(observedData$lloq))) {
+      stop("LLOQ value not provided with the data.")
+    }
+    censoredMask <- .isBlq(observedData)
+    censoredContribution <- .calculateCensoredContribution(
+      lloq = observedData$lloq[censoredMask],
+      simulated = simulatedYValApprox[censoredMask],
+      scaling = scaling,
+      linScaleCV = linScaleCV,
+      logScaleSD = logScaleSD
+    )
+    keep <- !censoredMask
+    observedData <- observedData[keep, , drop = FALSE]
+    observedXVal <- observedXVal[keep]
+    observedYVal <- observedYVal[keep]
+    simulatedYValApprox <- simulatedYValApprox[keep]
   }
 
   # Calculate raw residuals
@@ -196,14 +231,17 @@
     x = observedXVal,
     yObserved = observedYVal,
     ySimulated = simulatedYValApprox,
-    scaleFactor = scaleFactor,
-    errorWeights = round(errorWeights, 2),
+    scaleFactor = rep(scaleFactor, length.out = length(rawResiduals)),
+    errorWeights = rep(
+      round(errorWeights, 2),
+      length.out = length(rawResiduals)
+    ),
     robustWeights = round(robustWeights, 2),
     userWeights = userWeights,
     totalWeights = round(totalWeights, 2),
     rawResiduals = rawResiduals,
     weightedResiduals = weightedResiduals,
-    index = index
+    index = rep(index, length.out = length(rawResiduals))
   )
 
   # Ensure that the modelCost calculation does not result in NA
@@ -499,64 +537,34 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' scaling to calculate standard deviations for censored probabilities,
 #' enhancing overall model cost assessment with respect to detection limits.
 #'
-#' @param observed Data frame containing observed data, must include 'lloq',
-#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
-#' @param simulated Data frame containing simulated data, must include
-#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#' @param lloq Numeric vector of the per-row LLOQ for the censored rows only.
+#' @param simulated Numeric vector of (interpolated) simulated values, aligned
+#'   element-for-element with `lloq`.
 #' @param scaling Character string specifying the scaling method; should be one
 #'   of the predefined scaling options.
 #' @param linScaleCV Numeric, coefficient used to calculate standard deviation
 #'   for linear scaling, applied to 'lloq' values.
 #' @param logScaleSD Numeric, standard deviation for logarithmic scaling,
 #'   applied uniformly to all censored observations.
-#' @return Numeric value representing the sum of squared errors for censored
-#'   observations, contributing to the model's total cost.
+#' @return Numeric value representing the censored-likelihood contribution,
+#'   contributing to the model's total cost.
 #' @keywords internal
 #' @examples
 #' \dontrun{
-#' .calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
+#' .calculateCensoredContribution(lloq, simulated, scaling = "lin", linScaleCV = 0.2)
 #' }
 .calculateCensoredContribution <- function(
-  observed,
+  lloq,
   simulated,
   scaling,
   linScaleCV = NULL,
   logScaleSD = NULL
 ) {
-  ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
-  ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
-
-  lloq <- unique(stats::na.omit(observed$lloq))
-  ospsuite.utils::validateIsNumeric(lloq)
-
+  ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   if (length(lloq) == 0) {
-    stop("LLOQ value not provided with the data.")
-  } else if (any(is.na(observed$lloq))) {
-    observed$lloq[is.na(observed$lloq)] <- min(lloq, na.rm = TRUE)
-  }
-
-  # Identify censored and uncensored observations based on LLOQ
-  observedUncensored <- observed[
-    is.na(observed$lloq) |
-      (observed$yValues > observed$lloq),
-  ]
-  observedCensored <- observed[
-    !is.na(observed$lloq) &
-      (observed$yValues <= observed$lloq),
-  ]
-  simulatedCensored <- merge(
-    observedCensored[c("xValues", "xUnit", "xDimension")],
-    simulated,
-    by = c("xValues", "xUnit", "xDimension"),
-    all.x = TRUE
-  )
-
-  # No censored data to process
-  if (nrow(simulatedCensored) == 0) {
     return(0)
   }
-
   if (scaling == "lin" && !is.null(linScaleCV)) {
     stDev <- abs(linScaleCV * lloq)
   } else if (scaling == "log" && !is.null(logScaleSD)) {
@@ -564,15 +572,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   } else {
     stop("Scaling method and scaling parameters are not compatible.")
   }
-
-  censoredProbabilities <- stats::pnorm(
-    (observedCensored$lloq - simulatedCensored$yValues) / stDev
-  )
+  censoredProbabilities <- stats::pnorm((lloq - simulated) / stDev)
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
-  censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
-  censoredErrorVector <- sqrt(censoredErrorVector)
-
-  return(sum(censoredErrorVector^2))
+  sum(-2 * log(censoredProbabilities))
 }
 
 #' Summarize Cost Lists
