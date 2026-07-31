@@ -235,7 +235,7 @@
 <polyline points='222.76,493.63 225.50,493.63 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='222.76,459.31 225.50,459.31 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='222.76,424.99 225.50,424.99 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text transform='translate(198.77,478.97) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='44.03px' lengthAdjust='spacingAndGlyphs'>residuals</text>
+<text transform='translate(198.77,478.97) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='73.98px' lengthAdjust='spacingAndGlyphs'>residuals [mg/l]</text>
 <text transform='translate(210.65,478.97) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='100.29px' lengthAdjust='spacingAndGlyphs'>predicted - observed</text>
 <polyline points='235.28,542.37 235.28,539.63 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='323.47,542.37 323.47,539.63 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
