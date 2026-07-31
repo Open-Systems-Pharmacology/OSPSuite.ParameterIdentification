@@ -371,6 +371,13 @@ messages$errorPKMappingSimulationMismatch <- function() {
   )
 }
 
+messages$errorObjectiveTypeInertInPKMode <- function(objectiveType) {
+  ospsuite.utils::cliFormat(
+    "{.arg objectiveType} is {.val {objectiveType}}, but PK metric optimization always scores a relative sum of squares and ignores {.arg objectiveType} and {.arg blqMethod}.",
+    "Set {.code objectiveType = \"lsq\"}, or use {.arg outputMappings} instead of {.arg pkOutputMappings} to score with the configured objective."
+  )
+}
+
 messages$errorPKMultiIndividualSimulation <- function(
   pkParameter,
   quantityPath,

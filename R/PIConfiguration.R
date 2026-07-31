@@ -68,6 +68,27 @@ PIConfiguration <- R6::R6Class(
         if ("objectiveFunctionType" %in% names(value)) {
           stop(messages$errorObjectiveFunctionTypeRemoved())
         }
+        unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
+        if (length(unknownKeys) > 0) {
+          warning(
+            messages$warningUnknownOptions(
+              unknownKeys,
+              "objectiveFunctionOptions"
+            ),
+            call. = FALSE
+          )
+          value <- value[names(value) %in% names(ObjectiveFunctionSpecs)]
+        }
+        if (length(value) == 0) {
+          return(invisible(NULL))
+        }
+        # Validate the provided keys before the cross-field guards below, so
+        # an invalid value (e.g. NA) always fails with the package's own
+        # error instead of reaching an `if` condition first.
+        ospsuite.utils::validateIsOption(
+          value,
+          ObjectiveFunctionSpecs[names(value)]
+        )
         if (
           !is.null(value$robustMethod) &&
             value$robustMethod != "none" &&
@@ -86,24 +107,6 @@ PIConfiguration <- R6::R6Class(
         ) {
           stop(messages$errorMleRejectsScaleVar())
         }
-        unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
-        if (length(unknownKeys) > 0) {
-          warning(
-            messages$warningUnknownOptions(
-              unknownKeys,
-              "objectiveFunctionOptions"
-            ),
-            call. = FALSE
-          )
-          value <- value[names(value) %in% names(ObjectiveFunctionSpecs)]
-        }
-        if (length(value) == 0) {
-          return(invisible(NULL))
-        }
-        ospsuite.utils::validateIsOption(
-          value,
-          ObjectiveFunctionSpecs[names(value)]
-        )
         private$.objectiveFunctionOptions <- modifyList(
           private$.objectiveFunctionOptions,
           value

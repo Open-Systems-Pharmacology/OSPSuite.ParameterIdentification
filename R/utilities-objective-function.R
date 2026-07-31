@@ -147,25 +147,37 @@
 
   # BLQ substitution (blqMethod none/lloq/lloqHalf): substitute below-LLOQ
   # observed values against the per-point LLOQ. Observed-only; the simulated
-  # prediction is never modified. Passthrough for none and m3.
+  # prediction is never modified. Passthrough for none and m3. Classified once
+  # here, on the kernel-scale values the residuals themselves use, and reused
+  # below for `yValuesLinear` so a second, independent classification against
+  # `exp(lloq)` cannot disagree with this one by a few ULPs at the LLOQ
+  # boundary.
+  blqMask <- if (blqMethod %in% c("lloq", "lloqHalf")) {
+    .isBlqValues(observedYVal, observedData$lloq)
+  } else {
+    NULL
+  }
   observedYVal <- .applyBlqSubstitution(
     observedYVal,
     observedData$lloq,
     blqMethod,
-    scaling
+    scaling,
+    mask = blqMask
   )
   # Write the substituted observed values back so downstream error-weighting
   # (which reads observedData$yValues) sees the same values as the residuals.
   observedData$yValues <- observedYVal
   # Under log scaling, error-weighting instead reads `yValuesLinear` (the
-  # pre-log-transform reference). Substitute it identically so both scalings
-  # agree on the observed value that defines the coefficient of variation.
+  # pre-log-transform reference). Substitute it with the same mask so both
+  # scalings agree on which rows are BLQ and on the observed value that
+  # defines the coefficient of variation.
   if ("yValuesLinear" %in% colnames(observedData)) {
     observedData$yValuesLinear <- .applyBlqSubstitution(
       observedData$yValuesLinear,
       if (scaling == "log") exp(observedData$lloq) else observedData$lloq,
       blqMethod,
-      "lin"
+      "lin",
+      mask = blqMask
     )
   }
 

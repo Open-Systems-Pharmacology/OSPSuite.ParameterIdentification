@@ -81,6 +81,16 @@
       There is no concentrated scale for the scale factor to cancel against under a measured standard deviation, so it would inflate the measured standard deviation by the observation count.
       Set `scaleVar = FALSE`, or use `residualWeightingMethod = "none"`.
 
+# objectiveFunctionOptions validates values before the mle cross-field guards
+
+    Code
+      piConfiguration$objectiveFunctionOptions <- list(residualWeightingMethod = NA)
+    Condition
+      Error in `ospsuite.utils::validateIsOption()`:
+      ! Option validation failed:
+      
+      residualWeightingMethod : `<caller>`: NA values are not allowed.
+
 # objectiveFunctionType is no longer an objectiveFunctionOptions key
 
     Code

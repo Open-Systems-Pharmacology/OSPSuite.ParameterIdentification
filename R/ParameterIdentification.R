@@ -979,6 +979,19 @@ ParameterIdentification <- R6::R6Class(
     #' @return A [`PIResult`] object in standard mode, or a `PKResult` object
     #'   (internal) when `pkOutputMappings` was provided.
     run = function() {
+      # PK metric optimization always scores its own relative sum of squares
+      # (`.pkObjectiveFunction()`), so `objectiveType = "mle"` would otherwise
+      # be silently ignored. `blqMethod = "m3"` is inert for the same reason,
+      # but setting it requires `objectiveType = "mle"` first (enforced by
+      # `PIConfiguration$blqMethod`), so this one check covers both.
+      if (
+        !is.null(private$.pkMappings) &&
+          private$.configuration$objectiveType != "lsq"
+      ) {
+        stop(messages$errorObjectiveTypeInertInPKMode(
+          private$.configuration$objectiveType
+        ))
+      }
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       private$.savedSimulationState <- .storeSimulationState(

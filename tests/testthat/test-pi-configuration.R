@@ -419,6 +419,25 @@ test_that("mle and scaleVar are mutually exclusive under data-error weighting", 
   )
 })
 
+test_that("objectiveFunctionOptions validates values before the mle cross-field guards", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveType <- "mle"
+  piConfiguration$objectiveFunctionOptions <- list(scaleVar = TRUE)
+  # `ospsuite.utils::validateIsOption()` embeds the name of whichever function
+  # is currently on the call stack (e.g. `test_file()` vs `test_dir()`) in its
+  # per-field message; redact that volatile token so the snapshot is stable
+  # across how the suite is invoked.
+  expect_snapshot(
+    error = TRUE,
+    transform = function(lines) {
+      gsub("(residualWeightingMethod : )`[^`]*\\(\\)`", "\\1`<caller>`", lines)
+    },
+    piConfiguration$objectiveFunctionOptions <- list(
+      residualWeightingMethod = NA
+    )
+  )
+})
+
 test_that("objectiveFunctionType is no longer an objectiveFunctionOptions key", {
   piConfiguration <- PIConfiguration$new()
   expect_false(

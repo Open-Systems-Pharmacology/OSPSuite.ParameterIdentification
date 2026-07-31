@@ -202,6 +202,29 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   expect_true(costSub != costM3)
 })
 
+test_that("mle + error weighting + m3 tolerates censored rows with no usable SD", {
+  # The Laskin dataset's low (censored, <= LLOQ 2.5) rows carry no usable
+  # ArithmeticStdDev (NaN yErrorValues); only the uncensored rows above the
+  # LLOQ do. All three preconditions (objectiveType = "mle",
+  # residualWeightingMethod = "error", blqMethod = "m3") must hold at once for
+  # the data-error precondition to exclude the censored rows before checking
+  # for usable error values, rather than aborting the fit.
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  ds <- priv$.outputMappings[[1]]$observedDataSets[[1]]
+  ds$LLOQ <- 2.5
+  task$configuration$objectiveType <- "mle"
+  task$configuration$blqMethod <- "m3"
+  task$configuration$blqOptions <- list(linScaleCV = 0.2)
+  task$configuration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  sv <- sapply(priv$.piParameters, `[[`, "startValue")
+  expect_no_error(cost <- priv$.objectiveFunction(sv))
+  expect_true(is.finite(cost$modelCost))
+})
+
 test_that("lloqHalf, lloq, and none produce distinct costs on BLQ data", {
   costFor <- function(method) {
     task <- testPiTask()

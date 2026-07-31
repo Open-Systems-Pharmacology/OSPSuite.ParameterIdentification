@@ -127,11 +127,25 @@
 #' @param blqMethod A `BLQMethods` value: `"none"`, `"lloq"`, `"lloqHalf"`, `"m3"`.
 #' @param scaling A `ScalingOptions` value: `"lin"` or `"log"`. Governs the
 #'   `lloqHalf` target (`LLOQ/2` in lin, `ln(LLOQ) - ln(2)` in log).
+#' @param mask Logical vector, aligned with `observedValues`, marking which
+#'   rows are BLQ. When `NULL` (the default), classified internally via
+#'   [.isBlqValues()]. A caller that already classified the same rows on
+#'   another scale (e.g. the kernel substituting both `yValues` and
+#'   `yValuesLinear`) should pass that mask through here instead of letting
+#'   this function reclassify independently, since two classifications of the
+#'   same rows on different scales can disagree by a few ULPs at the LLOQ
+#'   boundary.
 #' @return The observed values, with BLQ observations substituted per
 #'   `blqMethod`.
 #' @keywords internal
 #' @noRd
-.applyBlqSubstitution <- function(observedValues, lloq, blqMethod, scaling) {
+.applyBlqSubstitution <- function(
+  observedValues,
+  lloq,
+  blqMethod,
+  scaling,
+  mask = NULL
+) {
   target <- switch(
     blqMethod,
     none = return(observedValues),
@@ -141,7 +155,7 @@
     ospsuite.utils::validateEnumValue(blqMethod, BLQMethods)
   )
   ospsuite.utils::validateIsSameLength(observedValues, lloq)
-  obsBelow <- .isBlqValues(observedValues, lloq)
+  obsBelow <- mask %||% .isBlqValues(observedValues, lloq)
   observedValues[obsBelow] <- target[obsBelow]
   observedValues
 }

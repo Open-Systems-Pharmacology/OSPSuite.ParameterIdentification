@@ -817,6 +817,46 @@ test_that("lloqHalf substitution also reaches yValuesLinear under GeometricStdDe
   expect_false(result$residualDetails$errorWeights[blqRow] == 1)
 })
 
+test_that("BLQ substitution stays consistent between yValues and yValuesLinear at exact LLOQ", {
+  # An observed value exactly equal to its LLOQ trivially classifies as BLQ on
+  # the primary (log) comparison: log(x) <= log(x) always holds for identical
+  # x. A second, independent classification of `yValuesLinear` against
+  # `exp(logLloq)` can drift from the original LLOQ by a few ULPs and
+  # disagree, leaving `yValuesLinear` unsubstituted while `yValues` is. The
+  # kernel must classify once and reuse that mask for both columns, so
+  # `.computeErrorWeights()` (which reads `yValuesLinear` under log scaling)
+  # always sees the substituted value.
+  df <- tibble::tibble(
+    dataType = c("simulated", "simulated", "observed", "observed"),
+    xValues = c(1, 2, 1, 2),
+    yValues = c(10, 5, 10, 5),
+    xUnit = "min",
+    yUnit = "mol/l",
+    xDimension = "Time",
+    yDimension = "Concentration (molar)",
+    lloq = c(NA_real_, NA_real_, NA_real_, 5),
+    weights = NA_real_,
+    yErrorValues = 1,
+    yErrorType = "ArithmeticStdDev",
+    yErrorUnit = "mol/l"
+  )
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    blqMethod = "lloqHalf",
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  # If `yValuesLinear` were not substituted, the coefficient of variation
+  # would be computed from the raw LLOQ (5) instead of LLOQ / 2 (2.5).
+  blqRow <- result$residualDetails$x == 2
+  expectedCV <- 1 / 2.5
+  expectedWeight <- round(1 / sqrt(log(1 + expectedCV^2)), 2)
+  expect_equal(result$residualDetails$errorWeights[blqRow], expectedWeight)
+})
+
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
   result_scaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = TRUE)
   result_unscaled <- .calculateCostMetrics(obsVsPredDf, scaleVar = FALSE)
