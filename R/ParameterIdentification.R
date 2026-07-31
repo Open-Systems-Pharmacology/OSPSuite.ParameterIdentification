@@ -360,37 +360,58 @@ ParameterIdentification <- R6::R6Class(
             if (private$.configuration$blqMethod == "m3") {
               scoredRows <- scoredRows[!.isBlq(scoredRows), , drop = FALSE]
             }
-            # .computeErrorWeights() only overwrites its seeded unit weight
-            # when the linear reference value is positive, so a non-positive
-            # value must count as unusable here too or it would silently fall
-            # back to the fabricated sigma = 1 this guard exists to prevent.
-            linearYValues <- scoredRows[["yValuesLinear"]] %||%
-              scoredRows$yValues
-            unusable <- is.na(scoredRows$yErrorValues) |
+            # Mirror the row filtering `.calculateCostMetrics()` performs before
+            # it scores anything: a row with a missing or infinite value, or a
+            # negative time, never reaches the error weights, so it cannot
+            # fabricate a sigma and must not be reported here.
+            scoredRows <- scoredRows[
+              is.finite(scoredRows$xValues) &
+                scoredRows$xValues >= 0 &
+                is.finite(scoredRows$yValues),
+              ,
+              drop = FALSE
+            ]
+            # Weights are read pre-log-transformation, so `yValues` is the
+            # linear reference `.computeErrorWeights()` will see.
+            noUsableError <- is.na(scoredRows$yErrorValues) |
               !(scoredRows$yErrorType %in%
                 c("ArithmeticStdDev", "GeometricStdDev")) |
               (scoredRows$yErrorType == "ArithmeticStdDev" &
                 scoredRows$yErrorValues <= 0) |
               (scoredRows$yErrorType == "GeometricStdDev" &
-                scoredRows$yErrorValues <= 1) |
-              !(linearYValues > 0)
-            # A residual NA anywhere in the disjunction above (e.g. an
-            # unfiltered NA yValues at this pre-.calculateCostMetrics() stage)
-            # must count as unusable rather than being silently admitted.
-            unusable[is.na(unusable)] <- TRUE
-            if (any(unusable)) {
-              stop(messages$errorMissingErrorValues(
+                scoredRows$yErrorValues <= 1)
+            noUsableError[is.na(noUsableError)] <- TRUE
+            # .computeErrorWeights() only overwrites its seeded unit weight when
+            # the reference value is positive, so a non-positive observation
+            # would silently fall back to the fabricated sigma = 1 as well. It
+            # is a distinct cause, though: the coefficient of variation the
+            # data-error model needs is undefined there, however good the
+            # reported standard deviation is.
+            nonPositiveValue <- scoredRows$yValues <= 0 & !noUsableError
+            if (any(noUsableError) || any(nonPositiveValue)) {
+              stop(messages$errorUnusableErrorValues(
                 outputMappings[[idx]]$quantity$path,
-                sum(unusable)
+                nNoUsableError = sum(noUsableError),
+                nNonPositiveValue = sum(nonPositiveValue)
               ))
             }
           }
 
           # Section 5.3: a zero dataset weight means sigma is infinite, which is
           # an "exclude this point" idiom under lsq but not expressible under a
-          # likelihood without changing what N means.
+          # likelihood without changing what N means. Only a weight the user
+          # configured carries that assertion. A bootstrap replicate multiplies
+          # the point weights by the number of times the dataset was drawn, so a
+          # dataset left out of a replicate legitimately arrives here with a
+          # weight of zero, meaning "not in this replicate". Validate the
+          # configured weights, which `.getOutputMappings()` cached before the
+          # first resampling, so both readings stay honest.
           if (private$.configuration$objectiveType == "mle") {
-            dataWeights <- outputMappings[[idx]]$dataWeights
+            dataWeights <- if (is.null(bootstrapSeed)) {
+              outputMappings[[idx]]$dataWeights
+            } else {
+              private$.initialOutputMappingState$dataSetWeights[[idx]]
+            }
             if (
               !is.null(dataWeights) &&
                 any(unlist(dataWeights) <= 0, na.rm = TRUE)
@@ -1045,6 +1066,9 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
+      # See `gridSearch()`: clear the cache so the observed-data preconditions
+      # run against the current configuration.
+      private$.obsVsPredDfCache <- NULL
 
       on.exit(private$.restoreOutputMappingsState(), add = TRUE)
 
@@ -1237,6 +1261,11 @@ ParameterIdentification <- R6::R6Class(
       private$.assertNotPKMode("gridSearch")
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
+      # The observed-data preconditions run while the cache is being built, so
+      # every entry point that evaluates the objective must start from a cleared
+      # cache, or a configuration changed since the last evaluation goes
+      # unchecked.
+      private$.obsVsPredDfCache <- NULL
 
       nrOfParameters <- length(private$.piParameters)
 
@@ -1386,6 +1415,9 @@ ParameterIdentification <- R6::R6Class(
 
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
+      # See `gridSearch()`: clear the cache so the observed-data preconditions
+      # run against the current configuration.
+      private$.obsVsPredDfCache <- NULL
 
       nrOfParameters <- length(private$.piParameters)
 

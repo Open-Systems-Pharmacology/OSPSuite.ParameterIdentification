@@ -200,8 +200,16 @@
       residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
-        yValues = observedData[["yValuesLinear"]] %||%
-          observedData[["yValues"]],
+        # `.computeErrorWeights()` needs the untransformed observed value, which
+        # under log scaling only `yValuesLinear` holds. Keyed on `scaling` rather
+        # than on the column being present, so a log-scaled frame that never
+        # went through `.applyLogTransformation()` fails loudly instead of
+        # silently deriving the coefficient of variation from a log-scale value.
+        yValues = if (scaling == "log") {
+          observedData[["yValuesLinear"]]
+        } else {
+          observedData[["yValues"]]
+        },
         yErrorValues = observedData[["yErrorValues"]],
         yErrorType = observedData[["yErrorType"]],
         scaling = scaling
@@ -640,8 +648,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' This function takes two lists, each being the output of the
 #' `.calculateCostMetrics` function, and summarizes them. It aggregates model
-#' costs and min log probabilities, and combines cost and residual details by
-#' row-binding.
+#' costs, min log probabilities, and the cost variables, and combines the
+#' residual details by row-binding.
 #'
 #' @param list1 The first list, containing the output of the
 #'   `.calculateCostMetrics` function, which includes `modelCost`,
@@ -653,11 +661,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'   `residualDetails`.
 #'
 #' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#'   `minLogProbabilities`, the `objectiveType` taken from `list1`, a row-bound
-#'   combination of `costVariables`, and a row-bound combination of
-#'   `residualDetails`.
+#'   `minLogProbabilities`, the `objectiveType` taken from `list1`, the
+#'   element-wise sum of `costVariables` (both frames share one fixed single-row
+#'   column set, so every statistic aggregates additively), and a row-bound
+#'   combination of `residualDetails`.
 #'
 #' @keywords internal
+#' @noRd
 .summarizeCostLists <- function(list1, list2) {
   mergedList <- list(
     modelCost = list1$modelCost + list2$modelCost,

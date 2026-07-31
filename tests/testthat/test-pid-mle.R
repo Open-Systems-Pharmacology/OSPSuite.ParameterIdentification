@@ -27,7 +27,9 @@ test_that("mle with the constant error model finds the same estimates as lsq", {
   taskMle$configuration$objectiveType <- "mle"
 
   resultLsq <- taskLsq$run()
-  resultMle <- taskMle$run()
+  # `autoEstimateCI` is on by default, so the run reaches the Hessian estimator,
+  # which is still on the least-squares scale under mle and warns about it.
+  expect_warning(resultMle <- taskMle$run(), "likelihood scale")
 
   # Primary assertion: cross-evaluate each objective at the other's estimate.
   # Two independently-converged parameter values only ever agree up to
@@ -79,7 +81,8 @@ test_that("the mle objective value equals the likelihood of the reported statist
   task$configuration$objectiveType <- "mle"
   task$configuration$algorithm <- "BOBYQA"
   task$configuration$algorithmOptions <- list(maxeval = 20)
-  result <- task$run()
+  # See above: the default Hessian CI warns under mle.
+  expect_warning(result <- task$run(), "likelihood scale")
   cost <- result$toList()$costDetails
 
   expect_equal(cost$objectiveType, "mle")
@@ -165,6 +168,149 @@ test_that("mle with data-error weighting rejects observations lacking an error v
     residualWeightingMethod = "error"
   )
   expect_snapshot(error = TRUE, task$run())
+})
+
+test_that("mle names a non-positive observation rather than blaming its error value", {
+  # A pre-dose measurement of 0 with a perfectly good standard deviation is
+  # common in PK data. It cannot be scored by the data-error model, because the
+  # coefficient of variation is undefined there, but telling the user an error
+  # value is missing would be false and unactionable.
+  base <- testObservedDataMultiple()$dataSet1
+  dataSet <- DataSet$new(name = "preDoseZero")
+  dataSet$setValues(
+    xValues = base$xValues,
+    yValues = replace(base$yValues, 1, 0),
+    yErrorValues = rep(1, length(base$yValues))
+  )
+  dataSet$yErrorType <- "ArithmeticStdDev"
+
+  mapping <- PIOutputMapping$new(
+    quantity = getQuantity(path = simOutputPath, container = sim_250mg)
+  )
+  mapping$addObservedDataSets(dataSet)
+  task <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = piParameterLipo_250mg,
+    outputMappings = mapping
+  )
+  task$configuration$objectiveType <- "mle"
+  task$configuration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValues <- sapply(priv$.piParameters, `[[`, "startValue")
+  expect_snapshot(error = TRUE, priv$.objectiveFunction(startValues))
+})
+
+test_that("mle rejects a dataset weight the user set to zero", {
+  # Section 5.3: unlike lsq, a likelihood reads a zero weight as an infinite
+  # residual standard deviation, not as an excluded point.
+  task <- testPiTask()
+  task$configuration$objectiveType <- "mle"
+  mapping <- task$outputMappings[[1]]
+  mapping$setDataWeights(
+    stats::setNames(list(0), names(mapping$observedDataSets)[[1]])
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValues <- sapply(priv$.piParameters, `[[`, "startValue")
+  expect_snapshot(error = TRUE, priv$.objectiveFunction(startValues))
+})
+
+test_that("the mle preconditions run on every entry point, not only run()", {
+  # The guards live in the cache-building branch of `.objectiveFunction()`. A
+  # cache filled by an earlier lsq evaluation must not let a later mle
+  # evaluation through unchecked, which would seed the fabricated sigma = 1 the
+  # data-error guard exists to prevent.
+  task <- testPiTask()
+  task$configuration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValues <- sapply(priv$.piParameters, `[[`, "startValue")
+  # lsq tolerates the missing error values by falling back to unit weights, and
+  # leaves the observed rows cached.
+  suppressWarnings(priv$.objectiveFunction(startValues))
+  expect_false(is.null(priv$.obsVsPredDfCache))
+
+  task$configuration$objectiveType <- "mle"
+  expect_snapshot(
+    error = TRUE,
+    task$calculateOFVProfiles(totalEvaluations = 2L)
+  )
+  expect_snapshot(error = TRUE, task$gridSearch(totalEvaluations = 2))
+})
+
+test_that("the mle objective is finalized on the aggregate of all mappings", {
+  # Section 2.4: the likelihood is assembled once, after aggregation, because
+  # the residual scale is shared across output mappings and cannot be
+  # concentrated within each one. Verified on the real two-mapping pipeline with
+  # deliberately unequal mappings, since identical mappings make the aggregate
+  # and the per-mapping sum coincide.
+  observedSets <- testObservedDataMultiple()
+  buildMapping <- function(simulation, dataSet) {
+    mapping <- PIOutputMapping$new(
+      quantity = getQuantity(path = simOutputPath, container = simulation)
+    )
+    mapping$addObservedDataSets(dataSet)
+    mapping
+  }
+
+  taskBoth <- ParameterIdentification$new(
+    simulations = list(sim_250mg, sim_500mg),
+    parameters = piParameterLipo,
+    outputMappings = list(
+      buildMapping(sim_250mg, observedSets$dataSet1),
+      buildMapping(sim_500mg, observedSets$dataSet2)
+    )
+  )
+  taskBoth$configuration$objectiveType <- "mle"
+  privBoth <- taskBoth$.__enclos_env__$private
+  privBoth$.batchInitialization()
+  startValues <- sapply(privBoth$.piParameters, `[[`, "startValue")
+  aggregate <- privBoth$.objectiveFunction(startValues)
+
+  # The first mapping alone, scored identically. Its statistics subtracted from
+  # the aggregate give the second mapping's, since `.summarizeCostLists()` sums
+  # `costVariables` element-wise.
+  taskFirst <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = piParameterLipo_250mg,
+    outputMappings = buildMapping(sim_250mg, observedSets$dataSet1)
+  )
+  taskFirst$configuration$objectiveType <- "mle"
+  privFirst <- taskFirst$.__enclos_env__$private
+  privFirst$.batchInitialization()
+  first <- privFirst$.objectiveFunction(
+    sapply(privFirst$.piParameters, `[[`, "startValue")
+  )
+
+  nllOf <- function(costVariables) {
+    .negLogLikelihood(
+      weightedSSR = costVariables$weightedSSR,
+      nObservations = costVariables$nObservations,
+      sumLogSigma = costVariables$sumLogSigma,
+      errorModel = "constant"
+    )
+  }
+  second <- aggregate$costVariables - first$costVariables
+
+  # Both mappings really did contribute, and unequally.
+  expect_equal(second$nObservations, 10)
+  expect_false(isTRUE(all.equal(
+    first$costVariables$weightedSSR,
+    second$weightedSSR
+  )))
+
+  # The objective is the likelihood of the aggregated statistics.
+  expect_equal(aggregate$modelCost, nllOf(aggregate$costVariables))
+  # And not the sum of the two per-mapping likelihoods.
+  expect_false(isTRUE(all.equal(
+    aggregate$modelCost,
+    nllOf(first$costVariables) + nllOf(second)
+  )))
 })
 
 test_that("mle with the data-error model ranks parameter sets exactly as weighted lsq does", {

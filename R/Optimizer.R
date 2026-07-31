@@ -145,6 +145,7 @@ Optimizer <- R6::R6Class(
       # For SSR-based objective: Cov(θ) = σ² * (H / 2)^(-1), with σ² = SSR / (n - p)
       # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
       cost <- fn(p = par, modelCostField = NULL)
+      private$.warnIfAnalyticCIUnderMle(cost)
       ssr <- purrr::pluck(
         cost,
         "costVariables",
@@ -223,9 +224,14 @@ Optimizer <- R6::R6Class(
     ) {
       result <- private$.initializeCIResult()
 
+      # One evaluation at the optimum serves both the threshold and the
+      # objective-type tag the warning below reads.
+      cost <- fn(p = par, modelCostField = NULL)
+      private$.warnIfAnalyticCIUnderMle(cost)
+
       # Calculate cost threshold based on confidence level (chi-sq criterion)
       controlCI$costThreshold <- 0.5 *
-        fn(par) +
+        cost[[private$.configuration$modelCostField]] +
         qchisq(controlCI$confLevel, df = 1)
 
       zScore <- qnorm(1 - (1 - controlCI$confLevel) / 2)
@@ -543,6 +549,20 @@ Optimizer <- R6::R6Class(
       }
 
       return(baseResult)
+    },
+
+    # Warn that the analytic CI estimators are still on the least-squares
+    # scale. Both read the curvature of the objective: the Hessian estimator
+    # scales `solve(hess / 2)` by an SSR-derived variance, and the profile
+    # estimator halves the objective before comparing it against an unscaled
+    # chi-square quantile. Neither is correct for a negative log-likelihood, so
+    # a cost tagged `mle` gets a warning rather than a silently wrong width.
+    .warnIfAnalyticCIUnderMle = function(cost) {
+      if (identical(purrr::pluck(cost, "objectiveType"), "mle")) {
+        warning(messages$warningAnalyticCiUnderMle(
+          private$.configuration$ciMethod
+        ))
+      }
     },
 
     # Initialize confidence interval (CI) result list

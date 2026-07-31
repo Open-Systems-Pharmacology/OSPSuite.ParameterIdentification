@@ -447,10 +447,31 @@ messages$errorUnknownErrorModelSource <- function(residualWeightingMethod) {
   )
 }
 
-messages$errorMissingErrorValues <- function(quantityPath, nRows) {
+messages$errorUnusableErrorValues <- function(
+  quantityPath,
+  nNoUsableError,
+  nNonPositiveValue
+) {
+  parts <- c(
+    "{.code objectiveType = \"mle\"} with {.code residualWeightingMethod = \"error\"} needs a usable standard deviation on every scored observation, and {.val {quantityPath}} does not provide one everywhere.",
+    if (nNoUsableError > 0) {
+      "{nNoUsableError} observation{?s} without a usable error value. Supply an error value for every observation, or set {.code residualWeightingMethod = \"none\"} to estimate a single residual standard deviation instead."
+    },
+    if (nNonPositiveValue > 0) {
+      "{nNonPositiveValue} observation{?s} with a value of zero or less and a usable error value. The data-error model turns that error value into a weight through the coefficient of variation, which is undefined at a non-positive value, so such an observation cannot be scored by this model at all. Remove it from the data set, or set {.code residualWeightingMethod = \"none\"}."
+    }
+  )
+  do.call(
+    ospsuite.utils::cliFormat,
+    c(as.list(parts), list(.envir = environment()))
+  )
+}
+
+messages$warningAnalyticCiUnderMle <- function(ciMethod) {
   ospsuite.utils::cliFormat(
-    "{.val {quantityPath}} has {nRows} observation{?s} without a usable error value, and {.code objectiveType = \"mle\"} with {.code residualWeightingMethod = \"error\"} requires one on every scored observation.",
-    "Supply an error value for every observation, or set {.code residualWeightingMethod = \"none\"} to estimate a single residual standard deviation instead."
+    "{.arg ciMethod} = {.val {ciMethod}} is not yet corrected for the likelihood scale of {.code objectiveType = \"mle\"}.",
+    "The Hessian and profile-likelihood estimators both still apply least-squares formulas, so the reported interval width is not trustworthy under {.val mle}.",
+    "Use {.code ciMethod = \"bootstrap\"}, which re-optimizes the same objective instead of reading its curvature."
   )
 }
 

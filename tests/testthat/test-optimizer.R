@@ -508,3 +508,54 @@ test_that("Hessian CI uses r from ciOptions to control number of iterations", {
   expect_equal(evalCount, 27L)
   expect_null(ciResult$error)
 })
+
+
+# Analytic CI methods under the mle objective
+
+# Same quadratic objective, tagged as a negative log-likelihood. Both analytic
+# estimators still use least-squares formulas on it, so both must say so.
+fnObjectiveMle <- function(p) {
+  cost <- fnObjective(p)
+  cost$objectiveType <- "mle"
+  cost
+}
+
+test_that("Hessian CI warns that it is not corrected for the likelihood scale", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
+
+  expect_snapshot(
+    suppressMessages(
+      ciResult <- optimizer$estimateCI(
+        par = parTest,
+        fn = fnObjectiveMle,
+        lower = lowerTest,
+        upper = upperTest
+      )
+    )
+  )
+  expect_null(ciResult$error)
+})
+
+test_that("profile likelihood CI warns that it is not corrected for the likelihood scale", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "PL"
+  # A single, wide profiling step per direction keeps the run cheap while still
+  # crossing the cost threshold, so the recorded output stays focused on the
+  # scale warning.
+  piConfig$ciOptions <- list(maxIter = 1L, epsilon = 5)
+  optimizer <- Optimizer$new(piConfig)
+
+  expect_snapshot(
+    suppressMessages(
+      ciResult <- optimizer$estimateCI(
+        par = parTest,
+        fn = fnObjectiveMle,
+        lower = lowerTest,
+        upper = upperTest
+      )
+    )
+  )
+  expect_equal(ciResult$method, "PL")
+})
