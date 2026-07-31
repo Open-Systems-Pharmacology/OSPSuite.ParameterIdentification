@@ -8,17 +8,25 @@ obsVsPredDf <- readr::read_csv(
 test_that("mle with the constant error model finds the same estimates as lsq", {
   # Section 2.5: with unit weights the NLL is a strictly increasing function of
   # weightedSSR, so the two objectives share a minimizer even though their
-  # values differ. Both runs share algorithm, bounds, and start values, and the
-  # optimizer tolerance is an order of magnitude tighter than the comparison.
+  # values differ. `run()` permanently applies its fitted value onto the
+  # shared simulation (`ParameterIdentification$.applyFinalValues()`), and
+  # `PIParameters$new()` seeds `startValue` from that live value, so
+  # constructing the second task only after the first has run would seed its
+  # search from the first run's answer instead of an independent baseline.
+  # Both tasks are constructed here before either is run, so both capture the
+  # same unfitted start value. Both runs share algorithm, bounds, and start
+  # values, and the optimizer tolerance is an order of magnitude tighter than
+  # the comparison.
   taskLsq <- testPiTask()
   taskLsq$configuration$algorithm <- "BOBYQA"
   taskLsq$configuration$algorithmOptions <- list(xtol_rel = 1e-8, maxeval = 200)
-  resultLsq <- taskLsq$run()
 
   taskMle <- testPiTask()
   taskMle$configuration$algorithm <- "BOBYQA"
   taskMle$configuration$algorithmOptions <- list(xtol_rel = 1e-8, maxeval = 200)
   taskMle$configuration$objectiveType <- "mle"
+
+  resultLsq <- taskLsq$run()
   resultMle <- taskMle$run()
 
   expect_equal(
@@ -138,10 +146,12 @@ test_that("mle with the data-error model ranks parameter sets exactly as weighte
   # so building a clean copy for a full run would mean reconstructing a new
   # DataSet from scratch and re-deriving its units and dimensions. The
   # dataframe fixture used above has no such obstacle, so it is cleaned
-  # directly: every observed row without a usable yErrorValues gets the mean
-  # of the fixture's own valid error values, so no row falls back to a
-  # fabricated sigma = 1, and the affine relationship is pinned on genuine
-  # measured sigmas without needing an optimizer run.
+  # directly: every observed row without a usable yErrorValues is filled with
+  # the mean of the fixture's own valid errors. That fill is synthetic, not a
+  # measured sigma; its only purpose is to keep every row eligible so the
+  # unit-weight fallback never fires. The affine relationship pinned below
+  # holds for any positive, parameter-independent sigma, so the particular
+  # fill value chosen does not affect what this test demonstrates.
   cleanDf <- obsVsPredDf
   observedIdx <- cleanDf$dataType == "observed"
   meanValidError <- mean(
