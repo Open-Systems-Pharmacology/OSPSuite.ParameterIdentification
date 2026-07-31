@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Major changes
+
+- `ParameterIdentification` now converts parameter values from `PIParameters$unit` to the base unit before applying them to the model. Previously they were applied unconverted, so a non-base unit silently optimized the wrong quantity (#300).
+
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification` now reads observed data once per optimization (and per bootstrap replicate) and caches it, instead of re-reading it from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).

@@ -62,7 +62,7 @@ test_that("run() stores best running cost in costDetails", {
   expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
 })
 
-test_that("run() succeeds with a state-variable optimization parameter (#156)", {
+test_that("run() succeeds with a state-variable optimization parameter", {
   piTask <- testStateVariableMixedTask()
   piTask$configuration <- lowIterPiConfiguration()
   piTask$configuration$autoEstimateCI <- FALSE
@@ -167,4 +167,60 @@ test_that("run() works with two datasets and individual weights", {
 
   suppressMessages(result <- piTask$run())
   expect_equal(result$toList()$objectiveValue, 4486.392, tolerance = 0.1)
+})
+
+test_that("run() reports the estimate in the declared unit and applies the matching base value", {
+  # Verifies the reporting contract, not the unit conversion. The estimate is
+  # reported in $unit and .applyFinalValues() writes the matching base value.
+  # It cannot detect a conversion regression, because setValue() converts
+  # correctly regardless. The conversion itself is covered by the gridSearch
+  # and molecules bucket tests above.
+  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
+
+  # Own simulation and PIParameters, so that assigning $unit cannot leak into
+  # the shared module-level fixtures used by unrelated snapshot tests.
+  sim <- ospsuite::loadSimulation(
+    pkmlPath,
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  piParameter <- PIParameters$new(
+    parameters = list(ospsuite::getParameter(clPath, container = sim))
+  )
+  piParameter$unit <- ospUnits$`Inversed time`$`1/h`
+  # Start, then max, then min: $unit does not rescale the values left from
+  # construction, and the bound setters cross-validate against them.
+  piParameter$startValue <- 56.4
+  piParameter$maxValue <- 100
+  piParameter$minValue <- 10
+
+  mapping <- PIOutputMapping$new(
+    quantity = ospsuite::getQuantity(outputPath, container = sim)
+  )
+  mapping$addObservedDataSets(
+    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  )
+
+  piTask <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter,
+    outputMappings = mapping,
+    configuration = lowIterPiConfiguration(iter = 1)
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+
+  suppressMessages(piResult <- piTask$run())
+  resultRow <- piResult$toDataFrame()
+  modelParameter <- ospsuite::getParameter(clPath, container = sim)
+
+  expect_equal(resultRow$unit, ospUnits$`Inversed time`$`1/h`)
+  # Independent oracle: 1/h to 1/min is a factor of 60, computed here rather
+  # than by re-using the conversion the implementation delegates to (T-6).
+  expect_equal(
+    modelParameter$value,
+    resultRow$estimate / 60,
+    tolerance = 1e-6
+  )
 })
