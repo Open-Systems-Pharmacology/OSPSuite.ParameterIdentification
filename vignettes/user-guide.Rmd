@@ -170,9 +170,9 @@ print(piParameterCl_250mg)
 print(piParameterCl_500mg)
 ```
 
-Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, the bounds and start value below would be interpreted as `1/h`, producing an interval that excludes the model's actual value.
+Values declared in `$unit` are converted to the parameter's base unit before they are applied to the model, so an identification can be set up in any unit of the parameter's dimension. The reset to `1/min` above is required because changing `$unit` relabels the stored numbers without rescaling them: without it, the bounds and start value above would be interpreted as `1/h`, producing an interval that excludes the parameter's own current value of `0.94 1/min`.
 
-One caveat is algorithm-specific. `HJKB` probes with absolute step sizes in the declared unit, so the choice of `$unit` changes its search resolution. `BOBYQA` and `DEoptim`'s search is unaffected, because their step and population scales derive from the bounds. Hessian-based confidence intervals depend on the declared unit regardless of algorithm, because their finite-difference step is capped at an absolute value, whereas profile-likelihood and bootstrap intervals are scale-relative and unaffected.
+One caveat is algorithm-specific. `HJKB` probes with absolute step sizes in the declared unit, so the choice of `$unit` changes its search resolution. The search performed by `BOBYQA` and `DEoptim` is unaffected, because their step and population scales derive from the bounds. Hessian-based confidence intervals depend on the declared unit regardless of algorithm, because their finite-difference step is capped at an absolute value, whereas profile-likelihood and bootstrap intervals are scale-relative and unaffected.
 
 #### Mapping of model output to observed data
 
