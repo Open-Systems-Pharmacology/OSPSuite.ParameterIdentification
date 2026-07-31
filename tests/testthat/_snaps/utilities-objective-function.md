@@ -64,8 +64,9 @@
 # calculateCostMetrics returns correct cost metric values for default parameters
 
     structure(list(modelCost = 677.390283322667, minLogProbability = 348.803465526585, 
-        costVariables = structure(list(nObservations = 11L, M3Contribution = 0, 
-            rawSSR = 677.390283322667, weightedSSR = 677.390283322667), class = "data.frame", row.names = c(NA, 
+        objectiveType = "lsq", costVariables = structure(list(nObservations = 11L, 
+            M3Contribution = 0, rawSSR = 677.390283322667, weightedSSR = 677.390283322667, 
+            sumLogSigma = 0), class = "data.frame", row.names = c(NA, 
         -1L)), residualDetails = structure(list(index = c(NA_real_, 
         NA_real_, NA_real_, NA_real_, NA_real_, NA_real_, NA_real_, 
         NA_real_, NA_real_, NA_real_, NA_real_), x = c(16.36363792, 

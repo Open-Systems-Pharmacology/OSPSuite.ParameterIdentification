@@ -31,6 +31,9 @@
 #'   for the censored contribution calculation. Defaults to `NULL`.
 #' @param logScaleSD Numeric, standard deviation used in logarithmic scaling
 #'   for the censored contribution calculation. Defaults to `NULL`.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -39,6 +42,7 @@
 #' @return A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
+#' - `objectiveType`: The objective function type tag.
 #' - `costVariables`: A dataframe with details on the cost calculations.
 #' - `residualDetails`: A dataframe with the calculated residuals and their weights.
 #' The summary has the class `modelCost`.
@@ -67,8 +71,11 @@
   index = NA_real_,
   scaling = "lin",
   linScaleCV = NULL,
-  logScaleSD = NULL
+  logScaleSD = NULL,
+  objectiveType = "lsq"
 ) {
+  ospsuite.utils::validateEnumValue(objectiveType, ObjectiveTypes)
+
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -215,6 +222,15 @@
 
   weightedSSR <- sum(weightedResiduals^2)
 
+  # Section 6: sigma_i is 1 / (scaleFactor * totalWeights_i) up to the error
+  # model's scale, so sum(log(sigma_i)) is the negated sum below. A row whose
+  # total weight is non-positive has infinite sigma and carries no likelihood
+  # information, so it is dropped here rather than contributing -Inf. Under
+  # `mle` such a row cannot occur, because the configuration rejects robust
+  # weighting and non-positive dataset weights.
+  appliedWeights <- scaleFactor * totalWeights
+  sumLogSigma <- -sum(log(appliedWeights[appliedWeights > 0]))
+
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(stats::dnorm(
     simulatedYValApprox,
@@ -227,6 +243,8 @@
     modelCost = weightedSSR + censoredContribution,
     minLogProbability = logProbability,
     nObservations = length(rawResiduals),
+    sumLogSigma = sumLogSigma,
+    objectiveType = objectiveType,
     M3Contribution = censoredContribution,
     rawSSR = sum(rawResiduals^2),
     weightedSSR = weightedSSR,
@@ -251,7 +269,10 @@
     warning(
       "Invalid model cost detected (NA). Returning infinite error cost structure."
     )
-    return(.createErrorCostStructure(index = index))
+    return(.createErrorCostStructure(
+      index = index,
+      objectiveType = objectiveType
+    ))
   }
 
   return(modelCost)
@@ -271,12 +292,18 @@
 #' @param weightedSSR Weighted sum of squared residuals.
 #' @param rawSSR Unweighted sum of squared residuals.
 #' @param M3Contribution Censored-data contribution to the cost.
+#' @param sumLogSigma Negated sum of the log of the applied per-observation
+#'   weights, the sufficient statistic the likelihood needs. Defaults to `0`,
+#'   the additive identity, for the failure substitute.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #' @param x,yObserved,ySimulated,scaleFactor,errorWeights,robustWeights,userWeights,totalWeights,rawResiduals,weightedResiduals
 #'   Per-observation vectors forming `residualDetails`. Default to `NA_real_` for
 #'   the failure substitute.
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #' @return A `modelCost` object: a list with `modelCost`, `minLogProbability`,
-#'   `costVariables`, and `residualDetails`.
+#'   `objectiveType`, `costVariables`, and `residualDetails`.
 #' @keywords internal
 #' @noRd
 .newModelCost <- function(
@@ -286,6 +313,8 @@
   weightedSSR,
   rawSSR = NA_real_,
   M3Contribution = 0,
+  sumLogSigma = 0,
+  objectiveType = "lsq",
   x = NA_real_,
   yObserved = NA_real_,
   ySimulated = NA_real_,
@@ -302,7 +331,8 @@
     nObservations = nObservations,
     M3Contribution = M3Contribution,
     rawSSR = rawSSR,
-    weightedSSR = weightedSSR
+    weightedSSR = weightedSSR,
+    sumLogSigma = sumLogSigma
   )
 
   residualDetails <- data.frame(
@@ -323,6 +353,7 @@
     list(
       modelCost = modelCost,
       minLogProbability = minLogProbability,
+      objectiveType = objectiveType,
       costVariables = costVariables,
       residualDetails = residualDetails
     ),
@@ -483,10 +514,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @param index Output-mapping index stored on the `residualDetails` row.
 #'   Defaults to `NA_real_`.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #' @return A `modelCost` object filled with infinite cost values.
 #' @keywords internal
 #' @noRd
-.createErrorCostStructure <- function(index = NA_real_) {
+.createErrorCostStructure <- function(index = NA_real_, objectiveType = "lsq") {
   .newModelCost(
     modelCost = Inf,
     minLogProbability = Inf,
@@ -494,7 +528,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     weightedSSR = Inf,
     rawSSR = Inf,
     M3Contribution = Inf,
-    index = index
+    sumLogSigma = 0,
+    index = index,
+    objectiveType = objectiveType
   )
 }
 
@@ -609,20 +645,24 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @param list1 The first list, containing the output of the
 #'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#'   `minLogProbability`, `objectiveType`, `costVariables`, and
+#'   `residualDetails`.
 #' @param list2 The second list, containing the output of the
 #'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#'   `minLogProbability`, `objectiveType`, `costVariables`, and
+#'   `residualDetails`.
 #'
 #' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#'   `minLogProbabilities`, a row-bound combination of `costVariables`, and a
-#'   row-bound combination of `residualDetails`.
+#'   `minLogProbabilities`, the `objectiveType` taken from `list1`, a row-bound
+#'   combination of `costVariables`, and a row-bound combination of
+#'   `residualDetails`.
 #'
 #' @keywords internal
 .summarizeCostLists <- function(list1, list2) {
   mergedList <- list(
     modelCost = list1$modelCost + list2$modelCost,
     minLogProbability = list1$minLogProbability + list2$minLogProbability,
+    objectiveType = list1$objectiveType,
     costVariables = list1$costVariables + list2$costVariables,
     residualDetails = rbind(list1$residualDetails, list2$residualDetails)
   )

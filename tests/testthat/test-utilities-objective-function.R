@@ -216,6 +216,98 @@ test_that("m3 guard errors when a mapping's LLOQ column is absent", {
   )
 })
 
+# sumLogSigma and objectiveType
+
+test_that("the kernel reports sumLogSigma as the negated log of the applied weights", {
+  # Section 6: sumLogSigma = -sum(log(s * w_i)), from the unrounded product
+  # that forms the weighted residuals.
+  df <- .blqKernelFixture()
+  df$weights <- 2.5
+  result <- .calculateCostMetrics(df, blqMethod = "none")
+  # s = 1 (scaleVar FALSE), errorWeights = 1, robustWeights = 1, so w_i = 2.5.
+  expected <- -sum(rep(log(2.5), result$costVariables$nObservations))
+  expect_equal(result$costVariables$sumLogSigma, expected)
+})
+
+test_that("sumLogSigma accounts for the scaleVar factor", {
+  df <- .blqKernelFixture()
+  result <- .calculateCostMetrics(df, blqMethod = "none", scaleVar = TRUE)
+  n <- result$costVariables$nObservations
+  # s = 1/n, w_i = 1, so each term is log(1/n).
+  expect_equal(result$costVariables$sumLogSigma, -n * log(1 / n))
+})
+
+test_that("a non-positive total weight is dropped from sumLogSigma but not from the count", {
+  # A zero weight means sigma is infinite, so the row carries no likelihood
+  # information and must not contribute -Inf. nObservations is deliberately
+  # unchanged, because the lsq Hessian CI reads it for its degrees of freedom.
+  df <- .blqKernelFixture()
+  df$weights <- 1
+  observedIdx <- which(df$dataType == "observed")
+  df$weights[observedIdx[1]] <- 0
+  result <- .calculateCostMetrics(df, blqMethod = "none")
+  expect_true(is.finite(result$costVariables$sumLogSigma))
+  expect_equal(result$costVariables$sumLogSigma, 0)
+  expect_equal(result$costVariables$nObservations, length(observedIdx))
+  expect_equal(
+    nrow(result$residualDetails),
+    result$costVariables$nObservations
+  )
+})
+
+test_that("the canonical schema gains sumLogSigma and the objective tag", {
+  # Mirrors the exact-schema assertions at lines 243-250, which this task's
+  # additions change. Kept exact rather than relaxed to a subset check so the
+  # schema stays pinned.
+  result <- .calculateCostMetrics(obsVsPredDf)
+  expect_equal(
+    names(result),
+    c(
+      "modelCost",
+      "minLogProbability",
+      "objectiveType",
+      "costVariables",
+      "residualDetails"
+    )
+  )
+  expect_equal(
+    names(result$costVariables),
+    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR", "sumLogSigma")
+  )
+})
+
+test_that("every modelCost producer carries an objectiveType tag", {
+  result <- .calculateCostMetrics(obsVsPredDf)
+  expect_equal(result$objectiveType, "lsq")
+
+  tagged <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  expect_equal(tagged$objectiveType, "mle")
+
+  errorStructure <- .createErrorCostStructure(objectiveType = "mle")
+  expect_equal(errorStructure$objectiveType, "mle")
+  expect_equal(errorStructure$costVariables$sumLogSigma, 0)
+})
+
+test_that("aggregation preserves the tag and sums the new column", {
+  first <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  second <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  merged <- .summarizeCostLists(first, second)
+  expect_equal(merged$objectiveType, "mle")
+  expect_equal(
+    merged$costVariables$sumLogSigma,
+    2 * first$costVariables$sumLogSigma
+  )
+})
+
+test_that("the failure substitute aggregates to an infinite cost, never NA", {
+  # The per-mapping error path does reach aggregation, so an NA default in the
+  # new column would hand the optimizer NA where lsq gives Inf.
+  good <- .calculateCostMetrics(obsVsPredDf)
+  merged <- .summarizeCostLists(good, .createErrorCostStructure())
+  expect_true(is.infinite(merged$costVariables$weightedSSR))
+  expect_false(is.na(merged$costVariables$sumLogSigma))
+})
+
 # .newModelCost
 
 test_that(".newModelCost builds the canonical schema with index owned by the constructor", {
@@ -242,11 +334,17 @@ test_that(".newModelCost builds the canonical schema with index owned by the con
   expect_s3_class(result, "modelCost")
   expect_equal(
     names(result),
-    c("modelCost", "minLogProbability", "costVariables", "residualDetails")
+    c(
+      "modelCost",
+      "minLogProbability",
+      "objectiveType",
+      "costVariables",
+      "residualDetails"
+    )
   )
   expect_equal(
     names(result$costVariables),
-    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR")
+    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR", "sumLogSigma")
   )
   expect_equal(
     names(result$residualDetails),
