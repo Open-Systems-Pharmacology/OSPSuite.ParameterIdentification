@@ -301,7 +301,9 @@ ParameterIdentification <- R6::R6Class(
           stop(messages$initialSimulationError())
         } else {
           message(messages$simulationError())
-          return(.createErrorCostStructure())
+          return(.createErrorCostStructure(
+            objectiveType = private$.configuration$objectiveType
+          ))
         }
       }
 
@@ -358,13 +360,23 @@ ParameterIdentification <- R6::R6Class(
             if (private$.configuration$blqMethod == "m3") {
               scoredRows <- scoredRows[!.isBlq(scoredRows), , drop = FALSE]
             }
+            # .computeErrorWeights() only overwrites its seeded unit weight
+            # when the linear reference value is positive, so a non-positive
+            # value must count as unusable here too or it would silently fall
+            # back to the fabricated sigma = 1 this guard exists to prevent.
+            linearYValues <- scoredRows[["yValuesLinear"]] %||%
+              scoredRows$yValues
             unusable <- is.na(scoredRows$yErrorValues) |
               !(scoredRows$yErrorType %in%
                 c("ArithmeticStdDev", "GeometricStdDev")) |
               (scoredRows$yErrorType == "ArithmeticStdDev" &
                 scoredRows$yErrorValues <= 0) |
               (scoredRows$yErrorType == "GeometricStdDev" &
-                scoredRows$yErrorValues <= 1)
+                scoredRows$yErrorValues <= 1) |
+              !(linearYValues > 0)
+            # A residual NA anywhere in the disjunction above (e.g. an
+            # unfiltered NA yValues at this pre-.calculateCostMetrics() stage)
+            # must count as unusable rather than being silently admitted.
             unusable[is.na(unusable)] <- TRUE
             if (any(unusable)) {
               stop(messages$errorMissingErrorValues(
@@ -379,7 +391,10 @@ ParameterIdentification <- R6::R6Class(
           # likelihood without changing what N means.
           if (private$.configuration$objectiveType == "mle") {
             dataWeights <- outputMappings[[idx]]$dataWeights
-            if (!is.null(dataWeights) && any(unlist(dataWeights) <= 0)) {
+            if (
+              !is.null(dataWeights) &&
+                any(unlist(dataWeights) <= 0, na.rm = TRUE)
+            ) {
               stop(messages$errorNonPositiveWeightsUnderMle(
                 outputMappings[[idx]]$quantity$path
               ))

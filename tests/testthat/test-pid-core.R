@@ -194,6 +194,9 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   # rows), which is smaller than the raw weightedSSR it replaces, so the total
   # drops to 157.9130500650 = 8.4107520110 (NLL) + 149.5022980540
   # (M3Contribution).
+  # Interim value: spec section 9 step 8 moves this again, once
+  # .calculateCensoredContribution() drops its factor of two and sources its
+  # sigma from the error model instead of linScaleCV/logScaleSD.
   expect_equal(costM3, 157.9130500650, tolerance = 1e-4)
 
   expect_true(costSub != costM3)

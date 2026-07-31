@@ -177,13 +177,18 @@ test_that(".finalizeObjective adds the censored contribution under mle", {
   expect_true(cost$costVariables$M3Contribution > 0)
 })
 
-test_that(".finalizeObjective passes a non-finite cost straight through", {
-  # Section 6.1: feeding Inf into the likelihood formula would produce NA.
-  cost <- .summarizeCostLists(
-    .calculateCostMetrics(obsVsPredDf, objectiveType = "mle"),
-    .createErrorCostStructure(objectiveType = "mle")
-  )
+test_that(".finalizeObjective's non-finite guard actually gates the formula", {
+  # Section 6.1: without the guard, nObservations = 0 alone makes
+  # .negLogLikelihood() return 0 regardless of weightedSSR (its own
+  # nObservations == 0 short-circuit), so weightedSSR = Inf would be masked:
+  # modelCost would become the finite 0 + M3Contribution instead of staying
+  # Inf. Constructing exactly that combination (Inf weightedSSR, 0
+  # observations, a finite M3Contribution) is what makes this test bite: the
+  # guarded path leaves modelCost at its already-Inf value, the guard-less
+  # path would compute a finite number instead.
+  cost <- .createErrorCostStructure(objectiveType = "mle")
+  cost$costVariables$nObservations <- 0
+  cost$costVariables$M3Contribution <- 5
   finalized <- .finalizeObjective(cost, "mle", "constant")
-  expect_true(is.infinite(finalized$modelCost))
-  expect_false(is.na(finalized$modelCost))
+  expect_equal(finalized$modelCost, Inf)
 })
