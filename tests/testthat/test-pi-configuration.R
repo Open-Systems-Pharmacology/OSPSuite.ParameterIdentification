@@ -342,8 +342,6 @@ test_that("blqRemove and blqMethod have expected defaults", {
 })
 
 test_that("blqRemove accepts valid modes and rejects invalid ones", {
-  # blqRemove filtering is not yet applied at runtime (added in a later step);
-  # these tests cover the validation surface only.
   piConfiguration <- PIConfiguration$new()
   piConfiguration$blqRemove <- "always"
   expect_equal(piConfiguration$blqRemove, "always")
@@ -370,9 +368,13 @@ test_that("blqMethod accepts m3 without an objectiveType constraint", {
 test_that("blqOptions defaults match BLQOptions", {
   piConfiguration <- PIConfiguration$new()
   expect_equal(piConfiguration$blqOptions$linScaleCV, 0.2)
+  # Pinned as a literal, not as a re-spelling of the formula in the enum: the
+  # value is a natural-log sigma, matching the natural-log transform applied by
+  # `.applyLogTransformation()`. Asserting the formula would pass for any
+  # consistent pair of wrong values, including the log10 sigma 0.0860086348330568.
   expect_equal(
     piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+    0.1980422004353651
   )
 })
 
@@ -382,7 +384,7 @@ test_that("blqOptions can be set and merged partially", {
   expect_equal(piConfiguration$blqOptions$linScaleCV, 0.3)
   expect_equal(
     piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+    sqrt(log(1 + 0.2^2))
   )
 })
 

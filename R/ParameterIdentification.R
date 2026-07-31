@@ -321,15 +321,33 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(outputMappings)) {
         df <- obsVsPredList[[idx]]$toDataFrame()
         if (buildObsCache) {
-          # First evaluation: df holds simulated and observed rows. Cache the
-          # observed rows (still in display units) for reuse.
-          obsVsPredDfCache[[idx]] <- df[
-            df$dataType == "observed",
-            ,
-            drop = FALSE
-          ]
+          # First evaluation: df holds simulated and observed rows. Apply the
+          # blqRemove filter to the observed rows (still in display units) once,
+          # cache the survivors, and rebuild df from the simulated rows plus the
+          # filtered observed rows so this scored build evaluation and every
+          # reuse iteration score the identical row set.
+          observedBeforeBlq <- df[df$dataType == "observed", , drop = FALSE]
+          observedRows <- .applyBlqRemove(
+            observedBeforeBlq,
+            private$.configuration$blqRemove
+          )
+          # Attribute an emptied mapping to blqRemove only when the filter
+          # actually removed rows. An already-empty observed set falls through
+          # to the kernel's generic "No observed data found" error instead.
+          if (nrow(observedRows) == 0L && nrow(observedBeforeBlq) > 0L) {
+            stop(messages$errorObservedDataRemovedByBlq(
+              outputMappings[[idx]]$quantity$path,
+              private$.configuration$blqRemove
+            ))
+          }
+          obsVsPredDfCache[[idx]] <- observedRows
+          df <- dplyr::bind_rows(
+            df[df$dataType == "simulated", , drop = FALSE],
+            observedRows
+          )
         } else {
-          # Reuse cached observed rows with the freshly simulated rows.
+          # Reuse the already-filtered cached observed rows with the freshly
+          # simulated rows.
           df <- dplyr::bind_rows(df, private$.obsVsPredDfCache[[idx]])
         }
 
@@ -341,19 +359,6 @@ ParameterIdentification <- R6::R6Class(
             outputMappings[[idx]]$quantity$dimension
           )
         )
-        # Apply LLOQ handling for the substitution BLQ methods (all but M3)
-        if (private$.configuration$blqMethod != "m3") {
-          # replace values < LLOQ with LLOQ/2 in simulated data
-          if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
-            lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[
-              (obsVsPredDf$dataType == "simulated" &
-                obsVsPredDf$yValues < lloq),
-              "yValues"
-            ] <- lloq / 2
-          }
-        }
-
         # Apply log transformation if requested
         if (outputMappings[[idx]]$scaling == "log") {
           obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
