@@ -188,6 +188,24 @@ test_that("all-censored m3 mapping does not error and cost is the censored term"
   expect_equal(cost$modelCost, cost$costVariables$M3Contribution)
 })
 
+test_that(".finalizeObjective leaves an all-censored fit as the censored term alone", {
+  # Spec sections 5.1 and 12: with every retained row censored, nObservations is
+  # 0, .negLogLikelihood() returns 0, and modelCost must stay equal to the
+  # censored contribution. This preserves the contract the lsq test above
+  # already pins.
+  cost <- .calculateCostMetrics(
+    .blqAllCensoredFixture(),
+    blqMethod = "m3",
+    scaling = "lin",
+    linScaleCV = 0.2,
+    objectiveType = "mle"
+  )
+  expect_equal(cost$costVariables$nObservations, 0)
+
+  finalized <- .finalizeObjective(cost, "mle", "constant")
+  expect_equal(finalized$modelCost, cost$costVariables$M3Contribution)
+})
+
 test_that("m3 guard errors when a mapping's LLOQ is entirely NA", {
   obsVsPredDfNoLloq <- obsVsPredDf
   obsVsPredDfNoLloq$lloq <- NA_real_

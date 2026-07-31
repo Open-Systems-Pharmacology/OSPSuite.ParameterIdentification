@@ -1,3 +1,8 @@
+obsVsPredDf <- readr::read_csv(
+  getTestDataFilePath("Aciclovir_obsVsPredDf.csv"),
+  show_col_types = FALSE
+)
+
 test_that(".errorModelFor maps the residual weighting method to an error model", {
   expect_equal(.errorModelFor("none"), "constant")
   expect_equal(.errorModelFor("error"), "dataError")
@@ -124,4 +129,61 @@ test_that(".negLogLikelihood rejects an unrecognized error model", {
       errorModel = "proportional"
     )
   )
+})
+
+test_that(".finalizeObjective leaves the lsq cost untouched", {
+  cost <- .calculateCostMetrics(obsVsPredDf)
+  finalized <- .finalizeObjective(cost, "lsq", "constant")
+  expect_equal(finalized$modelCost, cost$modelCost)
+  expect_identical(finalized, cost)
+})
+
+test_that(".finalizeObjective writes the likelihood into modelCost under mle", {
+  cost <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  finalized <- .finalizeObjective(cost, "mle", "constant")
+  expected <- .negLogLikelihood(
+    weightedSSR = cost$costVariables$weightedSSR,
+    nObservations = cost$costVariables$nObservations,
+    sumLogSigma = cost$costVariables$sumLogSigma,
+    errorModel = "constant"
+  )
+  expect_equal(finalized$modelCost, expected)
+  expect_false(finalized$modelCost == cost$modelCost)
+})
+
+test_that(".finalizeObjective adds the censored contribution under mle", {
+  # Section 6: an implementation that overwrites modelCost with the NLL alone
+  # would silently drop all censored scoring.
+  obsVsPredDfLLOQ <- obsVsPredDf
+  obsVsPredDfLLOQ$lloq <- 2.5
+  cost <- .calculateCostMetrics(
+    df = obsVsPredDfLLOQ,
+    blqMethod = "m3",
+    scaling = "lin",
+    linScaleCV = 0.2,
+    objectiveType = "mle"
+  )
+  finalized <- .finalizeObjective(cost, "mle", "constant")
+  nll <- .negLogLikelihood(
+    weightedSSR = cost$costVariables$weightedSSR,
+    nObservations = cost$costVariables$nObservations,
+    sumLogSigma = cost$costVariables$sumLogSigma,
+    errorModel = "constant"
+  )
+  expect_equal(
+    finalized$modelCost,
+    nll + cost$costVariables$M3Contribution
+  )
+  expect_true(cost$costVariables$M3Contribution > 0)
+})
+
+test_that(".finalizeObjective passes a non-finite cost straight through", {
+  # Section 6.1: feeding Inf into the likelihood formula would produce NA.
+  cost <- .summarizeCostLists(
+    .calculateCostMetrics(obsVsPredDf, objectiveType = "mle"),
+    .createErrorCostStructure(objectiveType = "mle")
+  )
+  finalized <- .finalizeObjective(cost, "mle", "constant")
+  expect_true(is.infinite(finalized$modelCost))
+  expect_false(is.na(finalized$modelCost))
 })

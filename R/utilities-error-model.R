@@ -59,3 +59,42 @@
     "dataError" = gaussianConstant + sumLogSigma + weightedSSR / 2
   )
 }
+
+#' Turn aggregated cost statistics into the objective the optimizer minimizes
+#'
+#' The single dispatch point on the scoring axis. Under `lsq` the aggregated
+#' cost is already the objective. Under `mle` the negative log-likelihood is
+#' assembled from the aggregated sufficient statistics and any censored
+#' contribution is added, then written into `modelCost`.
+#'
+#' Called once per objective-function evaluation, after
+#' `.summarizeCostLists()`, because a shared residual scale cannot be
+#' concentrated per output mapping.
+#'
+#' @param cost An aggregated `modelCost` object.
+#' @param objectiveType An `ObjectiveTypes` value.
+#' @param errorModel An `ErrorModels` value.
+#' @return The `modelCost` object with `modelCost` set to the objective value.
+#' @keywords internal
+#' @noRd
+.finalizeObjective <- function(cost, objectiveType, errorModel) {
+  ospsuite.utils::validateEnumValue(objectiveType, ObjectiveTypes)
+  if (objectiveType == "lsq") {
+    return(cost)
+  }
+  # A failed mapping already carries an infinite cost. Feeding it to the
+  # likelihood would yield NA, so propagate the penalty unchanged.
+  if (!is.finite(cost$costVariables$weightedSSR)) {
+    return(cost)
+  }
+
+  cost$modelCost <- .negLogLikelihood(
+    weightedSSR = cost$costVariables$weightedSSR,
+    nObservations = cost$costVariables$nObservations,
+    sumLogSigma = cost$costVariables$sumLogSigma,
+    errorModel = errorModel
+  ) +
+    cost$costVariables$M3Contribution
+
+  return(cost)
+}

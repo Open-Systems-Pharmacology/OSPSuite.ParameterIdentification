@@ -316,6 +316,13 @@ ParameterIdentification <- R6::R6Class(
         obsVsPredDfCache <- vector("list", length(outputMappings))
       }
 
+      # Extract cost function options
+      costControl <- private$.configuration$objectiveFunctionOptions
+      ospsuite.utils::validateIsOption(
+        options = costControl,
+        validOptions = ObjectiveFunctionSpecs[names(costControl)]
+      )
+
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
@@ -340,6 +347,45 @@ ParameterIdentification <- R6::R6Class(
               private$.configuration$blqRemove
             ))
           }
+          # Section 5.2: the dataError model asserts that sigma is measured, so
+          # the unit-weight fallback would fabricate sigma = 1 in the y-unit.
+          # Censored rows never reach the error weights, so exclude them.
+          if (
+            private$.configuration$objectiveType == "mle" &&
+              costControl$residualWeightingMethod == "error"
+          ) {
+            scoredRows <- observedRows
+            if (private$.configuration$blqMethod == "m3") {
+              scoredRows <- scoredRows[!.isBlq(scoredRows), , drop = FALSE]
+            }
+            unusable <- is.na(scoredRows$yErrorValues) |
+              !(scoredRows$yErrorType %in%
+                c("ArithmeticStdDev", "GeometricStdDev")) |
+              (scoredRows$yErrorType == "ArithmeticStdDev" &
+                scoredRows$yErrorValues <= 0) |
+              (scoredRows$yErrorType == "GeometricStdDev" &
+                scoredRows$yErrorValues <= 1)
+            unusable[is.na(unusable)] <- TRUE
+            if (any(unusable)) {
+              stop(messages$errorMissingErrorValues(
+                outputMappings[[idx]]$quantity$path,
+                sum(unusable)
+              ))
+            }
+          }
+
+          # Section 5.3: a zero dataset weight means sigma is infinite, which is
+          # an "exclude this point" idiom under lsq but not expressible under a
+          # likelihood without changing what N means.
+          if (private$.configuration$objectiveType == "mle") {
+            dataWeights <- outputMappings[[idx]]$dataWeights
+            if (!is.null(dataWeights) && any(unlist(dataWeights) <= 0)) {
+              stop(messages$errorNonPositiveWeightsUnderMle(
+                outputMappings[[idx]]$quantity$path
+              ))
+            }
+          }
+
           obsVsPredDfCache[[idx]] <- observedRows
           df <- dplyr::bind_rows(
             df[df$dataType == "simulated", , drop = FALSE],
@@ -375,12 +421,6 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Extract cost function options
-        costControl <- private$.configuration$objectiveFunctionOptions
-        ospsuite.utils::validateIsOption(
-          options = costControl,
-          validOptions = ObjectiveFunctionSpecs[names(costControl)]
-        )
         blqOptions <- private$.configuration$blqOptions
 
         # Compute cost for current output mapping
@@ -393,7 +433,8 @@ ParameterIdentification <- R6::R6Class(
           index = idx,
           linScaleCV = blqOptions$linScaleCV,
           logScaleSD = blqOptions$logScaleSD,
-          scaling = outputMappings[[idx]]$scaling
+          scaling = outputMappings[[idx]]$scaling,
+          objectiveType = private$.configuration$objectiveType
         )
 
         costSummaryList[[idx]] <- costSummary
@@ -407,6 +448,13 @@ ParameterIdentification <- R6::R6Class(
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      runningCost <- .finalizeObjective(
+        runningCost,
+        objectiveType = private$.configuration$objectiveType,
+        errorModel = .errorModelFor(
+          costControl$residualWeightingMethod
+        )
+      )
       private$.lastCostSummary <- runningCost
 
       # Evaluate running cost

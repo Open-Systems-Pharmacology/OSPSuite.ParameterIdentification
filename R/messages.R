@@ -446,3 +446,18 @@ messages$errorUnknownErrorModelSource <- function(residualWeightingMethod) {
     "No error model is defined for {.code residualWeightingMethod = {.val {residualWeightingMethod}}}."
   )
 }
+
+messages$errorMissingErrorValues <- function(quantityPath, nRows) {
+  ospsuite.utils::cliFormat(
+    "{.val {quantityPath}} has {nRows} observation{?s} without a usable error value, and {.code objectiveType = \"mle\"} with {.code residualWeightingMethod = \"error\"} requires one on every scored observation.",
+    "Supply an error value for every observation, or set {.code residualWeightingMethod = \"none\"} to estimate a single residual standard deviation instead."
+  )
+}
+
+messages$errorNonPositiveWeightsUnderMle <- function(quantityPath) {
+  ospsuite.utils::cliFormat(
+    "{.val {quantityPath}} carries a dataset weight of zero or less, which {.code objectiveType = \"mle\"} cannot represent.",
+    "A zero weight means the residual standard deviation is infinite rather than that the observation is excluded.",
+    "Remove the observation from the data set instead, or use {.arg blqRemove} if it is below the quantification limit."
+  )
+}

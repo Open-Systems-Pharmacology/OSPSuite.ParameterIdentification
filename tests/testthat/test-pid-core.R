@@ -181,10 +181,20 @@ test_that(".objectiveFunction preserves the substitution and M3 costs on LLOQ da
   costM3 <- privM3$.objectiveFunction(svM3)$modelCost
   # Was 843.0572708008 before the M3 rework: the pre-fix kernel double counted
   # the 8 censored rows (both in weightedSSR and in the censored term) and
-  # used a log10 penalty. Excluding them from weightedSSR (now 47.8419672186
-  # over the 3 uncensored rows) dominates the natural-log censored term
-  # (149.5022980540), netting a large drop to 197.3442652726.
-  expect_equal(costM3, 197.3442652726, tolerance = 1e-4)
+  # used a log10 penalty. Excluding them from weightedSSR (47.8419672186 over
+  # the 3 uncensored rows) dominates the natural-log censored term
+  # (149.5022980540), netting a drop to 197.3442652726 = weightedSSR +
+  # M3Contribution.
+  # Task 5 wires .finalizeObjective() into .objectiveFunction(), so
+  # objectiveType = "mle" now actually dispatches to the negative
+  # log-likelihood instead of leaving modelCost equal to the lsq-shaped
+  # weightedSSR + M3Contribution. Under residualWeightingMethod = "none" the
+  # error model is "constant": .negLogLikelihood() concentrates the residual
+  # scale from weightedSSR / nObservations (8.410752 over the 3 uncensored
+  # rows), which is smaller than the raw weightedSSR it replaces, so the total
+  # drops to 157.9130500650 = 8.4107520110 (NLL) + 149.5022980540
+  # (M3Contribution).
+  expect_equal(costM3, 157.9130500650, tolerance = 1e-4)
 
   expect_true(costSub != costM3)
 })
