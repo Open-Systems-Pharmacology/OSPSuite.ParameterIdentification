@@ -61,6 +61,12 @@ explains how to configure and run them, and shows how to inspect the results.
     bounds conflict, `ciType` is set to `"failed"`. For successfully estimated 
     two-sided intervals, `ciType` is `"two-sided"`.
 
+Under `objectiveType = "mle"` (see `vignette("error-calculation")`), `hessian` and
+`PL` are not yet corrected for the likelihood scale: both still read the curvature
+of the objective through least-squares formulas, and both warn about this at run
+time. `bootstrap` re-optimizes the same objective instead of reading its curvature,
+so it remains the reliable choice under `mle`.
+
 
 ## Advanced Configuration Options
 

@@ -78,9 +78,12 @@
       $minLogProbability
       [1] 88.24208
       
+      $objectiveType
+      [1] "lsq"
+      
       $costVariables
-        nObservations M3Contribution   rawSSR weightedSSR
-      1            11              0 156.2675    156.2675
+        nObservations M3Contribution   rawSSR weightedSSR sumLogSigma
+      1            11              0 156.2675    156.2675           0
       
       $residualDetails
          index          x  yObserved ySimulated scaleFactor errorWeights

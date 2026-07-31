@@ -81,6 +81,38 @@ test_that("estimateCI() works with bootstrap and individual data", {
   )
 })
 
+test_that("estimateCI() bootstraps under mle across several observed datasets", {
+  # A replicate that does not draw a dataset scales its point weights by zero.
+  # That is not the user asserting an infinite residual standard deviation, so
+  # the mle weight precondition must not fire on it.
+  resampled <- .resampleDataSetWeights(
+    setNames(rep(list(rep(1, 3)), 5), paste0("dataSet", 1:5)),
+    seed = 2203
+  )
+  expect_true(any(vapply(resampled, function(w) all(w == 0), logical(1))))
+
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(syntheticObservedData())
+
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+  piTask$configuration$objectiveType <- "mle"
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piResult <- piTask$run())
+
+  suppressMessages(
+    expect_no_error(piResult <- piTask$estimateCI())
+  )
+  expect_equal(
+    nrow(piResult$toList()$ciDetails$bootstrapResults),
+    bootstrapPiConfiguration()$ciOptions$nBootstrap
+  )
+})
+
 test_that("estimateCI() works with bootstrap and aggregated data", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData())

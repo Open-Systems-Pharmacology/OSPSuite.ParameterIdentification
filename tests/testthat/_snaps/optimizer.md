@@ -25,6 +25,7 @@
           .runHJKB: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
           .updateFixedParams: function (par, fixedParams) 
           .verbose: TRUE
+          .warnIfAnalyticCIUnderMle: function (cost) 
 
 # Optimizer returns correct parameters for BOBYQA
 
@@ -101,4 +102,28 @@
         1, -0.0140386952666812, -0.781584854855845, -0.0140386952666812, 
         1), dim = c(3L, 3L))), ciType = c("two-sided", "two-sided", 
     "two-sided"))
+
+# Hessian CI warns that it is not corrected for the likelihood scale
+
+    Code
+      suppressMessages(ciResult <- optimizer$estimateCI(par = parTest, fn = fnObjectiveMle,
+        lower = lowerTest, upper = upperTest))
+    Condition
+      Warning in `private$.warnIfAnalyticCIUnderMle()`:
+      `ciMethod` = "hessian" is not yet corrected for the likelihood scale of `objectiveType = "mle"`.
+      The Hessian and profile-likelihood estimators both still apply least-squares formulas, so the reported interval width is not trustworthy under "mle".
+      Use `ciMethod = "bootstrap"`, which re-optimizes the same objective instead of reading its curvature.
+
+# profile likelihood CI warns that it is not corrected for the likelihood scale
+
+    Code
+      suppressMessages(ciResult <- optimizer$estimateCI(par = parTest, fn = fnObjectiveMle,
+        lower = lowerTest, upper = upperTest))
+    Condition
+      Warning in `private$.warnIfAnalyticCIUnderMle()`:
+      `ciMethod` = "PL" is not yet corrected for the likelihood scale of `objectiveType = "mle"`.
+      The Hessian and profile-likelihood estimators both still apply least-squares formulas, so the reported interval width is not trustworthy under "mle".
+      Use `ciMethod = "bootstrap"`, which re-optimizes the same objective instead of reading its curvature.
+      Warning in `private$.computeProfileCI()`:
+      maxIter reached for parameter 3 without meeting cost threshold. Setting CI to Inf.
 

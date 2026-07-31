@@ -22,6 +22,9 @@ affecting error metrics and cost calculation. Defaults in
 \code{\link{ObjectiveFunctionOptions}}. Partial lists are merged with the current
 settings; only the provided keys are updated and validated.}
 
+    \item{\code{objectiveType}}{Scoring mode for the objective function. See
+\code{\link{ObjectiveTypes}}. Defaults to \code{lsq}.}
+
     \item{\code{blqRemove}}{Mode selecting which BLQ observations enter the
 objective. See \code{\link{BLQRemoveModes}}.
 Defaults to \code{none}.}

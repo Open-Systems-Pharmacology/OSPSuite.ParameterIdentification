@@ -13,10 +13,7 @@ test_that("Initialization sets default values correctly", {
   # expect_false(piConfiguration$simulateSteadyState)
   # expect_equal(piConfiguration$steadyStateTime, 1000)
   expect_false(piConfiguration$printEvaluationFeedback)
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
-    "lsq"
-  )
+  expect_equal(piConfiguration$objectiveType, "lsq")
   expect_equal(
     piConfiguration$objectiveFunctionOptions$residualWeightingMethod,
     "none"
@@ -110,8 +107,8 @@ test_that("objectiveFunctionOptions single-field assignment is validated", {
 test_that("objectiveFunctionOptions rejects invalid values", {
   piConfiguration <- PIConfiguration$new()
   expect_error(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "invalid",
-    regexp = "objectiveFunctionType"
+    piConfiguration$objectiveFunctionOptions$robustMethod <- "invalid",
+    regexp = "robustMethod"
   )
 })
 
@@ -132,14 +129,6 @@ test_that("objectiveFunctionOptions rejects invalid scaleVar", {
   expect_error(
     piConfiguration$objectiveFunctionOptions$scaleVar <- "yes",
     regexp = "scaleVar"
-  )
-})
-
-test_that("objectiveFunctionType no longer accepts m3", {
-  piConfiguration <- PIConfiguration$new()
-  expect_error(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "m3",
-    regexp = "objectiveFunctionType"
   )
 })
 
@@ -352,6 +341,7 @@ test_that("blqRemove accepts valid modes and rejects invalid ones", {
 
 test_that("blqMethod accepts all four methods and rejects invalid ones", {
   piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveType <- "mle"
   for (method in c("none", "lloq", "lloqHalf", "m3")) {
     piConfiguration$blqMethod <- method
     expect_equal(piConfiguration$blqMethod, method)
@@ -359,10 +349,106 @@ test_that("blqMethod accepts all four methods and rejects invalid ones", {
   expect_error(piConfiguration$blqMethod <- "censored")
 })
 
-test_that("blqMethod accepts m3 without an objectiveType constraint", {
+test_that("clearing blqMethod first unlocks returning objectiveType to lsq", {
   piConfiguration <- PIConfiguration$new()
-  expect_silent(piConfiguration$blqMethod <- "m3")
+  piConfiguration$objectiveType <- "mle"
+  piConfiguration$blqMethod <- "m3"
+  piConfiguration$blqMethod <- "none"
+  piConfiguration$objectiveType <- "lsq"
+  expect_equal(piConfiguration$objectiveType, "lsq")
+  expect_equal(piConfiguration$blqMethod, "none")
+})
+
+test_that("objectiveType defaults to lsq and accepts mle", {
+  piConfiguration <- PIConfiguration$new()
+  expect_equal(piConfiguration$objectiveType, "lsq")
+  piConfiguration$objectiveType <- "mle"
+  expect_equal(piConfiguration$objectiveType, "mle")
+})
+
+test_that("objectiveType rejects an unknown value", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(error = TRUE, piConfiguration$objectiveType <- "map")
+})
+
+test_that("blqMethod m3 requires objectiveType mle", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(error = TRUE, piConfiguration$blqMethod <- "m3")
+
+  piConfiguration$objectiveType <- "mle"
+  piConfiguration$blqMethod <- "m3"
   expect_equal(piConfiguration$blqMethod, "m3")
+})
+
+test_that("objectiveType cannot leave m3 stranded on the lsq path", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveType <- "mle"
+  piConfiguration$blqMethod <- "m3"
+  expect_snapshot(error = TRUE, piConfiguration$objectiveType <- "lsq")
+})
+
+test_that("mle and robust residual weighting are mutually exclusive", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveFunctionOptions <- list(robustMethod = "bisquare")
+  expect_snapshot(error = TRUE, piConfiguration$objectiveType <- "mle")
+
+  piConfigurationMle <- PIConfiguration$new()
+  piConfigurationMle$objectiveType <- "mle"
+  expect_snapshot(
+    error = TRUE,
+    piConfigurationMle$objectiveFunctionOptions <- list(robustMethod = "huber")
+  )
+})
+
+test_that("mle and scaleVar are mutually exclusive under data-error weighting", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error",
+    scaleVar = TRUE
+  )
+  expect_snapshot(error = TRUE, piConfiguration$objectiveType <- "mle")
+
+  piConfigurationMle <- PIConfiguration$new()
+  piConfigurationMle$objectiveType <- "mle"
+  piConfigurationMle$objectiveFunctionOptions <- list(
+    residualWeightingMethod = "error"
+  )
+  expect_snapshot(
+    error = TRUE,
+    piConfigurationMle$objectiveFunctionOptions <- list(scaleVar = TRUE)
+  )
+})
+
+test_that("objectiveFunctionOptions validates values before the mle cross-field guards", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$objectiveType <- "mle"
+  piConfiguration$objectiveFunctionOptions <- list(scaleVar = TRUE)
+  # `ospsuite.utils::validateIsOption()` embeds the name of whichever function
+  # is currently on the call stack (e.g. `test_file()` vs `test_dir()`) in its
+  # per-field message; redact that volatile token so the snapshot is stable
+  # across how the suite is invoked.
+  expect_snapshot(
+    error = TRUE,
+    transform = function(lines) {
+      gsub("(residualWeightingMethod : )`[^`]*\\(\\)`", "\\1`<caller>`", lines)
+    },
+    piConfiguration$objectiveFunctionOptions <- list(
+      residualWeightingMethod = NA
+    )
+  )
+})
+
+test_that("objectiveFunctionType is no longer an objectiveFunctionOptions key", {
+  piConfiguration <- PIConfiguration$new()
+  expect_false(
+    "objectiveFunctionType" %in% names(piConfiguration$objectiveFunctionOptions)
+  )
+  expect_snapshot(
+    error = TRUE,
+    piConfiguration$objectiveFunctionOptions <- list(
+      objectiveFunctionType = "mle"
+    )
+  )
 })
 
 test_that("blqOptions defaults match BLQOptions", {

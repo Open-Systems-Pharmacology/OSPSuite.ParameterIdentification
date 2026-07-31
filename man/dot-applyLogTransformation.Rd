@@ -15,6 +15,7 @@ to natural logarithm (\code{exp(1)}).}
 }
 \value{
 A transformed data frame with log-transformed \code{yValues} and \code{lloq}.
+The pre-transform observed values are preserved in \code{yValuesLinear}.
 }
 \description{
 Transforms the \code{yValues} and \code{lloq} columns in the given data frame using a

@@ -31,9 +31,6 @@ CIOptionSpecs <- list(
 
 #' @noRd
 ObjectiveFunctionSpecs <- list(
-  objectiveFunctionType = ospsuite.utils::characterOption(
-    allowedValues = c("lsq")
-  ),
   residualWeightingMethod = ospsuite.utils::characterOption(
     allowedValues = c("none", "error")
   ),

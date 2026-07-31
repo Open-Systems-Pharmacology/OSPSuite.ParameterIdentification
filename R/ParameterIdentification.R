@@ -319,7 +319,9 @@ ParameterIdentification <- R6::R6Class(
           stop(messages$initialSimulationError())
         } else {
           message(messages$simulationError())
-          return(.createErrorCostStructure())
+          return(.createErrorCostStructure(
+            objectiveType = private$.configuration$objectiveType
+          ))
         }
       }
 
@@ -333,6 +335,13 @@ ParameterIdentification <- R6::R6Class(
       if (buildObsCache) {
         obsVsPredDfCache <- vector("list", length(outputMappings))
       }
+
+      # Extract cost function options
+      costControl <- private$.configuration$objectiveFunctionOptions
+      ospsuite.utils::validateIsOption(
+        options = costControl,
+        validOptions = ObjectiveFunctionSpecs[names(costControl)]
+      )
 
       # Evaluate cost per output mapping
       costSummaryList <- vector("list", length(outputMappings))
@@ -358,6 +367,90 @@ ParameterIdentification <- R6::R6Class(
               private$.configuration$blqRemove
             ))
           }
+          # The dataError model asserts that sigma is measured, so
+          # the unit-weight fallback would fabricate sigma = 1 in the y-unit.
+          # Censored rows never reach the error weights, so exclude them.
+          if (
+            private$.configuration$objectiveType == "mle" &&
+              costControl$residualWeightingMethod == "error"
+          ) {
+            blqMethod <- private$.configuration$blqMethod
+            scoredRows <- observedRows
+            if (blqMethod == "m3") {
+              scoredRows <- scoredRows[!.isBlq(scoredRows), , drop = FALSE]
+            }
+            # Mirror the row filtering `.calculateCostMetrics()` performs before
+            # it scores anything: a row with a missing or infinite value, or a
+            # negative time, never reaches the error weights, so it cannot
+            # fabricate a sigma and must not be reported here.
+            scoredRows <- scoredRows[
+              is.finite(scoredRows$xValues) &
+                scoredRows$xValues >= 0 &
+                is.finite(scoredRows$yValues),
+              ,
+              drop = FALSE
+            ]
+            # Weights are read pre-log-transformation, so `yValues` is the
+            # linear reference `.computeErrorWeights()` will see.
+            noUsableError <- is.na(scoredRows$yErrorValues) |
+              !(scoredRows$yErrorType %in%
+                c("ArithmeticStdDev", "GeometricStdDev")) |
+              (scoredRows$yErrorType == "ArithmeticStdDev" &
+                scoredRows$yErrorValues <= 0) |
+              (scoredRows$yErrorType == "GeometricStdDev" &
+                scoredRows$yErrorValues <= 1)
+            noUsableError[is.na(noUsableError)] <- TRUE
+            # .computeErrorWeights() only overwrites its seeded unit weight when
+            # the reference value is positive, so a non-positive observation
+            # would silently fall back to the fabricated sigma = 1 as well. It
+            # is a distinct cause, though: the coefficient of variation the
+            # data-error model needs is undefined there, however good the
+            # reported standard deviation is. A row that a substituting BLQ
+            # method (`lloq`, `lloqHalf`) will rewrite to a positive value
+            # before the kernel weights it is not such a case, so it is
+            # excluded here too.
+            substitutedBlq <- if (blqMethod %in% c("lloq", "lloqHalf")) {
+              .isBlq(scoredRows)
+            } else {
+              FALSE
+            }
+            nonPositiveValue <- scoredRows$yValues <= 0 &
+              !noUsableError &
+              !substitutedBlq
+            if (any(noUsableError) || any(nonPositiveValue)) {
+              stop(messages$errorUnusableErrorValues(
+                outputMappings[[idx]]$quantity$path,
+                nNoUsableError = sum(noUsableError),
+                nNonPositiveValue = sum(nonPositiveValue)
+              ))
+            }
+          }
+
+          # A zero dataset weight means sigma is infinite, which is
+          # an "exclude this point" idiom under lsq but not expressible under a
+          # likelihood without changing what N means. Only a weight the user
+          # configured carries that assertion. A bootstrap replicate multiplies
+          # the point weights by the number of times the dataset was drawn, so a
+          # dataset left out of a replicate legitimately arrives here with a
+          # weight of zero, meaning "not in this replicate". Validate the
+          # configured weights, which `.getOutputMappings()` cached before the
+          # first resampling, so both readings stay honest.
+          if (private$.configuration$objectiveType == "mle") {
+            dataWeights <- if (is.null(bootstrapSeed)) {
+              outputMappings[[idx]]$dataWeights
+            } else {
+              private$.initialOutputMappingState$dataSetWeights[[idx]]
+            }
+            if (
+              !is.null(dataWeights) &&
+                any(unlist(dataWeights) <= 0, na.rm = TRUE)
+            ) {
+              stop(messages$errorNonPositiveWeightsUnderMle(
+                outputMappings[[idx]]$quantity$path
+              ))
+            }
+          }
+
           obsVsPredDfCache[[idx]] <- observedRows
           df <- dplyr::bind_rows(
             df[df$dataType == "simulated", , drop = FALSE],
@@ -393,12 +486,6 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Extract cost function options
-        costControl <- private$.configuration$objectiveFunctionOptions
-        ospsuite.utils::validateIsOption(
-          options = costControl,
-          validOptions = ObjectiveFunctionSpecs[names(costControl)]
-        )
         blqOptions <- private$.configuration$blqOptions
 
         # Compute cost for current output mapping
@@ -411,7 +498,8 @@ ParameterIdentification <- R6::R6Class(
           index = idx,
           linScaleCV = blqOptions$linScaleCV,
           logScaleSD = blqOptions$logScaleSD,
-          scaling = outputMappings[[idx]]$scaling
+          scaling = outputMappings[[idx]]$scaling,
+          objectiveType = private$.configuration$objectiveType
         )
 
         costSummaryList[[idx]] <- costSummary
@@ -425,6 +513,13 @@ ParameterIdentification <- R6::R6Class(
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      runningCost <- .finalizeObjective(
+        runningCost,
+        objectiveType = private$.configuration$objectiveType,
+        errorModel = .errorModelFor(
+          costControl$residualWeightingMethod
+        )
+      )
       private$.lastCostSummary <- runningCost
 
       # Evaluate running cost
@@ -892,6 +987,19 @@ ParameterIdentification <- R6::R6Class(
     #' @return A [`PIResult`] object in standard mode, or a `PKResult` object
     #'   (internal) when `pkOutputMappings` was provided.
     run = function() {
+      # PK metric optimization always scores its own relative sum of squares
+      # (`.pkObjectiveFunction()`), so `objectiveType = "mle"` would otherwise
+      # be silently ignored. `blqMethod = "m3"` is inert for the same reason,
+      # but setting it requires `objectiveType = "mle"` first (enforced by
+      # `PIConfiguration$blqMethod`), so this one check covers both.
+      if (
+        !is.null(private$.pkMappings) &&
+          private$.configuration$objectiveType != "lsq"
+      ) {
+        stop(messages$errorObjectiveTypeInertInPKMode(
+          private$.configuration$objectiveType
+        ))
+      }
       # Store simulation outputs and time intervals to reset them at the end
       # of the run.
       private$.savedSimulationState <- .storeSimulationState(
@@ -990,6 +1098,9 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
+      # See `gridSearch()`: clear the cache so the observed-data preconditions
+      # run against the current configuration.
+      private$.obsVsPredDfCache <- NULL
 
       on.exit(private$.restoreOutputMappingsState(), add = TRUE)
 
@@ -1184,6 +1295,11 @@ ParameterIdentification <- R6::R6Class(
       private$.assertNotPKMode("gridSearch")
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
+      # The observed-data preconditions run while the cache is being built, so
+      # every entry point that evaluates the objective must start from a cleared
+      # cache, or a configuration changed since the last evaluation goes
+      # unchecked.
+      private$.obsVsPredDfCache <- NULL
 
       nrOfParameters <- length(private$.piParameters)
 
@@ -1334,6 +1450,9 @@ ParameterIdentification <- R6::R6Class(
 
       private$.gridSearchFlag <- TRUE
       private$.batchInitialization()
+      # See `gridSearch()`: clear the cache so the observed-data preconditions
+      # run against the current configuration.
+      private$.obsVsPredDfCache <- NULL
 
       nrOfParameters <- length(private$.piParameters)
 

@@ -188,6 +188,24 @@ test_that("all-censored m3 mapping does not error and cost is the censored term"
   expect_equal(cost$modelCost, cost$costVariables$M3Contribution)
 })
 
+test_that(".finalizeObjective leaves an all-censored fit as the censored term alone", {
+  # Spec sections 5.1 and 12: with every retained row censored, nObservations is
+  # 0, .negLogLikelihood() returns 0, and modelCost must stay equal to the
+  # censored contribution. This preserves the contract the lsq test above
+  # already pins.
+  cost <- .calculateCostMetrics(
+    .blqAllCensoredFixture(),
+    blqMethod = "m3",
+    scaling = "lin",
+    linScaleCV = 0.2,
+    objectiveType = "mle"
+  )
+  expect_equal(cost$costVariables$nObservations, 0)
+
+  finalized <- .finalizeObjective(cost, "mle", "constant")
+  expect_equal(finalized$modelCost, cost$costVariables$M3Contribution)
+})
+
 test_that("m3 guard errors when a mapping's LLOQ is entirely NA", {
   obsVsPredDfNoLloq <- obsVsPredDf
   obsVsPredDfNoLloq$lloq <- NA_real_
@@ -216,6 +234,98 @@ test_that("m3 guard errors when a mapping's LLOQ column is absent", {
   )
 })
 
+# sumLogSigma and objectiveType
+
+test_that("the kernel reports sumLogSigma as the negated log of the applied weights", {
+  # sumLogSigma = -sum(log(s * w_i)), from the unrounded product
+  # that forms the weighted residuals.
+  df <- .blqKernelFixture()
+  df$weights <- 2.5
+  result <- .calculateCostMetrics(df, blqMethod = "none")
+  # s = 1 (scaleVar FALSE), errorWeights = 1, robustWeights = 1, so w_i = 2.5.
+  expected <- -sum(rep(log(2.5), result$costVariables$nObservations))
+  expect_equal(result$costVariables$sumLogSigma, expected)
+})
+
+test_that("sumLogSigma accounts for the scaleVar factor", {
+  df <- .blqKernelFixture()
+  result <- .calculateCostMetrics(df, blqMethod = "none", scaleVar = TRUE)
+  n <- result$costVariables$nObservations
+  # s = 1/n, w_i = 1, so each term is log(1/n).
+  expect_equal(result$costVariables$sumLogSigma, -n * log(1 / n))
+})
+
+test_that("a non-positive total weight is dropped from sumLogSigma but not from the count", {
+  # A zero weight means sigma is infinite, so the row carries no likelihood
+  # information and must not contribute -Inf. nObservations is deliberately
+  # unchanged, because the lsq Hessian CI reads it for its degrees of freedom.
+  df <- .blqKernelFixture()
+  df$weights <- 1
+  observedIdx <- which(df$dataType == "observed")
+  df$weights[observedIdx[1]] <- 0
+  result <- .calculateCostMetrics(df, blqMethod = "none")
+  expect_true(is.finite(result$costVariables$sumLogSigma))
+  expect_equal(result$costVariables$sumLogSigma, 0)
+  expect_equal(result$costVariables$nObservations, length(observedIdx))
+  expect_equal(
+    nrow(result$residualDetails),
+    result$costVariables$nObservations
+  )
+})
+
+test_that("the canonical schema gains sumLogSigma and the objective tag", {
+  # Mirrors the exact-schema assertions at lines 243-250, which this task's
+  # additions change. Kept exact rather than relaxed to a subset check so the
+  # schema stays pinned.
+  result <- .calculateCostMetrics(obsVsPredDf)
+  expect_equal(
+    names(result),
+    c(
+      "modelCost",
+      "minLogProbability",
+      "objectiveType",
+      "costVariables",
+      "residualDetails"
+    )
+  )
+  expect_equal(
+    names(result$costVariables),
+    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR", "sumLogSigma")
+  )
+})
+
+test_that("every modelCost producer carries an objectiveType tag", {
+  result <- .calculateCostMetrics(obsVsPredDf)
+  expect_equal(result$objectiveType, "lsq")
+
+  tagged <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  expect_equal(tagged$objectiveType, "mle")
+
+  errorStructure <- .createErrorCostStructure(objectiveType = "mle")
+  expect_equal(errorStructure$objectiveType, "mle")
+  expect_equal(errorStructure$costVariables$sumLogSigma, 0)
+})
+
+test_that("aggregation preserves the tag and sums the new column", {
+  first <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  second <- .calculateCostMetrics(obsVsPredDf, objectiveType = "mle")
+  merged <- .summarizeCostLists(first, second)
+  expect_equal(merged$objectiveType, "mle")
+  expect_equal(
+    merged$costVariables$sumLogSigma,
+    2 * first$costVariables$sumLogSigma
+  )
+})
+
+test_that("the failure substitute aggregates to an infinite cost, never NA", {
+  # The per-mapping error path does reach aggregation, so an NA default in the
+  # new column would hand the optimizer NA where lsq gives Inf.
+  good <- .calculateCostMetrics(obsVsPredDf)
+  merged <- .summarizeCostLists(good, .createErrorCostStructure())
+  expect_true(is.infinite(merged$costVariables$weightedSSR))
+  expect_false(is.na(merged$costVariables$sumLogSigma))
+})
+
 # .newModelCost
 
 test_that(".newModelCost builds the canonical schema with index owned by the constructor", {
@@ -242,11 +352,17 @@ test_that(".newModelCost builds the canonical schema with index owned by the con
   expect_s3_class(result, "modelCost")
   expect_equal(
     names(result),
-    c("modelCost", "minLogProbability", "costVariables", "residualDetails")
+    c(
+      "modelCost",
+      "minLogProbability",
+      "objectiveType",
+      "costVariables",
+      "residualDetails"
+    )
   )
   expect_equal(
     names(result$costVariables),
-    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR")
+    c("nObservations", "M3Contribution", "rawSSR", "weightedSSR", "sumLogSigma")
   )
   expect_equal(
     names(result$residualDetails),
@@ -491,6 +607,131 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
   expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-3)
 })
 
+test_that(".applyLogTransformation preserves the linear observed values", {
+  df <- .blqKernelFixture()
+  transformed <- .applyLogTransformation(df)
+  expect_true("yValuesLinear" %in% colnames(transformed))
+  expect_equal(transformed$yValuesLinear, df$yValues)
+  expect_equal(transformed$yValues, log(df$yValues))
+})
+
+test_that(".computeErrorWeights converts an arithmetic SD to the log scale", {
+  # sigma_log = sqrt(log(1 + (SD/y)^2)), weight = 1 / sigma_log.
+  yValues <- c(10, 4)
+  yErrorValues <- c(2, 1)
+  cv <- yErrorValues / yValues
+  expected <- 1 / sqrt(log(1 + cv^2))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that(".computeErrorWeights uses log(GSD) directly on the log scale", {
+  # A geometric SD is already a multiplicative spread.
+  yValues <- c(10, 4)
+  gsd <- c(1.3, 1.5)
+  expected <- 1 / log(gsd)
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = gsd,
+      yErrorType = rep("GeometricStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that("the two error types agree on the log scale as they do on the linear scale", {
+  # Mirrors the existing linear-scale agreement test: for
+  # GSD = exp(sqrt(log(1 + CV^2))) both formulas must give the same weight.
+  yValues <- c(10, 4)
+  arithSd <- c(2, 1)
+  cv <- arithSd / yValues
+  gsd <- exp(sqrt(log(1 + cv^2)))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = arithSd,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = gsd,
+      yErrorType = rep("GeometricStdDev", 2),
+      scaling = "log"
+    )
+  )
+})
+
+test_that(".computeErrorWeights keeps the linear formula under linear scaling", {
+  yValues <- c(10, 4)
+  yErrorValues <- c(2, 1)
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "lin"
+    ),
+    1 / yErrorValues
+  )
+})
+
+test_that("observations below one still receive measured weights on the log scale", {
+  # The eligibility guard must be evaluated against the linear reference value.
+  # Reading a log-transformed yValues would exclude every row here, silently
+  # falling back to unit weights.
+  yValues <- c(0.5, 0.2)
+  yErrorValues <- c(0.1, 0.05)
+  cv <- yErrorValues / yValues
+  expected <- 1 / sqrt(log(1 + cv^2))
+  expect_equal(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = yErrorValues,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    expected
+  )
+})
+
+test_that("the kernel hands the linear reference value to the error weights", {
+  # This is the test that pins Step 5's wiring. Every other test in this task
+  # calls .computeErrorWeights() directly with linear values, so a skipped or
+  # mis-wired handover would leave them all passing while the kernel silently
+  # computed weights from log(y_i) — the exact defect spec section 8.1 exists
+  # to prevent.
+  df <- .blqKernelFixture()
+  df$yErrorValues <- 0.4
+  df$yErrorType <- "ArithmeticStdDev"
+  df$yErrorUnit <- df$yUnit
+  observed <- df[df$dataType == "observed", ]
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  # residualDetails stores errorWeights rounded to two decimals.
+  cv <- 0.4 / observed$yValues
+  expected <- round(1 / sqrt(log(1 + cv^2)), 2)
+  expect_equal(result$residualDetails$errorWeights, expected)
+  # A mis-wire would fall back to unit weights for every row whose
+  # log-transformed value is not positive.
+  expect_false(all(result$residualDetails$errorWeights == 1))
+})
+
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
   resultHuber <- .calculateCostMetrics(obsVsPredDf, robustMethod = "huber")
   resultBisquare <- .calculateCostMetrics(
@@ -545,6 +786,75 @@ test_that("lloqHalf substitution reaches the kernel on the log scale", {
     result$residualDetails$yObserved[blqRow],
     log(2.5) - log(2)
   )
+})
+
+test_that("lloqHalf substitution also reaches yValuesLinear under GeometricStdDev weighting", {
+  # Row x=4 is reported as 0 (a common BLQ convention) at lloq 2.5. Before the
+  # substitution reached `yValuesLinear`, this row failed the `yValues > 0`
+  # eligibility test in `.computeErrorWeights()` and fell back to the
+  # fabricated unit weight; substitution restores LLOQ / 2 = 1.25, a genuine
+  # value the GeometricStdDev formula can use. Under log scaling the
+  # GeometricStdDev weight formula itself does not depend on the observed
+  # value, only the eligibility test does, so this pins the eligibility fix
+  # rather than the formula.
+  df <- .blqKernelFixture()
+  df$yValues[df$dataType == "observed" & df$xValues == 4] <- 0
+  df$yErrorValues <- 1.5
+  df$yErrorType <- "GeometricStdDev"
+  df$yErrorUnit <- df$yUnit
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    blqMethod = "lloqHalf",
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  blqRow <- result$residualDetails$x == 4
+  expected <- round(1 / log(1.5), 2)
+  expect_equal(result$residualDetails$errorWeights[blqRow], expected)
+  expect_false(result$residualDetails$errorWeights[blqRow] == 1)
+})
+
+test_that("BLQ substitution stays consistent between yValues and yValuesLinear at exact LLOQ", {
+  # An observed value exactly equal to its LLOQ trivially classifies as BLQ on
+  # the primary (log) comparison: log(x) <= log(x) always holds for identical
+  # x. A second, independent classification of `yValuesLinear` against
+  # `exp(logLloq)` can drift from the original LLOQ by a few ULPs and
+  # disagree, leaving `yValuesLinear` unsubstituted while `yValues` is. The
+  # kernel must classify once and reuse that mask for both columns, so
+  # `.computeErrorWeights()` (which reads `yValuesLinear` under log scaling)
+  # always sees the substituted value.
+  df <- tibble::tibble(
+    dataType = c("simulated", "simulated", "observed", "observed"),
+    xValues = c(1, 2, 1, 2),
+    yValues = c(10, 5, 10, 5),
+    xUnit = "min",
+    yUnit = "mol/l",
+    xDimension = "Time",
+    yDimension = "Concentration (molar)",
+    lloq = c(NA_real_, NA_real_, NA_real_, 5),
+    weights = NA_real_,
+    yErrorValues = 1,
+    yErrorType = "ArithmeticStdDev",
+    yErrorUnit = "mol/l"
+  )
+  dfLog <- .applyLogTransformation(df)
+
+  result <- .calculateCostMetrics(
+    dfLog,
+    blqMethod = "lloqHalf",
+    residualWeightingMethod = "error",
+    scaling = "log"
+  )
+
+  # If `yValuesLinear` were not substituted, the coefficient of variation
+  # would be computed from the raw LLOQ (5) instead of LLOQ / 2 (2.5).
+  blqRow <- result$residualDetails$x == 2
+  expectedCV <- 1 / 2.5
+  expectedWeight <- round(1 / sqrt(log(1 + expectedCV^2)), 2)
+  expect_equal(result$residualDetails$errorWeights[blqRow], expectedWeight)
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {

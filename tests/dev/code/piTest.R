@@ -35,7 +35,7 @@ piConfiguration <- PIConfiguration$new()
 print(piConfiguration)
 # If TRUE, the error is printed after each function evaluation. May be useful for assessing if the algorithm converges.
 piConfiguration$printEvaluationFeedback <- TRUE
-piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
+piConfiguration$objectiveType <- "lsq"
 
 ######### Define parameters to optimize#######
 parameters <- list()

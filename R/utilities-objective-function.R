@@ -31,6 +31,9 @@
 #'   for the censored contribution calculation. Defaults to `NULL`.
 #' @param logScaleSD Numeric, standard deviation used in logarithmic scaling
 #'   for the censored contribution calculation. Defaults to `NULL`.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -39,6 +42,7 @@
 #' @return A cost metrics summary list containing the following fields:
 #' - `modelCost`: The total cost calculated from the scaled sum of squared residuals.
 #' - `minLogProbability`: The minimum log probability indicating the model fit.
+#' - `objectiveType`: The objective function type tag.
 #' - `costVariables`: A dataframe with details on the cost calculations.
 #' - `residualDetails`: A dataframe with the calculated residuals and their weights.
 #' The summary has the class `modelCost`.
@@ -67,8 +71,11 @@
   index = NA_real_,
   scaling = "lin",
   linScaleCV = NULL,
-  logScaleSD = NULL
+  logScaleSD = NULL,
+  objectiveType = "lsq"
 ) {
+  ospsuite.utils::validateEnumValue(objectiveType, ObjectiveTypes)
+
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -140,16 +147,39 @@
 
   # BLQ substitution (blqMethod none/lloq/lloqHalf): substitute below-LLOQ
   # observed values against the per-point LLOQ. Observed-only; the simulated
-  # prediction is never modified. Passthrough for none and m3.
+  # prediction is never modified. Passthrough for none and m3. Classified once
+  # here, on the kernel-scale values the residuals themselves use, and reused
+  # below for `yValuesLinear` so a second, independent classification against
+  # `exp(lloq)` cannot disagree with this one by a few ULPs at the LLOQ
+  # boundary.
+  blqMask <- if (blqMethod %in% c("lloq", "lloqHalf")) {
+    .isBlqValues(observedYVal, observedData$lloq)
+  } else {
+    NULL
+  }
   observedYVal <- .applyBlqSubstitution(
     observedYVal,
     observedData$lloq,
     blqMethod,
-    scaling
+    scaling,
+    mask = blqMask
   )
   # Write the substituted observed values back so downstream error-weighting
   # (which reads observedData$yValues) sees the same values as the residuals.
   observedData$yValues <- observedYVal
+  # Under log scaling, error-weighting instead reads `yValuesLinear` (the
+  # pre-log-transform reference). Substitute it with the same mask so both
+  # scalings agree on which rows are BLQ and on the observed value that
+  # defines the coefficient of variation.
+  if ("yValuesLinear" %in% colnames(observedData)) {
+    observedData$yValuesLinear <- .applyBlqSubstitution(
+      observedData$yValuesLinear,
+      if (scaling == "log") exp(observedData$lloq) else observedData$lloq,
+      blqMethod,
+      "lin",
+      mask = blqMask
+    )
+  }
 
   # M3 censored handling: compute one shared BLQ mask, score the censored rows
   # via the censored likelihood, and exclude them from the least-squares term so
@@ -193,9 +223,19 @@
       residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
-        yValues = observedData[["yValues"]],
+        # `.computeErrorWeights()` needs the untransformed observed value, which
+        # under log scaling only `yValuesLinear` holds. Keyed on `scaling` rather
+        # than on the column being present, so a log-scaled frame that never
+        # went through `.applyLogTransformation()` fails loudly instead of
+        # silently deriving the coefficient of variation from a log-scale value.
+        yValues = if (scaling == "log") {
+          observedData[["yValuesLinear"]]
+        } else {
+          observedData[["yValues"]]
+        },
         yErrorValues = observedData[["yErrorValues"]],
-        yErrorType = observedData[["yErrorType"]]
+        yErrorType = observedData[["yErrorType"]],
+        scaling = scaling
       )
     )
 
@@ -213,6 +253,15 @@
 
   weightedSSR <- sum(weightedResiduals^2)
 
+  # sigma_i is 1 / (scaleFactor * totalWeights_i) up to the error
+  # model's scale, so sum(log(sigma_i)) is the negated sum below. A row whose
+  # total weight is non-positive has infinite sigma and carries no likelihood
+  # information, so it is dropped here rather than contributing -Inf. Under
+  # `mle` such a row cannot occur, because the configuration rejects robust
+  # weighting and non-positive dataset weights.
+  appliedWeights <- scaleFactor * totalWeights
+  sumLogSigma <- -sum(log(appliedWeights[appliedWeights > 0]))
+
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(stats::dnorm(
     simulatedYValApprox,
@@ -225,6 +274,8 @@
     modelCost = weightedSSR + censoredContribution,
     minLogProbability = logProbability,
     nObservations = length(rawResiduals),
+    sumLogSigma = sumLogSigma,
+    objectiveType = objectiveType,
     M3Contribution = censoredContribution,
     rawSSR = sum(rawResiduals^2),
     weightedSSR = weightedSSR,
@@ -249,7 +300,10 @@
     warning(
       "Invalid model cost detected (NA). Returning infinite error cost structure."
     )
-    return(.createErrorCostStructure(index = index))
+    return(.createErrorCostStructure(
+      index = index,
+      objectiveType = objectiveType
+    ))
   }
 
   return(modelCost)
@@ -269,12 +323,18 @@
 #' @param weightedSSR Weighted sum of squared residuals.
 #' @param rawSSR Unweighted sum of squared residuals.
 #' @param M3Contribution Censored-data contribution to the cost.
+#' @param sumLogSigma Negated sum of the log of the applied per-observation
+#'   weights, the sufficient statistic the likelihood needs. Defaults to `0`,
+#'   the additive identity, for the failure substitute.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #' @param x,yObserved,ySimulated,scaleFactor,errorWeights,robustWeights,userWeights,totalWeights,rawResiduals,weightedResiduals
 #'   Per-observation vectors forming `residualDetails`. Default to `NA_real_` for
 #'   the failure substitute.
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #' @return A `modelCost` object: a list with `modelCost`, `minLogProbability`,
-#'   `costVariables`, and `residualDetails`.
+#'   `objectiveType`, `costVariables`, and `residualDetails`.
 #' @keywords internal
 #' @noRd
 .newModelCost <- function(
@@ -284,6 +344,8 @@
   weightedSSR,
   rawSSR = NA_real_,
   M3Contribution = 0,
+  sumLogSigma = 0,
+  objectiveType = "lsq",
   x = NA_real_,
   yObserved = NA_real_,
   ySimulated = NA_real_,
@@ -300,7 +362,8 @@
     nObservations = nObservations,
     M3Contribution = M3Contribution,
     rawSSR = rawSSR,
-    weightedSSR = weightedSSR
+    weightedSSR = weightedSSR,
+    sumLogSigma = sumLogSigma
   )
 
   residualDetails <- data.frame(
@@ -321,6 +384,7 @@
     list(
       modelCost = modelCost,
       minLogProbability = minLogProbability,
+      objectiveType = objectiveType,
       costVariables = costVariables,
       residualDetails = residualDetails
     ),
@@ -330,10 +394,15 @@
 
 #' Compute error-based residual weights
 #'
-#' @param yValues Vector of y-values, required for conversion
+#' @param yValues Vector of y-values, required for conversion. Must be the
+#'   untransformed observed values even when the residuals are log-scaled.
 #' @param yErrorValues Vector of y-value errors
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
 #'   `GeometricStdDev`)
+#' @param scaling Character string specifying the scale the residual is on
+#'   (`"lin"` or `"log"`). Under `"log"`, the weight is the reciprocal of the
+#'   log-scale standard deviation, so it standardizes a natural-log residual.
+#'   Defaults to `"lin"`.
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
@@ -343,11 +412,13 @@
   yValues,
   yErrorValues,
   yErrorType,
+  scaling = "lin",
   defaultWeight = 1
 ) {
   ospsuite.utils::validateIsNumeric(yValues)
   ospsuite.utils::validateIsNumeric(yErrorValues)
   ospsuite.utils::validateIsCharacter(yErrorType)
+  ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
   ospsuite.utils::isSameLength(yValues, yErrorValues)
   ospsuite.utils::isSameLength(yValues, yErrorType)
 
@@ -357,16 +428,28 @@
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
   if (length(idxArith) > 0) {
-    weights[idxArith] <- 1 / yErrorValues[idxArith]
+    weights[idxArith] <- if (scaling == "log") {
+      # A residual in natural-log units needs the log-scale spread of a
+      # lognormal observation with this coefficient of variation.
+      cv <- yErrorValues[idxArith] / yValues[idxArith]
+      1 / sqrt(log(1 + cv^2))
+    } else {
+      1 / yErrorValues[idxArith]
+    }
   }
 
   idxGSD <- which(
     yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
   )
   if (length(idxGSD) > 0) {
-    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
-    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
-    weights[idxGSD] <- 1 / stDev
+    weights[idxGSD] <- if (scaling == "log") {
+      # A geometric standard deviation is already a multiplicative spread.
+      1 / log(yErrorValues[idxGSD])
+    } else {
+      # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
+      stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+      1 / stDev
+    }
   }
 
   nEligible <- sum(
@@ -462,10 +545,13 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @param index Output-mapping index stored on the `residualDetails` row.
 #'   Defaults to `NA_real_`.
+#' @param objectiveType A string naming the objective function type, one of
+#'   [`ospsuite.parameteridentification::ObjectiveTypes`]. Stamped onto the
+#'   returned `modelCost` object. Defaults to `"lsq"`.
 #' @return A `modelCost` object filled with infinite cost values.
 #' @keywords internal
 #' @noRd
-.createErrorCostStructure <- function(index = NA_real_) {
+.createErrorCostStructure <- function(index = NA_real_, objectiveType = "lsq") {
   .newModelCost(
     modelCost = Inf,
     minLogProbability = Inf,
@@ -473,7 +559,9 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     weightedSSR = Inf,
     rawSSR = Inf,
     M3Contribution = Inf,
-    index = index
+    sumLogSigma = 0,
+    index = index,
+    objectiveType = objectiveType
   )
 }
 
@@ -490,6 +578,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'   to natural logarithm (`exp(1)`).
 #'
 #' @return A transformed data frame with log-transformed `yValues` and `lloq`.
+#'   The pre-transform observed values are preserved in `yValuesLinear`.
 #' @keywords internal
 #'
 #' @examples
@@ -512,6 +601,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     molWeight = 1
   )
 
+  df$yValuesLinear <- df$yValues
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
     epsilon = UNITS_EPSILON,
@@ -581,25 +671,31 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' This function takes two lists, each being the output of the
 #' `.calculateCostMetrics` function, and summarizes them. It aggregates model
-#' costs and min log probabilities, and combines cost and residual details by
-#' row-binding.
+#' costs, min log probabilities, and the cost variables, and combines the
+#' residual details by row-binding.
 #'
 #' @param list1 The first list, containing the output of the
 #'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#'   `minLogProbability`, `objectiveType`, `costVariables`, and
+#'   `residualDetails`.
 #' @param list2 The second list, containing the output of the
 #'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
+#'   `minLogProbability`, `objectiveType`, `costVariables`, and
+#'   `residualDetails`.
 #'
 #' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#'   `minLogProbabilities`, a row-bound combination of `costVariables`, and a
-#'   row-bound combination of `residualDetails`.
+#'   `minLogProbabilities`, the `objectiveType` taken from `list1`, the
+#'   element-wise sum of `costVariables` (both frames share one fixed single-row
+#'   column set, so every statistic aggregates additively), and a row-bound
+#'   combination of `residualDetails`.
 #'
 #' @keywords internal
+#' @noRd
 .summarizeCostLists <- function(list1, list2) {
   mergedList <- list(
     modelCost = list1$modelCost + list2$modelCost,
     minLogProbability = list1$minLogProbability + list2$minLogProbability,
+    objectiveType = list1$objectiveType,
     costVariables = list1$costVariables + list2$costVariables,
     residualDetails = rbind(list1$residualDetails, list2$residualDetails)
   )

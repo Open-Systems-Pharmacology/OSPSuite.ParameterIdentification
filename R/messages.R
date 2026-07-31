@@ -377,6 +377,13 @@ messages$errorPKMappingSimulationMismatch <- function() {
   )
 }
 
+messages$errorObjectiveTypeInertInPKMode <- function(objectiveType) {
+  ospsuite.utils::cliFormat(
+    "{.arg objectiveType} is {.val {objectiveType}}, but PK metric optimization always scores a relative sum of squares and ignores {.arg objectiveType} and {.arg blqMethod}.",
+    "Set {.code objectiveType = \"lsq\"}, or use {.arg outputMappings} instead of {.arg pkOutputMappings} to score with the configured objective."
+  )
+}
+
 messages$errorPKMultiIndividualSimulation <- function(
   pkParameter,
   quantityPath,
@@ -414,5 +421,85 @@ messages$errorNoResidualsToPlot <- function() {
 messages$errorObservedDataRemovedByBlq <- function(quantityPath, blqRemove) {
   ospsuite.utils::cliFormat(
     "All observed data for {.val {quantityPath}} was removed by {.arg blqRemove} = {.val {blqRemove}}. No observations remain to fit this mapping."
+  )
+}
+
+messages$errorObjectiveFunctionTypeRemoved <- function() {
+  ospsuite.utils::cliFormat(
+    "{.arg objectiveFunctionType} has been removed from {.field objectiveFunctionOptions}.",
+    "Use {.arg objectiveType} to select {.val lsq} or {.val mle} scoring.",
+    "For censored (M3) handling set {.code objectiveType = \"mle\"} together with {.code blqMethod = \"m3\"}."
+  )
+}
+
+messages$errorM3RequiresMle <- function(objectiveType) {
+  ospsuite.utils::cliFormat(
+    "{.code blqMethod = \"m3\"} requires {.code objectiveType = \"mle\"}, but {.arg objectiveType} is {.val {objectiveType}}.",
+    "Censoring is a likelihood operation, so it cannot be scored by least squares."
+  )
+}
+
+messages$errorMleRejectsRobust <- function(robustMethod) {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"mle\"} cannot be combined with {.code robustMethod = {.val {robustMethod}}}.",
+    "Robust weights can be exactly zero, which makes the likelihood infinite at every parameter value.",
+    "Set {.code robustMethod = \"none\"}, or use {.code objectiveType = \"lsq\"}."
+  )
+}
+
+messages$errorMleRejectsScaleVar <- function() {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"mle\"} cannot be combined with {.code scaleVar = TRUE} while {.code residualWeightingMethod = \"error\"}.",
+    "There is no concentrated scale for the scale factor to cancel against under a measured standard deviation, so it would inflate the measured standard deviation by the observation count.",
+    "Set {.code scaleVar = FALSE}, or use {.code residualWeightingMethod = \"none\"}."
+  )
+}
+
+messages$errorLsqStrandsM3 <- function() {
+  ospsuite.utils::cliFormat(
+    "{.code objectiveType = \"lsq\"} is not allowed while {.code blqMethod = \"m3\"}.",
+    "Set {.code blqMethod} to {.val none}, {.val lloq}, or {.val lloqHalf} first."
+  )
+}
+
+messages$errorUnknownErrorModelSource <- function(residualWeightingMethod) {
+  ospsuite.utils::cliFormat(
+    "No error model is defined for {.code residualWeightingMethod = {.val {residualWeightingMethod}}}."
+  )
+}
+
+messages$errorUnusableErrorValues <- function(
+  quantityPath,
+  nNoUsableError,
+  nNonPositiveValue
+) {
+  parts <- c(
+    "{.code objectiveType = \"mle\"} with {.code residualWeightingMethod = \"error\"} needs a usable standard deviation on every scored observation, and {.val {quantityPath}} does not provide one everywhere.",
+    if (nNoUsableError > 0) {
+      "{nNoUsableError} observation{?s} without a usable error value. Supply an error value for every observation, or set {.code residualWeightingMethod = \"none\"} to estimate a single residual standard deviation instead."
+    },
+    if (nNonPositiveValue > 0) {
+      "{nNonPositiveValue} observation{?s} with a value of zero or less and a usable error value. The data-error model turns that error value into a weight through the coefficient of variation, which is undefined at a non-positive value, so such an observation cannot be scored by this model at all. Remove it from the data set, or set {.code residualWeightingMethod = \"none\"}."
+    }
+  )
+  do.call(
+    ospsuite.utils::cliFormat,
+    c(as.list(parts), list(.envir = environment()))
+  )
+}
+
+messages$warningAnalyticCiUnderMle <- function(ciMethod) {
+  ospsuite.utils::cliFormat(
+    "{.arg ciMethod} = {.val {ciMethod}} is not yet corrected for the likelihood scale of {.code objectiveType = \"mle\"}.",
+    "The Hessian and profile-likelihood estimators both still apply least-squares formulas, so the reported interval width is not trustworthy under {.val mle}.",
+    "Use {.code ciMethod = \"bootstrap\"}, which re-optimizes the same objective instead of reading its curvature."
+  )
+}
+
+messages$errorNonPositiveWeightsUnderMle <- function(quantityPath) {
+  ospsuite.utils::cliFormat(
+    "{.val {quantityPath}} carries a dataset weight of zero or less, which {.code objectiveType = \"mle\"} cannot represent.",
+    "A zero weight means the residual standard deviation is infinite rather than that the observation is excluded.",
+    "Remove the observation from the data set instead, or use {.arg blqRemove} if it is below the quantification limit."
   )
 }

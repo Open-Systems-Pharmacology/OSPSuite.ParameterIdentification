@@ -43,6 +43,7 @@ reference:
     contents:
       - Algorithms
       - contains("AlgorithmOptions")
+      - ObjectiveTypes
       - ObjectiveFunctionOptions
       - residualWeightingOptions
       - robustMethodOptions

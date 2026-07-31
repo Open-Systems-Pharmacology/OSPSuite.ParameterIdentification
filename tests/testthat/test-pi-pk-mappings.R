@@ -168,6 +168,23 @@ test_that("calculateOFVProfiles errors for pkOutputMappings", {
   )
 })
 
+test_that("run() errors when objectiveType is mle for pkOutputMappings", {
+  sim <- testSimulation()
+  config <- lowIterPiConfiguration()
+  config$objectiveType <- "mle"
+  pi <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = testPKParameters(sim),
+    pkOutputMappings = testPKMapping(sim),
+    configuration = config
+  )
+  expect_error(
+    pi$run(),
+    regexp = messages$errorObjectiveTypeInertInPKMode("mle"),
+    fixed = TRUE
+  )
+})
+
 test_that(".getPKValues uses each mapping's own simulation batch, not always the first", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   sim1 <- ospsuite::loadSimulation(

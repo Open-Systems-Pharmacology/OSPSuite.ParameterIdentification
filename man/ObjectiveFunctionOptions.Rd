@@ -16,8 +16,6 @@ configured via the \code{PIConfiguration} class.
 \details{
 Settings include:
 \itemize{
-\item \strong{\code{objectiveFunctionType}} - Type of objective function used. Default is
-\code{lsq} (least squares), influencing error calculation.
 \item \strong{\code{residualWeightingMethod}} - Method for residual weighting. Default is
 \code{none}.
 \item \strong{\code{robustMethod}} - Method for robust outlier handling. Default is \code{none}
