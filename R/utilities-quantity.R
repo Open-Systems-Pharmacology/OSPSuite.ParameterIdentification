@@ -27,6 +27,25 @@
   )
 }
 
+#' Convert an optimization parameter value to its base unit
+#'
+#' `SimulationBatch$addRunValues()` reads its values as base units and converts
+#' nothing, while the optimizer works in `PIParameters$unit`.
+#'
+#' @param piParameter A `PIParameters` object.
+#' @param value Numeric value expressed in `piParameter$unit`.
+#'
+#' @return `value` expressed in the parameter's base unit.
+#' @keywords internal
+#' @noRd
+.toBaseValue <- function(piParameter, value) {
+  ospsuite::toBaseUnit(
+    quantityOrDimension = piParameter$parameters[[1]],
+    values = value,
+    unit = piParameter$unit
+  )
+}
+
 #' Validate observed data availability in `PIOutputMapping`
 #'
 #' Ensures each `PIOutputMapping` object has observed datasets. Throws an error

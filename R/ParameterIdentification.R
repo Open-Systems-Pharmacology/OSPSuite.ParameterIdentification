@@ -123,6 +123,27 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # Applies a vector of optimizer values, one entry per `PIParameters` group,
+    # to every underlying model parameter. Values arrive in each group's
+    # `$unit`. `addRunValues()` reads base units, so they are converted here.
+    # This is the only place that writes into the variable buckets.
+    .applyParameterValues = function(values) {
+      if (length(values) != length(private$.piParameters)) {
+        stop(messages$errorParameterValuesLengthMismatch(
+          length(private$.piParameters),
+          length(values)
+        ))
+      }
+      for (idx in seq_along(values)) {
+        piParameter <- private$.piParameters[[idx]]
+        baseValue <- .toBaseValue(piParameter, values[[idx]])
+        for (parameter in piParameter$parameters) {
+          simId <- .getSimulationContainer(parameter)$id
+          private$.setVariableValue(simId, parameter, baseValue)
+        }
+      }
+    },
+
     # Batch Initialization for Simulations
     #
     # Initializes simulation batches, preparing them for parameter
@@ -213,12 +234,9 @@ ParameterIdentification <- R6::R6Class(
         }
 
         # Seed each optimization parameter's start value into its variable bucket.
-        for (piParameter in private$.piParameters) {
-          for (parameter in piParameter$parameters) {
-            simId <- .getSimulationContainer(parameter)$id
-            private$.setVariableValue(simId, parameter, piParameter$startValue)
-          }
-        }
+        private$.applyParameterValues(
+          vapply(private$.piParameters, function(p) p$startValue, numeric(1))
+        )
 
         # Create simulation batches for identification runs
         for (simulation in private$.simulations) {
@@ -572,13 +590,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     .getPKValues = function(paramValues) {
-      for (idx in seq_along(paramValues)) {
-        piParameter <- private$.piParameters[[idx]]
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, paramValues[[idx]])
-        }
-      }
+      private$.applyParameterValues(paramValues)
 
       for (simId in names(private$.simulationBatches)) {
         simBatch <- private$.simulationBatches[[simId]]
@@ -658,13 +670,7 @@ ParameterIdentification <- R6::R6Class(
       # Iterate through the values and update current parameter values. The
       # order of the values corresponds to the order of `PIParameters` in the
       # parameters list.
-      for (idx in seq_along(currVals)) {
-        piParameter <- private$.piParameters[[idx]]
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, currVals[[idx]])
-        }
-      }
+      private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
       # # Simulate steady-states if specified
@@ -878,7 +884,9 @@ ParameterIdentification <- R6::R6Class(
     #'   [`ospsuite::loadSimulation()`] to load simulation files.
     #' @param parameters A `PIParameters` or list of `PIParameters` objects
     #'   specifying the model parameters to optimize. Each `PIParameters` object
-    #'   may group one or more underlying model parameters. See
+    #'   may group one or more underlying model parameters, and its values are
+    #'   converted from its `$unit` to the base unit before they are applied to
+    #'   the model. See
     #'   [`ospsuite.parameteridentification::PIParameters`] for details.
     #' @param configuration (Optional) A `PIConfiguration` object specifying
     #'   algorithm, CI method, and objective function settings. Defaults to a
@@ -1138,7 +1146,9 @@ ParameterIdentification <- R6::R6Class(
     #'   data.
     #'
     #' @param par Optional parameter values for simulations, in the order of
-    #'   `ParameterIdentification$parameters`. Use current values if `NULL`.
+    #'   `ParameterIdentification$parameters`. Interpreted in each
+    #'   `PIParameters$unit` and converted to the base unit before being applied
+    #'   to the model. Use current values if `NULL`.
     #' @return A list of `patchwork` objects (one per output mapping), showing:
     #' - Individual time profiles
     #' - Predicted vs. observed values
@@ -1257,14 +1267,14 @@ ParameterIdentification <- R6::R6Class(
     #' initialize better starting values.
     #'
     #' @param lower Numeric vector of parameter lower bounds, defaulting to
-    #'   `PIParameter` minimum values.
+    #'   `PIParameters` minimum values. Interpreted in each `PIParameters$unit`.
     #' @param upper Numeric vector of parameter upper bounds, defaulting to
-    #'   `PIParameter` maximum values.
+    #'   `PIParameters` maximum values. Interpreted in each `PIParameters$unit`.
     #' @param logScaleFlag Logical scalar or vector; determines if grid points
     #'   are spaced logarithmically. Default is `FALSE`.
     #' @param totalEvaluations Integer specifying the total grid points. Default
     #'   is 50.
-    #' @param setStartValue Logical. If `TRUE`, updates `PIParameter` starting
+    #' @param setStartValue Logical. If `TRUE`, updates `PIParameters` starting
     #'   values to the best grid point. Default is `FALSE`.
     #'
     #' @return A tibble where each row is a parameter combination and the
@@ -1374,7 +1384,7 @@ ParameterIdentification <- R6::R6Class(
     #' Calculate Objective Function Value (OFV) Profiles
     #'
     #' @description
-    #' Generates OFV profiles by varying each `PIParameter` independently while
+    #' Generates OFV profiles by varying each `PIParameters` independently while
     #' holding the others fixed at `par`. Useful as a post-optimization
     #' diagnostic: around a (local) minimum the OFV is expected to be roughly
     #' convex along each axis.
@@ -1393,14 +1403,15 @@ ParameterIdentification <- R6::R6Class(
     #' `Inf` to the corresponding `ofv` cell.
     #'
     #' @param par Numeric vector of parameter values, one for each
-    #'   `PIParameter`. Defaults to current parameter values if `NULL`,
-    #'   not numeric, or of mismatched length.
+    #'   `PIParameters`, interpreted in each `PIParameters$unit`. Defaults to
+    #'   current parameter values if `NULL`, not numeric, or of mismatched
+    #'   length.
     #' @param boundFactor Numeric scalar. A value of `0.1` (default) means
     #'   bounds extend ±10% around `par` for each parameter.
     #' @param totalEvaluations Integer specifying the number of grid points
     #'   per parameter profile. Default is `20`.
     #'
-    #' @return A named list of tibbles, one element per `PIParameter`. List
+    #' @return A named list of tibbles, one element per `PIParameters`. List
     #'   names are the parameter paths (taken from `parameters[[1]]$path`).
     #'   Each tibble has two columns:
     #'   - a column named after the parameter path, holding the grid values;

@@ -352,7 +352,7 @@ outputMapping_500mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
 
-# State-variable parameter fixtures (issue #156)
+# State-variable parameter fixtures
 
 # Aciclovir state-variable (RHS-defined) parameter, dimension Volume (~0.045 L).
 stateVariableParameterPath <- "Organism|Lumen|Stomach|Liquid"
