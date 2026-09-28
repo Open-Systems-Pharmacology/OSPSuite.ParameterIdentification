@@ -12,6 +12,45 @@ test_that("run() errors if initial simulation fails", {
   ))
 })
 
+test_that("a failed simulation is reported by name", {
+  modPiTask <- testModifiedTask()
+  priv <- modPiTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  failedMessage <- messages$errorSimulationsFailed(
+    modPiTask$simulations[[1]]$name
+  )
+  startValues <- vapply(
+    modPiTask$parameters,
+    function(p) p$startValue,
+    numeric(1)
+  )
+
+  # The objective function reports the failure without the warning of the
+  # simulation engine
+  logged <- character()
+  expect_no_warning(
+    expect_error(
+      withCallingHandlers(
+        priv$.objectiveFunction(startValues),
+        message = function(m) {
+          logged <<- c(logged, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      ),
+      messages$initialSimulationError(),
+      fixed = TRUE
+    )
+  )
+  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+
+  # plotResults() shows the warning and names the failed simulation
+  expect_error(
+    suppressWarnings(modPiTask$plotResults()),
+    failedMessage,
+    fixed = TRUE
+  )
+})
+
 
 # BOBYQA Algorithm (Default)
 

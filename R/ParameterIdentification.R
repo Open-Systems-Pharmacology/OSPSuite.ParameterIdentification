@@ -511,13 +511,17 @@ ParameterIdentification <- R6::R6Class(
     # Run Simulations with Parameter Values
     #
     # Applies the parameter values to the simulation batches and runs them.
+    # Stops with the names of the simulations that failed.
     #
     # @param currVals Vector of parameter values, in the order of the
     #   `PIParameters` in the parameters list.
+    # @param silentMode Passed to `ospsuite::runSimulationBatches()`: if
+    #   `TRUE`, the warning of the simulation engine for a failed simulation
+    #   is not shown.
     # @return The result of `ospsuite::runSimulationBatches()`: for each
     #   simulation batch, the list of its `SimulationResults`, named by the
     #   simulation IDs.
-    .runSimulations = function(currVals) {
+    .runSimulations = function(currVals, silentMode = FALSE) {
       private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
@@ -556,10 +560,26 @@ ParameterIdentification <- R6::R6Class(
       # Run simulation batches
       simulationResults <- ospsuite::runSimulationBatches(
         simulationBatches = private$.simulationBatches,
-        simulationRunOptions = private$.configuration$simulationRunOptions
+        simulationRunOptions = private$.configuration$simulationRunOptions,
+        silentMode = silentMode
       )
       # The results come in the order of the batches, named by batch IDs
       names(simulationResults) <- names(private$.simulationBatches)
+
+      # A failed simulation has no results (#299)
+      failed <- vapply(
+        simulationResults,
+        function(results) length(results) == 0 || is.null(results[[1]]),
+        logical(1)
+      )
+      if (any(failed)) {
+        simulationNames <- vapply(
+          private$.simulations[names(simulationResults)[failed]],
+          function(simulation) simulation$name,
+          character(1)
+        )
+        stop(messages$errorSimulationsFailed(simulationNames))
+      }
       simulationResults
     },
 
@@ -624,7 +644,9 @@ ParameterIdentification <- R6::R6Class(
     #   unit of the mapped quantity.
     .simulateOutputs = function(currVals, bootstrapSeed = NULL) {
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
-      simulationResults <- private$.runSimulations(currVals)
+      # The objective function reports a failed simulation itself on every
+      # evaluation, so the warning of the simulation engine is not repeated
+      simulationResults <- private$.runSimulations(currVals, silentMode = TRUE)
 
       # Time values are read once per simulation
       times <- list()
@@ -632,7 +654,6 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(outputMappings)) {
         simId <- outputMappings[[idx]]$simId
         resultObject <- simulationResults[[simId]][[1]]
-        ospsuite.utils::validateIsOfType(resultObject, "SimulationResults")
         times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
         simulated[[idx]] <- .simulatedValues(
           resultObject,

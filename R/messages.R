@@ -58,6 +58,14 @@ messages$initialSimulationError <- function() {
   "Stopping optimization: Initial simulation failed."
 }
 
+messages$errorSimulationsFailed <- function(simulationNames) {
+  paste0(
+    if (length(simulationNames) == 1) "Simulation " else "Simulations ",
+    paste0("'", simulationNames, "'", collapse = ", "),
+    " failed."
+  )
+}
+
 messages$errorSimulatedValuesMissing <- function() {
   paste0(
     "Simulated values are missing, so the LLOQ of the observed data cannot ",

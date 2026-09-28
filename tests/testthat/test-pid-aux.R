@@ -85,14 +85,18 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
     parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
     outputMappings = outputMapping_250mg
   )
-  suppressMessages(suppressWarnings(
-    expect_warning(
+  # The failed simulation is reported by name, without the warning of the
+  # simulation engine (#299)
+  suppressMessages(
+    expect_message(
       gridSearchResults <- piTask$gridSearch(
         lower = c(0, -0.5),
         totalEvaluations = 5
-      )
+      ),
+      messages$errorSimulationsFailed(sim_250mg$name),
+      fixed = TRUE
     )
-  ))
+  )
   expect_snapshot(gridSearchResults$ofv)
 })
 
@@ -165,13 +169,17 @@ test_that("calculateOFVProfiles() returns `Inf` on simulation failure", {
     outputMappings = outputMapping_250mg
   )
 
-  suppressMessages(suppressWarnings(
-    expect_warning(
+  # The failed simulation is reported by name, without the warning of the
+  # simulation engine (#299)
+  suppressMessages(
+    expect_message(
       ofvProfiles <- piTask$calculateOFVProfiles(
         par = c(0, -0.25),
         totalEvaluations = 3
-      )
+      ),
+      messages$errorSimulationsFailed(sim_250mg$name),
+      fixed = TRUE
     )
-  ))
+  )
   expect_snapshot(ofvProfiles[[2]]$ofv)
 })
