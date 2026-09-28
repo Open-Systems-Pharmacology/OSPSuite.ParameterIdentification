@@ -74,6 +74,11 @@ ParameterIdentification <- R6::R6Class(
     # Named list by simulation IDs, detailing paths and start values for
     # variable parameters
     .variableParameters = NULL,
+    # Named list by simulation IDs: the paths of the variable parameters and
+    # molecules of each simulation, in the order of the variable buckets, and
+    # the index of the `PIParameters` group whose value each of them takes.
+    # Resolved once by `.resolveParameterTargets()`.
+    .parameterTargets = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
     # List of `PIOutputMapping` objects
@@ -112,21 +117,12 @@ ParameterIdentification <- R6::R6Class(
     # resampling
     .gprModels = NULL,
 
-    # Routes a parameter value into the correct variable bucket for the
-    # simulation batch. State-variable (RHS-defined) parameters must be
-    # registered as molecules; all others as parameters.
-    .setVariableValue = function(simId, parameter, value) {
-      if (parameter$isStateVariable) {
-        private$.variableMolecules[[simId]][[parameter$path]] <- value
-      } else {
-        private$.variableParameters[[simId]][[parameter$path]] <- value
-      }
-    },
-
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
     # `$unit`. `addRunValues()` reads base units, so they are converted here.
     # This is the only place that writes into the variable buckets.
+    # State-variable (RHS-defined) parameters go into the molecule buckets,
+    # all others into the parameter buckets.
     .applyParameterValues = function(values) {
       if (length(values) != length(private$.piParameters)) {
         stop(messages$errorParameterValuesLengthMismatch(
@@ -134,12 +130,31 @@ ParameterIdentification <- R6::R6Class(
           length(values)
         ))
       }
-      for (idx in seq_along(values)) {
-        piParameter <- private$.piParameters[[idx]]
-        baseValue <- .toBaseValue(piParameter, values[[idx]])
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, baseValue)
+      if (is.null(private$.parameterTargets)) {
+        private$.parameterTargets <- .resolveParameterTargets(
+          private$.piParameters
+        )
+      }
+      baseValues <- vapply(
+        seq_along(values),
+        function(idx) {
+          .toBaseValue(private$.piParameters[[idx]], values[[idx]])
+        },
+        numeric(1)
+      )
+      for (simId in names(private$.parameterTargets)) {
+        target <- private$.parameterTargets[[simId]]
+        if (length(target$parameterPaths) > 0) {
+          private$.variableParameters[[simId]] <- stats::setNames(
+            baseValues[target$parameterGroups],
+            target$parameterPaths
+          )
+        }
+        if (length(target$moleculePaths) > 0) {
+          private$.variableMolecules[[simId]] <- stats::setNames(
+            baseValues[target$moleculeGroups],
+            target$moleculePaths
+          )
         }
       }
     },
@@ -618,10 +633,9 @@ ParameterIdentification <- R6::R6Class(
       for (idx in seq_along(outputMappings)) {
         obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- outputMappings[[idx]]
-        # Find the simulation that is the parent of the output quantity
-        simId <- .getSimulationContainer(currOutputMapping$quantity)$id
-        # Find the simulation batch that corresponds to the simulation
-        simBatch <- private$.simulationBatches[[simId]]
+        # Find the simulation batch of the simulation that is the parent of
+        # the output quantity
+        simBatch <- private$.simulationBatches[[currOutputMapping$simId]]
         # Construct group names out of output path and simulation id
         groupName <- currOutputMapping$quantity$path
         # In each iteration, only one values set per simulation batch is simulated.

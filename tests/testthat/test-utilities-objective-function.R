@@ -479,9 +479,9 @@ test_that("a non-base state-variable unit reaches the molecules bucket in base u
     addToCache = FALSE
   )
 
-  # Organism|Lumen|Stomach|Liquid is RHS-defined, so .setVariableValue() routes
-  # it into the molecules bucket rather than the parameters bucket. Its base
-  # unit is l, so values declared in ml must arrive divided by 1000.
+  # Organism|Lumen|Stomach|Liquid is RHS-defined, so .applyParameterValues()
+  # routes it into the molecules bucket rather than the parameters bucket. Its
+  # base unit is l, so values declared in ml must arrive divided by 1000.
   piParameter <- PIParameters$new(
     parameters = list(getParameter(stateVariableParameterPath, container = sim))
   )

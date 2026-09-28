@@ -14,6 +14,51 @@
   return(.getSimulationContainer(entity$parentContainer))
 }
 
+#' Resolve the variable buckets written by each `PIParameters` group
+#'
+#' @description Resolves, once, the simulation of every model parameter of the
+#'   `PIParameters` groups and whether it is a state variable, so that parameter
+#'   values can be applied without walking the model on every evaluation.
+#'
+#' @param piParameters List of `PIParameters` objects, in the order of the
+#'   optimizer values.
+#'
+#' @return A list named by simulation IDs. Each entry holds `parameterPaths`
+#'   and `moleculePaths`, the paths of the variable parameters and of the
+#'   state-variable parameters of the simulation in the order in which they
+#'   are first written, and `parameterGroups` and `moleculeGroups`, the index
+#'   of the `PIParameters` group whose value each path takes. When several
+#'   groups contain the same path, the last one wins.
+#' @keywords internal
+#' @noRd
+.resolveParameterTargets <- function(piParameters) {
+  targets <- list()
+  for (idx in seq_along(piParameters)) {
+    for (parameter in piParameters[[idx]]$parameters) {
+      simId <- .getSimulationContainer(parameter)$id
+      target <- targets[[simId]] %||%
+        list(
+          parameterPaths = character(),
+          parameterGroups = integer(),
+          moleculePaths = character(),
+          moleculeGroups = integer()
+        )
+      kind <- if (parameter$isStateVariable) "molecule" else "parameter"
+      pathsField <- paste0(kind, "Paths")
+      groupsField <- paste0(kind, "Groups")
+      position <- match(parameter$path, target[[pathsField]])
+      if (is.na(position)) {
+        target[[pathsField]] <- c(target[[pathsField]], parameter$path)
+        target[[groupsField]] <- c(target[[groupsField]], idx)
+      } else {
+        target[[groupsField]][[position]] <- idx
+      }
+      targets[[simId]] <- target
+    }
+  }
+  targets
+}
+
 #' Validates Matching IDs across Simulation IDs, PI Parameters, and Output
 #' Mappings
 #'

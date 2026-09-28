@@ -10,6 +10,7 @@
 - `plot.modelCost()` now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (#275).
 - `ParameterIdentification` can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (#280).
 - `PIParameters$new()` accepts optional `minValue`/`maxValue`, errors on a zero start value when no bounds are supplied, and rejects zero-width bounds (`minValue == maxValue`) that leave nothing to optimize (#282).
+- `ParameterIdentification` resolves the simulation of every parameter path once per task instead of on every objective function evaluation, and uses the simulation ID stored in each `PIOutputMapping` (#302, #303).
 
 # ospsuite.parameteridentification 2.2.0
 
