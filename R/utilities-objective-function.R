@@ -124,32 +124,79 @@
     )
   }
 
-  # Extracting values for interpolation or direct matching
-  simulatedXVal <- simulatedData[["xValues"]]
-  simulatedYVal <- simulatedData[["yValues"]]
-  observedXVal <- observedData[["xValues"]]
-  observedYVal <- observedData[["yValues"]]
+  costTerms <- .costKernel(
+    simulatedX = simulatedData[["xValues"]],
+    simulatedY = simulatedData[["yValues"]],
+    observedX = observedData[["xValues"]],
+    observedY = observedData[["yValues"]],
+    userWeights = observedData$weights,
+    yErrorValues = observedData[["yErrorValues"]],
+    yErrorType = observedData[["yErrorType"]],
+    residualWeightingMethod = residualWeightingMethod,
+    robustMethod = robustMethod,
+    scaleVar = scaleVar,
+    censoredContribution = censoredContribution,
+    index = index
+  )
 
+  do.call(.newModelCost, costTerms)
+}
+
+#' Cost terms of one output mapping
+#'
+#' @description Interpolates the simulated values at the observed times and
+#'   calculates the residuals, their weights and the cost of one output
+#'   mapping. Shared by `.calculateCostMetrics()` and the objective function.
+#'   The values must be finite, with times of at least zero.
+#'
+#' @param simulatedX,simulatedY Simulated times and values.
+#' @param observedX,observedY Observed times and values.
+#' @param userWeights Data weights of the observations, `NA` for none.
+#' @param yErrorValues,yErrorType Error values and error types of the
+#'   observations, used when `residualWeightingMethod` is `"error"`.
+#' @param residualWeightingMethod,robustMethod,scaleVar Options of the
+#'   objective function, see `.calculateCostMetrics()`.
+#' @param censoredContribution Contribution of the censored observations
+#'   (M3 method), 0 otherwise.
+#' @param index Output-mapping index stored on every `residualDetails` row.
+#'
+#' @return A list of the arguments of `.newModelCost()`. When the model cost
+#'   is `NA`, a warning and the terms of `.createErrorCostStructure()`.
+#' @keywords internal
+#' @noRd
+.costKernel <- function(
+  simulatedX,
+  simulatedY,
+  observedX,
+  observedY,
+  userWeights,
+  yErrorValues,
+  yErrorType,
+  residualWeightingMethod,
+  robustMethod,
+  scaleVar,
+  censoredContribution,
+  index
+) {
   # Interpolating simulated Y values based on observed X values if applicable
-  if (length(unique(simulatedXVal)) > 1) {
-    simulatedYValApprox <- stats::approx(
-      simulatedXVal,
-      simulatedYVal,
-      xout = observedXVal
+  if (length(unique(simulatedX)) > 1) {
+    simulatedYApprox <- stats::approx(
+      simulatedX,
+      simulatedY,
+      xout = observedX
     )$y
   } else {
-    simulatedYValApprox <- simulatedYVal[match(observedXVal, simulatedXVal)]
+    simulatedYApprox <- simulatedY[match(observedX, simulatedX)]
   }
 
   # Calculate raw residuals
-  rawResiduals <- simulatedYValApprox - observedYVal
+  rawResiduals <- simulatedYApprox - observedY
 
   # Scaling residuals by the number of observations if requested
-  scaleFactor <- if (scaleVar) 1 / length(observedYVal) else 1
+  scaleFactor <- if (scaleVar) 1 / length(observedY) else 1
   normalizedResiduals <- rawResiduals * scaleFactor
 
   # Compute user-defined weights if available
-  userWeights <- observedData$weights
   userWeights[is.na(userWeights)] <- 1
 
   # Determining the method for residual weighting
@@ -158,9 +205,9 @@
       residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
-        yValues = observedData[["yValues"]],
-        yErrorValues = observedData[["yErrorValues"]],
-        yErrorType = observedData[["yErrorType"]]
+        yValues = observedY,
+        yErrorValues = yErrorValues,
+        yErrorType = yErrorType
       )
     )
 
@@ -180,22 +227,31 @@
 
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(stats::dnorm(
-    simulatedYValApprox,
-    observedYVal,
+    simulatedYApprox,
+    observedY,
     1 / totalWeights,
     log = TRUE
   ))
 
-  modelCost <- .newModelCost(
+  # Ensure that the modelCost calculation does not result in NA
+  if (is.na(weightedSSR + censoredContribution)) {
+    warning(
+      "Invalid model cost detected (NA). ",
+      "Returning infinite error cost structure."
+    )
+    return(.errorCostTerms(index = index))
+  }
+
+  list(
     modelCost = weightedSSR + censoredContribution,
     minLogProbability = logProbability,
     nObservations = length(rawResiduals),
     M3Contribution = censoredContribution,
     rawSSR = sum(rawResiduals^2),
     weightedSSR = weightedSSR,
-    x = observedXVal,
-    yObserved = observedYVal,
-    ySimulated = simulatedYValApprox,
+    x = observedX,
+    yObserved = observedY,
+    ySimulated = simulatedYApprox,
     scaleFactor = scaleFactor,
     errorWeights = round(errorWeights, 2),
     robustWeights = round(robustWeights, 2),
@@ -205,16 +261,185 @@
     weightedResiduals = weightedResiduals,
     index = index
   )
+}
 
-  # Ensure that the modelCost calculation does not result in NA
-  if (is.na(modelCost$modelCost)) {
-    warning(
-      "Invalid model cost detected (NA). Returning infinite error cost structure."
-    )
-    return(.createErrorCostStructure(index = index))
+#' Cost terms of one output mapping in the objective function
+#'
+#' @description Applies the LLOQ rule, the log transformation and the data
+#'   weights to the simulated values and the prepared observed data of one
+#'   output mapping and calculates its cost terms with `.costKernel()`, in the
+#'   same order as the data frame steps before `.calculateCostMetrics()`.
+#'
+#' @param simulated A list with `xValues` and `yValues`, the simulated values
+#'   in base units (see `.simulatedValues()`).
+#' @param observed The prepared observed data of the output mapping (see
+#'   `.prepareObservedData()`).
+#' @param dataWeights The data weights of the output mapping, a named list by
+#'   data set.
+#' @param costControl The objective function options, with the scaling of the
+#'   output mapping as `scaling`.
+#' @param index Index of the output mapping.
+#'
+#' @return A list of the arguments of `.newModelCost()`.
+#' @keywords internal
+#' @noRd
+.mappingCostTerms <- function(
+  simulated,
+  observed,
+  dataWeights,
+  costControl,
+  index
+) {
+  simulatedY <- simulated$yValues
+  # For LSQ, simulated values below the LLOQ are replaced by LLOQ / 2
+  if (costControl$objectiveFunctionType == "lsq" && observed$hasLloq) {
+    belowLloq <- simulatedY < observed$lloqMin
+    if (anyNA(belowLloq)) {
+      stop(messages$errorSimulatedValuesMissing())
+    }
+    simulatedY[belowLloq] <- observed$lloqMin / 2
   }
 
-  return(modelCost)
+  if (costControl$scaling == "log") {
+    simulatedY <- ospsuite.utils::logSafe(
+      simulatedY,
+      epsilon = observed$logEpsilon,
+      base = exp(1)
+    )
+    observedY <- observed$logYValues
+    lloq <- observed$logLloq
+  } else {
+    observedY <- observed$yValues
+    lloq <- observed$lloq
+  }
+
+  # Data weights by data set, NA where the output mapping has none
+  userWeights <- rep(NA_real_, length(observedY))
+  for (dataSet in names(dataWeights)) {
+    userWeights[observed$name == dataSet] <- dataWeights[[dataSet]]
+  }
+
+  keepSimulated <- .finiteValues(simulated$xValues, simulatedY)
+  keepObserved <- .finiteValues(observed$xValues, observedY)
+  simulatedX <- simulated$xValues[keepSimulated]
+  simulatedY <- simulatedY[keepSimulated]
+  observedX <- observed$xValues[keepObserved]
+  observedY <- observedY[keepObserved]
+
+  # Ensuring there is enough data to perform calculations
+  if (length(simulatedX) < 1) {
+    stop("No simulated data found when calculating cost function.")
+  }
+  if (length(observedX) < 1) {
+    stop("No observed data found when calculating cost function.")
+  }
+
+  # Applying M3 method for censored error calculation
+  censoredContribution <- 0
+  if (costControl$objectiveFunctionType == "m3") {
+    censoredContribution <- .calculateCensoredContribution(
+      observed = data.frame(
+        xValues = observedX,
+        xUnit = observed$xUnit,
+        xDimension = observed$xDimension[keepObserved],
+        yValues = observedY,
+        lloq = lloq[keepObserved]
+      ),
+      simulated = data.frame(
+        xValues = simulatedX,
+        xUnit = observed$xUnit,
+        xDimension = ospsuite::ospDimensions$Time,
+        yValues = simulatedY
+      ),
+      scaling = costControl$scaling,
+      linScaleCV = costControl$linScaleCV %||% NULL,
+      logScaleSD = costControl$logScaleSD %||% NULL
+    )
+  }
+
+  .costKernel(
+    simulatedX = simulatedX,
+    simulatedY = simulatedY,
+    observedX = observedX,
+    observedY = observedY,
+    userWeights = userWeights[keepObserved],
+    yErrorValues = observed$yErrorValues[keepObserved],
+    yErrorType = observed$yErrorType[keepObserved],
+    residualWeightingMethod = costControl$residualWeightingMethod,
+    robustMethod = costControl$robustMethod,
+    scaleVar = costControl$scaleVar,
+    censoredContribution = censoredContribution,
+    index = index
+  )
+}
+
+#' Values that enter the cost
+#'
+#' @description As in `.calculateCostMetrics()`, keeps the values with a
+#'   finite time of at least zero and a finite value.
+#'
+#' @param xValues,yValues Times and values.
+#' @return A logical vector.
+#' @keywords internal
+#' @noRd
+.finiteValues <- function(xValues, yValues) {
+  xValues[xValues == Inf | xValues == -Inf] <- NA
+  yValues[yValues == Inf | yValues == -Inf] <- NA
+  xValues[xValues < 0] <- NA
+  !(is.na(xValues) | is.na(yValues))
+}
+
+#' Combine the cost terms of all output mappings
+#'
+#' @description Sums the scalar cost terms of the output mappings in their
+#'   order and binds their per-observation terms into one `modelCost` object,
+#'   in one step. The result is identical to combining the `modelCost` objects
+#'   of the output mappings with `.summarizeCostLists()`.
+#'
+#' @param costTerms A list of results of `.costKernel()`, one per output
+#'   mapping.
+#' @return A `modelCost` object.
+#' @keywords internal
+#' @noRd
+.combineCostTerms <- function(costTerms) {
+  sumOf <- function(field) Reduce(`+`, lapply(costTerms, `[[`, field))
+  rowFields <- c(
+    "x",
+    "yObserved",
+    "ySimulated",
+    "scaleFactor",
+    "errorWeights",
+    "robustWeights",
+    "userWeights",
+    "totalWeights",
+    "rawResiduals",
+    "weightedResiduals",
+    "index"
+  )
+  rows <- lapply(rowFields, function(field) {
+    unlist(
+      lapply(costTerms, function(terms) {
+        rep_len(terms[[field]], length(terms$x))
+      }),
+      use.names = FALSE
+    )
+  })
+  names(rows) <- rowFields
+
+  do.call(
+    .newModelCost,
+    c(
+      list(
+        modelCost = sumOf("modelCost"),
+        minLogProbability = sumOf("minLogProbability"),
+        nObservations = sumOf("nObservations"),
+        weightedSSR = sumOf("weightedSSR"),
+        rawSSR = sumOf("rawSSR"),
+        M3Contribution = sumOf("M3Contribution")
+      ),
+      rows
+    )
+  )
 }
 
 #' Prepare the observed data of an output mapping
@@ -227,9 +452,10 @@
 #'
 #' @param outputMapping A `PIOutputMapping` object.
 #'
-#' @return A list with `rows`, the observed rows as a tibble in base units,
-#'   `xUnit` and `yUnit`, the base units, and `yDimension`, the dimension of
-#'   the mapped quantity.
+#' @return A list with one entry per observation in `name` (the data set),
+#'   `xValues`, `xDimension`, `yValues`, `yErrorValues`, `yErrorType` and
+#'   `lloq`, the log-transformed `logYValues` and `logLloq`, and `hasLloq`,
+#'   `lloqMin`, `logEpsilon`, `xUnit`, `yUnit` and `yDimension`.
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
@@ -256,7 +482,41 @@
     yUnit = yUnit
   )
 
-  list(rows = rows, xUnit = xUnit, yUnit = yUnit, yDimension = yDimension)
+  # Values for the LLOQ rule and the log transformation, as in the data frames
+  lloq <- rows$lloq
+  hasLloq <- sum(is.finite(lloq)) > 0
+  logEpsilon <- ospsuite::toUnit(
+    quantityOrDimension = yDimension,
+    values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+    targetUnit = yUnit,
+    molWeight = 1
+  )
+
+  list(
+    name = as.character(rows$name),
+    xValues = rows$xValues,
+    xDimension = rows$xDimension,
+    yValues = rows$yValues,
+    yErrorValues = rows$yErrorValues,
+    yErrorType = rows$yErrorType,
+    lloq = lloq,
+    hasLloq = hasLloq,
+    lloqMin = if (hasLloq) min(lloq, na.rm = TRUE) else NA_real_,
+    logYValues = ospsuite.utils::logSafe(
+      rows$yValues,
+      epsilon = logEpsilon,
+      base = exp(1)
+    ),
+    logLloq = ospsuite.utils::logSafe(
+      lloq,
+      epsilon = logEpsilon,
+      base = exp(1)
+    ),
+    logEpsilon = logEpsilon,
+    xUnit = xUnit,
+    yUnit = yUnit,
+    yDimension = yDimension
+  )
 }
 
 #' Construct a canonical `modelCost` object
@@ -470,13 +730,36 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' @keywords internal
 #' @noRd
 .createErrorCostStructure <- function(index = NA_real_) {
-  .newModelCost(
+  do.call(.newModelCost, .errorCostTerms(index = index))
+}
+
+#' Cost terms of a failed evaluation
+#'
+#' @description The terms of `.createErrorCostStructure()`: infinite costs
+#'   and one `residualDetails` row of `NA` values.
+#'
+#' @param index Output-mapping index stored on the `residualDetails` row.
+#' @return A list of the arguments of `.newModelCost()`.
+#' @keywords internal
+#' @noRd
+.errorCostTerms <- function(index = NA_real_) {
+  list(
     modelCost = Inf,
     minLogProbability = Inf,
     nObservations = 1,
     weightedSSR = Inf,
     rawSSR = Inf,
     M3Contribution = Inf,
+    x = NA_real_,
+    yObserved = NA_real_,
+    ySimulated = NA_real_,
+    scaleFactor = NA_real_,
+    errorWeights = NA_real_,
+    robustWeights = NA_real_,
+    userWeights = NA_real_,
+    totalWeights = NA_real_,
+    rawResiduals = NA_real_,
+    weightedResiduals = NA_real_,
     index = index
   )
 }

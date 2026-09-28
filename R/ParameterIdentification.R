@@ -306,7 +306,8 @@ ParameterIdentification <- R6::R6Class(
     #
     # Calculates and aggregates the model cost across all output mappings for
     # parameter estimation. Adjusts the evaluations counter, processes each
-    # output mapping's cost via `.calculateCostMetrics`, and aggregates the
+    # output mapping's cost via `.mappingCostTerms()` (the steps of
+    # `.calculateCostMetrics()` on numeric vectors), and aggregates the
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
     # @return Aggregated total cost summary.
@@ -352,83 +353,35 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
 
-      # Evaluate cost per output mapping
-      costSummaryList <- vector("list", length(outputMappings))
+      # Evaluate cost per output mapping, on the simulated values and the
+      # prepared observed data (see `.mappingCostTerms()`)
+      costTerms <- vector("list", length(outputMappings))
+      validatedScalings <- character()
       for (idx in seq_along(outputMappings)) {
-        observed <- private$.observedData[[idx]]
-        # The simulated values are in base units already, the observed values
-        # were converted by `.getObservedData()`
-        simulated <- tibble::tibble(
-          name = outputMappings[[idx]]$quantity$path,
-          dataType = "simulated",
-          xValues = simulatedList[[idx]]$xValues,
-          xUnit = observed$xUnit,
-          xDimension = ospsuite::ospDimensions$Time,
-          yValues = simulatedList[[idx]]$yValues,
-          yUnit = observed$yUnit,
-          yDimension = observed$yDimension
-        )
-        obsVsPredDf <- dplyr::bind_rows(simulated, observed$rows)
-
-        # Apply LLOQ handling for LSQ
-        if (
-          private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
-            "lsq"
-        ) {
-          # replace values < LLOQ with LLOQ/2 in simulated data
-          if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
-            lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[
-              (obsVsPredDf$dataType == "simulated" &
-                obsVsPredDf$yValues < lloq),
-              "yValues"
-            ] <- lloq / 2
-          }
-        }
-
-        # Apply log transformation if requested
-        if (outputMappings[[idx]]$scaling == "log") {
-          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
-        }
-
-        # Assign weights from PIOutputMapping
-        obsVsPredDf$weights <- NA_real_
-        if (!is.null(outputMappings[[idx]]$dataWeights)) {
-          weights <- outputMappings[[idx]]$dataWeights
-          for (dataset in names(weights)) {
-            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[
-              dataset
-            ]]
-          }
-        }
-
         # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
         costControl$scaling <- outputMappings[[idx]]$scaling
-        ospsuite.utils::validateIsOption(
-          options = costControl,
-          validOptions = ObjectiveFunctionSpecs
-        )
+        # The options of the output mappings differ only in their scaling
+        if (!costControl$scaling %in% validatedScalings) {
+          ospsuite.utils::validateIsOption(
+            options = costControl,
+            validOptions = ObjectiveFunctionSpecs
+          )
+          validatedScalings <- c(validatedScalings, costControl$scaling)
+        }
 
-        # Compute cost for current output mapping
-        costSummary <- .calculateCostMetrics(
-          df = obsVsPredDf,
-          objectiveFunctionType = costControl$objectiveFunctionType,
-          residualWeightingMethod = costControl$residualWeightingMethod,
-          robustMethod = costControl$robustMethod,
-          scaleVar = costControl$scaleVar,
-          index = idx,
-          linScaleCV = costControl$linScaleCV,
-          logScaleSD = costControl$logScaleSD,
-          scaling = costControl$scaling
+        costTerms[[idx]] <- .mappingCostTerms(
+          simulated = simulatedList[[idx]],
+          observed = private$.observedData[[idx]],
+          dataWeights = outputMappings[[idx]]$dataWeights,
+          costControl = costControl,
+          index = idx
         )
-
-        costSummaryList[[idx]] <- costSummary
       }
       rm(simulatedList)
 
-      # Aggregate cost across all output mappings
-      runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      # Aggregate cost across all output mappings, in one step
+      runningCost <- .combineCostTerms(costTerms)
       private$.lastCostSummary <- runningCost
 
       # Evaluate running cost

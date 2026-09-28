@@ -736,20 +736,178 @@ test_that("observed data equal the observed rows of a full evaluation", {
   currVals <- currStartValues(task)
 
   full <- priv$.evaluate(currVals)[[1]]$toDataFrame()
-  expected <- ospsuite:::.unitConverter(
+  converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),
     yUnit = ospsuite::getBaseUnit(task$outputMappings[[1]]$quantity$dimension)
   )
-  expected <- expected[expected$dataType == "observed", , drop = FALSE]
+  # The log transformation takes its epsilon from the first, simulated row
+  logged <- .applyLogTransformation(converted)
+  isObserved <- converted$dataType == "observed"
+  expected <- converted[isObserved, , drop = FALSE]
 
   priv$.objectiveFunction(currVals)
-  observed <- priv$.observedData[[1]]$rows
+  observed <- priv$.observedData[[1]]
 
-  for (column in c("xValues", "yValues", "yErrorValues", "lloq")) {
+  for (column in c(
+    "xValues",
+    "yValues",
+    "yErrorValues",
+    "yErrorType",
+    "lloq"
+  )) {
     expect_identical(observed[[column]], expected[[column]])
   }
-  expect_identical(as.character(observed$name), as.character(expected$name))
+  expect_identical(observed$name, as.character(expected$name))
+  expect_identical(observed$logYValues, logged$yValues[isObserved])
+  expect_identical(observed$logLloq, logged$lloq[isObserved])
+})
+
+# The objective function of 2.2.0.9009 on the data frames of a full
+# evaluation, as a reference for the evaluation on numeric vectors
+dataFrameObjective <- function(task, currVals) {
+  priv <- task$.__enclos_env__$private
+  options <- task$configuration$objectiveFunctionOptions
+  dataCombined <- priv$.evaluate(currVals)
+  costs <- lapply(seq_along(dataCombined), function(idx) {
+    mapping <- task$outputMappings[[idx]]
+    df <- ospsuite:::.unitConverter(
+      dataCombined[[idx]]$toDataFrame(),
+      xUnit = ospsuite::getBaseUnit("Time"),
+      yUnit = ospsuite::getBaseUnit(mapping$quantity$dimension)
+    )
+    if (options$objectiveFunctionType == "lsq" && sum(is.finite(df$lloq)) > 0) {
+      lloq <- min(df$lloq, na.rm = TRUE)
+      df[df$dataType == "simulated" & df$yValues < lloq, "yValues"] <- lloq / 2
+    }
+    if (mapping$scaling == "log") {
+      df <- .applyLogTransformation(df)
+    }
+    df$weights <- NA_real_
+    for (dataSet in names(mapping$dataWeights)) {
+      df$weights[df$name == dataSet] <- mapping$dataWeights[[dataSet]]
+    }
+    .calculateCostMetrics(
+      df = df,
+      objectiveFunctionType = options$objectiveFunctionType,
+      residualWeightingMethod = options$residualWeightingMethod,
+      robustMethod = options$robustMethod,
+      scaleVar = options$scaleVar,
+      index = idx,
+      linScaleCV = options$linScaleCV,
+      logScaleSD = options$logScaleSD,
+      scaling = mapping$scaling
+    )
+  })
+  Reduce(.summarizeCostLists, costs)
+}
+
+# Two outputs of one simulation with the same observed data
+twoOutputsTask <- function(
+  data,
+  scaling = c("lin", "lin"),
+  lloq = NULL,
+  options = NULL,
+  weights = FALSE
+) {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  if (!is.null(lloq)) {
+    data$LLOQ <- lloq
+  }
+  paths <- c(
+    paste0(
+      "Organism|PeripheralVenousBlood|Aciclovir|",
+      "Plasma (Peripheral Venous Blood)"
+    ),
+    "Organism|VenousBlood|Plasma|Aciclovir|Concentration"
+  )
+  mappings <- lapply(seq_along(paths), function(idx) {
+    mapping <- PIOutputMapping$new(
+      quantity = ospsuite::getQuantity(paths[[idx]], sim)
+    )
+    mapping$addObservedDataSets(data)
+    mapping$scaling <- scaling[[idx]]
+    mapping
+  })
+  if (weights) {
+    mappings[[1]]$setDataWeights(
+      stats::setNames(list(seq(0.5, 2, length.out = 11)), data$name)
+    )
+  }
+  configuration <- PIConfiguration$new()
+  if (!is.null(options)) {
+    configuration$objectiveFunctionOptions <- options
+  }
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = PIParameters$new(
+      parameters = list(ospsuite::getParameter("Aciclovir|Lipophilicity", sim))
+    ),
+    outputMappings = mappings,
+    configuration = configuration
+  )
+}
+
+test_that("objective function equals the cost of the full data frames", {
+  settings <- list(
+    list(),
+    list(scaling = c("log", "log")),
+    list(scaling = c("lin", "log"), weights = TRUE),
+    list(lloq = 0.5),
+    list(lloq = 0.5, scaling = c("log", "log")),
+    list(
+      lloq = 0.5,
+      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+    ),
+    list(
+      lloq = 0.5,
+      scaling = c("log", "log"),
+      options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+    ),
+    list(options = list(residualWeightingMethod = "error")),
+    list(options = list(robustMethod = "huber")),
+    list(scaling = c("log", "log"), options = list(robustMethod = "bisquare")),
+    list(options = list(scaleVar = TRUE))
+  )
+  for (setting in settings) {
+    setting$data <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+    task <- do.call(twoOutputsTask, setting)
+    priv <- task$.__enclos_env__$private
+    priv$.batchInitialization()
+    for (value in c(-0.097, 0.3)) {
+      expect_identical(
+        suppressWarnings(priv$.objectiveFunction(value)),
+        suppressWarnings(dataFrameObjective(task, value))
+      )
+    }
+  }
+})
+
+test_that(".combineCostTerms equals .summarizeCostLists of the costs", {
+  kernelTerms <- function(index) {
+    .costKernel(
+      simulatedX = c(0, 1, 2, 3),
+      simulatedY = c(1, 2, 3, 2) * index,
+      observedX = c(0.5, 1.5, 2.5),
+      observedY = c(1.4, 2.7, 2.2),
+      userWeights = c(NA, 2, 0.5),
+      yErrorValues = NULL,
+      yErrorType = NULL,
+      residualWeightingMethod = "none",
+      robustMethod = "huber",
+      scaleVar = FALSE,
+      censoredContribution = 0,
+      index = index
+    )
+  }
+  terms <- list(kernelTerms(1L), .errorCostTerms(index = 2L), kernelTerms(3L))
+  costs <- lapply(terms, function(t) do.call(.newModelCost, t))
+
+  expect_identical(.combineCostTerms(terms), Reduce(.summarizeCostLists, costs))
+  expect_identical(.combineCostTerms(terms[1]), costs[[1]])
+  expect_identical(.createErrorCostStructure(index = 2L), costs[[2]])
 })
 
 test_that("observed data are read again when the bootstrap seed changes", {

@@ -58,6 +58,13 @@ messages$initialSimulationError <- function() {
   "Stopping optimization: Initial simulation failed."
 }
 
+messages$errorSimulatedValuesMissing <- function() {
+  paste0(
+    "Simulated values are missing, so the LLOQ of the observed data cannot ",
+    "be applied to them."
+  )
+}
+
 messages$profilesNotSupplied <- function() {
   "Supply the result of the calculateOFVProfiles() method as the argument to the plotOFVProfiles() method."
 }
