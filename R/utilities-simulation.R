@@ -59,6 +59,50 @@
   targets
 }
 
+#' Time values of simulation results
+#'
+#' @description Reads the time values of `SimulationResults` for all their
+#'   individuals, in the order of `ospsuite::simulationResultsToDataFrame()`:
+#'   the time values of every individual, one individual after the other,
+#'   sorted by time with ties kept in this order.
+#'
+#' @param simulationResults A `SimulationResults` object.
+#'
+#' @return A list with `individualIds`, `xValues`, the sorted time values in
+#'   min, and `order`, the positions of the sorted values among the unsorted
+#'   ones.
+#' @keywords internal
+#' @noRd
+.simulatedTimes <- function(simulationResults) {
+  individualIds <- simulationResults$allIndividualIds
+  timeValues <- rep(simulationResults$timeValues, length(individualIds))
+  timeOrder <- order(timeValues, method = "radix")
+  list(
+    individualIds = individualIds,
+    xValues = timeValues[timeOrder],
+    order = timeOrder
+  )
+}
+
+#' Simulated values of a quantity
+#'
+#' @description Reads the values of a quantity from `SimulationResults` as a
+#'   numeric vector, in the order of `.simulatedTimes()`. As in
+#'   `ospsuite::simulationResultsToDataFrame()`, the values are in the base
+#'   unit of the quantity and missing values are `NA`.
+#'
+#' @param simulationResults A `SimulationResults` object.
+#' @param path Path of the quantity.
+#' @param times The result of `.simulatedTimes()` for `simulationResults`.
+#'
+#' @return A list with `xValues`, the time values in min, and `yValues`.
+#' @keywords internal
+#' @noRd
+.simulatedValues <- function(simulationResults, path, times) {
+  values <- simulationResults$getValuesByPath(path, times$individualIds)
+  list(xValues = times$xValues, yValues = values[times$order])
+}
+
 #' Validates Matching IDs across Simulation IDs, PI Parameters, and Output
 #' Mappings
 #'

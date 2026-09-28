@@ -320,12 +320,11 @@ ParameterIdentification <- R6::R6Class(
       # public call and bootstrap sample: they are read on the first
       # evaluation and reused, so the .NET `DataSet` objects are not read and
       # converted to base units on every evaluation.
-      obsVsPredList <- tryCatch(
+      simulatedList <- tryCatch(
         {
-          simulated <- private$.evaluate(
+          simulated <- private$.simulateOutputs(
             currVals,
-            bootstrapSeed = bootstrapSeed,
-            includeObserved = FALSE
+            bootstrapSeed = bootstrapSeed
           )
           private$.getObservedData(outputMappings)
           simulated
@@ -337,7 +336,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       # Handle simulation failure
-      if (anyNA(obsVsPredList)) {
+      if (anyNA(simulatedList)) {
         if (private$.fnEvaluations == 1 && !private$.gridSearchFlag) {
           stop(messages$initialSimulationError())
         } else {
@@ -346,10 +345,10 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
-      if (length(obsVsPredList) != length(outputMappings)) {
+      if (length(simulatedList) != length(outputMappings)) {
         stop(messages$errorObsVsPredListLengthMismatch(
           length(outputMappings),
-          length(obsVsPredList)
+          length(simulatedList)
         ))
       }
 
@@ -359,10 +358,17 @@ ParameterIdentification <- R6::R6Class(
         observed <- private$.observedData[[idx]]
         # The simulated values are in base units already, the observed values
         # were converted by `.getObservedData()`
-        df <- obsVsPredList[[idx]]$toDataFrame()
-        df$xUnit <- observed$xUnit
-        df$yUnit <- observed$yUnit
-        obsVsPredDf <- dplyr::bind_rows(df, observed$rows)
+        simulated <- tibble::tibble(
+          name = outputMappings[[idx]]$quantity$path,
+          dataType = "simulated",
+          xValues = simulatedList[[idx]]$xValues,
+          xUnit = observed$xUnit,
+          xDimension = ospsuite::ospDimensions$Time,
+          yValues = simulatedList[[idx]]$yValues,
+          yUnit = observed$yUnit,
+          yDimension = observed$yDimension
+        )
+        obsVsPredDf <- dplyr::bind_rows(simulated, observed$rows)
 
         # Apply LLOQ handling for LSQ
         if (
@@ -419,7 +425,7 @@ ParameterIdentification <- R6::R6Class(
 
         costSummaryList[[idx]] <- costSummary
       }
-      rm(obsVsPredList)
+      rm(simulatedList)
 
       # Aggregate cost across all output mappings
       runningCost <- Reduce(.summarizeCostLists, costSummaryList)
@@ -549,30 +555,16 @@ ParameterIdentification <- R6::R6Class(
       })
     },
 
-    # Simulation Evaluation with Parameter Values
+    # Run Simulations with Parameter Values
     #
-    # Evaluates simulations using specified parameter values, updating each
-    # parameter before simulation runs. Generates `DataCombined` objects for
-    # each output mapping, encapsulating both simulated and observed data.
+    # Applies the parameter values to the simulation batches and runs them.
     #
-    # @param currVals Vector of parameter values for simulation.
-    # @param includeObserved If TRUE (default), observed data is attached to each
-    #   `DataCombined`. If FALSE, only simulated results are attached, leaving the
-    #   observed data to be supplied from the cache by the caller. The objective
-    #   function uses FALSE on the hot path to avoid re-reading static observed
-    #   data every evaluation.
-    # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(
-      currVals,
-      bootstrapSeed = NULL,
-      includeObserved = TRUE
-    ) {
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
-
-      obsVsPredList <- vector("list", length(outputMappings))
-      # Iterate through the values and update current parameter values. The
-      # order of the values corresponds to the order of `PIParameters` in the
-      # parameters list.
+    # @param currVals Vector of parameter values, in the order of the
+    #   `PIParameters` in the parameters list.
+    # @return The result of `ospsuite::runSimulationBatches()`: for each
+    #   simulation batch, the list of its `SimulationResults`, named by the
+    #   simulation IDs.
+    .runSimulations = function(currVals) {
       private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
@@ -597,8 +589,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Apply initial and parameter values to simulation batches
       for (simId in names(private$.simulationBatches)) {
-        simBatch <- private$.simulationBatches[[simId]]
-        resultsId <- simBatch$addRunValues(
+        private$.simulationBatches[[simId]]$addRunValues(
           parameterValues = unlist(
             private$.variableParameters[[simId]],
             use.names = FALSE
@@ -614,44 +605,89 @@ ParameterIdentification <- R6::R6Class(
         simulationBatches = private$.simulationBatches,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
+      # The results come in the order of the batches, named by batch IDs
+      names(simulationResults) <- names(private$.simulationBatches)
+      simulationResults
+    },
 
+    # Simulation Evaluation with Parameter Values
+    #
+    # Evaluates simulations using specified parameter values, updating each
+    # parameter before simulation runs. Generates `DataCombined` objects for
+    # each output mapping, encapsulating both simulated and observed data.
+    # Used for plotting; the objective function uses `.simulateOutputs()`.
+    #
+    # @param currVals Vector of parameter values for simulation.
+    # @return List of `DataCombined` objects, one per output mapping.
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+      simulationResults <- private$.runSimulations(currVals)
+
+      obsVsPredList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
         obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- outputMappings[[idx]]
-        # Find the simulation batch of the simulation that is the parent of
-        # the output quantity
-        simBatch <- private$.simulationBatches[[currOutputMapping$simId]]
         # Construct group names out of output path and simulation id
         groupName <- currOutputMapping$quantity$path
-        # In each iteration, only one values set per simulation batch is simulated.
-        # Therefore we always need the first results entry
-        resultObject <- simulationResults[[simBatch$id]][[1]]
+        # In each iteration, only one values set per simulation batch is
+        # simulated. Therefore we always need the first results entry of the
+        # simulation that is the parent of the output quantity.
+        resultObject <- simulationResults[[currOutputMapping$simId]][[1]]
         obsVsPred$addSimulationResults(
           resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
           names = groupName,
           groups = groupName
         )
-
-        if (includeObserved) {
-          obsVsPred$addDataSets(
-            currOutputMapping$observedDataSets,
-            groups = groupName
-          )
-          # apply data transformations stored in corresponding `outputMapping`
-          obsVsPred$setDataTransformations(
-            forNames = names(outputMappings[[idx]]$observedDataSets),
-            xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
-            xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
-            yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
-            yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
-          )
-        }
+        obsVsPred$addDataSets(
+          currOutputMapping$observedDataSets,
+          groups = groupName
+        )
+        # apply data transformations stored in corresponding `outputMapping`
+        obsVsPred$setDataTransformations(
+          forNames = names(outputMappings[[idx]]$observedDataSets),
+          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
+          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
+          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
+          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
+        )
         obsVsPredList[[idx]] <- obsVsPred
       }
       rm(simulationResults)
 
       return(obsVsPredList)
+    },
+
+    # Simulated Values of Every Output Mapping
+    #
+    # Runs the simulations with the given parameter values and reads the
+    # simulated values of every output mapping directly from the simulation
+    # results as numeric vectors (see `.simulatedValues()`), without building
+    # `DataCombined` objects.
+    #
+    # @param currVals Vector of parameter values for simulation.
+    # @return A list with one entry per output mapping, each a list with
+    #   `xValues`, the time values in min, and `yValues`, the values in the base
+    #   unit of the mapped quantity.
+    .simulateOutputs = function(currVals, bootstrapSeed = NULL) {
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+      simulationResults <- private$.runSimulations(currVals)
+
+      # Time values are read once per simulation
+      times <- list()
+      simulated <- vector("list", length(outputMappings))
+      for (idx in seq_along(outputMappings)) {
+        simId <- outputMappings[[idx]]$simId
+        resultObject <- simulationResults[[simId]][[1]]
+        ospsuite.utils::validateIsOfType(resultObject, "SimulationResults")
+        times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
+        simulated[[idx]] <- .simulatedValues(
+          resultObject,
+          outputMappings[[idx]]$quantity$path,
+          times[[simId]]
+        )
+      }
+      simulated
     },
 
     # Observed data of every output mapping, in base units and with the data

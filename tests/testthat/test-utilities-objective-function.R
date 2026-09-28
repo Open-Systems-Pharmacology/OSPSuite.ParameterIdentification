@@ -630,8 +630,8 @@ test_that("state-variable initial value reaches the solver through evaluate", {
   priv$.batchInitialization()
 
   simulatedInitialValue <- function(startValue) {
-    df <- priv$.evaluate(startValue, includeObserved = FALSE)[[1]]$toDataFrame()
-    df$yValues[which.min(df$xValues)]
+    simulated <- priv$.simulateOutputs(startValue)[[1]]
+    simulated$yValues[which.min(simulated$xValues)]
   }
 
   # Two distinct initial values must reach the solver and appear as the
@@ -641,19 +641,67 @@ test_that("state-variable initial value reaches the solver through evaluate", {
   expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
 })
 
-test_that(".evaluate omits observed data when includeObserved = FALSE", {
+test_that(".simulateOutputs returns the simulated rows of a full evaluation", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
+  currVals <- currStartValues(task)
 
-  dcList <- priv$.evaluate(currStartValues(task), includeObserved = FALSE)
-  df <- dcList[[1]]$toDataFrame()
+  full <- priv$.evaluate(currVals)[[1]]$toDataFrame()
+  fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
+  simulated <- priv$.simulateOutputs(currVals)
 
-  expect_true("simulated" %in% df$dataType)
-  expect_false("observed" %in% df$dataType)
+  expect_length(simulated, 1)
+  expect_identical(simulated[[1]]$xValues, fullSimulated$xValues)
+  expect_identical(simulated[[1]]$yValues, fullSimulated$yValues)
 })
 
-test_that(".evaluate includes observed data by default", {
+test_that(".simulateOutputs reads several outputs of one simulation", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  piParameter <- PIParameters$new(
+    parameters = list(getParameter("Aciclovir|Lipophilicity", container = sim))
+  )
+  mappings <- lapply(
+    c(
+      paste0(
+        "Organism|PeripheralVenousBlood|Aciclovir|",
+        "Plasma (Peripheral Venous Blood)"
+      ),
+      "Organism|VenousBlood|Plasma|Aciclovir|Concentration"
+    ),
+    function(path) {
+      mapping <- PIOutputMapping$new(quantity = getQuantity(path, sim))
+      mapping$addObservedDataSets(
+        testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+      )
+      mapping
+    }
+  )
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter,
+    outputMappings = mappings
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  currVals <- currStartValues(task)
+
+  full <- priv$.evaluate(currVals)
+  simulated <- priv$.simulateOutputs(currVals)
+
+  expect_length(simulated, 2)
+  for (idx in 1:2) {
+    df <- full[[idx]]$toDataFrame()
+    df <- df[df$dataType == "simulated", , drop = FALSE]
+    expect_identical(simulated[[idx]]$xValues, df$xValues)
+    expect_identical(simulated[[idx]]$yValues, df$yValues)
+  }
+  expect_false(identical(simulated[[1]]$yValues, simulated[[2]]$yValues))
+})
+
+test_that(".evaluate includes simulated and observed data", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
