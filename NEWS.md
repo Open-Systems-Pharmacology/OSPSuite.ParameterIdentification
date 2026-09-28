@@ -11,6 +11,7 @@
 - `ParameterIdentification` can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (#280).
 - `PIParameters$new()` accepts optional `minValue`/`maxValue`, errors on a zero start value when no bounds are supplied, and rejects zero-width bounds (`minValue == maxValue`) that leave nothing to optimize (#282).
 - `ParameterIdentification` resolves the simulation of every parameter path once per task instead of on every objective function evaluation, and uses the simulation ID stored in each `PIOutputMapping` (#302, #303).
+- `ParameterIdentification` converts the observed data to base units once per call and bootstrap sample instead of on every objective function evaluation. The observed data are now read again at the start of every public method (`run()`, `estimateCI()`, `gridSearch()`, `calculateOFVProfiles()`, `plotResults()`), so changes of data sets or data transformations between two calls are used; previously they were only read again by `run()` (#303).
 
 # ospsuite.parameteridentification 2.2.0
 

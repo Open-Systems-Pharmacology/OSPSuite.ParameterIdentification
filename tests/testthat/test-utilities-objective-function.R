@@ -664,40 +664,47 @@ test_that(".evaluate includes observed data by default", {
   expect_true(all(c("simulated", "observed") %in% df$dataType))
 })
 
-test_that("objective function builds an observed-data cache and reuses it", {
+test_that("objective function reads the observed data once and reuses them", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  expect_null(priv$.obsVsPredDfCache)
+  expect_null(priv$.observedData)
 
   cost1 <- priv$.objectiveFunction(currVals)
-  expect_false(is.null(priv$.obsVsPredDfCache))
+  observedData <- priv$.observedData
+  expect_false(is.null(observedData))
 
   cost2 <- priv$.objectiveFunction(currVals)
-  expect_equal(cost2$modelCost, cost1$modelCost)
+  expect_identical(priv$.observedData, observedData)
+  expect_identical(cost2, cost1)
 })
 
-test_that("cached observed rows match the observed rows of a full evaluation", {
+test_that("observed data equal the observed rows of a full evaluation", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- priv$.evaluate(currVals, includeObserved = TRUE)[[1]]$toDataFrame()
-  fullObs <- full[full$dataType == "observed", , drop = FALSE]
+  full <- priv$.evaluate(currVals)[[1]]$toDataFrame()
+  expected <- ospsuite:::.unitConverter(
+    full,
+    xUnit = ospsuite::getBaseUnit("Time"),
+    yUnit = ospsuite::getBaseUnit(task$outputMappings[[1]]$quantity$dimension)
+  )
+  expected <- expected[expected$dataType == "observed", , drop = FALSE]
 
   priv$.objectiveFunction(currVals)
-  cached <- priv$.obsVsPredDfCache[[1]]
+  observed <- priv$.observedData[[1]]$rows
 
-  expect_equal(
-    as.data.frame(cached, stringsAsFactors = FALSE),
-    as.data.frame(fullObs, stringsAsFactors = FALSE)
-  )
+  for (column in c("xValues", "yValues", "yErrorValues", "lloq")) {
+    expect_identical(observed[[column]], expected[[column]])
+  }
+  expect_identical(as.character(observed$name), as.character(expected$name))
 })
 
-test_that("observed-data cache is invalidated when the bootstrap seed changes", {
+test_that("observed data are read again when the bootstrap seed changes", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
@@ -705,10 +712,36 @@ test_that("observed-data cache is invalidated when the bootstrap seed changes", 
 
   priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
   priv$.objectiveFunction(currVals, bootstrapSeed = 1L)
-  expect_false(is.null(priv$.obsVsPredDfCache))
+  expect_false(is.null(priv$.observedData))
 
   priv$.getOutputMappings(bootstrapSeed = 2L)
-  expect_null(priv$.obsVsPredDfCache)
+  expect_null(priv$.observedData)
+})
+
+test_that("observed data are read again at the start of every public call", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  currVals <- currStartValues(task)
+  costBefore <- priv$.objectiveFunction(currVals)$modelCost
+
+  # Public methods start with the batch initialization, so a change of the
+  # data transformations between two calls takes effect
+  task$outputMappings[[1]]$setDataTransformations(yFactors = 0.5)
+  priv$.batchInitialization()
+  expect_null(priv$.observedData)
+  costAfter <- priv$.objectiveFunction(currVals)$modelCost
+
+  freshTask <- testPiTask()
+  freshTask$outputMappings[[1]]$setDataTransformations(yFactors = 0.5)
+  freshPriv <- freshTask$.__enclos_env__$private
+  freshPriv$.batchInitialization()
+
+  expect_false(costAfter == costBefore)
+  expect_identical(
+    costAfter,
+    freshPriv$.objectiveFunction(currStartValues(freshTask))$modelCost
+  )
 })
 
 # .computeErrorWeights

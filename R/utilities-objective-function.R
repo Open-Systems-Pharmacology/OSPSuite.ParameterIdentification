@@ -217,6 +217,48 @@
   return(modelCost)
 }
 
+#' Prepare the observed data of an output mapping
+#'
+#' @description Reads the observed data sets of a `PIOutputMapping`, applies
+#'   its data transformations and converts x values, y values, LLOQ and
+#'   arithmetic error values to the base units of time and of the mapped
+#'   quantity. It uses the same `DataCombined` transformations and unit
+#'   conversion as a full evaluation, so the values are identical.
+#'
+#' @param outputMapping A `PIOutputMapping` object.
+#'
+#' @return A list with `rows`, the observed rows as a tibble in base units,
+#'   `xUnit` and `yUnit`, the base units, and `yDimension`, the dimension of
+#'   the mapped quantity.
+#' @keywords internal
+#' @noRd
+.prepareObservedData <- function(outputMapping) {
+  quantity <- outputMapping$quantity
+  observedDataSets <- outputMapping$observedDataSets
+  transformations <- outputMapping$dataTransformations
+
+  dataCombined <- ospsuite::DataCombined$new()
+  dataCombined$addDataSets(observedDataSets, groups = quantity$path)
+  dataCombined$setDataTransformations(
+    forNames = names(observedDataSets),
+    xOffsets = transformations$xOffsets,
+    xScaleFactors = transformations$xFactors,
+    yOffsets = transformations$yOffsets,
+    yScaleFactors = transformations$yFactors
+  )
+
+  yDimension <- quantity$dimension
+  xUnit <- ospsuite::getBaseUnit("Time")
+  yUnit <- ospsuite::getBaseUnit(yDimension)
+  rows <- ospsuite:::.unitConverter(
+    dataCombined$toDataFrame(),
+    xUnit = xUnit,
+    yUnit = yUnit
+  )
+
+  list(rows = rows, xUnit = xUnit, yUnit = yUnit, yDimension = yDimension)
+}
+
 #' Construct a canonical `modelCost` object
 #'
 #' Single constructor for the `modelCost` schema. Every producer (the kernel
