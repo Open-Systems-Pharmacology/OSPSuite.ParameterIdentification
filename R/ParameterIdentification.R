@@ -812,6 +812,70 @@ ParameterIdentification <- R6::R6Class(
       optimResult$startValues <- startValues
 
       return(optimResult)
+    },
+
+    # Estimate Confidence Intervals
+    #
+    # The steps of `estimateCI()` after its checks.
+    #
+    # @param fromRun `TRUE` when `run()` estimates the confidence intervals
+    #   after its optimization. The batches are initialized already then, and
+    #   nothing can change between the optimization and the estimation, so the
+    #   observed data that the optimization read are used again. Otherwise,
+    #   the batches are initialized, which reads the observed data again (see
+    #   `.batchInitialization()`).
+    # @return A `PIResult` object with the confidence intervals.
+    .estimateCI = function(fromRun = FALSE) {
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
+      savedState <- private$.savedSimulationState
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
+      # Initialize batches
+      if (!fromRun) {
+        private$.batchInitialization()
+      }
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
+
+      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
+
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      if (
+        private$.configuration$ciMethod == "bootstrap" &&
+          is.null(private$.activeBootstrapSeed)
+      ) {
+        .classifyObservedData(private$.outputMappings)
+        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
+      }
+
+      optimizer <- Optimizer$new(configuration = private$.configuration)
+
+      fn <- function(p, ...) private$.objectiveFunction(p, ...)
+
+      ciResult <- optimizer$estimateCI(
+        par = currValues,
+        fn = fn,
+        lower = lower,
+        upper = upper,
+        resetFn = function() private$.fnEvaluations <- 0
+      )
+
+      PIResult$new(
+        optimResult = private$.lastOptimResult,
+        ciResult = ciResult,
+        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+        configuration = private$.configuration,
+        piParameters = private$.piParameters
+      )
     }
   ),
   public = list(
@@ -976,7 +1040,7 @@ ParameterIdentification <- R6::R6Class(
           achievedPKValues = achievedPKValues
         )
       } else if (private$.configuration$autoEstimateCI) {
-        piResult <- self$estimateCI()
+        piResult <- private$.estimateCI(fromRun = TRUE)
       } else {
         message(messages$statusAutoEstimateCI())
         piResult <- PIResult$new(
@@ -1008,56 +1072,7 @@ ParameterIdentification <- R6::R6Class(
 
       private$.assertNotPKMode("estimateCI")
 
-      # Store simulation outputs and time intervals to reset them at the end
-      # of the run.
-      private$.savedSimulationState <- .storeSimulationState(
-        private$.simulations
-      )
-      savedState <- private$.savedSimulationState
-      on.exit(
-        .restoreSimulationState(private$.simulations, savedState),
-        add = TRUE
-      )
-      # Initialize batches
-      private$.batchInitialization()
-      # Reset function evaluations counter
-      private$.fnEvaluations <- 0
-
-      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
-
-      currValues <- sapply(private$.piParameters, `[[`, "currValue")
-      lower <- sapply(private$.piParameters, `[[`, "minValue")
-      upper <- sapply(private$.piParameters, `[[`, "maxValue")
-
-      if (
-        private$.configuration$ciMethod == "bootstrap" &&
-          is.null(private$.activeBootstrapSeed)
-      ) {
-        .classifyObservedData(private$.outputMappings)
-        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
-      }
-
-      optimizer <- Optimizer$new(configuration = private$.configuration)
-
-      fn <- function(p, ...) private$.objectiveFunction(p, ...)
-
-      ciResult <- optimizer$estimateCI(
-        par = currValues,
-        fn = fn,
-        lower = lower,
-        upper = upper,
-        resetFn = function() private$.fnEvaluations <- 0
-      )
-
-      piResult <- PIResult$new(
-        optimResult = private$.lastOptimResult,
-        ciResult = ciResult,
-        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
-        configuration = private$.configuration,
-        piParameters = private$.piParameters
-      )
-
-      return(piResult)
+      private$.estimateCI()
     },
 
     #' Plot Parameter Estimation Results
