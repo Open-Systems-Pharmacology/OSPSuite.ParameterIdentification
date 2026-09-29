@@ -4,11 +4,14 @@
 #
 # The code is copied from that version as it was, including the lints of that
 # version, so that it can be compared with it line by line; only the names of
-# the functions differ. Do not change it: the tests compare the objective
-# function with it by `identical()`. The functions it calls that are unchanged
-# since that version are those of the package: `.newModelCost()`,
-# `.computeErrorWeights()`, `.calculateHuberWeights()`,
-# `.calculateBisquareWeights()` and `.calculateCensoredContribution()`.
+# the functions differ. lintr skips it (`nolint start` and `nolint end`). Do
+# not change it: the tests compare the objective function with it by
+# `identical()`. The functions it calls that are unchanged since that version
+# are those of the package: `.newModelCost()`, `.computeErrorWeights()`,
+# `.calculateHuberWeights()`, `.calculateBisquareWeights()` and
+# `.calculateCensoredContribution()`.
+
+# nolint start
 
 # `.objectiveFunction()` of 2.2.0.9009 after the simulations: the
 # `DataCombined` objects of `.evaluate()`, their data frames in base units, the
@@ -368,3 +371,5 @@ frozenSummarizeCostLists <- function(list1, list2) {
 
   return(mergedList)
 }
+
+# nolint end
