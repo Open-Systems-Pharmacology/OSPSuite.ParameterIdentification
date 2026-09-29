@@ -15,7 +15,9 @@
 # absolute and relative difference of their numeric parts, and differences in
 # the errors, warnings and messages. Cases marked "expected to change" document
 # an intended change of behavior. Cases that the reference does not have are
-# listed, but not compared. Run times are left out.
+# listed, but not compared. `compare` exits with status 1 if the results or
+# the conditions of a case that is not expected to change differ. Run times
+# are left out.
 
 piLib <- Sys.getenv("PI_LIB")
 if (nzchar(piLib)) {
@@ -615,13 +617,18 @@ cases$transformationsBetweenCalls <- structure(
   expectChange = TRUE
 )
 
-# A first simulation that fails
-cases$failingSimulation <- function() {
-  task <- aciclovirTask()
-  simulation <- task$simulations[[1]]
-  simulation$solver$mxStep <- 1
-  evaluateObjective(task, lipophilicitySets[1])
-}
+# A first simulation that fails. The base commit shows the warning of the
+# simulation engine and logs a type error about `NULL`; the failed simulation
+# is now logged by name, with the reason from the engine, without the warning
+cases$failingSimulation <- structure(
+  function() {
+    task <- aciclovirTask()
+    simulation <- task$simulations[[1]]
+    simulation$solver$mxStep <- 1
+    evaluateObjective(task, lipophilicitySets[1])
+  },
+  expectChange = TRUE
+)
 
 # ---- public methods ----------------------------------------------------------
 
@@ -901,10 +908,16 @@ if (mode == "save") {
       cat(paste0("    ", unique(results[[name]]$conditions)), sep = "\n")
     }
   }
-  unexpected <- table$case[!table$identical & !table$expectChange]
+  # A change of the errors, warnings or messages is a change, too
+  unexpected <- table$case[
+    !(table$identical & table$sameConditions) & !table$expectChange
+  ]
   cat(
-    "\nCases that are not identical and not expected to change:",
+    "\nCases with other results or conditions, not expected to change:",
     if (length(unexpected)) paste(unexpected, collapse = ", ") else "none",
     "\n"
   )
+  if (length(unexpected)) {
+    quit(status = 1)
+  }
 }
