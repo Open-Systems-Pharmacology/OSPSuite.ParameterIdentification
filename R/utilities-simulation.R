@@ -135,8 +135,8 @@
 #'
 #' @description The error raised when simulations fail. Its message is that
 #'   of `messages$errorSimulationsFailed()`, and it keeps the arguments of the
-#'   message, so that the objective functions can log a reason that they
-#'   logged before in a shorter form.
+#'   message, so that the objective functions can log a reason of a kind that
+#'   they logged before in a shorter form (see `.failureReasonKinds()`).
 #'
 #' @param simulationNames The names of all simulations of the task.
 #' @param failed The positions of the failed simulations.
@@ -161,6 +161,45 @@
     class = "simulationsFailedError",
     call = call
   )
+}
+
+#' Lines of a reason of a failed simulation
+#'
+#' @param reason A message of the simulation engine.
+#'
+#' @return The lines of `reason` that are not empty.
+#' @keywords internal
+#' @noRd
+.reasonLines <- function(reason) {
+  lines <- strsplit(reason, "\r?\n")[[1]]
+  lines[nzchar(trimws(lines))]
+}
+
+#' Kinds of the reasons of failed simulations
+#'
+#' @description The simulation engine gives the time of the failure in the
+#'   first line of its message, for example "some variables became negative
+#'   when trying to reach t=81", and for negative values the variables that
+#'   became negative in the following lines. So the reasons of failures of
+#'   one kind differ in their text from one evaluation to the next. The kind
+#'   of a reason is its first line with every number replaced by "#".
+#'
+#' @param reasons The messages of the simulation engine.
+#'
+#' @return A character vector with the kind of each reason.
+#' @keywords internal
+#' @noRd
+.failureReasonKinds <- function(reasons) {
+  firstLines <- vapply(
+    reasons,
+    function(reason) {
+      lines <- .reasonLines(reason)
+      if (length(lines) == 0) "" else trimws(lines[[1]], which = "right")
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+  gsub("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", "#", firstLines)
 }
 
 #' Validates Matching IDs across Simulation IDs, PI Parameters, and Output

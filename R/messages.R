@@ -78,13 +78,13 @@ messages$errorSimulationsFailed <- function(
 }
 
 # The first line of each reason of the simulation engine, marked as shortened
-# if the reason has more lines. For a reason that was logged in full before.
+# if the reason has more lines. For a reason of a kind that was logged in full
+# before (see `.failureReasonKinds()`).
 messages$shortenedFailureReason <- function(reasons) {
   vapply(
     reasons,
     function(reason) {
-      lines <- strsplit(reason, "\r?\n")[[1]]
-      lines <- lines[nzchar(trimws(lines))]
+      lines <- .reasonLines(reason)
       if (length(lines) <= 1) {
         return(reason)
       }

@@ -92,9 +92,9 @@ ParameterIdentification <- R6::R6Class(
     # Observed data of each output mapping in base units, read once per
     # public call and bootstrap sample by `.getObservedData()`
     .observedData = NULL,
-    # Reasons of failed simulations that the objective functions logged in
-    # full in the current public call (see `.logSimulationFailure()`)
-    .loggedFailureReasons = character(),
+    # Kinds of the reasons of failed simulations that the objective functions
+    # logged in full in the current public call (see `.logSimulationFailure()`)
+    .loggedFailureKinds = character(),
     # Named list by simulation IDs: the observed times, in min, that were
     # added to the output time points when the batches were built
     .outputTimePoints = NULL,
@@ -192,7 +192,7 @@ ParameterIdentification <- R6::R6Class(
       private$.observedData <- NULL
       private$.observedTimesChecked <- private$.needBatchInitialization
       # The reasons of failed simulations are logged in full again
-      private$.loggedFailureReasons <- character()
+      private$.loggedFailureKinds <- character()
 
       # If the flag is already set to FALSE, short-cuts the execution of the
       # function. This way, the function call be called repeatedly with minimal
@@ -480,21 +480,26 @@ ParameterIdentification <- R6::R6Class(
 
     # Logs a failed evaluation of an objective function. The reason given by
     # the simulation engine can be long (for negative values, it lists every
-    # variable that became negative) and comes again on many evaluations. So
-    # every reason is logged in full once per public call (see
-    # `.batchInitialization()`), and afterwards with its first line only.
+    # variable that became negative) and comes again on many evaluations,
+    # often with another time of the failure in its first line. So a reason
+    # is logged in full only at the first failure of its kind in a public call
+    # (see `.failureReasonKinds()` and `.batchInitialization()`), and later
+    # reasons of that kind with their first line only.
     #
     # @param currVals Vector of parameter values of the evaluation.
     # @param cond The error of the evaluation.
     .logSimulationFailure = function(currVals, cond) {
       if (inherits(cond, "simulationsFailedError")) {
-        reasons <- cond$reasons
-        logged <- reasons %in% private$.loggedFailureReasons
-        private$.loggedFailureReasons <- union(
-          private$.loggedFailureReasons,
-          reasons
+        reasons <- unique(cond$reasons)
+        kinds <- .failureReasonKinds(reasons)
+        # Of several reasons of one kind in the same error, only the first is
+        # logged in full
+        shorten <- kinds %in% private$.loggedFailureKinds | duplicated(kinds)
+        private$.loggedFailureKinds <- union(
+          private$.loggedFailureKinds,
+          kinds
         )
-        reasons[logged] <- messages$shortenedFailureReason(reasons[logged])
+        reasons[shorten] <- messages$shortenedFailureReason(reasons[shorten])
         cond$message <- messages$errorSimulationsFailed(
           cond$simulationNames,
           cond$failed,
