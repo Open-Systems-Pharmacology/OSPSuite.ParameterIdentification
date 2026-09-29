@@ -605,8 +605,10 @@ cases$settingsBetweenCalls <- function() {
   task$configuration$objectiveFunctionOptions <- list(robustMethod = "huber")
   c(first, evaluateObjective(task, lipophilicitySets[1:2]))
 }
-# The base commit keeps the observed data of the first call until run(), so
-# it ignores this change of the data transformations
+# A change of the data transformations between two evaluations, with a batch
+# initialization in between, as at the start of a public call. The base
+# commit keeps the observed data it read until run() or the end of
+# estimateCI(), so it ignores the change
 cases$transformationsBetweenCalls <- structure(
   function() {
     task <- aciclovirTask()
@@ -621,8 +623,8 @@ cases$transformationsBetweenCalls <- structure(
 # reach, because their output time points are set at the first call: with
 # least squares, times after the last simulated time, and with M3, censored
 # values at times that were not simulated. The cost is infinite, with a
-# warning that says why. The base commit keeps the observed data of the first
-# call until run(), so it ignores the new data set
+# warning that says why. The base commit keeps the observed data it read until
+# run() or the end of estimateCI(), so it ignores the new data set
 cases$observedTimesBetweenCalls <- structure(
   function() {
     laterData <- function(xValues, yValues, lloq = NULL) {
