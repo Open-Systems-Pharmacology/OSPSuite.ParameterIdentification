@@ -373,6 +373,72 @@
   )
 }
 
+#' Observed times without simulated values
+#'
+#' @description Whether observed data of an output mapping that enter its cost
+#'   are at times that were not output time points of the simulation when its
+#'   batch was built, and have no simulated value there. That is the case for
+#'   such a time outside the simulated times, where the simulated values
+#'   cannot be interpolated, and, with the M3 method, for a censored value at
+#'   such a time that was not simulated, because
+#'   `.calculateCensoredContribution()` needs a simulated value at exactly its
+#'   time. The cost of the output mapping is then infinite.
+#'
+#' @param simulated The simulated values of the output mapping (see
+#'   `.simulatedValues()`).
+#' @param observed The prepared observed data of the output mapping (see
+#'   `.prepareObservedData()`).
+#' @param costControl The objective function options, with the scaling of the
+#'   output mapping as `scaling`.
+#' @param outputTimePoints The observed times, in min, that were added to the
+#'   output time points of the simulation when its batch was built. They are
+#'   calculated from the same values as the prepared observed times.
+#'
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+#' @noRd
+.hasUnsimulatedObservedTimes <- function(
+  simulated,
+  observed,
+  costControl,
+  outputTimePoints
+) {
+  if (costControl$scaling == "log") {
+    observedY <- observed$logYValues
+    lloq <- observed$logLloq
+  } else {
+    observedY <- observed$yValues
+    lloq <- observed$lloq
+  }
+  # The observed values that enter the cost (see `.mappingCostTerms()`), at
+  # times that were no output time points
+  enters <- .finiteValues(observed$xValues, observedY)
+  newTimes <- enters & !(observed$xValues %in% outputTimePoints)
+  simulatedX <- simulated$xValues[
+    .finiteValues(simulated$xValues, simulated$yValues)
+  ]
+  if (!any(newTimes) || length(simulatedX) == 0) {
+    return(FALSE)
+  }
+
+  outside <- observed$xValues < min(simulatedX) |
+    observed$xValues > max(simulatedX)
+  if (any(newTimes & outside)) {
+    return(TRUE)
+  }
+  if (costControl$objectiveFunctionType != "m3" || all(is.na(lloq[enters]))) {
+    return(FALSE)
+  }
+  # As in `.calculateCensoredContribution()`: a value without an LLOQ takes
+  # the lowest LLOQ, and `merge()` finds the simulated value of a censored
+  # value by its time, compared as by `as.character()`
+  lloq[is.na(lloq)] <- min(lloq[enters], na.rm = TRUE)
+  censored <- observedY <= lloq
+  simulatedTimes <- as.character(simulatedX)
+  notSimulated <- !(as.character(observed$xValues) %in% simulatedTimes)
+  any(newTimes & censored & notSimulated)
+}
+
 #' Values that enter the cost
 #'
 #' @description Keeps the values with a finite time of at least zero and a

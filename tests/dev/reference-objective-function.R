@@ -617,6 +617,54 @@ cases$transformationsBetweenCalls <- structure(
   expectChange = TRUE
 )
 
+# A data set added between two calls, at times that the simulations do not
+# reach, because their output time points are set at the first call: with
+# least squares, times after the last simulated time, and with M3, censored
+# values at times that were not simulated. The cost is infinite, with a
+# warning that says why. The base commit keeps the observed data of the first
+# call until run(), so it ignores the new data set
+cases$observedTimesBetweenCalls <- structure(
+  function() {
+    laterData <- function(xValues, yValues, lloq = NULL) {
+      laskin <- laskinData()
+      dataSet <- syntheticData(
+        "later",
+        xValues = xValues,
+        yValues = yValues,
+        yUnit = laskin$yUnit,
+        yDimension = laskin$yDimension
+      )
+      dataSet$molWeight <- laskin$molWeight
+      if (!is.null(lloq)) {
+        dataSet$LLOQ <- lloq
+      }
+      dataSet
+    }
+    withNewData <- function(task, dataSet) {
+      first <- evaluateObjective(task, lipophilicitySets[1])
+      task$outputMappings[[1]]$addObservedDataSets(dataSet)
+      c(first, evaluateObjective(task, lipophilicitySets[1]))
+    }
+    list(
+      lsq = withNewData(
+        aciclovirTask(),
+        laterData(c(1.62, 25, 50), c(1, 0.05, 0.01))
+      ),
+      m3 = withNewData(
+        aciclovirTask(
+          objectiveFunctionOptions = list(
+            objectiveFunctionType = "m3",
+            linScaleCV = 0.2
+          ),
+          dataSets = laskinData(lloq = 0.5)
+        ),
+        laterData(c(1.62, 3.21, 16.87), rep(0.1, 3), lloq = 0.5)
+      )
+    )
+  },
+  expectChange = TRUE
+)
+
 # A first simulation that fails. The base commit shows the warning of the
 # simulation engine and logs a type error about `NULL`; the failed simulation
 # is now logged by name, with the reason from the engine, without the warning

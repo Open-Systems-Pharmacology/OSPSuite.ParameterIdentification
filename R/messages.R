@@ -95,6 +95,28 @@ messages$shortenedFailureReason <- function(reasons) {
   )
 }
 
+# `mappingIndices` are the positions of output mappings and `quantityPaths`
+# the paths of their quantities
+messages$warningObservedTimesNotSimulated <- function(
+  mappingIndices,
+  quantityPaths
+) {
+  several <- length(mappingIndices) > 1
+  paste0(
+    "The observed data of ",
+    if (several) "output mappings " else "output mapping ",
+    paste0(mappingIndices, " ('", quantityPaths, "')", collapse = ", "),
+    " have times without simulated values: outside the simulated times or, ",
+    "with objectiveFunctionType 'm3', censored values at times that were ",
+    "not simulated. The output time points of the simulations are set at ",
+    "the first call of a ParameterIdentification object, and these observed ",
+    "times were added or changed later, so the cost of ",
+    if (several) "these output mappings" else "the output mapping",
+    " is infinite. Create a new ParameterIdentification object to simulate ",
+    "at the new observed times."
+  )
+}
+
 # `dataType` is "simulated" or "observed"
 messages$errorNoDataForCost <- function(dataType) {
   paste0("No ", dataType, " data found when calculating cost function.")

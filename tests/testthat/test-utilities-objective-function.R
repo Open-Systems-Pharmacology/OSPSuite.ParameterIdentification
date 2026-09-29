@@ -1355,6 +1355,87 @@ test_that("LLOQ, scaling and weights changed between calls take effect", {
   expect_identical(after, gridSearch(freshTask))
 })
 
+test_that("new observed times without simulated values are warned about", {
+  # Mass concentrations at times in min that are not observed times of the
+  # task. The output time points of Aciclovir.pkml end at 1440 min.
+  laterData <- function(xValues, yValues, lloq = NULL) {
+    dataSet <- DataSet$new(name = "later")
+    dataSet$xUnit <- "min"
+    dataSet$yDimension <- ospDimensions$`Concentration (mass)`
+    dataSet$yUnit <- "mg/l"
+    dataSet$setValues(xValues = xValues, yValues = yValues)
+    if (!is.null(lloq)) {
+      dataSet$LLOQ <- lloq
+    }
+    dataSet
+  }
+  # The objective function values and the warnings of a grid search
+  gridSearch <- function(task) {
+    warnings <- character()
+    grid <- withCallingHandlers(
+      task$gridSearch(lower = -0.5, upper = 0.5, totalEvaluations = 2),
+      warning = function(w) {
+        warnings <<- c(warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+    list(ofv = grid$ofv, warnings = warnings)
+  }
+  # Grid searches before and after `dataSet` is added to the output mapping,
+  # and once more
+  searchesAroundNewData <- function(dataSet, lloq = NULL, options = NULL) {
+    task <- testPiTask()
+    if (!is.null(options)) {
+      task$configuration$objectiveFunctionOptions <- options
+    }
+    mapping <- task$outputMappings[[1]]
+    if (!is.null(lloq)) {
+      firstDataSet <- mapping$observedDataSets[[1]]
+      firstDataSet$LLOQ <- lloq
+    }
+    before <- gridSearch(task)
+    mapping$addObservedDataSets(dataSet)
+    list(
+      before = before,
+      after = gridSearch(task),
+      again = gridSearch(task),
+      warning = messages$warningObservedTimesNotSimulated(
+        1,
+        mapping$quantity$path
+      )
+    )
+  }
+  # Every call after the change warns once, besides the warnings of the
+  # infinite costs
+  expectWarnedCalls <- function(searches) {
+    expect_length(searches$before$warnings, 0)
+    expect_true(all(is.finite(searches$before$ofv)))
+    for (search in searches[c("after", "again")]) {
+      expect_identical(sum(search$warnings == searches$warning), 1L)
+      expect_identical(search$ofv, c(Inf, Inf))
+    }
+  }
+
+  # Least squares with times after the last simulated time
+  expectWarnedCalls(
+    searchesAroundNewData(laterData(c(97, 1500, 3000), c(1, 0.05, 0.01)))
+  )
+
+  # M3 with censored values at times that were not simulated
+  expectWarnedCalls(searchesAroundNewData(
+    laterData(c(97, 193, 1013), rep(0.1, 3), lloq = 0.5),
+    lloq = 0.5,
+    options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+  ))
+
+  # With least squares, new times inside the simulated times are
+  # interpolated, without a warning
+  inside <- searchesAroundNewData(laterData(c(97, 193, 1013), c(3, 2, 0.5)))
+  expect_length(inside$after$warnings, 0)
+  expect_true(all(is.finite(inside$after$ofv)))
+  expect_false(identical(inside$after$ofv, inside$before$ofv))
+})
+
 test_that("the LLOQ rule stops when simulated values are missing", {
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"

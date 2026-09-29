@@ -95,6 +95,12 @@ ParameterIdentification <- R6::R6Class(
     # Reasons of failed simulations that the objective functions logged in
     # full in the current public call (see `.logSimulationFailure()`)
     .loggedFailureReasons = character(),
+    # Named list by simulation IDs: the observed times, in min, that were
+    # added to the output time points when the batches were built
+    .outputTimePoints = NULL,
+    # Whether the observed times of the current public call were checked
+    # against the output time points (see `.checkObservedTimes()`)
+    .observedTimesChecked = FALSE,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from the best objective function evaluation
@@ -176,9 +182,15 @@ ParameterIdentification <- R6::R6Class(
       # the simulations are only set below, when the batches are built at the
       # first call. After a change of the x values of the observed data (for
       # example of `xOffsets` or `xFactors`) or with a new data set, the
-      # simulated values at the new observed times are therefore interpolated
-      # between the output time points of the first call.
+      # simulated values at new observed times are therefore interpolated
+      # between the output time points of the first call. A new observed time
+      # outside the simulated times, or a censored value at a new time with
+      # the M3 method, has no simulated value, so the cost of its output
+      # mapping is infinite. `.checkObservedTimes()` warns about it at the
+      # first evaluation of the call; it has nothing to check when the
+      # batches are built below, from the current observed data.
       private$.observedData <- NULL
+      private$.observedTimesChecked <- private$.needBatchInitialization
       # The reasons of failed simulations are logged in full again
       private$.loggedFailureReasons <- character()
 
@@ -237,6 +249,7 @@ ParameterIdentification <- R6::R6Class(
             )
           }
         } else {
+          private$.outputTimePoints <- list()
           for (outputMapping in private$.outputMappings) {
             simId <- outputMapping$simId
             simulation <- private$.simulations[[simId]]
@@ -260,6 +273,10 @@ ParameterIdentification <- R6::R6Class(
                 unit = dataset$xUnit
               )
               simulation$outputSchema$addTimePoints(xVals)
+              private$.outputTimePoints[[simId]] <- c(
+                private$.outputTimePoints[[simId]],
+                xVals
+              )
             }
           }
         }
@@ -357,6 +374,11 @@ ParameterIdentification <- R6::R6Class(
           message(messages$simulationError())
           return(.createErrorCostStructure())
         }
+      }
+
+      if (!private$.observedTimesChecked) {
+        private$.checkObservedTimes(simulatedList, observedData, outputMappings)
+        private$.observedTimesChecked <- TRUE
       }
 
       # Evaluate cost per output mapping, on the simulated values and the
@@ -742,6 +764,53 @@ ParameterIdentification <- R6::R6Class(
         private$.observedData <- lapply(outputMappings, .prepareObservedData)
       }
       private$.observedData
+    },
+
+    # Warns about the output mappings whose observed data have times without
+    # simulated values because the output time points of the simulations were
+    # set at an earlier call (see `.batchInitialization()` and
+    # `.hasUnsimulatedObservedTimes()`). The cost of such a mapping is
+    # infinite.
+    #
+    # @param simulatedList The simulated values of every output mapping (see
+    #   `.simulateOutputs()`).
+    # @param observedData The observed data of every output mapping (see
+    #   `.getObservedData()`).
+    # @param outputMappings The output mappings of the evaluation.
+    .checkObservedTimes = function(
+      simulatedList,
+      observedData,
+      outputMappings
+    ) {
+      costControl <- private$.configuration$objectiveFunctionOptions
+      affected <- vapply(
+        seq_along(outputMappings),
+        function(idx) {
+          costControl$scaling <- outputMappings[[idx]]$scaling
+          .hasUnsimulatedObservedTimes(
+            simulated = simulatedList[[idx]],
+            observed = observedData[[idx]],
+            costControl = costControl,
+            outputTimePoints = private$.outputTimePoints[[
+              outputMappings[[idx]]$simId
+            ]]
+          )
+        },
+        logical(1)
+      )
+      if (any(affected)) {
+        warning(
+          messages$warningObservedTimesNotSimulated(
+            which(affected),
+            vapply(
+              outputMappings[affected],
+              function(mapping) mapping$quantity$path,
+              character(1)
+            )
+          ),
+          call. = FALSE
+        )
+      }
     },
 
     # Retrieve Output Mappings with Optional Bootstrap Resampling
