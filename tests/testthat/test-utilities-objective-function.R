@@ -1273,6 +1273,52 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
   )
 })
 
+test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
+  # The data frames of the tests of `.calculateCostMetrics()` above
+  naDf <- obsVsPredDf
+  firstObserved <- which(naDf$dataType == "observed")[1]
+  naDf$xValues[firstObserved] <- max(naDf$xValues) * 10
+  geometricDf <- obsVsPredDf
+  validErrors <- geometricDf$dataType == "observed" &
+    !is.na(geometricDf$yErrorValues) &
+    geometricDf$yErrorValues > 0
+  cv <- geometricDf$yErrorValues[validErrors] /
+    geometricDf$yValues[validErrors]
+  geometricDf$yErrorValues[validErrors] <- exp(sqrt(log(1 + cv^2)))
+  geometricDf$yErrorType <- "GeometricStdDev"
+  lloqDf <- obsVsPredDf
+  lloqDf$lloq <- 2.5
+  infiniteDf <- obsVsPredDf
+  infiniteDf$xValues[1] <- Inf
+  infiniteDf$yValues[1] <- -Inf
+
+  settings <- list(
+    list(df = obsVsPredDf),
+    list(df = obsVsPredDf, index = 7),
+    list(df = naDf, index = 5),
+    list(df = obsVsPredDf, residualWeightingMethod = "none"),
+    list(df = obsVsPredDf, residualWeightingMethod = "error"),
+    list(df = geometricDf, residualWeightingMethod = "error"),
+    list(df = obsVsPredDf, robustMethod = "huber"),
+    list(df = obsVsPredDf, robustMethod = "bisquare"),
+    list(df = lloqDf, objectiveFunctionType = "lsq"),
+    list(
+      df = lloqDf,
+      objectiveFunctionType = "m3",
+      scaling = "lin",
+      linScaleCV = 0.2
+    ),
+    list(df = obsVsPredDf, scaleVar = TRUE),
+    list(df = infiniteDf)
+  )
+  for (setting in settings) {
+    expect_identical(
+      withWarningMessages(do.call(.calculateCostMetrics, setting)),
+      withWarningMessages(do.call(frozenCalculateCostMetrics, setting))
+    )
+  }
+})
+
 test_that("observed data are read again per bootstrap sample and after it", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private

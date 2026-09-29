@@ -4,7 +4,9 @@
 #' of one output mapping from a data frame of simulated and observed data, for
 #' example that of a `DataCombined` object. The objective function calculates
 #' the same cost on numeric vectors with `.mappingCostTerms()`. Both use
-#' `.costKernel()`, which the tests pin through this function.
+#' `.costKernel()`, and the tests compare both with the calculation of version
+#' 2.2.0.9009 by `identical()` (see
+#' `tests/testthat/helper-frozen-objective-function.R`).
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #'   observation. Supports dataframes created from a `DataCombined` object via
