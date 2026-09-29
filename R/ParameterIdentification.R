@@ -593,8 +593,9 @@ ParameterIdentification <- R6::R6Class(
       }
       # Run simulation batches. The simulation engine gives the reason for a
       # failed simulation only in a warning, which the silent mode of
-      # `runSimulationBatches()` drops. So the warnings are collected for the
-      # error below, and muffled here in silent mode.
+      # `runSimulationBatches()` drops. So these warnings are collected for
+      # the error below, and muffled here in silent mode. Any other warning
+      # is left as it is.
       engineWarnings <- list()
       simulationResults <- withCallingHandlers(
         ospsuite::runSimulationBatches(
@@ -602,9 +603,11 @@ ParameterIdentification <- R6::R6Class(
           simulationRunOptions = private$.configuration$simulationRunOptions
         ),
         warning = function(w) {
-          engineWarnings[[length(engineWarnings) + 1]] <<- w
-          if (silentMode) {
-            invokeRestart("muffleWarning")
+          if (.isSimulationFailureWarning(w)) {
+            engineWarnings[[length(engineWarnings) + 1]] <<- w
+            if (silentMode) {
+              invokeRestart("muffleWarning")
+            }
           }
         }
       )
@@ -637,9 +640,9 @@ ParameterIdentification <- R6::R6Class(
           call = sys.call()
         ))
       }
-      # Warnings without a failed simulation whose results are used are shown
-      # in silent mode, too: they are about a simulation whose results are
-      # not used, or not about a failure
+      # Without a failed simulation whose results are used, the warnings of
+      # the engine are about simulations whose results are not used. They are
+      # shown in silent mode, too.
       if (silentMode) {
         for (engineWarning in engineWarnings) {
           warning(engineWarning)

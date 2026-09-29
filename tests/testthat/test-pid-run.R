@@ -138,6 +138,62 @@ test_that("a failed simulation with a shared name is named with its position", {
   )
 })
 
+test_that("other warnings of a simulation run are shown and are no reasons", {
+  unrelatedWarning <- "A warning that is not about a failed simulation"
+  runSimulationBatches <- ospsuite::runSimulationBatches
+  local_mocked_bindings(
+    runSimulationBatches = function(...) {
+      warning(unrelatedWarning)
+      runSimulationBatches(...)
+    },
+    .package = "ospsuite"
+  )
+  # The warnings of an expression and its error, if any
+  runWithWarnings <- function(expr) {
+    warnings <- character()
+    error <- tryCatch(
+      withCallingHandlers(
+        {
+          expr
+          NULL
+        },
+        warning = function(w) {
+          warnings <<- c(warnings, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = identity
+    )
+    list(warnings = warnings, error = error)
+  }
+
+  # Without a failed simulation, the warning is shown once
+  piTask <- testTwoSimulationsTask()
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValue <- piTask$parameters[[1]]$startValue
+  run <- runWithWarnings(priv$.simulateOutputs(startValue))
+  expect_identical(run$warnings, unrelatedWarning)
+  expect_null(run$error)
+
+  # With a failed simulation, the warning is shown as well, and the error
+  # gives the reason from the simulation engine only
+  failingTask <- testTwoSimulationsTask(failing = 2)
+  failingPriv <- failingTask$.__enclos_env__$private
+  failingPriv$.batchInitialization()
+  failingRun <- runWithWarnings(failingPriv$.simulateOutputs(startValue))
+  expect_identical(failingRun$warnings, unrelatedWarning)
+  failedText <- paste0(
+    "Simulation '",
+    failingTask$simulations[[2]]$name,
+    "' (position 2) failed: "
+  )
+  errorMessage <- conditionMessage(failingRun$error)
+  expect_true(startsWith(errorMessage, failedText))
+  expect_gt(nchar(errorMessage), nchar(failedText))
+  expect_false(grepl(unrelatedWarning, errorMessage, fixed = TRUE))
+})
+
 
 # BOBYQA Algorithm (Default)
 

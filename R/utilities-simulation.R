@@ -103,6 +103,34 @@
   list(xValues = times$xValues, yValues = values[times$order])
 }
 
+#' Warning of a failed simulation run
+#'
+#' @description Whether a warning is the one with which ospsuite reports a
+#'   failed simulation run, with the reason given by the simulation engine.
+#'   `ospsuite::runSimulationBatches()` raises it in
+#'   `.getConcurrentSimulationRunnerResults()`, once per failed run, unless
+#'   its silent mode is on. If ospsuite raised it elsewhere, these warnings
+#'   would be shown as they are and missing from the reasons of a failure,
+#'   which the tests of failed simulations would show.
+#'
+#' @param condition A warning.
+#'
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+#' @noRd
+.isSimulationFailureWarning <- function(condition) {
+  call <- conditionCall(condition)
+  if (!is.call(call)) {
+    return(FALSE)
+  }
+  # The name of the function, also when it is called as `ospsuite:::name()`
+  functionName <- all.names(call[[1]])
+  identical(
+    functionName[length(functionName)],
+    ".getConcurrentSimulationRunnerResults"
+  )
+}
+
 #' Error of failed simulations
 #'
 #' @description The error raised when simulations fail. Its message is that
