@@ -7,7 +7,7 @@
 ## Major changes
 
 - `ParameterIdentification` now converts parameter values from `PIParameters$unit` to the base unit before applying them to the model. Previously they were applied unconverted, so a non-base unit silently optimized the wrong quantity (#300).
-- The objective function of `ParameterIdentification` is faster, most of all for tasks with many simulations, parameters and output mappings. Apart from the simulations themselves, little work is left in an evaluation: the model parameters are looked up once per task, the observed data are converted to base units once per call, and the simulated values and the cost are calculated on numeric vectors instead of `DataCombined` objects and data frames. The results are identical. In the examples of #303, an evaluation takes about half the time, and about a tenth where the simulations are fast (#302, #303).
+- The objective function of `ParameterIdentification` is faster, most of all for tasks with many simulations, parameters and output mappings. Apart from the simulations themselves, little work is left in an evaluation: the model parameters are looked up once per task, the observed data are converted to base units once per call, and the simulated values and the cost are calculated on numeric vectors instead of `DataCombined` objects and data frames. The results are identical. In the examples of #303, an evaluation takes about half the time, and an eighth to a tenth of it where the simulations themselves are fast (#302, #303).
 
 ## Minor improvements and bug fixes
 
