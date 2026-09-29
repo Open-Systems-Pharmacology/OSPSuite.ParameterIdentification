@@ -389,6 +389,23 @@ testClarithromycinTask <- function(simulationNames = c("IV250", "PO250")) {
 
 # General Helpers
 
+# Counts the reads of the observed data of an output mapping, that is the
+# calls of `.prepareObservedData()`, until the end of the calling test. The
+# count is in `$reads` of the returned environment.
+localObservedDataReads <- function(env = parent.frame()) {
+  counter <- new.env()
+  counter$reads <- 0
+  prepareObservedData <- ospsuite.parameteridentification:::.prepareObservedData
+  testthat::local_mocked_bindings(
+    .prepareObservedData = function(outputMapping) {
+      counter$reads <- counter$reads + 1
+      prepareObservedData(outputMapping)
+    },
+    .env = env
+  )
+  counter
+}
+
 parseFnevals <- function(output) {
   text <- paste0(output, collapse = "\n")
   as.integer(regmatches(

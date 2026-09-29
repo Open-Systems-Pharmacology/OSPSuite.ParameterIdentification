@@ -604,7 +604,7 @@ test_that("objective function runs with only a state-variable parameter", {
   expect_true(is.finite(cost$modelCost))
 })
 
-test_that("state-variable initial value reaches the solver through evaluate", {
+test_that("state-variable initial value reaches the solver", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -699,6 +699,36 @@ test_that(".simulateOutputs reads several outputs of one simulation", {
     expect_identical(simulated[[idx]]$yValues, df$yValues)
   }
   expect_false(identical(simulated[[1]]$yValues, simulated[[2]]$yValues))
+})
+
+test_that(".simulatedValues orders a population result as DataCombined", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  # Three individuals with different lipophilicity, so that their values
+  # differ at every time
+  populationFile <- tempfile(fileext = ".csv")
+  on.exit(unlink(populationFile), add = TRUE)
+  writeLines(
+    c('"IndividualId","Aciclovir|Lipophilicity"', "0,-0.5", "1,0.3", "2,1"),
+    populationFile
+  )
+  results <- runSimulations(
+    sim,
+    population = loadPopulation(populationFile)
+  )[[1]]
+  path <- testQuantity(sim)$path
+
+  simulated <- .simulatedValues(results, path, .simulatedTimes(results))
+  dataCombined <- DataCombined$new()
+  dataCombined$addSimulationResults(results, quantitiesOrPaths = path)
+  df <- dataCombined$toDataFrame()
+
+  expect_identical(sort(unique(df$IndividualId)), 0:2)
+  expect_identical(simulated$xValues, df$xValues)
+  expect_identical(simulated$yValues, df$yValues)
 })
 
 # several simulations
@@ -895,14 +925,18 @@ test_that("objective function reads the observed data once and reuses them", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
+  observedDataReads <- localObservedDataReads()
 
   expect_null(priv$.observedData)
 
   cost1 <- priv$.objectiveFunction(currVals)
   observedData <- priv$.observedData
   expect_false(is.null(observedData))
+  expect_equal(observedDataReads$reads, 1)
 
   cost2 <- priv$.objectiveFunction(currVals)
+  priv$.objectiveFunction(currVals * 2)
+  expect_equal(observedDataReads$reads, 1)
   expect_identical(priv$.observedData, observedData)
   expect_identical(cost2, cost1)
 })
@@ -1088,18 +1122,35 @@ test_that(".combineCostTerms equals .summarizeCostLists of the costs", {
   expect_identical(.createErrorCostStructure(index = 2L), costs[[2]])
 })
 
-test_that("observed data are read again when the bootstrap seed changes", {
+test_that("observed data are read again per bootstrap sample and after it", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
+  original <- lapply(priv$.outputMappings, .prepareObservedData)
 
-  priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
-  priv$.objectiveFunction(currVals, bootstrapSeed = 1L)
-  expect_false(is.null(priv$.observedData))
+  # The values of aggregated data are resampled from a GPR model
+  suppressMessages(
+    priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
+  )
+  samples <- list()
+  for (seed in 1:2) {
+    priv$.objectiveFunction(currVals, bootstrapSeed = seed)
+    samples[[seed]] <- priv$.observedData
+    # The observed data of the evaluation are those of the resampled data
+    expect_identical(
+      samples[[seed]],
+      lapply(priv$.outputMappings, .prepareObservedData)
+    )
+    expect_false(identical(samples[[seed]][[1]]$yValues, original[[1]]$yValues))
+  }
+  expect_false(identical(samples[[1]][[1]]$yValues, samples[[2]][[1]]$yValues))
 
-  priv$.getOutputMappings(bootstrapSeed = 2L)
+  # The restored data are read again
+  priv$.restoreOutputMappingsState()
   expect_null(priv$.observedData)
+  priv$.objectiveFunction(currVals)
+  expect_identical(priv$.observedData, original)
 })
 
 test_that("observed data are read again at the start of every public call", {
@@ -1126,6 +1177,59 @@ test_that("observed data are read again at the start of every public call", {
     costAfter,
     freshPriv$.objectiveFunction(currStartValues(freshTask))$modelCost
   )
+})
+
+test_that("LLOQ, scaling and weights changed between calls take effect", {
+  change <- function(task) {
+    mapping <- task$outputMappings[[1]]
+    dataSet <- mapping$observedDataSets[[1]]
+    dataSet$LLOQ <- stats::median(dataSet$yValues)
+    mapping$scaling <- "log"
+    mapping$setDataWeights(
+      stats::setNames(list(2), names(mapping$observedDataSets))
+    )
+  }
+  gridSearch <- function(task) {
+    task$gridSearch(lower = -0.5, upper = 0.5, totalEvaluations = 3)
+  }
+
+  task <- testPiTask()
+  before <- gridSearch(task)
+  change(task)
+  after <- gridSearch(task)
+
+  freshTask <- testPiTask()
+  change(freshTask)
+  expect_false(identical(after$ofv, before$ofv))
+  expect_identical(after, gridSearch(freshTask))
+})
+
+test_that("the LLOQ rule stops when simulated values are missing", {
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "lin"
+  costTerms <- function(lloq) {
+    dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+    if (!is.null(lloq)) {
+      dataSet$LLOQ <- lloq
+    }
+    mapping <- PIOutputMapping$new(quantity = testQuantity())
+    mapping$addObservedDataSets(dataSet)
+    .mappingCostTerms(
+      simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
+      observed = .prepareObservedData(mapping),
+      dataWeights = mapping$dataWeights,
+      costControl = costControl,
+      index = 1L
+    )
+  }
+
+  expect_error(
+    costTerms(lloq = 0.5),
+    messages$errorSimulatedValuesMissing(),
+    fixed = TRUE
+  )
+  # Without an LLOQ, a missing simulated value is left out
+  expect_true(is.finite(costTerms(lloq = NULL)$modelCost))
 })
 
 # .computeErrorWeights
