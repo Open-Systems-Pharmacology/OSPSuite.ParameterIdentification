@@ -938,7 +938,8 @@ ParameterIdentification <- R6::R6Class(
 
     # Estimate Confidence Intervals
     #
-    # The steps of `estimateCI()` after its checks.
+    # The steps of `estimateCI()` after its checks. `run()` calls this method,
+    # not `estimateCI()`.
     #
     # @param fromRun `TRUE` when `run()` estimates the confidence intervals
     #   after its optimization. The batches are initialized already then, and
@@ -1162,6 +1163,10 @@ ParameterIdentification <- R6::R6Class(
           achievedPKValues = achievedPKValues
         )
       } else if (private$.configuration$autoEstimateCI) {
+        # The steps of `estimateCI()` after its checks, without a new batch
+        # initialization, so that the observed data of the optimization are
+        # used again. `estimateCI()` itself is not called, so an override of
+        # it in a subclass does not change the confidence intervals of `run()`.
         piResult <- private$.estimateCI(fromRun = TRUE)
       } else {
         message(messages$statusAutoEstimateCI())
