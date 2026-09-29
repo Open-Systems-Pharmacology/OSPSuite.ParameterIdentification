@@ -879,6 +879,18 @@ test_that(".resolveParameterTargets resolves groups over two simulations", {
   }
 })
 
+test_that("parameter targets are resolved again when the batches are built", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.parameterTargets <- list()
+  priv$.batchInitialization()
+
+  expect_identical(
+    priv$.parameterTargets,
+    .resolveParameterTargets(task$parameters)
+  )
+})
+
 # The intravenous and the oral Clarithromycin task, and one with both, built
 # once for the tests below
 clarithromycinTasks <- local({

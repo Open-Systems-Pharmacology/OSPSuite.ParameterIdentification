@@ -77,7 +77,7 @@ ParameterIdentification <- R6::R6Class(
     # Named list by simulation IDs: the paths of the variable parameters and
     # molecules of each simulation, in the order of the variable buckets, and
     # the index of the `PIParameters` group whose value each of them takes.
-    # Resolved once by `.resolveParameterTargets()`.
+    # Resolved by `.resolveParameterTargets()` when the batches are built.
     .parameterTargets = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
@@ -254,7 +254,10 @@ ParameterIdentification <- R6::R6Class(
           }
         }
 
-        # Seed each optimization parameter's start value into its variable bucket.
+        # Seed each optimization parameter's start value into its variable
+        # bucket. The paths of the buckets, from which the batches below are
+        # built, are resolved again.
+        private$.parameterTargets <- NULL
         private$.applyParameterValues(
           vapply(private$.piParameters, function(p) p$startValue, numeric(1))
         )
@@ -310,6 +313,8 @@ ParameterIdentification <- R6::R6Class(
     # `.calculateCostMetrics()` on numeric vectors), and aggregates the
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
+    # @param bootstrapSeed Optional bootstrap seed. If given, the output
+    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return Aggregated total cost summary.
     .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
       # Increment function evaluations counter
@@ -323,11 +328,11 @@ ParameterIdentification <- R6::R6Class(
       # evaluation. They are read outside of the `tryCatch()` below, so that
       # an error in the observed data stops the call with its own message
       # instead of being reported as a failed simulation.
-      private$.getObservedData(outputMappings)
+      observedData <- private$.getObservedData(outputMappings)
 
       # Run simulation and catch errors
       simulatedList <- tryCatch(
-        private$.simulateOutputs(currVals, bootstrapSeed = bootstrapSeed),
+        private$.simulateOutputs(currVals, outputMappings = outputMappings),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
@@ -370,13 +375,12 @@ ParameterIdentification <- R6::R6Class(
 
         costTerms[[idx]] <- .mappingCostTerms(
           simulated = simulatedList[[idx]],
-          observed = private$.observedData[[idx]],
+          observed = observedData[[idx]],
           dataWeights = outputMappings[[idx]]$dataWeights,
           costControl = costControl,
           index = idx
         )
       }
-      rm(simulatedList)
 
       # Aggregate cost across all output mappings, in one step
       runningCost <- .combineCostTerms(costTerms)
@@ -602,6 +606,8 @@ ParameterIdentification <- R6::R6Class(
     # Used for plotting; the objective function uses `.simulateOutputs()`.
     #
     # @param currVals Vector of parameter values for simulation.
+    # @param bootstrapSeed Optional bootstrap seed. If given, the output
+    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return List of `DataCombined` objects, one per output mapping.
     .evaluate = function(currVals, bootstrapSeed = NULL) {
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
@@ -641,11 +647,15 @@ ParameterIdentification <- R6::R6Class(
     # `DataCombined` objects.
     #
     # @param currVals Vector of parameter values for simulation.
+    # @param outputMappings The output mappings of the evaluation (see
+    #   `.getOutputMappings()`), by default those of the task.
     # @return A list with one entry per output mapping, each a list with
     #   `xValues`, the time values in min, and `yValues`, the values in the base
     #   unit of the mapped quantity.
-    .simulateOutputs = function(currVals, bootstrapSeed = NULL) {
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+    .simulateOutputs = function(
+      currVals,
+      outputMappings = private$.outputMappings
+    ) {
       # The objective function reports a failed simulation itself on every
       # evaluation, so the warning of the simulation engine is not repeated
       simulationResults <- private$.runSimulations(currVals, silentMode = TRUE)

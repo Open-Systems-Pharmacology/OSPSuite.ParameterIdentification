@@ -206,7 +206,7 @@ PISimFailureTester <- R6::R6Class(
   inherit = ParameterIdentification,
   cloneable = FALSE,
   private = list(
-    .simulateOutputs = function(currVals, bootstrapSeed = NULL) {
+    .simulateOutputs = function(currVals, outputMappings = NULL) {
       private$.fnEvaluations <- private$.fnEvaluations + 2
       stop("Simulated failure in evaluation")
     }

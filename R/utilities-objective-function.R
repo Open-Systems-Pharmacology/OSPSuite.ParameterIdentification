@@ -504,7 +504,7 @@
 #' @return A list with one entry per observation in `name` (the data set),
 #'   `xValues`, `xDimension`, `yValues`, `yErrorValues`, `yErrorType` and
 #'   `lloq`, the log-transformed `logYValues` and `logLloq`, and `hasLloq`,
-#'   `lloqMin`, `logEpsilon`, `xUnit`, `yUnit` and `yDimension`.
+#'   `lloqMin`, `logEpsilon` and `xUnit`, the unit of the x values.
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
@@ -545,9 +545,7 @@
       base = exp(1)
     ),
     logEpsilon = logEpsilon,
-    xUnit = xUnit,
-    yUnit = yUnit,
-    yDimension = yDimension
+    xUnit = xUnit
   )
 }
 
