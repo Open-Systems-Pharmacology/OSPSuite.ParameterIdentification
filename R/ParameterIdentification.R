@@ -453,10 +453,18 @@ ParameterIdentification <- R6::R6Class(
 
     .getPKValues = function(paramValues) {
       # The PK objective function reports a failed simulation itself on every
-      # evaluation, so the warning of the simulation engine is not repeated
+      # evaluation, so the warning of the simulation engine is not repeated.
+      # Only the results of the simulations of the PK mappings are used: the
+      # task may have other simulations, whose failure does not fail the
+      # evaluation.
       simulationResults <- private$.runSimulations(
         paramValues,
-        silentMode = TRUE
+        silentMode = TRUE,
+        usedSimulations = unique(vapply(
+          private$.pkMappings,
+          function(mapping) mapping$simId,
+          character(1)
+        ))
       )
 
       lapply(private$.pkMappings, function(mapping) {
@@ -496,18 +504,27 @@ ParameterIdentification <- R6::R6Class(
     # Run Simulations with Parameter Values
     #
     # Applies the parameter values to the simulation batches and runs them.
-    # Stops with the names of the simulations that failed and the reasons
-    # given by the simulation engine.
+    # If a simulation whose results are used fails, stops with the names of
+    # the simulations that failed and the reasons given by the simulation
+    # engine.
     #
     # @param currVals Vector of parameter values, in the order of the
     #   `PIParameters` in the parameters list.
     # @param silentMode If `TRUE`, the warnings of the simulation engine for
     #   failed simulations are not shown; their reasons are still part of the
     #   error.
+    # @param usedSimulations The IDs of the simulations whose results are
+    #   used, by default all. The failure of another simulation (in PK mode, a
+    #   simulation without a PK mapping) does not stop the run, and the
+    #   warning of the simulation engine is shown for it, also in silent mode.
     # @return The result of `ospsuite::runSimulationBatches()`: for each
     #   simulation batch, the list of its `SimulationResults`, named by the
     #   simulation IDs.
-    .runSimulations = function(currVals, silentMode = FALSE) {
+    .runSimulations = function(
+      currVals,
+      silentMode = FALSE,
+      usedSimulations = names(private$.simulationBatches)
+    ) {
       private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
@@ -569,9 +586,11 @@ ParameterIdentification <- R6::R6Class(
         function(results) length(results) == 0 || is.null(results[[1]]),
         logical(1)
       )
-      if (any(failed)) {
+      if (any(failed[usedSimulations])) {
         # The message gives the position in the task of a failed simulation
-        # whose name other simulations share
+        # whose name other simulations share. The engine does not say which
+        # reason belongs to which simulation, so the message names every
+        # failed simulation, also one whose results are not used.
         simulationNames <- vapply(
           private$.simulations,
           function(simulation) simulation$name,
@@ -586,8 +605,9 @@ ParameterIdentification <- R6::R6Class(
           reasons = vapply(engineWarnings, conditionMessage, character(1))
         ))
       }
-      # Warnings without a failed simulation are not about a failure, so they
-      # are shown in silent mode, too
+      # Warnings without a failed simulation whose results are used are shown
+      # in silent mode, too: they are about a simulation whose results are
+      # not used, or not about a failure
       if (silentMode) {
         for (engineWarning in engineWarnings) {
           warning(engineWarning)

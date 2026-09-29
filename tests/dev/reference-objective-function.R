@@ -770,6 +770,31 @@ cases$pkFailingSimulation <- structure(
   },
   expectChange = TRUE
 )
+# A failing simulation without a PK mapping, which shares the dose with the
+# simulation of the PK mapping: the warning of the simulation engine is shown,
+# and the cost is that of the simulation of the PK mapping
+cases$pkUnmappedFailingSimulation <- function() {
+  sims <- list(newAciclovir(), newAciclovir())
+  sims[[2]]$solver$mxStep <- 1
+  quantity <- getQuantity(plasmaPath, container = sims[[1]])
+  task <- ParameterIdentification$new(
+    simulations = sims,
+    parameters = piParameter(sims, dosePath, 2.5e-4, 1e-4, 1e-3),
+    pkOutputMappings = PKOutputMapping$new(
+      quantity = quantity,
+      pkParameter = "C_max",
+      targetValue = 30,
+      targetUnit = quantity$unit
+    ),
+    configuration = piConfiguration(algorithmOptions = list(maxeval = 5))
+  )
+  private <- privateOf(task)
+  private$.batchInitialization()
+  list(
+    costs = lapply(doseSets, private$.pkObjectiveFunction),
+    run = withoutRunTimes(task$run()$toList())
+  )
+}
 
 # ---- run and compare -------------------------------------------------------
 
