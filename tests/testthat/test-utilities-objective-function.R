@@ -401,6 +401,43 @@ test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE
   expect_true(result_scaled$modelCost != result_unscaled$modelCost)
 })
 
+test_that("the cost stops without simulated or observed data", {
+  for (dataType in c("simulated", "observed")) {
+    expect_error(
+      .calculateCostMetrics(obsVsPredDf[obsVsPredDf$dataType != dataType, ]),
+      messages$errorNoDataForCost(dataType),
+      fixed = TRUE
+    )
+  }
+
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "lin"
+  observed <- .prepareObservedData(testOutputMapping()[[1]])
+  expect_error(
+    .mappingCostTerms(
+      simulated = list(xValues = c(0, 60), yValues = c(NA, Inf)),
+      observed = observed,
+      dataWeights = NULL,
+      costControl = costControl,
+      index = 1L
+    ),
+    messages$errorNoDataForCost("simulated"),
+    fixed = TRUE
+  )
+  observed$yValues[] <- NA
+  expect_error(
+    .mappingCostTerms(
+      simulated = list(xValues = c(0, 60), yValues = c(1, 2)),
+      observed = observed,
+      dataWeights = NULL,
+      costControl = costControl,
+      index = 1L
+    ),
+    messages$errorNoDataForCost("observed"),
+    fixed = TRUE
+  )
+})
+
 test_that("calculateCostMetrics handles infinite values in xValues and yValues correctly", {
   obsVsPredDfInf <- obsVsPredDf
   obsVsPredDfInf$xValues[1] <- Inf

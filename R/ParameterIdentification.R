@@ -623,18 +623,9 @@ ParameterIdentification <- R6::R6Class(
           names = groupName,
           groups = groupName
         )
-        obsVsPred$addDataSets(
-          currOutputMapping$observedDataSets,
-          groups = groupName
-        )
-        # apply data transformations stored in corresponding `outputMapping`
-        obsVsPred$setDataTransformations(
-          forNames = names(outputMappings[[idx]]$observedDataSets),
-          xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
-          xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
-          yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
-          yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
-        )
+        # Observed data in the same group, with the data transformations of
+        # the output mapping
+        .addObservedData(obsVsPred, currOutputMapping)
         obsVsPredList[[idx]] <- obsVsPred
       }
       rm(simulationResults)

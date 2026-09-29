@@ -91,12 +91,8 @@
   }
   ospsuite.utils::validateEnumValue(robustMethod, robustMethodOptions)
 
-  # Handle infinite values
-  df$xValues[df$xValues == Inf | df$xValues == -Inf] <- NA
-  df$yValues[df$yValues == Inf | df$yValues == -Inf] <- NA
-  df$xValues[df$xValues < 0] <- NA
-  idx <- is.na(df$xValues) | is.na(df$yValues)
-  df <- df[!idx, ]
+  # Handle infinite values and negative times
+  df <- df[.finiteValues(df$xValues, df$yValues), ]
 
   # Splitting dataframe into simulated and observed data
   simulatedData <- df[df$dataType == "simulated", ]
@@ -106,10 +102,10 @@
 
   # Ensuring there is enough data to perform calculations
   if (NROW(simulatedData) < 1 | is.null(simulatedData)) {
-    stop("No simulated data found when calculating cost function.")
+    stop(messages$errorNoDataForCost("simulated"))
   }
   if (NROW(observedData) < 1 | is.null(observedData)) {
-    stop("No observed data found when calculating cost function.")
+    stop(messages$errorNoDataForCost("observed"))
   }
 
   # Applying M3 method for censored error calculation
@@ -328,10 +324,10 @@
 
   # Ensuring there is enough data to perform calculations
   if (length(simulatedX) < 1) {
-    stop("No simulated data found when calculating cost function.")
+    stop(messages$errorNoDataForCost("simulated"))
   }
   if (length(observedX) < 1) {
-    stop("No observed data found when calculating cost function.")
+    stop(messages$errorNoDataForCost("observed"))
   }
 
   # Applying M3 method for censored error calculation
@@ -375,8 +371,9 @@
 
 #' Values that enter the cost
 #'
-#' @description As in `.calculateCostMetrics()`, keeps the values with a
-#'   finite time of at least zero and a finite value.
+#' @description Keeps the values with a finite time of at least zero and a
+#'   finite value. Used by `.calculateCostMetrics()` and the objective
+#'   function.
 #'
 #' @param xValues,yValues Times and values.
 #' @return A logical vector.
@@ -442,6 +439,58 @@
   )
 }
 
+#' Add the observed data of an output mapping to a `DataCombined`
+#'
+#' @description Adds the observed data sets of a `PIOutputMapping` to a
+#'   `DataCombined` object, in the group named by the path of the mapped
+#'   quantity, and applies the data transformations of the mapping. Used for
+#'   the observed data of the objective function and of the plots.
+#'
+#' @param dataCombined A `DataCombined` object.
+#' @param outputMapping A `PIOutputMapping` object.
+#'
+#' @return `dataCombined`, invisibly.
+#' @keywords internal
+#' @noRd
+.addObservedData <- function(dataCombined, outputMapping) {
+  observedDataSets <- outputMapping$observedDataSets
+  transformations <- outputMapping$dataTransformations
+  dataCombined$addDataSets(
+    observedDataSets,
+    groups = outputMapping$quantity$path
+  )
+  dataCombined$setDataTransformations(
+    forNames = names(observedDataSets),
+    xOffsets = transformations$xOffsets,
+    xScaleFactors = transformations$xFactors,
+    yOffsets = transformations$yOffsets,
+    yScaleFactors = transformations$yFactors
+  )
+  invisible(dataCombined)
+}
+
+#' Epsilon of the log transformation
+#'
+#' @description The ospsuite setting `LOG_SAFE_EPSILON` in the unit of the
+#'   values to transform, converted with a molecular weight of 1. Values
+#'   below it are replaced by it before the log transformation (see
+#'   `ospsuite.utils::logSafe()`).
+#'
+#' @param dimension Dimension of the values.
+#' @param unit Unit of the values.
+#'
+#' @return A numeric value.
+#' @keywords internal
+#' @noRd
+.logEpsilon <- function(dimension, unit) {
+  ospsuite::toUnit(
+    quantityOrDimension = dimension,
+    values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
+    targetUnit = unit,
+    molWeight = 1
+  )
+}
+
 #' Prepare the observed data of an output mapping
 #'
 #' @description Reads the observed data sets of a `PIOutputMapping`, applies
@@ -459,21 +508,9 @@
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
-  quantity <- outputMapping$quantity
-  observedDataSets <- outputMapping$observedDataSets
-  transformations <- outputMapping$dataTransformations
+  dataCombined <- .addObservedData(ospsuite::DataCombined$new(), outputMapping)
 
-  dataCombined <- ospsuite::DataCombined$new()
-  dataCombined$addDataSets(observedDataSets, groups = quantity$path)
-  dataCombined$setDataTransformations(
-    forNames = names(observedDataSets),
-    xOffsets = transformations$xOffsets,
-    xScaleFactors = transformations$xFactors,
-    yOffsets = transformations$yOffsets,
-    yScaleFactors = transformations$yFactors
-  )
-
-  yDimension <- quantity$dimension
+  yDimension <- outputMapping$quantity$dimension
   xUnit <- ospsuite::getBaseUnit("Time")
   yUnit <- ospsuite::getBaseUnit(yDimension)
   rows <- ospsuite:::.unitConverter(
@@ -485,12 +522,7 @@
   # Values for the LLOQ rule and the log transformation, as in the data frames
   lloq <- rows$lloq
   hasLloq <- sum(is.finite(lloq)) > 0
-  logEpsilon <- ospsuite::toUnit(
-    quantityOrDimension = yDimension,
-    values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-    targetUnit = yUnit,
-    molWeight = 1
-  )
+  logEpsilon <- .logEpsilon(yDimension, yUnit)
 
   list(
     name = as.character(rows$name),
@@ -792,21 +824,16 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     colnames(df)
   )
 
-  UNITS_EPSILON <- ospsuite::toUnit(
-    quantityOrDimension = df$yDimension[1],
-    values = ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON"),
-    targetUnit = df$yUnit[1],
-    molWeight = 1
-  )
+  epsilon <- .logEpsilon(df$yDimension[1], df$yUnit[1])
 
   df$yValues <- ospsuite.utils::logSafe(
     df$yValues,
-    epsilon = UNITS_EPSILON,
+    epsilon = epsilon,
     base = base
   )
   df$lloq <- ospsuite.utils::logSafe(
     df$lloq,
-    epsilon = UNITS_EPSILON,
+    epsilon = epsilon,
     base = base
   )
 

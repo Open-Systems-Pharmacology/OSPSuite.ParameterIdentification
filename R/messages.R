@@ -85,6 +85,11 @@ messages$errorSimulationsFailed <- function(
   paste0(text, ": ", paste(reasons, collapse = "; "))
 }
 
+# `dataType` is "simulated" or "observed"
+messages$errorNoDataForCost <- function(dataType) {
+  paste0("No ", dataType, " data found when calculating cost function.")
+}
+
 messages$errorSimulatedValuesMissing <- function() {
   paste0(
     "Simulated values are missing, so the LLOQ of the observed data cannot ",
