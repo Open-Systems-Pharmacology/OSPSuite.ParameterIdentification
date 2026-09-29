@@ -169,7 +169,12 @@ ParameterIdentification <- R6::R6Class(
     .batchInitialization = function() {
       # Every public method that evaluates the objective function starts here.
       # Observed data sets and their transformations can change between two
-      # calls, so the observed data are read again.
+      # calls, so the observed data are read again. The output time points of
+      # the simulations are only set below, when the batches are built at the
+      # first call. After a change of the x values of the observed data (for
+      # example of `xOffsets` or `xFactors`) or with a new data set, the
+      # simulated values at the new observed times are therefore interpolated
+      # between the output time points of the first call.
       private$.observedData <- NULL
 
       # If the flag is already set to FALSE, short-cuts the execution of the
