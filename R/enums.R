@@ -202,8 +202,8 @@ CIDefaults <- list(
 #'   `0.2`.
 #' - **`logScaleSD`** – Standard deviation for log scaling. Default is `NULL`.
 #'
-#'   These options are configurable in `PIConfiguration`, directly influencing
-#'   the `calculateCostMetrics` functionality for detailed model fit assessment.
+#'   These options are configurable in `PIConfiguration` and define how the
+#'   objective function of `ParameterIdentification` calculates the model cost.
 ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   objectiveFunctionType = "lsq",
   residualWeightingMethod = "none",

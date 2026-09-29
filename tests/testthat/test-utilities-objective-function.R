@@ -21,7 +21,7 @@ test_that(".calculateCensoredContribution correctly calculates result with linea
 
 test_that(".calculateCensoredContribution correctly calculates result with logarithmic scaling", {
   obsVsPredDf$lloq <- 2.5
-  obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
+  obsVsPredDfLog <- frozenApplyLogTransformation(obsVsPredDf)
   obsDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "observed", ]
   predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
   result <- .calculateCensoredContribution(
@@ -181,27 +181,6 @@ test_that(".createErrorCostStructure stamps a non-NA index onto the residual row
   expect_equal(errorOut$residualDetails$index, 2)
 })
 
-test_that(".summarizeCostLists aggregates a kernel output and an error structure without error", {
-  kernelOut <- .calculateCostMetrics(obsVsPredDf)
-  errorOut <- .createErrorCostStructure()
-
-  merged <- .summarizeCostLists(kernelOut, errorOut)
-
-  expect_equal(merged$modelCost, Inf)
-  expect_equal(
-    names(merged$costVariables),
-    names(kernelOut$costVariables)
-  )
-  expect_equal(
-    nrow(merged$residualDetails),
-    nrow(kernelOut$residualDetails) + nrow(errorOut$residualDetails)
-  )
-  expect_equal(
-    merged$costVariables$nObservations,
-    kernelOut$costVariables$nObservations + errorOut$costVariables$nObservations
-  )
-})
-
 # plot.modelCost
 
 test_that("plot.modelCost shows only the raw series when weighting leaves residuals unchanged", {
@@ -235,22 +214,6 @@ test_that("plot.modelCost errors on a failed-evaluation cost object with no fini
     plot.modelCost(errorCost),
     regexp = messages$errorNoResidualsToPlot(),
     fixed = TRUE
-  )
-})
-
-# .applyLogTransformation
-
-test_that(".applyLogTransformation correctly log-transforms `yValues` and `lloq`", {
-  obsVsPredDfLog <- .applyLogTransformation(obsVsPredDf)
-  expect_snapshot_value(
-    obsVsPredDfLog$yValues,
-    style = "deparse",
-    tolerance = 1e-5
-  )
-  expect_snapshot_value(
-    obsVsPredDfLog$lloq,
-    style = "deparse",
-    tolerance = 1e-5
   )
 })
 
@@ -1002,8 +965,9 @@ test_that("observed data equal the observed rows of a full evaluation", {
     xUnit = ospsuite::getBaseUnit("Time"),
     yUnit = ospsuite::getBaseUnit(task$outputMappings[[1]]$quantity$dimension)
   )
-  # The log transformation takes its epsilon from the first, simulated row
-  logged <- .applyLogTransformation(converted)
+  # The log transformation of 2.2.0.9009 takes its epsilon from the first,
+  # simulated row
+  logged <- frozenApplyLogTransformation(converted)
   isObserved <- converted$dataType == "observed"
   expected <- converted[isObserved, , drop = FALSE]
 
@@ -1277,7 +1241,7 @@ test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
   expectFrozenObjective(task, lipophilicityValues[[2]])
 })
 
-test_that(".combineCostTerms equals .summarizeCostLists of the costs", {
+test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
   kernelTerms <- function(index) {
     .costKernel(
       simulatedX = c(0, 1, 2, 3),
@@ -1297,9 +1261,16 @@ test_that(".combineCostTerms equals .summarizeCostLists of the costs", {
   terms <- list(kernelTerms(1L), .errorCostTerms(index = 2L), kernelTerms(3L))
   costs <- lapply(terms, function(t) do.call(.newModelCost, t))
 
-  expect_identical(.combineCostTerms(terms), Reduce(.summarizeCostLists, costs))
+  expect_identical(
+    .combineCostTerms(terms),
+    Reduce(frozenSummarizeCostLists, costs)
+  )
   expect_identical(.combineCostTerms(terms[1]), costs[[1]])
   expect_identical(.createErrorCostStructure(index = 2L), costs[[2]])
+  expect_identical(
+    .createErrorCostStructure(index = 2L),
+    frozenCreateErrorCostStructure(index = 2L)
+  )
 })
 
 test_that("observed data are read again per bootstrap sample and after it", {

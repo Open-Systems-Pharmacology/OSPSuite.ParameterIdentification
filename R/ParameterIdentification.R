@@ -349,13 +349,6 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
-      if (length(simulatedList) != length(outputMappings)) {
-        stop(messages$errorObsVsPredListLengthMismatch(
-          length(outputMappings),
-          length(simulatedList)
-        ))
-      }
-
       # Evaluate cost per output mapping, on the simulated values and the
       # prepared observed data (see `.mappingCostTerms()`)
       costTerms <- vector("list", length(outputMappings))

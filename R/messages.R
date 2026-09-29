@@ -29,14 +29,6 @@ messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
 
-messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
-  sprintf(
-    "Number of combined data entries must be %d to match output mappings, but got %d.",
-    expected,
-    actual
-  )
-}
-
 messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
 }

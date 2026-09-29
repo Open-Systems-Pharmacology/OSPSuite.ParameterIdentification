@@ -1,7 +1,10 @@
 #' @title Calculate Cost Metrics for Model Evaluation
 #'
-#' @description Internal utility to calculate residual-based cost metrics for
-#' model fit assessment. Used within parameter estimation routines.
+#' @description Internal utility to calculate the residual-based cost metrics
+#' of one output mapping from a data frame of simulated and observed data, for
+#' example that of a `DataCombined` object. The objective function calculates
+#' the same cost on numeric vectors with `.mappingCostTerms()`. Both use
+#' `.costKernel()`, which the tests pin through this function.
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #'   observation. Supports dataframes created from a `DataCombined` object via
@@ -264,7 +267,8 @@
 #' @description Applies the LLOQ rule, the log transformation and the data
 #'   weights to the simulated values and the prepared observed data of one
 #'   output mapping and calculates its cost terms with `.costKernel()`, in the
-#'   same order as the data frame steps before `.calculateCostMetrics()`.
+#'   same order as the objective function of version 2.2.0.9009 did on data
+#'   frames before `.calculateCostMetrics()`.
 #'
 #' @param simulated A list with `xValues` and `yValues`, the simulated values
 #'   in base units (see `.simulatedValues()`).
@@ -390,8 +394,9 @@
 #'
 #' @description Sums the scalar cost terms of the output mappings in their
 #'   order and binds their per-observation terms into one `modelCost` object,
-#'   in one step. The result is identical to combining the `modelCost` objects
-#'   of the output mappings with `.summarizeCostLists()`.
+#'   in one step. The result is identical to adding the `modelCost` objects of
+#'   the output mappings one after the other and binding their rows, as the
+#'   objective function of version 2.2.0.9009 did.
 #'
 #' @param costTerms A list of results of `.costKernel()`, one per output
 #'   mapping.
@@ -554,8 +559,8 @@
 #' Single constructor for the `modelCost` schema. Every producer (the kernel
 #' happy path and the error/failure substitute) routes through it so
 #' `costVariables` and `residualDetails` always share one fixed column set,
-#' which keeps `.summarizeCostLists()` safe to aggregate. The constructor owns
-#' the `index` field.
+#' which keeps the cost terms of several output mappings safe to combine (see
+#' `.combineCostTerms()`). The constructor owns the `index` field.
 #'
 #' @param modelCost Total scalar cost the optimizer minimizes.
 #' @param minLogProbability Scalar negative log probability of the fit.
@@ -794,50 +799,6 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   )
 }
 
-#' Apply Log Transformation to Data Frame
-#'
-#' Transforms the `yValues` and `lloq` columns in the given data frame using a
-#' log transformation. Currently, this function only supports `obsVsPredDf` data
-#' frames, which must contain `yDimension`, `yUnit`, `yValues`, and `lloq`
-#' columns.
-#'
-#' @param df A `tbl_df` representing the observed vs predicted data frame
-#'   (`obsVsPredDf`).
-#' @param base A positive numeric value specifying the logarithm base. Defaults
-#'   to natural logarithm (`exp(1)`).
-#'
-#' @return A transformed data frame with log-transformed `yValues` and `lloq`.
-#' @keywords internal
-#'
-#' @examples
-#' # Assuming df is a valid obsVsPredDf data frame
-#' \dontrun{
-#' transformedDf <- applyLogTransformation(df)
-#' }
-.applyLogTransformation <- function(df, base = exp(1)) {
-  ospsuite.utils::validateIsOfType(df, "tbl_df")
-  ospsuite.utils::validateIsNumeric(base)
-  ospsuite.utils::validateIsIncluded(
-    c("yDimension", "yUnit", "yValues", "lloq"),
-    colnames(df)
-  )
-
-  epsilon <- .logEpsilon(df$yDimension[1], df$yUnit[1])
-
-  df$yValues <- ospsuite.utils::logSafe(
-    df$yValues,
-    epsilon = epsilon,
-    base = base
-  )
-  df$lloq <- ospsuite.utils::logSafe(
-    df$lloq,
-    epsilon = epsilon,
-    base = base
-  )
-
-  return(df)
-}
-
 #' Calculate Contribution of Censored Data
 #'
 #'
@@ -923,37 +884,6 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   censoredErrorVector <- sqrt(censoredErrorVector)
 
   return(sum(censoredErrorVector^2))
-}
-
-#' Summarize Cost Lists
-#'
-#' This function takes two lists, each being the output of the
-#' `.calculateCostMetrics` function, and summarizes them. It aggregates model
-#' costs and min log probabilities, and combines cost and residual details by
-#' row-binding.
-#'
-#' @param list1 The first list, containing the output of the
-#'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
-#' @param list2 The second list, containing the output of the
-#'   `.calculateCostMetrics` function, which includes `modelCost`,
-#'   `minLogProbability`, `costVariables`, and `residualDetails`.
-#'
-#' @return Returns a list that includes the sum of `modelCosts`, the sum of
-#'   `minLogProbabilities`, a row-bound combination of `costVariables`, and a
-#'   row-bound combination of `residualDetails`.
-#'
-#' @keywords internal
-.summarizeCostLists <- function(list1, list2) {
-  mergedList <- list(
-    modelCost = list1$modelCost + list2$modelCost,
-    minLogProbability = list1$minLogProbability + list2$minLogProbability,
-    costVariables = list1$costVariables + list2$costVariables,
-    residualDetails = rbind(list1$residualDetails, list2$residualDetails)
-  )
-  class(mergedList) <- class(list1)
-
-  return(mergedList)
 }
 
 #' Calculate Huber Weights for Residuals

@@ -27,7 +27,7 @@ Settings include:
 \code{0.2}.
 \item \strong{\code{logScaleSD}} – Standard deviation for log scaling. Default is \code{NULL}.
 
-These options are configurable in \code{PIConfiguration}, directly influencing
-the \code{calculateCostMetrics} functionality for detailed model fit assessment.
+These options are configurable in \code{PIConfiguration} and define how the
+objective function of \code{ParameterIdentification} calculates the model cost.
 }
 }
