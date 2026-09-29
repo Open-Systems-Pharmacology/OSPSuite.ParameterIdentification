@@ -53,7 +53,7 @@ getTestPKParameters <- function() {
   function(simulation = NULL) {
     if (!is.null(simulation)) {
       param <- ospsuite::getParameter(
-        path = "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+        path = "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
         container = simulation
       )
       piParameter <- PIParameters$new(parameters = list(param))

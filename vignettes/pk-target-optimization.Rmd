@@ -52,7 +52,7 @@ The parameter is retrieved by its full path in the simulation. `minValue` and `m
 
 ```{r piParameter}
 doseParam <- getParameter(
-  path = "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+  path = "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
   container = sim
 )
 
