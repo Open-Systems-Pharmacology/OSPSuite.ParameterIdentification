@@ -1480,6 +1480,29 @@ test_that("new observed times without simulated values are warned about", {
   expect_length(inside$after$warnings, 0)
   expect_true(all(is.finite(inside$after$ofv)))
   expect_false(identical(inside$after$ofv, inside$before$ofv))
+
+  # Observed times that were output time points at the first call are not
+  # new. With M3 and x transformations set before the first call, the
+  # censored values have no simulated value at exactly their times, which
+  # are not exact in single precision, so the cost is infinite in every
+  # call. A later call without a change does not warn about new times.
+  task <- testPiTask()
+  task$configuration$objectiveFunctionOptions <- list(
+    objectiveFunctionType = "m3",
+    linScaleCV = 0.2
+  )
+  mapping <- task$outputMappings[[1]]
+  firstDataSet <- mapping$observedDataSets[[1]]
+  firstDataSet$LLOQ <- 0.5
+  mapping$setDataTransformations(xOffsets = 0.1, xFactors = 1.05)
+  first <- gridSearch(task)
+  expect_identical(first$ofv, c(Inf, Inf))
+  again <- gridSearch(task)
+  expect_false(
+    messages$warningObservedTimesNotSimulated(1, mapping$quantity$path) %in%
+      again$warnings
+  )
+  expect_identical(again, first)
 })
 
 test_that("the LLOQ rule stops when simulated values are missing", {
