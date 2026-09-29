@@ -12,6 +12,16 @@ test_that("run() errors if initial simulation fails", {
   ))
 })
 
+test_that("run() stops on unconvertible observed data", {
+  # The error is raised by the unit conversion, not reported as a failed
+  # simulation
+  expect_error(
+    suppressMessages(testUnconvertibleDataTask()$run()),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
+})
+
 test_that("a failed simulation is reported by name", {
   modPiTask <- testModifiedTask()
   priv <- modPiTask$.__enclos_env__$private

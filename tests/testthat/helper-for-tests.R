@@ -261,6 +261,28 @@ testModifiedTask <- function() {
   )
 }
 
+# A task whose observed data cannot be converted to the unit of the output:
+# the molecular weight of the mass concentrations, which are mapped to a molar
+# output, is removed after the data set was added to the mapping
+testUnconvertibleDataTask <- function() {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+  mapping$addObservedDataSets(dataSet)
+  dataSet$molWeight <- NA_real_
+
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = testParameters(sim),
+    outputMappings = mapping,
+    configuration = lowIterPiConfiguration()
+  )
+}
+
 
 # General Helpers
 

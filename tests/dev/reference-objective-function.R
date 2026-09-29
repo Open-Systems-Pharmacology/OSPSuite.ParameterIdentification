@@ -296,8 +296,9 @@ cases$dataSetsLog <- function() {
     lipophilicitySets
   )
 }
-# Transformations for single data sets fail on the base commit (in the
-# batch initialization or in the evaluation); they must fail the same way
+# Transformations for single data sets fail on the base commit (#311), in the
+# batch initialization or in the evaluation. When they fail in the batch
+# initialization, they must fail the same way
 cases$labelledTransformationOne <- function() {
   task <- aciclovirTask(dataSets = twoDataSets())
   task$outputMappings[[1]]$setDataTransformations(
@@ -307,15 +308,22 @@ cases$labelledTransformationOne <- function() {
   )
   evaluateObjective(task, lipophilicitySets[1])
 }
-cases$labelledTransformationAll <- function() {
-  task <- aciclovirTask(dataSets = twoDataSets())
-  task$outputMappings[[1]]$setDataTransformations(
-    labels = c("dataSet1", "dataSet2"),
-    xOffsets = c(0, 0.2),
-    yFactors = c(1, 0.8)
-  )
-  evaluateObjective(task, lipophilicitySets[1])
-}
+# The base commit reports the error of the data transformations as a failed
+# simulation ("Initial simulation failed."). The observed data are now
+# prepared before the simulations run, so the evaluation stops with the error
+# itself
+cases$labelledTransformationAll <- structure(
+  function() {
+    task <- aciclovirTask(dataSets = twoDataSets())
+    task$outputMappings[[1]]$setDataTransformations(
+      labels = c("dataSet1", "dataSet2"),
+      xOffsets = c(0, 0.2),
+      yFactors = c(1, 0.8)
+    )
+    evaluateObjective(task, lipophilicitySets[1])
+  },
+  expectChange = TRUE
+)
 
 # LLOQ: three observations are below 0.5 mg/l
 cases$lloqLsqLin <- function() {

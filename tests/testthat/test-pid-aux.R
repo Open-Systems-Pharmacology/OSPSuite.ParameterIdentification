@@ -100,6 +100,18 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   expect_snapshot(gridSearchResults$ofv)
 })
 
+test_that("gridSearch() stops on unconvertible observed data", {
+  # The error is raised by the unit conversion instead of returning `Inf` for
+  # every grid point as if the simulation had failed
+  expect_error(
+    suppressMessages(
+      testUnconvertibleDataTask()$gridSearch(totalEvaluations = 3)
+    ),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
+})
+
 test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
@@ -182,4 +194,14 @@ test_that("calculateOFVProfiles() returns `Inf` on simulation failure", {
     )
   )
   expect_snapshot(ofvProfiles[[2]]$ofv)
+})
+
+test_that("calculateOFVProfiles() stops on unconvertible observed data", {
+  expect_error(
+    suppressMessages(
+      testUnconvertibleDataTask()$calculateOFVProfiles(totalEvaluations = 2L)
+    ),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
 })

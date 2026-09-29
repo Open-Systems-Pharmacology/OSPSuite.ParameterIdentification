@@ -317,19 +317,17 @@ ParameterIdentification <- R6::R6Class(
 
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
-      # Run simulation and catch errors. The observed data are static within a
-      # public call and bootstrap sample: they are read on the first
-      # evaluation and reused, so the .NET `DataSet` objects are not read and
-      # converted to base units on every evaluation.
+      # The observed data are static within a public call and bootstrap
+      # sample: they are read on the first evaluation and reused, so the .NET
+      # `DataSet` objects are not read and converted to base units on every
+      # evaluation. They are read outside of the `tryCatch()` below, so that
+      # an error in the observed data stops the call with its own message
+      # instead of being reported as a failed simulation.
+      private$.getObservedData(outputMappings)
+
+      # Run simulation and catch errors
       simulatedList <- tryCatch(
-        {
-          simulated <- private$.simulateOutputs(
-            currVals,
-            bootstrapSeed = bootstrapSeed
-          )
-          private$.getObservedData(outputMappings)
-          simulated
-        },
+        private$.simulateOutputs(currVals, bootstrapSeed = bootstrapSeed),
         error = function(cond) {
           messages$logSimulationError(currVals, cond)
           return(NA)
