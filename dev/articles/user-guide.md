@@ -79,7 +79,7 @@ parameters and change the dose of the second simulation to 500 mg.
 ``` r
 
 # Path to the dose parameter
-doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+doseParameterPath <- "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
@@ -90,7 +90,8 @@ sim_250mg_doseParam <- getParameter(
 print(sim_250mg_doseParam)
 #> <Parameter>
 #>   • Quantity Type: Parameter
-#>   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
+#>   • Path: Events|IV 250mg 10min|No
+#>   formulation|Application_1|ProtocolSchemaItem|Dose
 #>   • Value: 2.50e-04 [kg]
 #> 
 #> ── Formula ──
@@ -106,7 +107,8 @@ setParameterValues(parameters = sim_500mg_doseParam, values = 500, units = "mg")
 print(sim_500mg_doseParam)
 #> <Parameter>
 #>   • Quantity Type: Parameter
-#>   • Path: Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose
+#>   • Path: Events|IV 250mg 10min|No
+#>   formulation|Application_1|ProtocolSchemaItem|Dose
 #>   • Value: 5.00e-04 [kg]
 #> 
 #> ── Formula ──
@@ -499,8 +501,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 17.23 s
-#>   • Elapsed (CI): 7.458 s
+#>   • Elapsed (optimization): 15.21 s
+#>   • Elapsed (CI): 6.780 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9009</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -124,7 +124,7 @@ simulated quantity, a PK metric, and the target value.</li>
 space.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
-<span>  path <span class="op">=</span> <span class="st">"Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"</span>,</span>
+<span>  path <span class="op">=</span> <span class="st">"Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"</span>,</span>
 <span>  container <span class="op">=</span> <span class="va">sim</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -198,7 +198,7 @@ is the base unit of the PK parameter’s dimension.</p>
 <span><span class="co">#&gt;   • Objective value: 0.00e+00</span></span>
 <span><span class="co">#&gt;   • Iterations: 13</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 13</span></span>
-<span><span class="co">#&gt;   • Elapsed: 2.066 s</span></span>
+<span><span class="co">#&gt;   • Elapsed: 2.055 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">PK Parameters</span>:</span></span>
 <span><span class="co">#&gt;   • C_max: Target = 30.00 µmol/l, Achieved = 30.00 µmol/l</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -257,7 +257,7 @@ mappings simultaneously.</p>
 <span><span class="co">#&gt;   • Objective value: 5.90e-05</span></span>
 <span><span class="co">#&gt;   • Iterations: 13</span></span>
 <span><span class="co">#&gt;   • Function evaluations: 13</span></span>
-<span><span class="co">#&gt;   • Elapsed: 1.967 s</span></span>
+<span><span class="co">#&gt;   • Elapsed: 1.790 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">PK Parameters</span>:</span></span>
 <span><span class="co">#&gt;   • C_max: Target = 30.00 µmol/l, Achieved = 29.84 µmol/l</span></span>
 <span><span class="co">#&gt;   • AUC_tEnd: Target = 2400. µmol*min/l, Achieved = 2413. µmol*min/l</span></span>
