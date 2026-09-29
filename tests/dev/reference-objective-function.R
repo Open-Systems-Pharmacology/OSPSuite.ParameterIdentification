@@ -14,7 +14,8 @@
 # reports, for every case, whether the results are identical, the largest
 # absolute and relative difference of their numeric parts, and differences in
 # the errors, warnings and messages. Cases marked "expected to change" document
-# an intended change of behavior. Run times are left out.
+# an intended change of behavior. Cases that the reference does not have are
+# listed, but not compared. Run times are left out.
 
 piLib <- Sys.getenv("PI_LIB")
 if (nzchar(piLib)) {
@@ -705,6 +706,64 @@ cases$plotResults <- function() {
   })
 }
 
+# ---- PK metric mode ----------------------------------------------------------
+
+dosePath <- paste0(
+  "Events|IV 250mg 10min|No formulation|Application_1|",
+  "ProtocolSchemaItem|Dose"
+)
+
+# A task that fits the dose of Aciclovir to a target C_max
+pkTask <- function(mxStep = NULL) {
+  sim <- newAciclovir()
+  if (!is.null(mxStep)) {
+    sim$solver$mxStep <- mxStep
+  }
+  quantity <- getQuantity(plasmaPath, container = sim)
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter(sim, dosePath, 2.5e-4, 1e-4, 1e-3),
+    pkOutputMappings = PKOutputMapping$new(
+      quantity = quantity,
+      pkParameter = "C_max",
+      targetValue = 30,
+      targetUnit = quantity$unit
+    ),
+    configuration = piConfiguration(algorithmOptions = list(maxeval = 5))
+  )
+}
+doseSets <- list(2.5e-4, 1e-4, 6e-4, 2.5e-4)
+
+cases$pkObjective <- function() {
+  private <- privateOf(pkTask())
+  private$.batchInitialization()
+  lapply(doseSets, function(dose) {
+    list(
+      pkValues = private$.getPKValues(dose),
+      cost = private$.pkObjectiveFunction(dose)
+    )
+  })
+}
+cases$pkRun <- function() withoutRunTimes(pkTask()$run()$toList())
+# A simulation that fails in PK mode: the first evaluation stops, the later
+# ones return the largest cost. The base commit stops with a type error about
+# `NULL` and shows the warning of the simulation engine on every evaluation
+cases$pkFailingSimulation <- structure(
+  function() {
+    private <- privateOf(pkTask(mxStep = 1))
+    private$.batchInitialization()
+    first <- tryCatch(
+      private$.pkObjectiveFunction(doseSets[[1]]),
+      error = conditionMessage
+    )
+    list(
+      first = first,
+      later = lapply(doseSets[2:3], private$.pkObjectiveFunction)
+    )
+  },
+  expectChange = TRUE
+)
+
 # ---- run and compare -------------------------------------------------------
 
 runCase <- function(case) {
@@ -814,9 +873,11 @@ if (mode == "save") {
     results$.versions$piLibrary,
     "\n\n"
   )
+  # A reference stored before a case was added does not have it
+  compared <- intersect(names(cases), names(reference))
   table <- do.call(
     rbind,
-    lapply(names(cases), function(name) {
+    lapply(compared, function(name) {
       row <- compareCase(reference[[name]], results[[name]])
       row$expectChange <- isTRUE(attr(cases[[name]], "expectChange"))
       cbind(case = name, row)
@@ -824,7 +885,15 @@ if (mode == "save") {
   )
   options(width = 150)
   print(table, row.names = FALSE, digits = 3)
-  for (name in names(cases)) {
+  notInReference <- setdiff(names(cases), compared)
+  if (length(notInReference)) {
+    cat(
+      "\nCases that are not in the reference:",
+      paste(notInReference, collapse = ", "),
+      "\n"
+    )
+  }
+  for (name in compared) {
     if (!identical(reference[[name]]$conditions, results[[name]]$conditions)) {
       cat("\nConditions of", name, "\n  reference:\n")
       cat(paste0("    ", unique(reference[[name]]$conditions)), sep = "\n")

@@ -238,6 +238,38 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   )
 })
 
+test_that("a failed simulation in PK mode is reported by name", {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  sim$solver$mxStep <- 1
+  task <- testPKTask(sim)
+  priv <- task$.__enclos_env__$private
+  failedMessage <- messages$errorSimulationsFailed(sim$name)
+
+  # The first evaluation stops with the name of the failed simulation,
+  # without the warning of the simulation engine (#299)
+  expect_no_warning(
+    expect_error(suppressMessages(task$run()), failedMessage, fixed = TRUE)
+  )
+
+  # Later evaluations log it and return the largest cost
+  logged <- character()
+  expect_no_warning(
+    cost <- withCallingHandlers(
+      priv$.pkObjectiveFunction(task$parameters[[1]]$startValue),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+  )
+  expect_identical(cost, .Machine$double.xmax)
+  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+})
+
 test_that(".getPKValues routes a state-variable parameter as a molecule", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")

@@ -450,30 +450,15 @@ ParameterIdentification <- R6::R6Class(
     },
 
     .getPKValues = function(paramValues) {
-      private$.applyParameterValues(paramValues)
-
-      for (simId in names(private$.simulationBatches)) {
-        simBatch <- private$.simulationBatches[[simId]]
-        simBatch$addRunValues(
-          parameterValues = unlist(
-            private$.variableParameters[[simId]],
-            use.names = FALSE
-          ),
-          initialValues = unlist(
-            private$.variableMolecules[[simId]],
-            use.names = FALSE
-          )
-        )
-      }
-
-      batchResults <- ospsuite::runSimulationBatches(
-        simulationBatches = private$.simulationBatches,
-        simulationRunOptions = private$.configuration$simulationRunOptions
+      # The PK objective function reports a failed simulation itself on every
+      # evaluation, so the warning of the simulation engine is not repeated
+      simulationResults <- private$.runSimulations(
+        paramValues,
+        silentMode = TRUE
       )
 
       lapply(private$.pkMappings, function(mapping) {
-        simBatch <- private$.simulationBatches[[mapping$simId]]
-        simResult <- batchResults[[simBatch$id]][[1]]
+        simResult <- simulationResults[[mapping$simId]][[1]]
         pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)
         pkParam <- tryCatch(
           pkAnalysis$pKParameterFor(
