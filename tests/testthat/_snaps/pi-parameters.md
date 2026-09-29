@@ -27,7 +27,7 @@
       piParam$minValue <- (newStartValue * 2)
     Condition
       Error:
-      ! `minValue` and `maxValue` must bracket the start value (3.52833353250001e-05) with `minValue` < `maxValue`. Provided bound: 7.05666706500003e-05.
+      ! `minValue` and `maxValue` must bracket the start value (3.5e-05) with `minValue` < `maxValue`. Provided bound: 7e-05.
 
 ---
 
@@ -35,7 +35,7 @@
       piParam$maxValue <- (newStartValue / 2)
     Condition
       Error:
-      ! `minValue` and `maxValue` must bracket the start value (3.52833353250001e-05) with `minValue` < `maxValue`. Provided bound: 1.76416676625001e-05.
+      ! `minValue` and `maxValue` must bracket the start value (3.5e-05) with `minValue` < `maxValue`. Provided bound: 1.75e-05.
 
 # PIParameters with multiple parameters can export to data.frame
 
@@ -53,7 +53,7 @@
       piParam$minValue <- (newStartValue * 2)
     Condition
       Error:
-      ! `minValue` and `maxValue` must bracket the start value (4.33497537841081) with `minValue` < `maxValue`. Provided bound: 8.66995075682162.
+      ! `minValue` and `maxValue` must bracket the start value (4.3) with `minValue` < `maxValue`. Provided bound: 8.6.
 
 ---
 
@@ -61,7 +61,7 @@
       piParam$maxValue <- (newStartValue / 2)
     Condition
       Error:
-      ! `minValue` and `maxValue` must bracket the start value (4.33497537841081) with `minValue` < `maxValue`. Provided bound: 2.16748768920541.
+      ! `minValue` and `maxValue` must bracket the start value (4.3) with `minValue` < `maxValue`. Provided bound: 2.15.
 
 # Zero start value without explicit bounds errors
 

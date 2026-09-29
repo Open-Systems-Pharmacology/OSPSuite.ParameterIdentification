@@ -26,7 +26,10 @@ test_that("PIParameters can export to data.frame", {
 
 test_that("Start, min, and max values are set correctly (single parameter)", {
   piParam <- PIParameters$new(testParam)
-  newStartValue <- refVal * 2
+  # Rounded because the error message prints 15 significant digits: their last
+  # digit changes with the Aciclovir.pkml of ospsuite, and R on macOS arm64
+  # prints values close to a rounding boundary differently
+  newStartValue <- signif(refVal * 2, 2)
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
   expect_snapshot(piParam$minValue <- (newStartValue * 2), error = TRUE)
@@ -97,7 +100,8 @@ test_that("PIParameters with multiple parameters can export to data.frame", {
 
 test_that("Start, min, and max values are set correctly (multiple parameters)", {
   piParam <- PIParameters$new(testParamsList)
-  newStartValue <- refVal * 2
+  # Rounded for the same reason as in the single parameter test
+  newStartValue <- signif(refVal * 2, 2)
   piParam$startValue <- newStartValue
   expect_equal(piParam$startValue, newStartValue)
   expect_snapshot(piParam$minValue <- (newStartValue * 2), error = TRUE)

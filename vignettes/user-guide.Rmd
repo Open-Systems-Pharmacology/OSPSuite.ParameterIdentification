@@ -76,7 +76,7 @@ In the next step, we will retrieve the objects of the application dose parameter
 
 ```{r setDose}
 # Path to the dose parameter
-doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+doseParameterPath <- "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters

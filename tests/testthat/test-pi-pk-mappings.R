@@ -190,11 +190,11 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   ospsuite::setParameterValues(cl2, cl2$value * 0.1)
 
   doseParam1 <- ospsuite::getParameter(
-    "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+    "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
     container = sim1
   )
   doseParam2 <- ospsuite::getParameter(
-    "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose",
+    "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
     container = sim2
   )
   piParam <- PIParameters$new(parameters = list(doseParam1, doseParam2))
@@ -278,7 +278,7 @@ test_that(".getPKValues routes a state-variable parameter as a molecule", {
 
 test_that("run() applies a non-base parameter unit in PK mode", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
-  dosePath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+  dosePath <- "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 
   # Own simulation per task: earlier run()s mutate the cached simulation's Dose
