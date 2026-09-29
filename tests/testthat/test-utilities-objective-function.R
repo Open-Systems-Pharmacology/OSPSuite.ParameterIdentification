@@ -1024,126 +1024,257 @@ test_that("observed data equal the observed rows of a full evaluation", {
   expect_identical(observed$logLloq, logged$lloq[isObserved])
 })
 
-# The objective function of 2.2.0.9009 on the data frames of a full
-# evaluation, as a reference for the evaluation on numeric vectors
-dataFrameObjective <- function(task, currVals) {
-  priv <- task$.__enclos_env__$private
-  options <- task$configuration$objectiveFunctionOptions
-  dataCombined <- priv$.evaluate(currVals)
-  costs <- lapply(seq_along(dataCombined), function(idx) {
-    mapping <- task$outputMappings[[idx]]
-    df <- ospsuite:::.unitConverter(
-      dataCombined[[idx]]$toDataFrame(),
-      xUnit = ospsuite::getBaseUnit("Time"),
-      yUnit = ospsuite::getBaseUnit(mapping$quantity$dimension)
-    )
-    if (options$objectiveFunctionType == "lsq" && sum(is.finite(df$lloq)) > 0) {
-      lloq <- min(df$lloq, na.rm = TRUE)
-      df[df$dataType == "simulated" & df$yValues < lloq, "yValues"] <- lloq / 2
-    }
-    if (mapping$scaling == "log") {
-      df <- .applyLogTransformation(df)
-    }
-    df$weights <- NA_real_
-    for (dataSet in names(mapping$dataWeights)) {
-      df$weights[df$name == dataSet] <- mapping$dataWeights[[dataSet]]
-    }
-    .calculateCostMetrics(
-      df = df,
-      objectiveFunctionType = options$objectiveFunctionType,
-      residualWeightingMethod = options$residualWeightingMethod,
-      robustMethod = options$robustMethod,
-      scaleVar = options$scaleVar,
-      index = idx,
-      linScaleCV = options$linScaleCV,
-      logScaleSD = options$logScaleSD,
-      scaling = mapping$scaling
-    )
+# The objective function against that of 2.2.0.9009, which calculated the
+# cost on data frames (`frozenObjectiveFunction()`, see
+# helper-frozen-objective-function.R). Each test builds one task and applies
+# several settings to it. A setting sets the scaling of every output mapping
+# and every objective function option, so it does not depend on the settings
+# applied before it.
+
+# The value of an expression and the messages of its warnings
+withWarningMessages <- function(expr) {
+  warningMessages <- character()
+  value <- withCallingHandlers(expr, warning = function(w) {
+    warningMessages <<- c(warningMessages, conditionMessage(w))
+    invokeRestart("muffleWarning")
   })
-  Reduce(.summarizeCostLists, costs)
+  list(value = value, warnings = warningMessages)
 }
 
-# Two outputs of one simulation with the same observed data
-twoOutputsTask <- function(
-  data,
-  scaling = c("lin", "lin"),
-  lloq = NULL,
-  options = NULL,
-  weights = FALSE
-) {
+# Sets the scaling of every output mapping (`scaling` is recycled) and every
+# objective function option, the given ones and the defaults for the others,
+# and initializes the batches, as a public method does. The observed data are
+# then read again.
+applyCostSetting <- function(task, scaling = "lin", options = list()) {
+  mappings <- task$outputMappings
+  scaling <- rep_len(scaling, length(mappings))
+  for (idx in seq_along(mappings)) {
+    mappings[[idx]]$scaling <- scaling[[idx]]
+  }
+  task$configuration$objectiveFunctionOptions <- utils::modifyList(
+    PIConfiguration$new()$objectiveFunctionOptions,
+    options
+  )
+  task$.__enclos_env__$private$.batchInitialization()
+}
+
+# Expects identical results and warnings from the objective function and from
+# the objective function of 2.2.0.9009, for each parameter value, in this
+# order. The first evaluation reads the observed data, the later ones reuse
+# them.
+expectFrozenObjective <- function(task, values, bootstrapSeed = NULL) {
+  priv <- task$.__enclos_env__$private
+  for (value in values) {
+    testthat::expect_identical(
+      withWarningMessages(
+        priv$.objectiveFunction(value, bootstrapSeed = bootstrapSeed)
+      ),
+      withWarningMessages(frozenObjectiveFunction(task, value, bootstrapSeed))
+    )
+  }
+}
+
+# Applies each setting to the task and compares the objective functions
+expectFrozenForSettings <- function(task, settings, values) {
+  for (setting in settings) {
+    do.call(applyCostSetting, c(list(task), setting))
+    expectFrozenObjective(task, values)
+  }
+}
+
+aciclovirPlasmaPaths <- c(
+  paste0(
+    "Organism|PeripheralVenousBlood|Aciclovir|",
+    "Plasma (Peripheral Venous Blood)"
+  ),
+  "Organism|VenousBlood|Plasma|Aciclovir|Concentration"
+)
+
+# A task with the lipophilicity of one Aciclovir simulation as the parameter
+# and a list of observed data sets for each output path
+aciclovirTask <- function(dataSetsByPath) {
   sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
   )
-  if (!is.null(lloq)) {
-    data$LLOQ <- lloq
-  }
-  paths <- c(
-    paste0(
-      "Organism|PeripheralVenousBlood|Aciclovir|",
-      "Plasma (Peripheral Venous Blood)"
-    ),
-    "Organism|VenousBlood|Plasma|Aciclovir|Concentration"
-  )
-  mappings <- lapply(seq_along(paths), function(idx) {
-    mapping <- PIOutputMapping$new(
-      quantity = ospsuite::getQuantity(paths[[idx]], sim)
-    )
-    mapping$addObservedDataSets(data)
-    mapping$scaling <- scaling[[idx]]
-    mapping
-  })
-  if (weights) {
-    mappings[[1]]$setDataWeights(
-      stats::setNames(list(seq(0.5, 2, length.out = 11)), data$name)
-    )
-  }
-  configuration <- PIConfiguration$new()
-  if (!is.null(options)) {
-    configuration$objectiveFunctionOptions <- options
-  }
   ParameterIdentification$new(
     simulations = sim,
     parameters = PIParameters$new(
       parameters = list(ospsuite::getParameter("Aciclovir|Lipophilicity", sim))
     ),
-    outputMappings = mappings,
-    configuration = configuration
+    outputMappings = lapply(names(dataSetsByPath), function(path) {
+      mapping <- PIOutputMapping$new(
+        quantity = ospsuite::getQuantity(path, sim)
+      )
+      mapping$addObservedDataSets(dataSetsByPath[[path]])
+      mapping
+    })
   )
 }
 
-test_that("objective function equals the cost of the full data frames", {
-  settings <- list(
-    list(),
-    list(scaling = c("log", "log")),
-    list(scaling = c("lin", "log"), weights = TRUE),
-    list(lloq = 0.5),
-    list(lloq = 0.5, scaling = c("log", "log")),
-    list(
-      lloq = 0.5,
-      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
-    ),
-    list(
-      lloq = 0.5,
-      scaling = c("log", "log"),
-      options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
-    ),
-    list(options = list(residualWeightingMethod = "error")),
-    list(options = list(robustMethod = "huber")),
-    list(scaling = c("log", "log"), options = list(robustMethod = "bisquare")),
-    list(options = list(scaleVar = TRUE))
-  )
-  for (setting in settings) {
-    setting$data <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-    task <- do.call(twoOutputsTask, setting)
-    priv <- task$.__enclos_env__$private
-    priv$.batchInitialization()
-    for (value in c(-0.097, 0.3)) {
-      expect_identical(
-        suppressWarnings(priv$.objectiveFunction(value)),
-        suppressWarnings(dataFrameObjective(task, value))
-      )
-    }
+# Two outputs of one simulation with the same observed data, optionally with
+# an LLOQ, and with data weights for the first output
+twoOutputsTask <- function(lloq = NULL, weights = FALSE) {
+  data <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  if (!is.null(lloq)) {
+    data$LLOQ <- lloq
   }
+  task <- aciclovirTask(
+    stats::setNames(list(data, data), aciclovirPlasmaPaths)
+  )
+  if (weights) {
+    task$outputMappings[[1]]$setDataWeights(
+      stats::setNames(list(seq(0.5, 2, length.out = 11)), data$name)
+    )
+  }
+  task
+}
+
+lipophilicityValues <- c(-0.097, 0.3)
+
+test_that("objective function equals 2.2.0.9009 for scaling and options", {
+  expectFrozenForSettings(
+    twoOutputsTask(),
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(residualWeightingMethod = "error")),
+      list(options = list(robustMethod = "huber")),
+      list(scaling = "log", options = list(robustMethod = "bisquare")),
+      list(options = list(scaleVar = TRUE))
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 with data weights", {
+  expectFrozenForSettings(
+    twoOutputsTask(weights = TRUE),
+    list(
+      list(scaling = c("lin", "log")),
+      list(scaling = c("log", "lin"))
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 with an LLOQ", {
+  expectFrozenForSettings(
+    twoOutputsTask(lloq = 0.5),
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(
+        scaling = "log",
+        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+      )
+    ),
+    lipophilicityValues
+  )
+})
+
+# Molar data in min with geometric SD
+molarDataSet <- function(name, lloq = NULL) {
+  dataSet <- ospsuite::DataSet$new(name = name)
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- "nmol/l"
+  dataSet$setValues(
+    xValues = c(30, 60, 120, 240, 480, 720),
+    yValues = c(12000, 9000, 6000, 3000, 1200, 500),
+    yErrorValues = c(1.2, 1.3, 1.5, 1.4, 1.8, 2)
+  )
+  dataSet$yErrorType <- ospsuite::DataErrorType$GeometricStdDev
+  if (!is.null(lloq)) {
+    dataSet$LLOQ <- lloq
+  }
+  dataSet
+}
+
+# One simulation with two outputs. The first output has three data sets, with
+# y transformations: the data of Laskin 1982 (mg/l, arithmetic SD) with a data
+# weight, the same data times 1.5 without the last point, with an LLOQ and a
+# data weight per point, and molar data. The second output has molar data
+# with an LLOQ, with x and y transformations.
+severalDataSetsTask <- function() {
+  dataSets <- testObservedDataMultiple()
+  dataSets$dataSet2$LLOQ <- 1
+  task <- aciclovirTask(stats::setNames(
+    list(
+      c(dataSets, dataSet3 = molarDataSet("dataSet3")),
+      molarDataSet("dataSet4", lloq = 1000)
+    ),
+    aciclovirPlasmaPaths
+  ))
+  task$outputMappings[[1]]$setDataTransformations(
+    yOffsets = 0.05,
+    yFactors = 0.9
+  )
+  task$outputMappings[[1]]$setDataWeights(
+    list(dataSet1 = 2, dataSet2 = seq(1, 0.1, length.out = 10))
+  )
+  # M3 compares the censored observations with the simulated values at the
+  # same times, so the transformed times must be times of the simulation
+  # results, which are single precision numbers
+  task$outputMappings[[2]]$setDataTransformations(
+    xOffsets = 2,
+    xFactors = 1.5,
+    yFactors = 1.2
+  )
+  task
+}
+
+test_that("objective function equals 2.2.0.9009 for several data sets", {
+  expectFrozenForSettings(
+    severalDataSetsTask(),
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(residualWeightingMethod = "error")),
+      list(scaling = "log", options = list(residualWeightingMethod = "error")),
+      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(
+        scaling = "log",
+        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+      ),
+      list(
+        scaling = c("lin", "log"),
+        options = list(robustMethod = "huber", scaleVar = TRUE)
+      )
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
+  # Five individual data sets, the first with a data weight: the bootstrap
+  # resamples the weights of the data sets, not their values
+  dataSets <- syntheticObservedData()
+  task <- aciclovirTask(stats::setNames(
+    list(dataSets),
+    aciclovirPlasmaPaths[1]
+  ))
+  mapping <- task$outputMappings[[1]]
+  mapping$setDataWeights(stats::setNames(list(2), dataSets[[1]]$name))
+  priv <- task$.__enclos_env__$private
+  applyCostSetting(task)
+  priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
+
+  for (seed in 1:2) {
+    expectFrozenObjective(task, lipophilicityValues, bootstrapSeed = seed)
+    expect_false(identical(
+      mapping$dataWeights,
+      priv$.initialOutputMappingState$dataSetWeights[[1]]
+    ))
+  }
+  applyCostSetting(task, scaling = "log")
+  expectFrozenObjective(task, lipophilicityValues[[2]], bootstrapSeed = 3L)
+
+  # The restored weights
+  priv$.restoreOutputMappingsState()
+  expectFrozenObjective(task, lipophilicityValues[[2]])
 })
 
 test_that(".combineCostTerms equals .summarizeCostLists of the costs", {
