@@ -313,6 +313,79 @@ testTwoSimulationsTask <- function(failing = integer()) {
   )
 }
 
+# A task with the intravenous ("IV250") and the oral ("PO250") Clarithromycin
+# simulations of the package, or with one of them, each with its own observed
+# data. The output mappings come in the reverse order of the simulations. The
+# first parameter group spans both simulations, the second spans them in the
+# reverse order, and the third belongs to the oral simulation only. A task
+# with one simulation has the groups of that simulation.
+testClarithromycinTask <- function(simulationNames = c("IV250", "PO250")) {
+  files <- c(
+    IV250 = "Clarithromycin_Chu_1992_iv_250mg.pkml",
+    PO250 = "Clarithromycin_Chu_1993_po_250mg.pkml"
+  )
+  simulations <- lapply(files[simulationNames], function(file) {
+    ospsuite::loadSimulation(
+      system.file(
+        "extdata",
+        file,
+        package = "ospsuite.parameteridentification"
+      ),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+  })
+
+  dataFile <- system.file(
+    "extdata",
+    "Clarithromycin_Profiles.xlsx",
+    package = "ospsuite.parameteridentification"
+  )
+  dataConfig <- ospsuite::createImporterConfigurationForFile(dataFile)
+  dataConfig$sheets <- simulationNames
+  dataConfig$namingPattern <- "{Sheet}"
+  observedData <- ospsuite::loadDataSetsFromExcel(dataFile, dataConfig)
+
+  group <- function(path, groupSimulations) {
+    groupSimulations <- intersect(groupSimulations, simulationNames)
+    if (length(groupSimulations) == 0) {
+      return(NULL)
+    }
+    PIParameters$new(
+      parameters = lapply(simulations[groupSimulations], function(simulation) {
+        ospsuite::getParameter(path, simulation)
+      })
+    )
+  }
+  parameters <- list(
+    group("Clarithromycin-CYP3A4-fit|kcat", c("IV250", "PO250")),
+    group(
+      paste0(
+        "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|",
+        "Renal Clearances-fitted|Specific clearance"
+      ),
+      c("PO250", "IV250")
+    ),
+    group("Clarithromycin|Lipophilicity", "PO250")
+  )
+
+  outputPath <- paste0(
+    "Organism|PeripheralVenousBlood|Clarithromycin|",
+    "Plasma (Peripheral Venous Blood)"
+  )
+  ParameterIdentification$new(
+    simulations = unname(simulations),
+    parameters = Filter(Negate(is.null), parameters),
+    outputMappings = lapply(rev(simulationNames), function(name) {
+      mapping <- PIOutputMapping$new(
+        quantity = ospsuite::getQuantity(outputPath, simulations[[name]])
+      )
+      mapping$addObservedDataSets(observedData[[name]])
+      mapping
+    })
+  )
+}
+
 
 # General Helpers
 

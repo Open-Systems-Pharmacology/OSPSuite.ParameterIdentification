@@ -701,6 +701,184 @@ test_that(".simulateOutputs reads several outputs of one simulation", {
   expect_false(identical(simulated[[1]]$yValues, simulated[[2]]$yValues))
 })
 
+# several simulations
+
+test_that(".resolveParameterTargets resolves groups over two simulations", {
+  clPath <- paste0(
+    "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|",
+    "Renal Clearances-TS-Aciclovir|TSspec"
+  )
+  lipophilicityPath <- "Aciclovir|Lipophilicity"
+  volumePath <- "Organism|Liver|Volume"
+  simulations <- replicate(
+    2,
+    loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    ),
+    simplify = FALSE
+  )
+  ids <- vapply(simulations, function(sim) sim$root$id, character(1))
+  group <- function(path, positions) {
+    PIParameters$new(
+      parameters = lapply(simulations[positions], function(sim) {
+        getParameter(path, container = sim)
+      })
+    )
+  }
+  groups <- list(
+    # Both simulations, the second one first
+    group(clPath, 2:1),
+    # Both simulations
+    group(lipophilicityPath, 1:2),
+    # A path of the second simulation that the second group has, too: the
+    # last group wins
+    group(lipophilicityPath, 2),
+    # A state variable in both simulations
+    group(stateVariableParameterPath, 1:2),
+    # The same path twice in one group
+    group(volumePath, c(1, 1))
+  )
+
+  targets <- .resolveParameterTargets(groups)
+  expect_identical(names(targets), rev(ids))
+  expect_identical(
+    targets[[ids[[1]]]],
+    list(
+      parameterPaths = c(clPath, lipophilicityPath, volumePath),
+      parameterGroups = c(1L, 2L, 5L),
+      moleculePaths = stateVariableParameterPath,
+      moleculeGroups = 4L
+    )
+  )
+  expect_identical(
+    targets[[ids[[2]]]],
+    list(
+      parameterPaths = c(clPath, lipophilicityPath),
+      parameterGroups = c(1L, 3L),
+      moleculePaths = stateVariableParameterPath,
+      moleculeGroups = 4L
+    )
+  )
+
+  # The buckets of the simulations take the value of their group, in the
+  # order of the variable paths of their batches
+  task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = groups,
+    outputMappings = lapply(simulations, function(sim) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
+  )
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  values <- c(0.5, -0.2, 0.3, 0.05, 2.5)
+  priv$.applyParameterValues(values)
+  expected <- list(
+    list(
+      parameters = values[c(1, 2, 5)],
+      parameterPaths = c(clPath, lipophilicityPath, volumePath)
+    ),
+    list(
+      parameters = values[c(1, 3)],
+      parameterPaths = c(clPath, lipophilicityPath)
+    )
+  )
+  for (idx in 1:2) {
+    simId <- ids[[idx]]
+    batch <- priv$.simulationBatches[[simId]]
+    expect_equal(
+      priv$.variableParameters[[simId]],
+      stats::setNames(
+        expected[[idx]]$parameters,
+        expected[[idx]]$parameterPaths
+      )
+    )
+    expect_equal(
+      priv$.variableMolecules[[simId]],
+      stats::setNames(values[[4]], stateVariableParameterPath)
+    )
+    expect_identical(
+      batch$getVariableParameters(),
+      names(priv$.variableParameters[[simId]])
+    )
+    expect_identical(
+      batch$getVariableMolecules(),
+      names(priv$.variableMolecules[[simId]])
+    )
+  }
+})
+
+# The intravenous and the oral Clarithromycin task, and one with both, built
+# once for the tests below
+clarithromycinTasks <- local({
+  tasks <- NULL
+  function() {
+    if (is.null(tasks)) {
+      tasks <<- list(
+        both = testClarithromycinTask(),
+        IV250 = testClarithromycinTask("IV250"),
+        PO250 = testClarithromycinTask("PO250")
+      )
+      for (task in tasks) {
+        task$.__enclos_env__$private$.batchInitialization()
+      }
+    }
+    tasks
+  }
+})
+
+test_that("the cost of two simulations is the sum of their costs", {
+  tasks <- clarithromycinTasks()
+  objective <- function(name, values) {
+    tasks[[name]]$.__enclos_env__$private$.objectiveFunction(values)
+  }
+  startValues <- currStartValues(tasks$both)
+
+  for (values in list(startValues, startValues * c(2, 0.5, 1.1))) {
+    both <- objective("both", values)
+    # The intravenous simulation has only the first two groups
+    iv <- objective("IV250", values[1:2])
+    po <- objective("PO250", values)
+
+    expect_identical(both$modelCost, po$modelCost + iv$modelCost)
+    expect_identical(
+      both$minLogProbability,
+      po$minLogProbability + iv$minLogProbability
+    )
+    expect_identical(both$costVariables, po$costVariables + iv$costVariables)
+    # The first output mapping is that of the oral simulation, the second
+    # that of the intravenous one
+    ivRows <- iv$residualDetails
+    ivRows$index <- 2L
+    expect_identical(both$residualDetails, rbind(po$residualDetails, ivRows))
+    expect_identical(unique(both$residualDetails$index), 1:2)
+  }
+})
+
+test_that(".simulateOutputs reads the outputs of two simulations", {
+  task <- clarithromycinTasks()$both
+  priv <- task$.__enclos_env__$private
+  currVals <- currStartValues(task)
+
+  full <- priv$.evaluate(currVals)
+  simulated <- priv$.simulateOutputs(currVals)
+
+  expect_length(simulated, 2)
+  for (idx in 1:2) {
+    df <- full[[idx]]$toDataFrame()
+    df <- df[df$dataType == "simulated", , drop = FALSE]
+    expect_identical(simulated[[idx]]$xValues, df$xValues)
+    expect_identical(simulated[[idx]]$yValues, df$yValues)
+  }
+  # Each simulation has its own output times, those of its observed data
+  expect_false(identical(simulated[[1]]$xValues, simulated[[2]]$xValues))
+  expect_false(identical(simulated[[1]]$yValues, simulated[[2]]$yValues))
+})
+
 test_that(".evaluate includes simulated and observed data", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
