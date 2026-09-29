@@ -103,6 +103,38 @@
   list(xValues = times$xValues, yValues = values[times$order])
 }
 
+#' Error of failed simulations
+#'
+#' @description The error raised when simulations fail. Its message is that
+#'   of `messages$errorSimulationsFailed()`, and it keeps the arguments of the
+#'   message, so that the objective functions can log a reason that they
+#'   logged before in a shorter form.
+#'
+#' @param simulationNames The names of all simulations of the task.
+#' @param failed The positions of the failed simulations.
+#' @param reasons The messages of the simulation engine.
+#' @param call The call to report with the error.
+#'
+#' @return A condition of class `simulationsFailedError`, with the fields
+#'   `simulationNames`, `failed` and `reasons`.
+#' @keywords internal
+#' @noRd
+.simulationsFailedError <- function(
+  simulationNames,
+  failed,
+  reasons,
+  call = NULL
+) {
+  errorCondition(
+    messages$errorSimulationsFailed(simulationNames, failed, reasons),
+    simulationNames = simulationNames,
+    failed = failed,
+    reasons = reasons,
+    class = "simulationsFailedError",
+    call = call
+  )
+}
+
 #' Validates Matching IDs across Simulation IDs, PI Parameters, and Output
 #' Mappings
 #'

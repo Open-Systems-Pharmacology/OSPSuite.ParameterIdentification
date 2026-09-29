@@ -77,6 +77,24 @@ messages$errorSimulationsFailed <- function(
   paste0(text, ": ", paste(reasons, collapse = "; "))
 }
 
+# The first line of each reason of the simulation engine, marked as shortened
+# if the reason has more lines. For a reason that was logged in full before.
+messages$shortenedFailureReason <- function(reasons) {
+  vapply(
+    reasons,
+    function(reason) {
+      lines <- strsplit(reason, "\r?\n")[[1]]
+      lines <- lines[nzchar(trimws(lines))]
+      if (length(lines) <= 1) {
+        return(reason)
+      }
+      paste0(trimws(lines[[1]], which = "right"), " [...]")
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+}
+
 # `dataType` is "simulated" or "observed"
 messages$errorNoDataForCost <- function(dataType) {
   paste0("No ", dataType, " data found when calculating cost function.")

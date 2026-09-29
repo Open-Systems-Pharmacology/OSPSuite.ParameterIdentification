@@ -99,6 +99,55 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   expect_snapshot(gridSearchResults$ofv)
 })
 
+test_that("gridSearch() logs the full reason of a failed simulation once", {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  # A negative dose makes the simulation fail with a reason of many lines,
+  # which lists the variables that became negative
+  sim$solver$checkForNegativeValues <- TRUE
+  piTask <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = testPKParameters(sim),
+    outputMappings = testOutputMapping(sim)
+  )
+  # The errors that a grid search over three negative doses logs
+  loggedErrors <- function() {
+    logged <- character()
+    expect_no_warning(
+      withCallingHandlers(
+        piTask$gridSearch(lower = -1e-3, upper = -5e-4, totalEvaluations = 3),
+        message = function(m) {
+          logged <<- c(logged, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      )
+    )
+    errors <- grep("^Error: ", logged, value = TRUE)
+    sub("\n$", "", sub("^Error: ", "", errors))
+  }
+
+  errors <- loggedErrors()
+  expect_length(errors, 3)
+  failedText <- paste0("Simulation '", sim$name, "' failed: ")
+  expect_true(startsWith(errors[[1]], failedText))
+  reason <- substring(errors[[1]], nchar(failedText) + 1)
+  expect_match(reason, "\n", fixed = TRUE)
+
+  # The later failures of the call give the first line of the reason only
+  shortened <- messages$errorSimulationsFailed(
+    sim$name,
+    reasons = messages$shortenedFailureReason(reason)
+  )
+  expect_false(grepl("\n", shortened, fixed = TRUE))
+  expect_identical(errors[2:3], rep(shortened, 2))
+
+  # A new call logs the full reason again
+  expect_identical(loggedErrors(), c(errors[[1]], shortened, shortened))
+})
+
 test_that("gridSearch() stops on unconvertible observed data", {
   # The error is raised by the unit conversion instead of returning `Inf` for
   # every grid point as if the simulation had failed
