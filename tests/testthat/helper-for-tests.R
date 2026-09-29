@@ -283,6 +283,36 @@ testUnconvertibleDataTask <- function() {
   )
 }
 
+# A task with two copies of the Aciclovir simulation, which share their name,
+# one lipophilicity parameter over both, and the same data mapped to each.
+# The simulations at the positions `failing` fail.
+testTwoSimulationsTask <- function(failing = integer()) {
+  simulations <- lapply(1:2, function(idx) {
+    ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+  })
+  for (idx in failing) {
+    simulations[[idx]]$solver$mxStep <- 1
+  }
+
+  ParameterIdentification$new(
+    simulations = simulations,
+    parameters = PIParameters$new(
+      parameters = lapply(simulations, function(simulation) {
+        ospsuite::getParameter("Aciclovir|Lipophilicity", simulation)
+      })
+    ),
+    outputMappings = lapply(simulations, function(simulation) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
+  )
+}
+
 
 # General Helpers
 

@@ -58,23 +58,31 @@ messages$initialSimulationError <- function() {
   "Stopping optimization: Initial simulation failed."
 }
 
-# `reasons` are the messages of the simulation engine. With several failed
-# simulations, the engine does not say which reason belongs to which
-# simulation, so the distinct reasons are listed after the names.
+# `simulationNames` are the names of all simulations of the task and `failed`
+# the positions of the failed ones. A name that several simulations share is
+# followed by the position of the simulation. `reasons` are the messages of
+# the simulation engine. With several failed simulations, the engine does not
+# say which reason belongs to which simulation, so the distinct reasons are
+# listed after the names.
 messages$errorSimulationsFailed <- function(
   simulationNames,
+  failed = seq_along(simulationNames),
   reasons = character()
 ) {
-  failed <- paste0(
-    if (length(simulationNames) == 1) "Simulation " else "Simulations ",
-    paste0("'", simulationNames, "'", collapse = ", "),
+  failedNames <- simulationNames[failed]
+  labels <- paste0("'", failedNames, "'")
+  shared <- failedNames %in% simulationNames[duplicated(simulationNames)]
+  labels[shared] <- paste0(labels[shared], " (position ", failed[shared], ")")
+  text <- paste0(
+    if (length(failed) == 1) "Simulation " else "Simulations ",
+    paste(labels, collapse = ", "),
     " failed"
   )
   reasons <- unique(reasons)
   if (length(reasons) == 0) {
-    return(paste0(failed, "."))
+    return(paste0(text, "."))
   }
-  paste0(failed, ": ", paste(reasons, collapse = "; "))
+  paste0(text, ": ", paste(reasons, collapse = "; "))
 }
 
 messages$errorSimulatedValuesMissing <- function() {

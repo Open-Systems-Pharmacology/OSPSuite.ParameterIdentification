@@ -568,13 +568,19 @@ ParameterIdentification <- R6::R6Class(
         logical(1)
       )
       if (any(failed)) {
+        # The message gives the position in the task of a failed simulation
+        # whose name other simulations share
         simulationNames <- vapply(
-          private$.simulations[names(simulationResults)[failed]],
+          private$.simulations,
           function(simulation) simulation$name,
           character(1)
         )
         stop(messages$errorSimulationsFailed(
           simulationNames,
+          failed = match(
+            names(simulationResults)[failed],
+            names(private$.simulations)
+          ),
           reasons = vapply(engineWarnings, conditionMessage, character(1))
         ))
       }

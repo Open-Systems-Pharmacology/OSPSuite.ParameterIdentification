@@ -62,31 +62,15 @@ test_that("a failed simulation is reported by name and reason", {
 })
 
 test_that("several failed simulations are reported with their reasons", {
-  simulations <- lapply(1:2, function(idx) {
-    simulation <- ospsuite::loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    )
-    simulation$solver$mxStep <- 1
-    simulation
-  })
-  piTask <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = PIParameters$new(
-      parameters = lapply(simulations, function(simulation) {
-        ospsuite::getParameter("Aciclovir|Lipophilicity", simulation)
-      })
-    ),
-    outputMappings = lapply(simulations, function(simulation) {
-      mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
-      mapping$addObservedDataSets(testObservedData())
-      mapping
-    })
-  )
+  piTask <- testTwoSimulationsTask(failing = 1:2)
   priv <- piTask$.__enclos_env__$private
   priv$.batchInitialization()
   startValue <- piTask$parameters[[1]]$startValue
+  simulationNames <- vapply(
+    piTask$simulations,
+    function(simulation) simulation$name,
+    character(1)
+  )
 
   # Both simulations fail for the same reason, which the message gives once
   engineWarnings <- character()
@@ -102,11 +86,23 @@ test_that("several failed simulations are reported with their reasons", {
   expect_length(engineWarnings, 2)
   expect_length(unique(engineWarnings), 1)
   failedMessage <- messages$errorSimulationsFailed(
-    vapply(simulations, function(simulation) simulation$name, character(1)),
+    simulationNames,
     reasons = engineWarnings
   )
   expect_identical(conditionMessage(runError), failedMessage)
-  expect_match(failedMessage, "^Simulations ")
+  # The simulations share their name, so their positions tell them apart
+  expect_match(
+    failedMessage,
+    paste0(
+      "Simulations '",
+      simulationNames[[1]],
+      "' (position 1), '",
+      simulationNames[[2]],
+      "' (position 2) failed: ",
+      engineWarnings[[1]]
+    ),
+    fixed = TRUE
+  )
 
   # The objective function logs the same message without the warnings
   priv$.fnEvaluations <- 1
@@ -121,6 +117,25 @@ test_that("several failed simulations are reported with their reasons", {
     )
   )
   expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+})
+
+test_that("a failed simulation with a shared name is named with its position", {
+  piTask <- testTwoSimulationsTask(failing = 2)
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  runError <- expect_error(
+    suppressWarnings(priv$.runSimulations(piTask$parameters[[1]]$startValue))
+  )
+  expect_match(
+    conditionMessage(runError),
+    paste0(
+      "Simulation '",
+      piTask$simulations[[2]]$name,
+      "' (position 2) failed: "
+    ),
+    fixed = TRUE
+  )
 })
 
 
