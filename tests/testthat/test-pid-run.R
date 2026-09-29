@@ -22,21 +22,28 @@ test_that("run() stops on unconvertible observed data", {
   )
 })
 
-test_that("a failed simulation is reported by name", {
+test_that("a failed simulation is reported by name and reason", {
   modPiTask <- testModifiedTask()
   priv <- modPiTask$.__enclos_env__$private
-  priv$.batchInitialization()
-  failedMessage <- messages$errorSimulationsFailed(
-    modPiTask$simulations[[1]]$name
-  )
   startValues <- vapply(
     modPiTask$parameters,
     function(p) p$startValue,
     numeric(1)
   )
 
-  # The objective function reports the failure without the warning of the
-  # simulation engine
+  # plotResults() shows the warning of the simulation engine and stops with
+  # the name of the failed simulation and the reason from that warning
+  engineWarning <- expect_warning(
+    plotError <- expect_error(modPiTask$plotResults(par = startValues))
+  )
+  failedMessage <- messages$errorSimulationsFailed(
+    modPiTask$simulations[[1]]$name,
+    reasons = conditionMessage(engineWarning)
+  )
+  expect_identical(conditionMessage(plotError), failedMessage)
+
+  # The objective function reports the same failure without the warning of
+  # the simulation engine
   logged <- character()
   expect_no_warning(
     expect_error(
@@ -52,13 +59,68 @@ test_that("a failed simulation is reported by name", {
     )
   )
   expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+})
 
-  # plotResults() shows the warning and names the failed simulation
-  expect_error(
-    suppressWarnings(modPiTask$plotResults()),
-    failedMessage,
-    fixed = TRUE
+test_that("several failed simulations are reported with their reasons", {
+  simulations <- lapply(1:2, function(idx) {
+    simulation <- ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+    simulation$solver$mxStep <- 1
+    simulation
+  })
+  piTask <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = PIParameters$new(
+      parameters = lapply(simulations, function(simulation) {
+        ospsuite::getParameter("Aciclovir|Lipophilicity", simulation)
+      })
+    ),
+    outputMappings = lapply(simulations, function(simulation) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
   )
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValue <- piTask$parameters[[1]]$startValue
+
+  # Both simulations fail for the same reason, which the message gives once
+  engineWarnings <- character()
+  runError <- expect_error(
+    withCallingHandlers(
+      priv$.runSimulations(startValue),
+      warning = function(w) {
+        engineWarnings <<- c(engineWarnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+  )
+  expect_length(engineWarnings, 2)
+  expect_length(unique(engineWarnings), 1)
+  failedMessage <- messages$errorSimulationsFailed(
+    vapply(simulations, function(simulation) simulation$name, character(1)),
+    reasons = engineWarnings
+  )
+  expect_identical(conditionMessage(runError), failedMessage)
+  expect_match(failedMessage, "^Simulations ")
+
+  # The objective function logs the same message without the warnings
+  priv$.fnEvaluations <- 1
+  logged <- character()
+  expect_no_warning(
+    withCallingHandlers(
+      priv$.objectiveFunction(startValue),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+  )
+  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
 })
 
 

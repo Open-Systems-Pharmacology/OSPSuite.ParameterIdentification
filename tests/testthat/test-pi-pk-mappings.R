@@ -238,7 +238,7 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   )
 })
 
-test_that("a failed simulation in PK mode is reported by name", {
+test_that("a failed simulation in PK mode is reported by name and reason", {
   sim <- ospsuite::loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
     loadFromCache = FALSE,
@@ -247,12 +247,14 @@ test_that("a failed simulation in PK mode is reported by name", {
   sim$solver$mxStep <- 1
   task <- testPKTask(sim)
   priv <- task$.__enclos_env__$private
-  failedMessage <- messages$errorSimulationsFailed(sim$name)
+  # The name of the failed simulation and the reason given by the simulation
+  # engine
+  failedPattern <- messages$errorSimulationsFailed(sim$name, reasons = ".+")
 
-  # The first evaluation stops with the name of the failed simulation,
-  # without the warning of the simulation engine (#299)
+  # The first evaluation stops with the failed simulation, without the
+  # warning of the simulation engine (#299)
   expect_no_warning(
-    expect_error(suppressMessages(task$run()), failedMessage, fixed = TRUE)
+    expect_error(suppressMessages(task$run()), failedPattern)
   )
 
   # Later evaluations log it and return the largest cost
@@ -267,7 +269,7 @@ test_that("a failed simulation in PK mode is reported by name", {
     )
   )
   expect_identical(cost, .Machine$double.xmax)
-  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+  expect_true(any(grepl(failedPattern, logged)))
 })
 
 test_that(".getPKValues routes a state-variable parameter as a molecule", {

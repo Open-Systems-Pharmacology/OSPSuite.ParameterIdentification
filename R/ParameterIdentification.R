@@ -494,13 +494,14 @@ ParameterIdentification <- R6::R6Class(
     # Run Simulations with Parameter Values
     #
     # Applies the parameter values to the simulation batches and runs them.
-    # Stops with the names of the simulations that failed.
+    # Stops with the names of the simulations that failed and the reasons
+    # given by the simulation engine.
     #
     # @param currVals Vector of parameter values, in the order of the
     #   `PIParameters` in the parameters list.
-    # @param silentMode Passed to `ospsuite::runSimulationBatches()`: if
-    #   `TRUE`, the warning of the simulation engine for a failed simulation
-    #   is not shown.
+    # @param silentMode If `TRUE`, the warnings of the simulation engine for
+    #   failed simulations are not shown; their reasons are still part of the
+    #   error.
     # @return The result of `ospsuite::runSimulationBatches()`: for each
     #   simulation batch, the list of its `SimulationResults`, named by the
     #   simulation IDs.
@@ -540,11 +541,22 @@ ParameterIdentification <- R6::R6Class(
           )
         )
       }
-      # Run simulation batches
-      simulationResults <- ospsuite::runSimulationBatches(
-        simulationBatches = private$.simulationBatches,
-        simulationRunOptions = private$.configuration$simulationRunOptions,
-        silentMode = silentMode
+      # Run simulation batches. The simulation engine gives the reason for a
+      # failed simulation only in a warning, which the silent mode of
+      # `runSimulationBatches()` drops. So the warnings are collected for the
+      # error below, and muffled here in silent mode.
+      engineWarnings <- list()
+      simulationResults <- withCallingHandlers(
+        ospsuite::runSimulationBatches(
+          simulationBatches = private$.simulationBatches,
+          simulationRunOptions = private$.configuration$simulationRunOptions
+        ),
+        warning = function(w) {
+          engineWarnings[[length(engineWarnings) + 1]] <<- w
+          if (silentMode) {
+            invokeRestart("muffleWarning")
+          }
+        }
       )
       # The results come in the order of the batches, named by batch IDs
       names(simulationResults) <- names(private$.simulationBatches)
@@ -561,7 +573,17 @@ ParameterIdentification <- R6::R6Class(
           function(simulation) simulation$name,
           character(1)
         )
-        stop(messages$errorSimulationsFailed(simulationNames))
+        stop(messages$errorSimulationsFailed(
+          simulationNames,
+          reasons = vapply(engineWarnings, conditionMessage, character(1))
+        ))
+      }
+      # Warnings without a failed simulation are not about a failure, so they
+      # are shown in silent mode, too
+      if (silentMode) {
+        for (engineWarning in engineWarnings) {
+          warning(engineWarning)
+        }
       }
       simulationResults
     },

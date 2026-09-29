@@ -58,12 +58,23 @@ messages$initialSimulationError <- function() {
   "Stopping optimization: Initial simulation failed."
 }
 
-messages$errorSimulationsFailed <- function(simulationNames) {
-  paste0(
+# `reasons` are the messages of the simulation engine. With several failed
+# simulations, the engine does not say which reason belongs to which
+# simulation, so the distinct reasons are listed after the names.
+messages$errorSimulationsFailed <- function(
+  simulationNames,
+  reasons = character()
+) {
+  failed <- paste0(
     if (length(simulationNames) == 1) "Simulation " else "Simulations ",
     paste0("'", simulationNames, "'", collapse = ", "),
-    " failed."
+    " failed"
   )
+  reasons <- unique(reasons)
+  if (length(reasons) == 0) {
+    return(paste0(failed, "."))
+  }
+  paste0(failed, ": ", paste(reasons, collapse = "; "))
 }
 
 messages$errorSimulatedValuesMissing <- function() {
