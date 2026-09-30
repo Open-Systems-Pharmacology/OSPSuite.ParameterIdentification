@@ -29,14 +29,6 @@ messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
 
-messages$errorObsVsPredListLengthMismatch <- function(expected, actual) {
-  sprintf(
-    "Number of combined data entries must be %d to match output mappings, but got %d.",
-    expected,
-    actual
-  )
-}
-
 messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
 }
@@ -56,6 +48,108 @@ messages$simulationError <- function(values) {
 
 messages$initialSimulationError <- function() {
   "Stopping optimization: Initial simulation failed."
+}
+
+# `simulationNames` are the names of all simulations of the task and `failed`
+# the positions of the failed ones. A name that several simulations share is
+# followed by the position of the simulation. `reasons` are the messages of
+# the simulation engine. With several failed simulations, the engine does not
+# say which reason belongs to which simulation, so the distinct reasons are
+# listed after the names.
+messages$errorSimulationsFailed <- function(
+  simulationNames,
+  failed = seq_along(simulationNames),
+  reasons = character()
+) {
+  failedNames <- simulationNames[failed]
+  labels <- paste0("'", failedNames, "'")
+  shared <- failedNames %in% simulationNames[duplicated(simulationNames)]
+  labels[shared] <- paste0(labels[shared], " (position ", failed[shared], ")")
+  text <- paste0(
+    if (length(failed) == 1) "Simulation " else "Simulations ",
+    paste(labels, collapse = ", "),
+    " failed"
+  )
+  reasons <- unique(reasons)
+  if (length(reasons) == 0) {
+    return(paste0(text, "."))
+  }
+  paste0(text, ": ", paste(reasons, collapse = "; "))
+}
+
+# The first line of each reason of the simulation engine, marked as shortened
+# if the reason has more lines. For a reason of a kind that was logged in full
+# before (see `.failureReasonKinds()`).
+messages$shortenedFailureReason <- function(reasons) {
+  vapply(
+    reasons,
+    function(reason) {
+      lines <- .reasonLines(reason)
+      if (length(lines) <= 1) {
+        return(reason)
+      }
+      paste0(trimws(lines[[1]], which = "right"), " [...]")
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
+}
+
+# `mappingIndices` are the positions of output mappings and `quantityPaths`
+# the paths of their quantities
+messages$warningObservedTimesNotSimulated <- function(
+  mappingIndices,
+  quantityPaths
+) {
+  several <- length(mappingIndices) > 1
+  paste0(
+    "The observed data of ",
+    if (several) "output mappings " else "output mapping ",
+    paste0(mappingIndices, " ('", quantityPaths, "')", collapse = ", "),
+    " have times without simulated values: outside the simulated times or, ",
+    "with objectiveFunctionType 'm3', censored values at times that were ",
+    "not simulated. The output time points of the simulations are set at ",
+    "the first call of a ParameterIdentification object, and these observed ",
+    "times were added or changed later, so the cost of ",
+    if (several) "these output mappings" else "the output mapping",
+    " is infinite. Create a new ParameterIdentification object to simulate ",
+    "at the new observed times."
+  )
+}
+
+# `dataType` is "simulated" or "observed". `index` is the position of the
+# output mapping and `quantityPath` the path of its quantity, both `NULL` for
+# a cost calculated without an output mapping.
+messages$errorNoDataForCost <- function(
+  dataType,
+  index = NULL,
+  quantityPath = NULL
+) {
+  text <- paste0(
+    "No ",
+    dataType,
+    " values ",
+    if (!is.null(index)) {
+      paste0("of output mapping ", index, " ('", quantityPath, "') ")
+    },
+    "enter the cost: every value has a time below 0, or a missing or ",
+    "infinite time or value."
+  )
+  if (dataType == "observed" && !is.null(index)) {
+    text <- paste0(
+      text,
+      " Check the data transformations of the output mapping, for example ",
+      "xOffsets."
+    )
+  }
+  text
+}
+
+messages$errorSimulatedValuesMissing <- function() {
+  paste0(
+    "Simulated values are missing, so the LLOQ of the observed data cannot ",
+    "be applied to them."
+  )
 }
 
 messages$profilesNotSupplied <- function() {

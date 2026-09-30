@@ -12,6 +12,188 @@ test_that("run() errors if initial simulation fails", {
   ))
 })
 
+test_that("run() stops on unconvertible observed data", {
+  # The error is raised by the unit conversion, not reported as a failed
+  # simulation
+  expect_error(
+    suppressMessages(testUnconvertibleDataTask()$run()),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
+})
+
+test_that("a failed simulation is reported by name and reason", {
+  modPiTask <- testModifiedTask()
+  priv <- modPiTask$.__enclos_env__$private
+  startValues <- vapply(
+    modPiTask$parameters,
+    function(p) p$startValue,
+    numeric(1)
+  )
+
+  # plotResults() shows the warning of the simulation engine and stops with
+  # the name of the failed simulation and the reason from that warning
+  engineWarning <- expect_warning(
+    plotError <- expect_error(modPiTask$plotResults(par = startValues))
+  )
+  failedMessage <- messages$errorSimulationsFailed(
+    modPiTask$simulations[[1]]$name,
+    reasons = conditionMessage(engineWarning)
+  )
+  expect_identical(conditionMessage(plotError), failedMessage)
+
+  # The objective function reports the same failure without the warning of
+  # the simulation engine
+  logged <- character()
+  expect_no_warning(
+    expect_error(
+      withCallingHandlers(
+        priv$.objectiveFunction(startValues),
+        message = function(m) {
+          logged <<- c(logged, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
+      ),
+      messages$initialSimulationError(),
+      fixed = TRUE
+    )
+  )
+  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+})
+
+test_that("several failed simulations are reported with their reasons", {
+  piTask <- testTwoSimulationsTask(failing = 1:2)
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValue <- piTask$parameters[[1]]$startValue
+  simulationNames <- vapply(
+    piTask$simulations,
+    function(simulation) simulation$name,
+    character(1)
+  )
+
+  # Both simulations fail for the same reason, which the message gives once
+  engineWarnings <- character()
+  runError <- expect_error(
+    withCallingHandlers(
+      priv$.runSimulations(startValue),
+      warning = function(w) {
+        engineWarnings <<- c(engineWarnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+  )
+  expect_length(engineWarnings, 2)
+  expect_length(unique(engineWarnings), 1)
+  failedMessage <- messages$errorSimulationsFailed(
+    simulationNames,
+    reasons = engineWarnings
+  )
+  expect_identical(conditionMessage(runError), failedMessage)
+  # The simulations share their name, so their positions tell them apart
+  expect_match(
+    failedMessage,
+    paste0(
+      "Simulations '",
+      simulationNames[[1]],
+      "' (position 1), '",
+      simulationNames[[2]],
+      "' (position 2) failed: ",
+      engineWarnings[[1]]
+    ),
+    fixed = TRUE
+  )
+
+  # The objective function logs the same message without the warnings
+  priv$.fnEvaluations <- 1
+  logged <- character()
+  expect_no_warning(
+    withCallingHandlers(
+      priv$.objectiveFunction(startValue),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+  )
+  expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
+})
+
+test_that("a failed simulation with a shared name is named with its position", {
+  piTask <- testTwoSimulationsTask(failing = 2)
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+
+  runError <- expect_error(
+    suppressWarnings(priv$.runSimulations(piTask$parameters[[1]]$startValue))
+  )
+  expect_match(
+    conditionMessage(runError),
+    paste0(
+      "Simulation '",
+      piTask$simulations[[2]]$name,
+      "' (position 2) failed: "
+    ),
+    fixed = TRUE
+  )
+})
+
+test_that("other warnings of a simulation run are shown and are no reasons", {
+  unrelatedWarning <- "A warning that is not about a failed simulation"
+  runSimulationBatches <- ospsuite::runSimulationBatches
+  local_mocked_bindings(
+    runSimulationBatches = function(...) {
+      warning(unrelatedWarning)
+      runSimulationBatches(...)
+    },
+    .package = "ospsuite"
+  )
+  # The warnings of an expression and its error, if any
+  runWithWarnings <- function(expr) {
+    warnings <- character()
+    error <- tryCatch(
+      withCallingHandlers(
+        {
+          expr
+          NULL
+        },
+        warning = function(w) {
+          warnings <<- c(warnings, conditionMessage(w))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      error = identity
+    )
+    list(warnings = warnings, error = error)
+  }
+
+  # Without a failed simulation, the warning is shown once
+  piTask <- testTwoSimulationsTask()
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  startValue <- piTask$parameters[[1]]$startValue
+  run <- runWithWarnings(priv$.simulateOutputs(startValue))
+  expect_identical(run$warnings, unrelatedWarning)
+  expect_null(run$error)
+
+  # With a failed simulation, the warning is shown as well, and the error
+  # gives the reason from the simulation engine only
+  failingTask <- testTwoSimulationsTask(failing = 2)
+  failingPriv <- failingTask$.__enclos_env__$private
+  failingPriv$.batchInitialization()
+  failingRun <- runWithWarnings(failingPriv$.simulateOutputs(startValue))
+  expect_identical(failingRun$warnings, unrelatedWarning)
+  failedText <- paste0(
+    "Simulation '",
+    failingTask$simulations[[2]]$name,
+    "' (position 2) failed: "
+  )
+  errorMessage <- conditionMessage(failingRun$error)
+  expect_true(startsWith(errorMessage, failedText))
+  expect_gt(nchar(errorMessage), nchar(failedText))
+  expect_false(grepl(unrelatedWarning, errorMessage, fixed = TRUE))
+})
+
 
 # BOBYQA Algorithm (Default)
 

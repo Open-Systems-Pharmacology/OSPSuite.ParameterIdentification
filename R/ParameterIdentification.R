@@ -74,6 +74,11 @@ ParameterIdentification <- R6::R6Class(
     # Named list by simulation IDs, detailing paths and start values for
     # variable parameters
     .variableParameters = NULL,
+    # Named list by simulation IDs: the paths of the variable parameters and
+    # molecules of each simulation, in the order of the variable buckets, and
+    # the index of the `PIParameters` group whose value each of them takes.
+    # Resolved by `.resolveParameterTargets()` when the batches are built.
+    .parameterTargets = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
     # List of `PIOutputMapping` objects
@@ -84,8 +89,18 @@ ParameterIdentification <- R6::R6Class(
     .needBatchInitialization = TRUE,
     # Stores simulation state if saved during batch creation
     .savedSimulationState = NULL,
-    # Cached observed-data rows per output mapping
-    .obsVsPredDfCache = NULL,
+    # Observed data of each output mapping in base units, read once per
+    # public call and bootstrap sample by `.getObservedData()`
+    .observedData = NULL,
+    # Kinds of the reasons of failed simulations that the objective functions
+    # logged in full in the current public call (see `.logSimulationFailure()`)
+    .loggedFailureKinds = character(),
+    # Named list by simulation IDs: the observed times, in min, that were
+    # added to the output time points when the batches were built
+    .outputTimePoints = NULL,
+    # Whether the observed times of the current public call were checked
+    # against the output time points (see `.checkObservedTimes()`)
+    .observedTimesChecked = FALSE,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from the best objective function evaluation
@@ -112,21 +127,12 @@ ParameterIdentification <- R6::R6Class(
     # resampling
     .gprModels = NULL,
 
-    # Routes a parameter value into the correct variable bucket for the
-    # simulation batch. State-variable (RHS-defined) parameters must be
-    # registered as molecules; all others as parameters.
-    .setVariableValue = function(simId, parameter, value) {
-      if (parameter$isStateVariable) {
-        private$.variableMolecules[[simId]][[parameter$path]] <- value
-      } else {
-        private$.variableParameters[[simId]][[parameter$path]] <- value
-      }
-    },
-
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
     # `$unit`. `addRunValues()` reads base units, so they are converted here.
     # This is the only place that writes into the variable buckets.
+    # State-variable (RHS-defined) parameters go into the molecule buckets,
+    # all others into the parameter buckets.
     .applyParameterValues = function(values) {
       if (length(values) != length(private$.piParameters)) {
         stop(messages$errorParameterValuesLengthMismatch(
@@ -134,12 +140,31 @@ ParameterIdentification <- R6::R6Class(
           length(values)
         ))
       }
-      for (idx in seq_along(values)) {
-        piParameter <- private$.piParameters[[idx]]
-        baseValue <- .toBaseValue(piParameter, values[[idx]])
-        for (parameter in piParameter$parameters) {
-          simId <- .getSimulationContainer(parameter)$id
-          private$.setVariableValue(simId, parameter, baseValue)
+      if (is.null(private$.parameterTargets)) {
+        private$.parameterTargets <- .resolveParameterTargets(
+          private$.piParameters
+        )
+      }
+      baseValues <- vapply(
+        seq_along(values),
+        function(idx) {
+          .toBaseValue(private$.piParameters[[idx]], values[[idx]])
+        },
+        numeric(1)
+      )
+      for (simId in names(private$.parameterTargets)) {
+        target <- private$.parameterTargets[[simId]]
+        if (length(target$parameterPaths) > 0) {
+          private$.variableParameters[[simId]] <- stats::setNames(
+            baseValues[target$parameterGroups],
+            target$parameterPaths
+          )
+        }
+        if (length(target$moleculePaths) > 0) {
+          private$.variableMolecules[[simId]] <- stats::setNames(
+            baseValues[target$moleculeGroups],
+            target$moleculePaths
+          )
         }
       }
     },
@@ -151,6 +176,24 @@ ParameterIdentification <- R6::R6Class(
     # and setting variable parameters. Optimizes repeated calls by checking
     # initialization necessity.
     .batchInitialization = function() {
+      # Every public method that evaluates the objective function starts here.
+      # Observed data sets and their transformations can change between two
+      # calls, so the observed data are read again. The output time points of
+      # the simulations are only set below, when the batches are built at the
+      # first call. After a change of the x values of the observed data (for
+      # example of `xOffsets` or `xFactors`) or with a new data set, the
+      # simulated values at new observed times are therefore interpolated
+      # between the output time points of the first call. A new observed time
+      # outside the simulated times, or a censored value at a new time with
+      # the M3 method, has no simulated value, so the cost of its output
+      # mapping is infinite. `.checkObservedTimes()` warns about it at the
+      # first evaluation of the call; it has nothing to check when the
+      # batches are built below, from the current observed data.
+      private$.observedData <- NULL
+      private$.observedTimesChecked <- private$.needBatchInitialization
+      # The reasons of failed simulations are logged in full again
+      private$.loggedFailureKinds <- character()
+
       # If the flag is already set to FALSE, short-cuts the execution of the
       # function. This way, the function call be called repeatedly with minimal
       # overhead
@@ -206,6 +249,7 @@ ParameterIdentification <- R6::R6Class(
             )
           }
         } else {
+          private$.outputTimePoints <- list()
           for (outputMapping in private$.outputMappings) {
             simId <- outputMapping$simId
             simulation <- private$.simulations[[simId]]
@@ -229,11 +273,18 @@ ParameterIdentification <- R6::R6Class(
                 unit = dataset$xUnit
               )
               simulation$outputSchema$addTimePoints(xVals)
+              private$.outputTimePoints[[simId]] <- c(
+                private$.outputTimePoints[[simId]],
+                xVals
+              )
             }
           }
         }
 
-        # Seed each optimization parameter's start value into its variable bucket.
+        # Seed each optimization parameter's start value into its variable
+        # bucket. The paths of the buckets, from which the batches below are
+        # built, are resolved again.
+        private$.parameterTargets <- NULL
         private$.applyParameterValues(
           vapply(private$.piParameters, function(p) p$startValue, numeric(1))
         )
@@ -285,9 +336,12 @@ ParameterIdentification <- R6::R6Class(
     #
     # Calculates and aggregates the model cost across all output mappings for
     # parameter estimation. Adjusts the evaluations counter, processes each
-    # output mapping's cost via `.calculateCostMetrics`, and aggregates the
+    # output mapping's cost via `.mappingCostTerms()` (the steps of
+    # `.calculateCostMetrics()` on numeric vectors), and aggregates the
     # results into total cost summary.
     # @param currVals Vector of parameter values for simulation.
+    # @param bootstrapSeed Optional bootstrap seed. If given, the output
+    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return Aggregated total cost summary.
     .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
       # Increment function evaluations counter
@@ -295,26 +349,25 @@ ParameterIdentification <- R6::R6Class(
 
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
 
-      # Observed data is static within an optimization (and bootstrap replicate).
-      # Read it once into the cache, then reuse it on subsequent evaluations so
-      # the .NET DataSet objects are not re-read every function evaluation.
-      buildObsCache <- is.null(private$.obsVsPredDfCache)
+      # The observed data are static within a public call and bootstrap
+      # sample: they are read on the first evaluation and reused, so the .NET
+      # `DataSet` objects are not read and converted to base units on every
+      # evaluation. They are read outside of the `tryCatch()` below, so that
+      # an error in the observed data stops the call with its own message
+      # instead of being reported as a failed simulation.
+      observedData <- private$.getObservedData(outputMappings)
 
       # Run simulation and catch errors
-      obsVsPredList <- tryCatch(
-        private$.evaluate(
-          currVals,
-          bootstrapSeed = bootstrapSeed,
-          includeObserved = buildObsCache
-        ),
+      simulatedList <- tryCatch(
+        private$.simulateOutputs(currVals, outputMappings = outputMappings),
         error = function(cond) {
-          messages$logSimulationError(currVals, cond)
+          private$.logSimulationFailure(currVals, cond)
           return(NA)
         }
       )
 
       # Handle simulation failure
-      if (anyNA(obsVsPredList)) {
+      if (anyNA(simulatedList)) {
         if (private$.fnEvaluations == 1 && !private$.gridSearchFlag) {
           stop(messages$initialSimulationError())
         } else {
@@ -323,106 +376,40 @@ ParameterIdentification <- R6::R6Class(
         }
       }
 
-      if (length(obsVsPredList) != length(outputMappings)) {
-        stop(messages$errorObsVsPredListLengthMismatch(
-          length(outputMappings),
-          length(obsVsPredList)
-        ))
+      if (!private$.observedTimesChecked) {
+        private$.checkObservedTimes(simulatedList, observedData, outputMappings)
+        private$.observedTimesChecked <- TRUE
       }
 
-      if (buildObsCache) {
-        obsVsPredDfCache <- vector("list", length(outputMappings))
-      }
-
-      # Evaluate cost per output mapping
-      costSummaryList <- vector("list", length(outputMappings))
+      # Evaluate cost per output mapping, on the simulated values and the
+      # prepared observed data (see `.mappingCostTerms()`)
+      costTerms <- vector("list", length(outputMappings))
+      validatedScalings <- character()
       for (idx in seq_along(outputMappings)) {
-        df <- obsVsPredList[[idx]]$toDataFrame()
-        if (buildObsCache) {
-          # First evaluation: df holds simulated and observed rows. Cache the
-          # observed rows (still in display units) for reuse.
-          obsVsPredDfCache[[idx]] <- df[
-            df$dataType == "observed",
-            ,
-            drop = FALSE
-          ]
-        } else {
-          # Reuse cached observed rows with the freshly simulated rows.
-          df <- dplyr::bind_rows(df, private$.obsVsPredDfCache[[idx]])
-        }
-
-        # Convert all columns to base units for consistent residual calculation
-        obsVsPredDf <- ospsuite:::.unitConverter(
-          df,
-          xUnit = ospsuite::getBaseUnit("Time"),
-          yUnit = ospsuite::getBaseUnit(
-            outputMappings[[idx]]$quantity$dimension
-          )
-        )
-        # Apply LLOQ handling for LSQ
-        if (
-          private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
-            "lsq"
-        ) {
-          # replace values < LLOQ with LLOQ/2 in simulated data
-          if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
-            lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
-            obsVsPredDf[
-              (obsVsPredDf$dataType == "simulated" &
-                obsVsPredDf$yValues < lloq),
-              "yValues"
-            ] <- lloq / 2
-          }
-        }
-
-        # Apply log transformation if requested
-        if (outputMappings[[idx]]$scaling == "log") {
-          obsVsPredDf <- .applyLogTransformation(obsVsPredDf)
-        }
-
-        # Assign weights from PIOutputMapping
-        obsVsPredDf$weights <- NA_real_
-        if (!is.null(outputMappings[[idx]]$dataWeights)) {
-          weights <- outputMappings[[idx]]$dataWeights
-          for (dataset in names(weights)) {
-            obsVsPredDf$weights[obsVsPredDf$name == dataset] <- weights[[
-              dataset
-            ]]
-          }
-        }
-
         # Extract cost function options
         costControl <- private$.configuration$objectiveFunctionOptions
         costControl$scaling <- outputMappings[[idx]]$scaling
-        ospsuite.utils::validateIsOption(
-          options = costControl,
-          validOptions = ObjectiveFunctionSpecs
-        )
+        # The options of the output mappings differ only in their scaling
+        if (!costControl$scaling %in% validatedScalings) {
+          ospsuite.utils::validateIsOption(
+            options = costControl,
+            validOptions = ObjectiveFunctionSpecs
+          )
+          validatedScalings <- c(validatedScalings, costControl$scaling)
+        }
 
-        # Compute cost for current output mapping
-        costSummary <- .calculateCostMetrics(
-          df = obsVsPredDf,
-          objectiveFunctionType = costControl$objectiveFunctionType,
-          residualWeightingMethod = costControl$residualWeightingMethod,
-          robustMethod = costControl$robustMethod,
-          scaleVar = costControl$scaleVar,
+        costTerms[[idx]] <- .mappingCostTerms(
+          simulated = simulatedList[[idx]],
+          observed = observedData[[idx]],
+          dataWeights = outputMappings[[idx]]$dataWeights,
+          costControl = costControl,
           index = idx,
-          linScaleCV = costControl$linScaleCV,
-          logScaleSD = costControl$logScaleSD,
-          scaling = costControl$scaling
+          quantityPath = outputMappings[[idx]]$quantity$path
         )
-
-        costSummaryList[[idx]] <- costSummary
       }
-      # Publish the cache only after every mapping built successfully, so a
-      # mid-loop error leaves it NULL and forces a full rebuild on retry.
-      if (buildObsCache) {
-        private$.obsVsPredDfCache <- obsVsPredDfCache
-      }
-      rm(obsVsPredList)
 
-      # Aggregate cost across all output mappings
-      runningCost <- Reduce(.summarizeCostLists, costSummaryList)
+      # Aggregate cost across all output mappings, in one step
+      runningCost <- .combineCostTerms(costTerms)
       private$.lastCostSummary <- runningCost
 
       # Evaluate running cost
@@ -462,7 +449,7 @@ ParameterIdentification <- R6::R6Class(
           if (private$.fnEvaluations == 1) {
             stop(cond)
           }
-          messages$logSimulationError(currVals, cond)
+          private$.logSimulationFailure(currVals, cond)
           return(NA)
         }
       )
@@ -492,31 +479,55 @@ ParameterIdentification <- R6::R6Class(
       return(cost)
     },
 
-    .getPKValues = function(paramValues) {
-      private$.applyParameterValues(paramValues)
-
-      for (simId in names(private$.simulationBatches)) {
-        simBatch <- private$.simulationBatches[[simId]]
-        simBatch$addRunValues(
-          parameterValues = unlist(
-            private$.variableParameters[[simId]],
-            use.names = FALSE
-          ),
-          initialValues = unlist(
-            private$.variableMolecules[[simId]],
-            use.names = FALSE
-          )
+    # Logs a failed evaluation of an objective function. The reason given by
+    # the simulation engine can be long (for negative values, it lists every
+    # variable that became negative) and comes again on many evaluations,
+    # often with another time of the failure in its first line. So a reason
+    # is logged in full only at the first failure of its kind in a public call
+    # (see `.failureReasonKinds()` and `.batchInitialization()`), and later
+    # reasons of that kind with their first line only.
+    #
+    # @param currVals Vector of parameter values of the evaluation.
+    # @param cond The error of the evaluation.
+    .logSimulationFailure = function(currVals, cond) {
+      if (inherits(cond, "simulationsFailedError")) {
+        reasons <- unique(cond$reasons)
+        kinds <- .failureReasonKinds(reasons)
+        # Of several reasons of one kind in the same error, only the first is
+        # logged in full
+        shorten <- kinds %in% private$.loggedFailureKinds | duplicated(kinds)
+        private$.loggedFailureKinds <- union(
+          private$.loggedFailureKinds,
+          kinds
+        )
+        reasons[shorten] <- messages$shortenedFailureReason(reasons[shorten])
+        cond$message <- messages$errorSimulationsFailed(
+          cond$simulationNames,
+          cond$failed,
+          reasons
         )
       }
+      messages$logSimulationError(currVals, cond)
+    },
 
-      batchResults <- ospsuite::runSimulationBatches(
-        simulationBatches = private$.simulationBatches,
-        simulationRunOptions = private$.configuration$simulationRunOptions
+    .getPKValues = function(paramValues) {
+      # The PK objective function reports a failed simulation itself on every
+      # evaluation, so the warning of the simulation engine is not repeated.
+      # Only the results of the simulations of the PK mappings are used: the
+      # task may have other simulations, whose failure does not fail the
+      # evaluation.
+      simulationResults <- private$.runSimulations(
+        paramValues,
+        silentMode = TRUE,
+        usedSimulations = unique(vapply(
+          private$.pkMappings,
+          function(mapping) mapping$simId,
+          character(1)
+        ))
       )
 
       lapply(private$.pkMappings, function(mapping) {
-        simBatch <- private$.simulationBatches[[mapping$simId]]
-        simResult <- batchResults[[simBatch$id]][[1]]
+        simResult <- simulationResults[[mapping$simId]][[1]]
         pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)
         pkParam <- tryCatch(
           pkAnalysis$pKParameterFor(
@@ -549,30 +560,30 @@ ParameterIdentification <- R6::R6Class(
       })
     },
 
-    # Simulation Evaluation with Parameter Values
+    # Run Simulations with Parameter Values
     #
-    # Evaluates simulations using specified parameter values, updating each
-    # parameter before simulation runs. Generates `DataCombined` objects for
-    # each output mapping, encapsulating both simulated and observed data.
+    # Applies the parameter values to the simulation batches and runs them.
+    # If a simulation whose results are used fails, stops with the names of
+    # the simulations that failed and the reasons given by the simulation
+    # engine.
     #
-    # @param currVals Vector of parameter values for simulation.
-    # @param includeObserved If TRUE (default), observed data is attached to each
-    #   `DataCombined`. If FALSE, only simulated results are attached, leaving the
-    #   observed data to be supplied from the cache by the caller. The objective
-    #   function uses FALSE on the hot path to avoid re-reading static observed
-    #   data every evaluation.
-    # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(
+    # @param currVals Vector of parameter values, in the order of the
+    #   `PIParameters` in the parameters list.
+    # @param silentMode If `TRUE`, the warnings of the simulation engine for
+    #   failed simulations are not shown; their reasons are still part of the
+    #   error.
+    # @param usedSimulations The IDs of the simulations whose results are
+    #   used, by default all. The failure of another simulation (in PK mode, a
+    #   simulation without a PK mapping) does not stop the run, and the
+    #   warning of the simulation engine is shown for it, also in silent mode.
+    # @return The result of `ospsuite::runSimulationBatches()`: for each
+    #   simulation batch, the list of its `SimulationResults`, named by the
+    #   simulation IDs.
+    .runSimulations = function(
       currVals,
-      bootstrapSeed = NULL,
-      includeObserved = TRUE
+      silentMode = FALSE,
+      usedSimulations = names(private$.simulationBatches)
     ) {
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
-
-      obsVsPredList <- vector("list", length(outputMappings))
-      # Iterate through the values and update current parameter values. The
-      # order of the values corresponds to the order of `PIParameters` in the
-      # parameters list.
       private$.applyParameterValues(currVals)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
@@ -597,8 +608,7 @@ ParameterIdentification <- R6::R6Class(
 
       # Apply initial and parameter values to simulation batches
       for (simId in names(private$.simulationBatches)) {
-        simBatch <- private$.simulationBatches[[simId]]
-        resultsId <- simBatch$addRunValues(
+        private$.simulationBatches[[simId]]$addRunValues(
           parameterValues = unlist(
             private$.variableParameters[[simId]],
             use.names = FALSE
@@ -609,50 +619,204 @@ ParameterIdentification <- R6::R6Class(
           )
         )
       }
-      # Run simulation batches
-      simulationResults <- ospsuite::runSimulationBatches(
-        simulationBatches = private$.simulationBatches,
-        simulationRunOptions = private$.configuration$simulationRunOptions
+      # Run simulation batches. The simulation engine gives the reason for a
+      # failed simulation only in a warning, which the silent mode of
+      # `runSimulationBatches()` drops. So these warnings are collected for
+      # the error below, and muffled here in silent mode. Any other warning
+      # is left as it is.
+      engineWarnings <- list()
+      simulationResults <- withCallingHandlers(
+        ospsuite::runSimulationBatches(
+          simulationBatches = private$.simulationBatches,
+          simulationRunOptions = private$.configuration$simulationRunOptions
+        ),
+        warning = function(w) {
+          if (.isSimulationFailureWarning(w)) {
+            engineWarnings[[length(engineWarnings) + 1]] <<- w
+            if (silentMode) {
+              invokeRestart("muffleWarning")
+            }
+          }
+        }
       )
+      # The results come in the order of the batches, named by batch IDs
+      names(simulationResults) <- names(private$.simulationBatches)
 
+      # A failed simulation has no results (#299)
+      failed <- vapply(
+        simulationResults,
+        function(results) length(results) == 0 || is.null(results[[1]]),
+        logical(1)
+      )
+      if (any(failed[usedSimulations])) {
+        # The message gives the position in the task of a failed simulation
+        # whose name other simulations share. The engine does not say which
+        # reason belongs to which simulation, so the message names every
+        # failed simulation, also one whose results are not used.
+        simulationNames <- vapply(
+          private$.simulations,
+          function(simulation) simulation$name,
+          character(1)
+        )
+        stop(.simulationsFailedError(
+          simulationNames,
+          failed = match(
+            names(simulationResults)[failed],
+            names(private$.simulations)
+          ),
+          reasons = vapply(engineWarnings, conditionMessage, character(1)),
+          call = sys.call()
+        ))
+      }
+      # Without a failed simulation whose results are used, the warnings of
+      # the engine are about simulations whose results are not used. They are
+      # shown in silent mode, too.
+      if (silentMode) {
+        for (engineWarning in engineWarnings) {
+          warning(engineWarning)
+        }
+      }
+      simulationResults
+    },
+
+    # Simulation Evaluation with Parameter Values
+    #
+    # Evaluates simulations using specified parameter values, updating each
+    # parameter before simulation runs. Generates `DataCombined` objects for
+    # each output mapping, encapsulating both simulated and observed data.
+    # Used for plotting; the objective function uses `.simulateOutputs()`.
+    #
+    # @param currVals Vector of parameter values for simulation.
+    # @param bootstrapSeed Optional bootstrap seed. If given, the output
+    #   mappings are resampled for it (see `.getOutputMappings()`).
+    # @return List of `DataCombined` objects, one per output mapping.
+    .evaluate = function(currVals, bootstrapSeed = NULL) {
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+      simulationResults <- private$.runSimulations(currVals)
+
+      obsVsPredList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
         obsVsPred <- ospsuite::DataCombined$new()
         currOutputMapping <- outputMappings[[idx]]
-        # Find the simulation that is the parent of the output quantity
-        simId <- .getSimulationContainer(currOutputMapping$quantity)$id
-        # Find the simulation batch that corresponds to the simulation
-        simBatch <- private$.simulationBatches[[simId]]
         # Construct group names out of output path and simulation id
         groupName <- currOutputMapping$quantity$path
-        # In each iteration, only one values set per simulation batch is simulated.
-        # Therefore we always need the first results entry
-        resultObject <- simulationResults[[simBatch$id]][[1]]
+        # In each iteration, only one values set per simulation batch is
+        # simulated. Therefore we always need the first results entry of the
+        # simulation that is the parent of the output quantity.
+        resultObject <- simulationResults[[currOutputMapping$simId]][[1]]
         obsVsPred$addSimulationResults(
           resultObject,
           quantitiesOrPaths = currOutputMapping$quantity$path,
           names = groupName,
           groups = groupName
         )
-
-        if (includeObserved) {
-          obsVsPred$addDataSets(
-            currOutputMapping$observedDataSets,
-            groups = groupName
-          )
-          # apply data transformations stored in corresponding `outputMapping`
-          obsVsPred$setDataTransformations(
-            forNames = names(outputMappings[[idx]]$observedDataSets),
-            xOffsets = outputMappings[[idx]]$dataTransformations$xOffsets,
-            xScaleFactors = outputMappings[[idx]]$dataTransformations$xFactors,
-            yOffsets = outputMappings[[idx]]$dataTransformations$yOffsets,
-            yScaleFactors = outputMappings[[idx]]$dataTransformations$yFactors
-          )
-        }
+        # Observed data in the same group, with the data transformations of
+        # the output mapping
+        .addObservedData(obsVsPred, currOutputMapping)
         obsVsPredList[[idx]] <- obsVsPred
       }
       rm(simulationResults)
 
       return(obsVsPredList)
+    },
+
+    # Simulated Values of Every Output Mapping
+    #
+    # Runs the simulations with the given parameter values and reads the
+    # simulated values of every output mapping directly from the simulation
+    # results as numeric vectors (see `.simulatedValues()`), without building
+    # `DataCombined` objects.
+    #
+    # @param currVals Vector of parameter values for simulation.
+    # @param outputMappings The output mappings of the evaluation (see
+    #   `.getOutputMappings()`), by default those of the task.
+    # @return A list with one entry per output mapping, each a list with
+    #   `xValues`, the time values in min, and `yValues`, the values in the base
+    #   unit of the mapped quantity.
+    .simulateOutputs = function(
+      currVals,
+      outputMappings = private$.outputMappings
+    ) {
+      # The objective function reports a failed simulation itself on every
+      # evaluation, so the warning of the simulation engine is not repeated
+      simulationResults <- private$.runSimulations(currVals, silentMode = TRUE)
+
+      # Time values are read once per simulation
+      times <- list()
+      simulated <- vector("list", length(outputMappings))
+      for (idx in seq_along(outputMappings)) {
+        simId <- outputMappings[[idx]]$simId
+        resultObject <- simulationResults[[simId]][[1]]
+        times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
+        simulated[[idx]] <- .simulatedValues(
+          resultObject,
+          outputMappings[[idx]]$quantity$path,
+          times[[simId]]
+        )
+      }
+      simulated
+    },
+
+    # Observed data of every output mapping, in base units and with the data
+    # transformations applied (see `.prepareObservedData()`). They are read on
+    # the first call after `.batchInitialization()` or a new bootstrap sample
+    # and reused afterwards: reading the values of observed `DataSet` objects
+    # from .NET is slow and retains memory on every read (#271).
+    #
+    # @param outputMappings The output mappings of the current evaluation.
+    # @return A list with the prepared observed data of each output mapping.
+    .getObservedData = function(outputMappings) {
+      if (is.null(private$.observedData)) {
+        private$.observedData <- lapply(outputMappings, .prepareObservedData)
+      }
+      private$.observedData
+    },
+
+    # Warns about the output mappings whose observed data have times without
+    # simulated values because the output time points of the simulations were
+    # set at an earlier call (see `.batchInitialization()` and
+    # `.hasUnsimulatedObservedTimes()`). The cost of such a mapping is
+    # infinite.
+    #
+    # @param simulatedList The simulated values of every output mapping (see
+    #   `.simulateOutputs()`).
+    # @param observedData The observed data of every output mapping (see
+    #   `.getObservedData()`).
+    # @param outputMappings The output mappings of the evaluation.
+    .checkObservedTimes = function(
+      simulatedList,
+      observedData,
+      outputMappings
+    ) {
+      costControl <- private$.configuration$objectiveFunctionOptions
+      affected <- vapply(
+        seq_along(outputMappings),
+        function(idx) {
+          costControl$scaling <- outputMappings[[idx]]$scaling
+          .hasUnsimulatedObservedTimes(
+            simulated = simulatedList[[idx]],
+            observed = observedData[[idx]],
+            costControl = costControl,
+            outputTimePoints = private$.outputTimePoints[[
+              outputMappings[[idx]]$simId
+            ]]
+          )
+        },
+        logical(1)
+      )
+      if (any(affected)) {
+        warning(
+          messages$warningObservedTimesNotSimulated(
+            which(affected),
+            vapply(
+              outputMappings[affected],
+              function(mapping) mapping$quantity$path,
+              character(1)
+            )
+          ),
+          call. = FALSE
+        )
+      }
     },
 
     # Retrieve Output Mappings with Optional Bootstrap Resampling
@@ -703,8 +867,8 @@ ParameterIdentification <- R6::R6Class(
           private$.gprModels,
           bootstrapSeed
         )
-        # Observed data changed, so the cache must be rebuilt
-        private$.obsVsPredDfCache <- NULL
+        # Observed data changed, so they must be read again
+        private$.observedData <- NULL
       }
 
       return(private$.outputMappings)
@@ -725,8 +889,8 @@ ParameterIdentification <- R6::R6Class(
       private$.initialOutputMappingState <- NULL
       private$.activeBootstrapSeed <- NULL
       private$.gprModels <- NULL
-      # Observed data restored to its original state, so rebuild the cache
-      private$.obsVsPredDfCache <- NULL
+      # Observed data restored to its original state, so read it again
+      private$.observedData <- NULL
     },
 
     # Apply Identified Parameter Values
@@ -776,6 +940,71 @@ ParameterIdentification <- R6::R6Class(
       optimResult$startValues <- startValues
 
       return(optimResult)
+    },
+
+    # Estimate Confidence Intervals
+    #
+    # The steps of `estimateCI()` after its checks. `run()` calls this method,
+    # not `estimateCI()`.
+    #
+    # @param fromRun `TRUE` when `run()` estimates the confidence intervals
+    #   after its optimization. The batches are initialized already then, and
+    #   nothing can change between the optimization and the estimation, so the
+    #   observed data that the optimization read are used again. Otherwise,
+    #   the batches are initialized, which reads the observed data again (see
+    #   `.batchInitialization()`).
+    # @return A `PIResult` object with the confidence intervals.
+    .estimateCI = function(fromRun = FALSE) {
+      # Store simulation outputs and time intervals to reset them at the end
+      # of the run.
+      private$.savedSimulationState <- .storeSimulationState(
+        private$.simulations
+      )
+      savedState <- private$.savedSimulationState
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
+      # Initialize batches
+      if (!fromRun) {
+        private$.batchInitialization()
+      }
+      # Reset function evaluations counter
+      private$.fnEvaluations <- 0
+
+      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
+
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
+
+      if (
+        private$.configuration$ciMethod == "bootstrap" &&
+          is.null(private$.activeBootstrapSeed)
+      ) {
+        .classifyObservedData(private$.outputMappings)
+        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
+      }
+
+      optimizer <- Optimizer$new(configuration = private$.configuration)
+
+      fn <- function(p, ...) private$.objectiveFunction(p, ...)
+
+      ciResult <- optimizer$estimateCI(
+        par = currValues,
+        fn = fn,
+        lower = lower,
+        upper = upper,
+        resetFn = function() private$.fnEvaluations <- 0
+      )
+
+      PIResult$new(
+        optimResult = private$.lastOptimResult,
+        ciResult = ciResult,
+        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+        configuration = private$.configuration,
+        piParameters = private$.piParameters
+      )
     }
   ),
   public = list(
@@ -908,8 +1137,6 @@ ParameterIdentification <- R6::R6Class(
       private$.lastOptimResult <- NULL
       private$.bestCostSummary <- NULL
       private$.lastCostSummary <- NULL
-      # Reset observed-data cache for a fresh run
-      private$.obsVsPredDfCache <- NULL
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       # Reset gridSearchFlag
@@ -942,7 +1169,11 @@ ParameterIdentification <- R6::R6Class(
           achievedPKValues = achievedPKValues
         )
       } else if (private$.configuration$autoEstimateCI) {
-        piResult <- self$estimateCI()
+        # The steps of `estimateCI()` after its checks, without a new batch
+        # initialization, so that the observed data of the optimization are
+        # used again. `estimateCI()` itself is not called, so an override of
+        # it in a subclass does not change the confidence intervals of `run()`.
+        piResult <- private$.estimateCI(fromRun = TRUE)
       } else {
         message(messages$statusAutoEstimateCI())
         piResult <- PIResult$new(
@@ -974,56 +1205,7 @@ ParameterIdentification <- R6::R6Class(
 
       private$.assertNotPKMode("estimateCI")
 
-      # Store simulation outputs and time intervals to reset them at the end
-      # of the run.
-      private$.savedSimulationState <- .storeSimulationState(
-        private$.simulations
-      )
-      savedState <- private$.savedSimulationState
-      on.exit(
-        .restoreSimulationState(private$.simulations, savedState),
-        add = TRUE
-      )
-      # Initialize batches
-      private$.batchInitialization()
-      # Reset function evaluations counter
-      private$.fnEvaluations <- 0
-
-      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
-
-      currValues <- sapply(private$.piParameters, `[[`, "currValue")
-      lower <- sapply(private$.piParameters, `[[`, "minValue")
-      upper <- sapply(private$.piParameters, `[[`, "maxValue")
-
-      if (
-        private$.configuration$ciMethod == "bootstrap" &&
-          is.null(private$.activeBootstrapSeed)
-      ) {
-        .classifyObservedData(private$.outputMappings)
-        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
-      }
-
-      optimizer <- Optimizer$new(configuration = private$.configuration)
-
-      fn <- function(p, ...) private$.objectiveFunction(p, ...)
-
-      ciResult <- optimizer$estimateCI(
-        par = currValues,
-        fn = fn,
-        lower = lower,
-        upper = upper,
-        resetFn = function() private$.fnEvaluations <- 0
-      )
-
-      piResult <- PIResult$new(
-        optimResult = private$.lastOptimResult,
-        ciResult = ciResult,
-        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
-        configuration = private$.configuration,
-        piParameters = private$.piParameters
-      )
-
-      return(piResult)
+      private$.estimateCI()
     },
 
     #' Plot Parameter Estimation Results

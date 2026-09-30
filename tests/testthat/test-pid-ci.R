@@ -42,6 +42,21 @@ test_that("estimateCI() works as expected using Hessian", {
   )
 })
 
+test_that("run() reads the observed data once when it estimates the CI", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  expect_true(piTask$configuration$autoEstimateCI)
+  observedDataReads <- localObservedDataReads()
+
+  suppressMessages(piResult <- piTask$run())
+  expect_false(is.null(piResult$toList()$ciDetails))
+  expect_equal(observedDataReads$reads, 1)
+
+  # A later call reads them again
+  suppressMessages(piTask$estimateCI())
+  expect_equal(observedDataReads$reads, 2)
+})
+
 
 # Bootstrap CI Method
 

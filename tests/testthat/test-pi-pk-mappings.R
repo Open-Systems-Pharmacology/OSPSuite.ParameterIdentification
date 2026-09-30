@@ -238,6 +238,138 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   )
 })
 
+test_that("a failed simulation in PK mode is reported by name and reason", {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  sim$solver$mxStep <- 1
+  task <- testPKTask(sim)
+  priv <- task$.__enclos_env__$private
+  # The name of the failed simulation and the reason given by the simulation
+  # engine
+  failedPattern <- messages$errorSimulationsFailed(sim$name, reasons = ".+")
+
+  # The first evaluation stops with the failed simulation, without the
+  # warning of the simulation engine (#299)
+  expect_no_warning(
+    expect_error(suppressMessages(task$run()), failedPattern)
+  )
+
+  # Later evaluations log it and return the largest cost
+  logged <- character()
+  expect_no_warning(
+    cost <- withCallingHandlers(
+      priv$.pkObjectiveFunction(task$parameters[[1]]$startValue),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+  )
+  expect_identical(cost, .Machine$double.xmax)
+  expect_true(any(grepl(failedPattern, logged)))
+})
+
+test_that("a failed simulation without a PK mapping only warns", {
+  newSimulation <- function(failing = FALSE) {
+    simulation <- ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+    if (failing) {
+      simulation$solver$mxStep <- 1
+    }
+    simulation
+  }
+  # The dose is one parameter over all simulations, and the PK mapping uses
+  # the first simulation only
+  pkTask <- function(simulations) {
+    dose <- PIParameters$new(
+      parameters = lapply(simulations, function(simulation) {
+        ospsuite::getParameter(
+          paste0(
+            "Events|IV 250mg 10min|No formulation|Application_1|",
+            "ProtocolSchemaItem|Dose"
+          ),
+          simulation
+        )
+      })
+    )
+    dose$minValue <- 0.0001
+    dose$maxValue <- 0.001
+    ParameterIdentification$new(
+      simulations = simulations,
+      parameters = dose,
+      pkOutputMappings = testPKMapping(simulations[[1]]),
+      configuration = lowIterPiConfiguration(5)
+    )
+  }
+  collectWarnings <- function(expr) {
+    warnings <- character()
+    value <- withCallingHandlers(
+      expr,
+      warning = function(w) {
+        warnings <<- c(warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }
+    )
+    list(value = value, warnings = warnings)
+  }
+
+  task <- pkTask(list(newSimulation(), newSimulation(failing = TRUE)))
+  single <- pkTask(list(newSimulation()))
+  priv <- task$.__enclos_env__$private
+  singlePriv <- single$.__enclos_env__$private
+  priv$.batchInitialization()
+  singlePriv$.batchInitialization()
+
+  # The cost is that of the task without the failed simulation, and the
+  # warning of the simulation engine is shown for the failed one
+  for (doseValue in c(2.5e-4, 6e-4)) {
+    evaluation <- collectWarnings(priv$.pkObjectiveFunction(doseValue))
+    expect_identical(
+      evaluation$value,
+      singlePriv$.pkObjectiveFunction(doseValue)
+    )
+    expect_length(evaluation$warnings, 1)
+    expect_false(grepl("^Simulation", evaluation$warnings))
+  }
+
+  # run() does not stop and finds the same dose
+  runResult <- collectWarnings(suppressMessages(task$run()))
+  expect_gt(length(runResult$warnings), 0)
+  expect_identical(
+    runResult$value$toDataFrame(),
+    suppressMessages(single$run())$toDataFrame()
+  )
+
+  # If a simulation of a PK mapping fails as well, the evaluation fails. The
+  # simulation engine does not say which reason belongs to which simulation,
+  # so the error names both
+  bothFail <- pkTask(list(
+    newSimulation(failing = TRUE),
+    newSimulation(failing = TRUE)
+  ))
+  bothFailPriv <- bothFail$.__enclos_env__$private
+  bothFailPriv$.batchInitialization()
+  expect_no_warning(
+    expect_error(
+      bothFailPriv$.getPKValues(2.5e-4),
+      paste0(
+        "Simulations '",
+        bothFail$simulations[[1]]$name,
+        "' (position 1), '",
+        bothFail$simulations[[2]]$name,
+        "' (position 2) failed: "
+      ),
+      fixed = TRUE
+    )
+  )
+})
+
 test_that(".getPKValues routes a state-variable parameter as a molecule", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")

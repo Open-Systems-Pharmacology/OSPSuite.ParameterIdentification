@@ -85,15 +85,187 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
     parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
     outputMappings = outputMapping_250mg
   )
-  suppressMessages(suppressWarnings(
-    expect_warning(
+  # The failed simulation is reported by name and with the reason given by
+  # the simulation engine, without its warning (#299)
+  expect_no_warning(suppressMessages(
+    expect_message(
       gridSearchResults <- piTask$gridSearch(
         lower = c(0, -0.5),
         totalEvaluations = 5
-      )
+      ),
+      messages$errorSimulationsFailed(sim_250mg$name, reasons = ".+")
     )
   ))
   expect_snapshot(gridSearchResults$ofv)
+})
+
+# The errors that the objective function logs in a grid search, without
+# "Error: "
+gridSearchErrors <- function(piTask, ...) {
+  logged <- character()
+  testthat::expect_no_warning(
+    withCallingHandlers(
+      piTask$gridSearch(...),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+  )
+  errors <- grep("^Error: ", logged, value = TRUE)
+  sub("\n$", "", sub("^Error: ", "", errors))
+}
+
+test_that("gridSearch() logs the full reason of a failed simulation once", {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  # A negative dose makes the simulation fail with a reason of many lines,
+  # which lists the variables that became negative
+  sim$solver$checkForNegativeValues <- TRUE
+  piTask <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = testPKParameters(sim),
+    outputMappings = testOutputMapping(sim)
+  )
+  # The errors that a grid search over three negative doses logs
+  loggedErrors <- function() {
+    gridSearchErrors(
+      piTask,
+      lower = -1e-3,
+      upper = -5e-4,
+      totalEvaluations = 3
+    )
+  }
+
+  errors <- loggedErrors()
+  expect_length(errors, 3)
+  failedText <- paste0("Simulation '", sim$name, "' failed: ")
+  expect_true(startsWith(errors[[1]], failedText))
+  reason <- substring(errors[[1]], nchar(failedText) + 1)
+  expect_match(reason, "\n", fixed = TRUE)
+
+  # The later failures of the call give the first line of the reason only
+  shortened <- messages$errorSimulationsFailed(
+    sim$name,
+    reasons = messages$shortenedFailureReason(reason)
+  )
+  expect_false(grepl("\n", shortened, fixed = TRUE))
+  expect_identical(errors[2:3], rep(shortened, 2))
+
+  # A new call logs the full reason again
+  expect_identical(loggedErrors(), c(errors[[1]], shortened, shortened))
+})
+
+test_that("gridSearch() logs the full reason once if the failure time varies", {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  # A negative dose makes the simulation fail with negative values. The
+  # engine gives the time of the failure in the first line of the reason, so
+  # the reasons differ when the start time of the dose changes.
+  sim$solver$checkForNegativeValues <- TRUE
+  schemaItem <- paste0(
+    "Events|IV 250mg 10min|No formulation|Application_1|",
+    "ProtocolSchemaItem|"
+  )
+  ospsuite::setParameterValuesByPath(paste0(schemaItem, "Dose"), -5e-4, sim)
+  startTime <- ospsuite::getParameter(
+    paste0(schemaItem, "Start time"),
+    container = sim
+  )
+  startTime$value <- 10
+  piTask <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = PIParameters$new(
+      parameters = list(startTime),
+      minValue = 1,
+      maxValue = 600
+    ),
+    outputMappings = testOutputMapping(sim)
+  )
+  # The errors that a grid search over three start times logs
+  loggedErrors <- function() {
+    gridSearchErrors(piTask, lower = 30, upper = 580, totalEvaluations = 3)
+  }
+
+  errors <- loggedErrors()
+  expect_length(errors, 3)
+  failedText <- paste0("Simulation '", sim$name, "' failed: ")
+  expect_true(all(startsWith(errors, failedText)))
+  reasons <- substring(errors, nchar(failedText) + 1)
+  # Every failure has another first line
+  firstLines <- vapply(
+    strsplit(reasons, "\n", fixed = TRUE),
+    function(lines) sub(" [...]", "", lines[[1]], fixed = TRUE),
+    character(1)
+  )
+  expect_length(unique(firstLines), 3)
+
+  # Only the first failure of the call gives the full reason, the later ones
+  # the first line of their own reason
+  expect_match(reasons[[1]], "\n", fixed = TRUE)
+  expect_false(any(grepl("\n", reasons[2:3], fixed = TRUE)))
+  expect_identical(reasons[2:3], paste0(firstLines[2:3], " [...]"))
+
+  # A new call logs the full reason again
+  expect_identical(loggedErrors(), errors)
+})
+
+test_that("reasons of failed simulations are logged in full once per kind", {
+  private <- testPiTask()$.__enclos_env__$private
+  simulationNames <- c("A", "B", "C", "D")
+  loggedError <- function(reasons) {
+    cond <- .simulationsFailedError(simulationNames, 1:4, reasons)
+    capture_messages(private$.logSimulationFailure(1, cond))[[2]]
+  }
+  expectedError <- function(reasons) {
+    paste0(
+      "Error: ",
+      messages$errorSimulationsFailed(simulationNames, 1:4, reasons),
+      "\n"
+    )
+  }
+  shortened <- messages$shortenedFailureReason
+  # Reasons of one kind differ only in the numbers of their first line
+  negative <- function(time) {
+    paste0("Values became negative at t=", time, ":\nVariable 1\nVariable 2")
+  }
+  oneLine <- function(time) paste0("Error at t=", time, ": no convergence")
+
+  # One reason twice, another of its kind and one of another kind: the first
+  # of each kind is logged in full
+  expect_identical(
+    loggedError(c(negative(1.5), negative(1.5), negative(2e-3), oneLine(3))),
+    expectedError(c(negative(1.5), shortened(negative(2e-3)), oneLine(3)))
+  )
+  # Later in the call, only a new kind is logged in full
+  other <- "Another failure:\nDetails"
+  expect_identical(
+    loggedError(c(negative(40), oneLine(7), other, negative(1.5))),
+    expectedError(c(
+      shortened(negative(40)),
+      oneLine(7),
+      other,
+      shortened(negative(1.5))
+    ))
+  )
+})
+
+test_that("gridSearch() stops on unconvertible observed data", {
+  # The error is raised by the unit conversion instead of returning `Inf` for
+  # every grid point as if the simulation had failed
+  expect_error(
+    suppressMessages(
+      testUnconvertibleDataTask()$gridSearch(totalEvaluations = 3)
+    ),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
 })
 
 test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
@@ -165,13 +337,26 @@ test_that("calculateOFVProfiles() returns `Inf` on simulation failure", {
     outputMappings = outputMapping_250mg
   )
 
-  suppressMessages(suppressWarnings(
-    expect_warning(
+  # The failed simulation is reported by name and with the reason given by
+  # the simulation engine, without its warning (#299)
+  expect_no_warning(suppressMessages(
+    expect_message(
       ofvProfiles <- piTask$calculateOFVProfiles(
         par = c(0, -0.25),
         totalEvaluations = 3
-      )
+      ),
+      messages$errorSimulationsFailed(sim_250mg$name, reasons = ".+")
     )
   ))
   expect_snapshot(ofvProfiles[[2]]$ofv)
+})
+
+test_that("calculateOFVProfiles() stops on unconvertible observed data", {
+  expect_error(
+    suppressMessages(
+      testUnconvertibleDataTask()$calculateOFVProfiles(totalEvaluations = 2L)
+    ),
+    "Molecular Weight not available",
+    fixed = TRUE
+  )
 })

@@ -206,11 +206,7 @@ PISimFailureTester <- R6::R6Class(
   inherit = ParameterIdentification,
   cloneable = FALSE,
   private = list(
-    .evaluate = function(
-      currVals,
-      bootstrapSeed = NULL,
-      includeObserved = TRUE
-    ) {
+    .simulateOutputs = function(currVals, outputMappings = NULL) {
       private$.fnEvaluations <- private$.fnEvaluations + 2
       stop("Simulated failure in evaluation")
     }
@@ -265,8 +261,150 @@ testModifiedTask <- function() {
   )
 }
 
+# A task whose observed data cannot be converted to the unit of the output:
+# the molecular weight of the mass concentrations, which are mapped to a molar
+# output, is removed after the data set was added to the mapping
+testUnconvertibleDataTask <- function() {
+  sim <- ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+  mapping$addObservedDataSets(dataSet)
+  dataSet$molWeight <- NA_real_
+
+  ParameterIdentification$new(
+    simulations = sim,
+    parameters = testParameters(sim),
+    outputMappings = mapping,
+    configuration = lowIterPiConfiguration()
+  )
+}
+
+# A task with two copies of the Aciclovir simulation, which share their name,
+# one lipophilicity parameter over both, and the same data mapped to each.
+# The simulations at the positions `failing` fail.
+testTwoSimulationsTask <- function(failing = integer()) {
+  simulations <- lapply(1:2, function(idx) {
+    ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+  })
+  for (idx in failing) {
+    simulations[[idx]]$solver$mxStep <- 1
+  }
+
+  ParameterIdentification$new(
+    simulations = simulations,
+    parameters = PIParameters$new(
+      parameters = lapply(simulations, function(simulation) {
+        ospsuite::getParameter("Aciclovir|Lipophilicity", simulation)
+      })
+    ),
+    outputMappings = lapply(simulations, function(simulation) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
+  )
+}
+
+# A task with the intravenous ("IV250") and the oral ("PO250") Clarithromycin
+# simulations of the package, or with one of them, each with its own observed
+# data. The output mappings come in the reverse order of the simulations. The
+# first parameter group spans both simulations, the second spans them in the
+# reverse order, and the third belongs to the oral simulation only. A task
+# with one simulation has the groups of that simulation.
+testClarithromycinTask <- function(simulationNames = c("IV250", "PO250")) {
+  files <- c(
+    IV250 = "Clarithromycin_Chu_1992_iv_250mg.pkml",
+    PO250 = "Clarithromycin_Chu_1993_po_250mg.pkml"
+  )
+  simulations <- lapply(files[simulationNames], function(file) {
+    ospsuite::loadSimulation(
+      system.file(
+        "extdata",
+        file,
+        package = "ospsuite.parameteridentification"
+      ),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+  })
+
+  dataFile <- system.file(
+    "extdata",
+    "Clarithromycin_Profiles.xlsx",
+    package = "ospsuite.parameteridentification"
+  )
+  dataConfig <- ospsuite::createImporterConfigurationForFile(dataFile)
+  dataConfig$sheets <- simulationNames
+  dataConfig$namingPattern <- "{Sheet}"
+  observedData <- ospsuite::loadDataSetsFromExcel(dataFile, dataConfig)
+
+  group <- function(path, groupSimulations) {
+    groupSimulations <- intersect(groupSimulations, simulationNames)
+    if (length(groupSimulations) == 0) {
+      return(NULL)
+    }
+    PIParameters$new(
+      parameters = lapply(simulations[groupSimulations], function(simulation) {
+        ospsuite::getParameter(path, simulation)
+      })
+    )
+  }
+  parameters <- list(
+    group("Clarithromycin-CYP3A4-fit|kcat", c("IV250", "PO250")),
+    group(
+      paste0(
+        "Neighborhoods|Kidney_pls_Kidney_ur|Clarithromycin|",
+        "Renal Clearances-fitted|Specific clearance"
+      ),
+      c("PO250", "IV250")
+    ),
+    group("Clarithromycin|Lipophilicity", "PO250")
+  )
+
+  outputPath <- paste0(
+    "Organism|PeripheralVenousBlood|Clarithromycin|",
+    "Plasma (Peripheral Venous Blood)"
+  )
+  ParameterIdentification$new(
+    simulations = unname(simulations),
+    parameters = Filter(Negate(is.null), parameters),
+    outputMappings = lapply(rev(simulationNames), function(name) {
+      mapping <- PIOutputMapping$new(
+        quantity = ospsuite::getQuantity(outputPath, simulations[[name]])
+      )
+      mapping$addObservedDataSets(observedData[[name]])
+      mapping
+    })
+  )
+}
+
 
 # General Helpers
+
+# Counts the reads of the observed data of an output mapping, that is the
+# calls of `.prepareObservedData()`, until the end of the calling test. The
+# count is in `$reads` of the returned environment.
+localObservedDataReads <- function(env = parent.frame()) {
+  counter <- new.env()
+  counter$reads <- 0
+  prepareObservedData <- ospsuite.parameteridentification:::.prepareObservedData
+  testthat::local_mocked_bindings(
+    .prepareObservedData = function(outputMapping) {
+      counter$reads <- counter$reads + 1
+      prepareObservedData(outputMapping)
+    },
+    .env = env
+  )
+  counter
+}
 
 parseFnevals <- function(output) {
   text <- paste0(output, collapse = "\n")
