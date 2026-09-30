@@ -23,7 +23,6 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PKResult.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ParameterIdentification.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/ScalingOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-applyLogTransformation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateBisquareWeights.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateCensoredContribution.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-calculateHuberWeights.html</loc></url>
@@ -32,7 +31,6 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-removeFormulaPaths.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-restoreSimulationState.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-storeSimulationState.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-summarizeCostLists.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-validateIsSameDimension.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-validateOutputMappingHasData.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/dot-validateSimulationIds.html</loc></url>
