@@ -382,9 +382,14 @@ test_that("the cost stops without simulated or observed data", {
       observed = observed,
       dataWeights = NULL,
       costControl = costControl,
-      index = 1L
+      index = 2L,
+      quantityPath = "Organism|A"
     ),
-    messages$errorNoDataForCost("simulated"),
+    paste0(
+      "No simulated values of output mapping 2 ('Organism|A') enter the ",
+      "cost: every value has a time below 0, or a missing or infinite time ",
+      "or value."
+    ),
     fixed = TRUE
   )
   observed$yValues[] <- NA
@@ -394,9 +399,28 @@ test_that("the cost stops without simulated or observed data", {
       observed = observed,
       dataWeights = NULL,
       costControl = costControl,
-      index = 1L
+      index = 2L,
+      quantityPath = "Organism|A"
     ),
-    messages$errorNoDataForCost("observed"),
+    paste0(
+      "No observed values of output mapping 2 ('Organism|A') enter the ",
+      "cost: every value has a time below 0, or a missing or infinite time ",
+      "or value. Check the data transformations of the output mapping, for ",
+      "example xOffsets."
+    ),
+    fixed = TRUE
+  )
+})
+
+test_that("observed times all below 0 stop the call with the output mapping", {
+  task <- testPiTask()
+  mapping <- task$outputMappings[[1]]
+  # Shifts every observed time below 0. The data sets have the same x unit.
+  lastTime <- max(unlist(lapply(mapping$observedDataSets, `[[`, "xValues")))
+  mapping$setDataTransformations(xOffsets = -(lastTime + 1))
+  expect_error(
+    task$gridSearch(lower = -0.5, upper = 0.5, totalEvaluations = 2),
+    messages$errorNoDataForCost("observed", 1, mapping$quantity$path),
     fixed = TRUE
   )
 })

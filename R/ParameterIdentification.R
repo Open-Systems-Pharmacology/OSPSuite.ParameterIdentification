@@ -403,7 +403,8 @@ ParameterIdentification <- R6::R6Class(
           observed = observedData[[idx]],
           dataWeights = outputMappings[[idx]]$dataWeights,
           costControl = costControl,
-          index = idx
+          index = idx,
+          quantityPath = outputMappings[[idx]]$quantity$path
         )
       }
 

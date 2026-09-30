@@ -281,6 +281,8 @@
 #' @param costControl The objective function options, with the scaling of the
 #'   output mapping as `scaling`.
 #' @param index Index of the output mapping.
+#' @param quantityPath Path of the quantity of the output mapping, for the
+#'   message when no simulated or observed values enter the cost.
 #'
 #' @return A list of the arguments of `.newModelCost()`.
 #' @keywords internal
@@ -290,7 +292,8 @@
   observed,
   dataWeights,
   costControl,
-  index
+  index,
+  quantityPath = NULL
 ) {
   simulatedY <- simulated$yValues
   # For LSQ, simulated values below the LLOQ are replaced by LLOQ / 2
@@ -330,10 +333,16 @@
 
   # Ensuring there is enough data to perform calculations
   if (length(simulatedX) < 1) {
-    stop(messages$errorNoDataForCost("simulated"))
+    stop(
+      messages$errorNoDataForCost("simulated", index, quantityPath),
+      call. = FALSE
+    )
   }
   if (length(observedX) < 1) {
-    stop(messages$errorNoDataForCost("observed"))
+    stop(
+      messages$errorNoDataForCost("observed", index, quantityPath),
+      call. = FALSE
+    )
   }
 
   # Applying M3 method for censored error calculation

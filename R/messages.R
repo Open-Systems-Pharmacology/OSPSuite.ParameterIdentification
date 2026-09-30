@@ -117,9 +117,32 @@ messages$warningObservedTimesNotSimulated <- function(
   )
 }
 
-# `dataType` is "simulated" or "observed"
-messages$errorNoDataForCost <- function(dataType) {
-  paste0("No ", dataType, " data found when calculating cost function.")
+# `dataType` is "simulated" or "observed". `index` is the position of the
+# output mapping and `quantityPath` the path of its quantity, both `NULL` for
+# a cost calculated without an output mapping.
+messages$errorNoDataForCost <- function(
+  dataType,
+  index = NULL,
+  quantityPath = NULL
+) {
+  text <- paste0(
+    "No ",
+    dataType,
+    " values ",
+    if (!is.null(index)) {
+      paste0("of output mapping ", index, " ('", quantityPath, "') ")
+    },
+    "enter the cost: every value has a time below 0, or a missing or ",
+    "infinite time or value."
+  )
+  if (dataType == "observed" && !is.null(index)) {
+    text <- paste0(
+      text,
+      " Check the data transformations of the output mapping, for example ",
+      "xOffsets."
+    )
+  }
+  text
 }
 
 messages$errorSimulatedValuesMissing <- function() {
