@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-- Minimum required `ospsuite` version is now 13.0.1. The vignettes and tests use the example `Aciclovir.pkml` shipped with `ospsuite` 13.0.1, in which the dose parameter has a new path (#313).
+- Minimum required `ospsuite` version is now 13.0.1.9006. The vignettes and tests use the example `Aciclovir.pkml` shipped with `ospsuite` 13.0.1, in which the dose parameter has a new path (#313). `ospsuite` 13.0.1.9006 transforms the LLOQ and the geometric standard deviations of observed data consistently with the y values (Open-Systems-Pharmacology/OSPSuite-R#2046).
 
 ## Major changes
 
@@ -20,6 +20,7 @@
 - An error in the observed data sets of an output mapping or in their data transformations, for example #311 with labels for all data sets, now stops `run()`, `estimateCI()`, `gridSearch()` and `calculateOFVProfiles()` with its own message, as an error in the unit conversion of the observed data already did. Previously it was reported as a failed simulation: `run()` and `estimateCI()` stopped with "Initial simulation failed.", and `gridSearch()` and `calculateOFVProfiles()` returned an infinite objective function value for every point (#310).
 - With an LLOQ and `objectiveFunctionType = "lsq"`, a missing simulated value still stops the evaluation, now with an explicit message instead of an error from `tibble` (#310).
 - When no observed or simulated values of an output mapping enter the cost, for example because `xOffsets` of `setDataTransformations()` shift all observed times below 0, the error of `ParameterIdentification` now names the output mapping by its position and quantity path and gives the reason. Previously it said "No observed data found when calculating cost function." (#310).
+- With y transformations (`yOffsets` or `yFactors` of `PIOutputMapping$setDataTransformations()`), the objective function now uses the LLOQ and the geometric standard deviations on the scale of the transformed observed data. Previously the LLOQ kept its raw value, so the LLOQ rule of `objectiveFunctionType = "lsq"` and the censoring of `"m3"` compared transformed values with an untransformed LLOQ, and geometric standard deviations were multiplied by the y factor, which distorted the weights of `residualWeightingMethod = "error"`. The cost, and so the result of a parameter identification, changes for output mappings that combine y transformations with an LLOQ or with geometric standard deviations. The correction is in `ospsuite` (Open-Systems-Pharmacology/OSPSuite-R#2046).
 
 # ospsuite.parameteridentification 2.2.0
 

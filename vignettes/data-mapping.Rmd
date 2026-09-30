@@ -241,6 +241,15 @@ outputMapping$setDataTransformations(
 outputMapping$dataTransformations
 ```
 
+The LLOQ and the error values of the observed data are transformed with the y
+values, so the objective function compares them on the same scale. The LLOQ is
+transformed like the y values, and arithmetic standard deviations are
+multiplied by the absolute value of the y factor. Geometric standard deviations are factors without
+a unit, so the y factor does not change them. A y offset adjusts them
+approximately. For data that an offset brings close to or below zero, such as
+baseline-corrected data, arithmetic standard deviations are the better choice
+(see `vignette("data-combined", package = "ospsuite")`).
+
 
 ## Practical tips
 

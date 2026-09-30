@@ -117,7 +117,21 @@ names must match the names of the observed datasets.}
 \if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
 \subsection{\code{PIOutputMapping$setDataTransformations()}}{
-  Configures transformations for datasets.
+  Configures transformations for datasets. X and y values
+are transformed as \code{(value + offset) * factor}, and the objective
+function uses the transformed values. The other columns of the
+observed data follow the y values:
+\itemize{
+\item The LLOQ is transformed like the y values. With a negative
+\code{yFactors}, it is set to \code{NA}.
+\item Arithmetic standard deviations are multiplied by \code{abs(yFactors)}.
+\item Geometric standard deviations are not changed by \code{yFactors}. A y
+offset adjusts them approximately, and sets them to \code{NA} where a y
+value is not positive before or after the offset.
+}
+
+See \code{ospsuite::DataCombined} for the limits of the approximation for
+geometric standard deviations.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(
