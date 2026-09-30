@@ -26,7 +26,8 @@
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #'   Defaults to `NA_real_`.
 #' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#'   including `scaling`, `linScaleCV`, and `logScaleSD`.
+#'   including `scaling`, `linScaleCV`, and `logScaleSD`. `scaling` is not
+#'   used for the error weights, which assume `yValues` on the linear scale.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the

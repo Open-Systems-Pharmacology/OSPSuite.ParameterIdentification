@@ -1214,6 +1214,9 @@ severalDataSetsTask <- function() {
   task
 }
 
+# Without log scaling and error weights: 2.2.0.9009 calculated the error weights
+# on the log scale from the log values (#325), see the tests after those of
+# `.computeErrorWeights()`
 test_that("objective function equals 2.2.0.9009 for several data sets", {
   expectFrozenForSettings(
     severalDataSetsTask(),
@@ -1221,8 +1224,6 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
       list(),
       list(scaling = "log"),
       list(options = list(residualWeightingMethod = "error")),
-      # With `scaling = "log"`, 2.2.0.9009 calculated the error weights from
-      # the log values (#325), see the tests of `.computeErrorWeights()`
       list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
       list(
         scaling = "log",
@@ -1620,15 +1621,19 @@ test_that(".computeErrorWeights converts arithmetic SDs to the log scale", {
 })
 
 # Cost terms of an output mapping with log scaling and error weights, for
-# observations at 1, 2 and 3 min with geometric SDs
-logScaleErrorTerms <- function(yValues, yErrorValues) {
+# observations at 1, 2 and 3 min
+logScaleErrorTerms <- function(
+  yValues,
+  yErrorValues,
+  yErrorType = "GeometricStdDev"
+) {
   observed <- list(
     name = rep("dataSet", 3),
     xValues = c(1, 2, 3),
     xDimension = rep(ospsuite::ospDimensions$Time, 3),
     yValues = yValues,
     yErrorValues = yErrorValues,
-    yErrorType = rep("GeometricStdDev", 3),
+    yErrorType = rep(yErrorType, 3),
     lloq = rep(NA_real_, 3),
     hasLloq = FALSE,
     lloqMin = NA_real_,
@@ -1648,7 +1653,7 @@ logScaleErrorTerms <- function(yValues, yErrorValues) {
   .mappingCostTerms(simulated, observed, list(), costControl, 1)
 }
 
-test_that("error weights on the log scale use the observed values", {
+test_that("GSD weights of a mapping on the log scale are 1 / log(GSD)", {
   # The same GSD for all observations, one of them below 1 (#325)
   terms <- logScaleErrorTerms(c(0.5, 2, 10), rep(1.5, 3))
 
@@ -1656,8 +1661,21 @@ test_that("error weights on the log scale use the observed values", {
   expect_equal(terms$errorWeights, c(2.47, 2.47, 2.47))
 })
 
+test_that("arithmetic SD weights of a mapping on the log scale use the CV", {
+  # CV = 0.2 for all observations, one of them below 1 (#325):
+  # 1 / sqrt(log(1 + 0.2^2)) = 5.05
+  terms <- logScaleErrorTerms(
+    c(0.5, 2, 10),
+    c(0.1, 0.4, 2),
+    yErrorType = "ArithmeticStdDev"
+  )
+
+  expect_equal(terms$errorWeights, c(5.05, 5.05, 5.05))
+})
+
 test_that("an invalid error of a value below 1 on the log scale is reported", {
-  # A GSD of 1 is invalid. The value 0.5 has a log value below 0 (#325)
+  # The GSD of 1 of the value 0.5 is invalid. 2.2.0.9009 did not report it,
+  # because it checked the log value, which is below 0 (#325)
   expect_warning(
     terms <- logScaleErrorTerms(c(0.5, 2, 10), c(1, 1.5, 1.5)),
     regexp = "unit weights"
