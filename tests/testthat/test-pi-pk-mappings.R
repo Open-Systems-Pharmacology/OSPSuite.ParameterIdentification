@@ -254,7 +254,11 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
   # The first evaluation stops with the failed simulation, without the
   # warning of the simulation engine (#299)
   expect_no_warning(
-    expect_error(suppressMessages(task$run()), failedPattern)
+    expect_error(
+      suppressMessages(task$run()),
+      failedPattern,
+      class = "simulationsFailedError"
+    )
   )
 
   # Later evaluations log it and return the largest cost

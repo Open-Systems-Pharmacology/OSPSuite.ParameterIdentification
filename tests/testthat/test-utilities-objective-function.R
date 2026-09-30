@@ -67,6 +67,57 @@ test_that(".calculateCensoredContribution throws an error when LLOQ values are m
   )
 })
 
+test_that(".calculateCensoredContribution uses the LLOQ of each censored value", {
+  # Two data sets with different LLOQs, all values censored, in the order of
+  # the data sets and not of the times
+  observed <- data.frame(
+    xValues = c(60, 180, 120, 240),
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = c(0.5, 0.5, 1, 1),
+    lloq = c(1, 1, 2, 2)
+  )
+  simulated <- data.frame(
+    xValues = c(60, 120, 180, 240),
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = c(0.1, 1.9, 0.9, 0.2)
+  )
+  # The simulated values at the observed times
+  simulatedY <- c(0.1, 0.9, 1.9, 0.2)
+  lloq <- observed$lloq
+
+  expect_equal(
+    .calculateCensoredContribution(
+      observed = observed,
+      simulated = simulated,
+      scaling = "lin",
+      linScaleCV = 0.2
+    ),
+    sum(-2 * log10(stats::pnorm((lloq - simulatedY) / (0.2 * lloq))))
+  )
+  expect_equal(
+    .calculateCensoredContribution(
+      observed = transform(observed, yValues = log(yValues), lloq = log(lloq)),
+      simulated = transform(simulated, yValues = log(yValues)),
+      scaling = "log",
+      logScaleSD = 0.086
+    ),
+    sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / 0.086)))
+  )
+  # One LLOQ for all values
+  observed$lloq <- 2
+  expect_equal(
+    .calculateCensoredContribution(
+      observed = observed,
+      simulated = simulated,
+      scaling = "lin",
+      linScaleCV = 0.2
+    ),
+    sum(-2 * log10(stats::pnorm((2 - simulatedY) / (0.2 * 2))))
+  )
+})
+
 test_that(".calculateCensoredContribution throws errors on invalid options", {
   obsDf$lloq <- 2.5
   expect_error(
@@ -1163,6 +1214,115 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
   )
 })
 
+test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapping", {
+  dataSets <- testObservedDataMultiple()
+  dataSets$dataSet1$LLOQ <- 0.5
+  dataSets$dataSet2$LLOQ <- 2
+  expectFrozenForSettings(
+    aciclovirTask(stats::setNames(list(dataSets), aciclovirPlasmaPaths[[1]])),
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(
+        scaling = "log",
+        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+      )
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("censored values contribute alike in one or in two output mappings", {
+  dataSets <- testObservedDataMultiple()
+  dataSets$dataSet1$LLOQ <- 0.5
+  dataSets$dataSet2$LLOQ <- 2
+  # The M3 contribution with the data sets in the given output mappings. The
+  # frozen objective function uses `.calculateCensoredContribution()` of the
+  # package, so this compares with output mappings of one LLOQ each instead.
+  m3Contribution <- function(dataSetsByMapping, scaling, options) {
+    sim <- ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+    task <- ParameterIdentification$new(
+      simulations = sim,
+      parameters = PIParameters$new(
+        parameters = list(
+          ospsuite::getParameter("Aciclovir|Lipophilicity", sim)
+        )
+      ),
+      outputMappings = lapply(dataSetsByMapping, function(mappingDataSets) {
+        mapping <- PIOutputMapping$new(
+          quantity = ospsuite::getQuantity(aciclovirPlasmaPaths[[1]], sim)
+        )
+        mapping$addObservedDataSets(mappingDataSets)
+        mapping
+      })
+    )
+    applyCostSetting(task, scaling = scaling, options = options)
+    task$.__enclos_env__$private$.objectiveFunction(
+      lipophilicityValues[[1]]
+    )$costVariables$M3Contribution
+  }
+
+  for (setting in list(
+    list(
+      scaling = "lin",
+      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+    ),
+    list(
+      scaling = "log",
+      options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+    )
+  )) {
+    together <- m3Contribution(
+      list(unname(dataSets)),
+      setting$scaling,
+      setting$options
+    )
+    separate <- m3Contribution(
+      list(dataSets$dataSet1, dataSets$dataSet2),
+      setting$scaling,
+      setting$options
+    )
+    expect_gt(together, 0)
+    expect_equal(together, separate)
+  }
+})
+
+test_that("objective function equals 2.2.0.9009 with observed values of zero", {
+  # A zero and a value below the epsilon of the log transformation
+  dataSet <- ospsuite::DataSet$new(name = "withZeros")
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- "nmol/l"
+  dataSet$setValues(
+    xValues = c(30, 60, 120, 240, 480, 720),
+    yValues = c(12000, 9000, 0, 3000, 1e-20, 500)
+  )
+  task <- aciclovirTask(
+    stats::setNames(list(dataSet), aciclovirPlasmaPaths[[1]])
+  )
+  expectFrozenForSettings(
+    task,
+    list(
+      list(),
+      list(scaling = "log"),
+      list(scaling = "log", options = list(robustMethod = "bisquare"))
+    ),
+    lipophilicityValues
+  )
+  # Both values are replaced by the epsilon, in the base unit of the data
+  logYValues <- task$.__enclos_env__$private$.observedData[[1]]$logYValues
+  expect_equal(
+    logYValues[c(3, 5)],
+    rep(log(ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON")), 2)
+  )
+  expect_true(all(is.finite(logYValues)))
+})
+
 # Molar data in min with geometric SD
 molarDataSet <- function(name, lloq = NULL) {
   dataSet <- ospsuite::DataSet$new(name = name)
@@ -1233,6 +1393,63 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
       )
     ),
     lipophilicityValues
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 for two simulations with grouped parameters", {
+  # Mass data, parameter groups over both simulations and over one
+  task <- testClarithromycinTask()
+  startValues <- currStartValues(task)
+  expectFrozenForSettings(
+    task,
+    list(
+      list(),
+      list(scaling = "log"),
+      list(scaling = c("lin", "log"), options = list(robustMethod = "huber"))
+    ),
+    list(startValues, startValues * c(2, 0.5, 1.1))
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 for the Midazolam model", {
+  sim <- ospsuite::loadSimulation(
+    getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  filePath <- getTestDataFilePath("Midazolam_Smith_1981.xlsx")
+  dataConfig <- ospsuite::createImporterConfigurationForFile(filePath)
+  dataConfig$sheets <- "Smith1981"
+  dataConfig$namingPattern <- "{Source}.{Sheet}"
+  mapping <- PIOutputMapping$new(
+    quantity = ospsuite::getQuantity(
+      paste0(
+        "Organism|PeripheralVenousBlood|Midazolam|",
+        "Plasma (Peripheral Venous Blood)"
+      ),
+      sim
+    )
+  )
+  mapping$addObservedDataSets(
+    ospsuite::loadDataSetsFromExcel(filePath, dataConfig)
+  )
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = lapply(
+      c(
+        "Midazolam|Lipophilicity",
+        "Midazolam-CYP3A4-Patki et al. 2003 rCYP3A4|kcat"
+      ),
+      function(path) {
+        PIParameters$new(parameters = list(ospsuite::getParameter(path, sim)))
+      }
+    ),
+    outputMappings = mapping
+  )
+  expectFrozenForSettings(
+    task,
+    list(list(), list(scaling = "log")),
+    list(c(3.9, 320), c(3, 600))
   )
 })
 
