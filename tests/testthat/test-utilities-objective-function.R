@@ -1221,7 +1221,8 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
       list(),
       list(scaling = "log"),
       list(options = list(residualWeightingMethod = "error")),
-      list(scaling = "log", options = list(residualWeightingMethod = "error")),
+      # With `scaling = "log"`, 2.2.0.9009 calculated the error weights from
+      # the log values (#325), see the tests of `.computeErrorWeights()`
       list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
       list(
         scaling = "log",
@@ -1591,4 +1592,95 @@ test_that(".computeErrorWeights warns when some GSD error values are invalid", {
     .computeErrorWeights(yValues, yErrorValues, yErrorType),
     regexp = "unit weights"
   )
+})
+
+test_that(".computeErrorWeights uses log(GSD) as the SD on the log scale", {
+  # The SD of the log of a log-normal value is log(GSD), whatever the value,
+  # also for values below 1: 1 / log(1.5) = 2.466303, 1 / log(2) = 1.442695
+  result <- .computeErrorWeights(
+    yValues = c(0.5, 2, 10),
+    yErrorValues = c(1.5, 2, 1.5),
+    yErrorType = rep("GeometricStdDev", 3),
+    scaling = "log"
+  )
+
+  expect_equal(result, c(2.466303, 1.442695, 2.466303), tolerance = 1e-6)
+})
+
+test_that(".computeErrorWeights converts arithmetic SDs to the log scale", {
+  # CV = 0.2 for both values: SD of the log = sqrt(log(1 + 0.2^2)) = 0.198042
+  result <- .computeErrorWeights(
+    yValues = c(10, 0.5),
+    yErrorValues = c(2, 0.1),
+    yErrorType = rep("ArithmeticStdDev", 2),
+    scaling = "log"
+  )
+
+  expect_equal(result, c(5.049429, 5.049429), tolerance = 1e-6)
+})
+
+# Cost terms of an output mapping with log scaling and error weights, for
+# observations at 1, 2 and 3 min with geometric SDs
+logScaleErrorTerms <- function(yValues, yErrorValues) {
+  observed <- list(
+    name = rep("dataSet", 3),
+    xValues = c(1, 2, 3),
+    xDimension = rep(ospsuite::ospDimensions$Time, 3),
+    yValues = yValues,
+    yErrorValues = yErrorValues,
+    yErrorType = rep("GeometricStdDev", 3),
+    lloq = rep(NA_real_, 3),
+    hasLloq = FALSE,
+    lloqMin = NA_real_,
+    logYValues = log(yValues),
+    logLloq = rep(NA_real_, 3),
+    logEpsilon = 1e-20,
+    xUnit = ospsuite::ospUnits$Time$min
+  )
+  simulated <- list(xValues = 0:4, yValues = c(1, 0.6, 2.2, 11, 5))
+  costControl <- list(
+    objectiveFunctionType = "lsq",
+    residualWeightingMethod = "error",
+    robustMethod = "none",
+    scaleVar = FALSE,
+    scaling = "log"
+  )
+  .mappingCostTerms(simulated, observed, list(), costControl, 1)
+}
+
+test_that("error weights on the log scale use the observed values", {
+  # The same GSD for all observations, one of them below 1 (#325)
+  terms <- logScaleErrorTerms(c(0.5, 2, 10), rep(1.5, 3))
+
+  # 1 / log(1.5) = 2.47 for every observation
+  expect_equal(terms$errorWeights, c(2.47, 2.47, 2.47))
+})
+
+test_that("an invalid error of a value below 1 on the log scale is reported", {
+  # A GSD of 1 is invalid. The value 0.5 has a log value below 0 (#325)
+  expect_warning(
+    terms <- logScaleErrorTerms(c(0.5, 2, 10), c(1, 1.5, 1.5)),
+    regexp = "unit weights"
+  )
+  expect_equal(terms$errorWeights, c(1, 2.47, 2.47))
+})
+
+test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
+  # Molar data with the GSDs 1.2, 1.3, 1.5, 1.4, 1.8 and 2 and values from
+  # 0.5 to 12 µmol/l in the base unit, so some log values are below 0
+  task <- aciclovirTask(stats::setNames(
+    list(list(molarDataSet("dataSet"))),
+    aciclovirPlasmaPaths[2]
+  ))
+  applyCostSetting(
+    task,
+    scaling = "log",
+    options = list(residualWeightingMethod = "error")
+  )
+  priv <- task$.__enclos_env__$private
+
+  details <- priv$.objectiveFunction(lipophilicityValues[[1]])$residualDetails
+
+  # 1 / log(GSD), rounded to 2 digits
+  expect_equal(details$errorWeights, c(5.48, 3.81, 2.47, 2.97, 1.70, 1.44))
 })
