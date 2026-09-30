@@ -10,12 +10,13 @@
 \item{simulations}{List of \code{Simulation} objects}
 }
 \value{
-A named list with entries \code{outputIntervals}, \code{timePoints}, and
-\code{outputSelections}. Every entry is a named list with names being the IDs of
-the simulations.
+A named list with names being the IDs of the simulations. Every
+entry is a list with the paths of the output selections (\code{outputs}), the
+output time points (\code{timePoints}), and the name, start time, end time and
+resolution of every output interval (\code{intervals}).
 }
 \description{
-Stores simulation output intervals, output time points, and
-output selections in the current state.
+Stores the output selections, output intervals, and output
+time points of simulations in their current state.
 }
 \keyword{internal}
