@@ -23,7 +23,8 @@
 of the predefined scaling options.}
 
 \item{linScaleCV}{Numeric, coefficient used to calculate standard deviation
-for linear scaling, applied to 'lloq' values.}
+for linear scaling, applied to the 'lloq' value of each censored
+observation.}
 
 \item{logScaleSD}{Numeric, standard deviation for logarithmic scaling,
 applied uniformly to all censored observations.}

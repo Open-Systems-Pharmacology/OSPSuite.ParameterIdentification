@@ -41,6 +41,8 @@ test_that("a failed simulation is reported by name and reason", {
     reasons = conditionMessage(engineWarning)
   )
   expect_identical(conditionMessage(plotError), failedMessage)
+  # The objective functions shorten the logged reasons of errors of this class
+  expect_s3_class(plotError, "simulationsFailedError")
 
   # The objective function reports the same failure without the warning of
   # the simulation engine
