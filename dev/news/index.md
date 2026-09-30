@@ -24,7 +24,10 @@
   simulated values and the cost are calculated on numeric vectors
   instead of `DataCombined` objects and data frames, apart from the
   contribution of censored values with `objectiveFunctionType = "m3"`.
-  The results are identical. In the examples of
+  The results are identical, apart from the correction of the M3 method
+  for several LLOQs in one output mapping below
+  ([\#317](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317)).
+  In the examples of
   [\#303](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/303),
   an evaluation is about 2 to 2.5 times faster, and 7 to 9 times faster
   where the simulations themselves are fast
@@ -106,6 +109,17 @@
   and quantity path and gives the reason. Previously it said “No
   observed data found when calculating cost function.”
   ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- With `objectiveFunctionType = "m3"`, the contribution of the values
+  below the LLOQ is now correct when they have different LLOQs, for
+  example in two data sets with different LLOQs in one output mapping.
+  Each such value is now compared with the simulated value at its own
+  time, and with `linScaleCV` its standard deviation is calculated from
+  its own LLOQ. Previously an LLOQ could be compared with the simulated
+  value at another time, and a value could get the standard deviation of
+  another LLOQ, so the cost was wrong and depended on the order in which
+  the data sets were added to the output mapping. With one LLOQ per
+  output mapping, the results are unchanged
+  ([\#317](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317)).
 
 ## ospsuite.parameteridentification 2.2.0
 

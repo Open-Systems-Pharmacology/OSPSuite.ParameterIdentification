@@ -41,7 +41,7 @@ detection limits.
 - linScaleCV:
 
   Numeric, coefficient used to calculate standard deviation for linear
-  scaling, applied to 'lloq' values.
+  scaling, applied to the 'lloq' value of each censored observation.
 
 - logScaleSD:
 
