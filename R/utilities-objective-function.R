@@ -920,7 +920,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' @param scaling Character string specifying the scaling method; should be one
 #'   of the predefined scaling options.
 #' @param linScaleCV Numeric, coefficient used to calculate standard deviation
-#'   for linear scaling, applied to 'lloq' values.
+#'   for linear scaling, applied to the 'lloq' value of each censored
+#'   observation.
 #' @param logScaleSD Numeric, standard deviation for logarithmic scaling,
 #'   applied uniformly to all censored observations.
 #' @return Numeric value representing the sum of squared errors for censored
@@ -959,10 +960,14 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     !is.na(observed$lloq) &
       (observed$yValues <= observed$lloq),
   ]
+  # `merge()` sorts the rows by time, so the LLOQ of each censored value is
+  # merged along with it, to stay with the simulated value at its time when
+  # the data sets of an output mapping have different LLOQs
+  keys <- c("xValues", "xUnit", "xDimension")
   simulatedCensored <- merge(
-    observedCensored[c("xValues", "xUnit", "xDimension")],
-    simulated,
-    by = c("xValues", "xUnit", "xDimension"),
+    observedCensored[c(keys, "lloq")],
+    simulated[c(keys, "yValues")],
+    by = keys,
     all.x = TRUE
   )
 
@@ -972,7 +977,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (scaling == "lin" && !is.null(linScaleCV)) {
-    stDev <- abs(linScaleCV * lloq)
+    stDev <- abs(linScaleCV * simulatedCensored$lloq)
   } else if (scaling == "log" && !is.null(logScaleSD)) {
     stDev <- logScaleSD
   } else {
@@ -980,7 +985,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   censoredProbabilities <- stats::pnorm(
-    (observedCensored$lloq - simulatedCensored$yValues) / stDev
+    (simulatedCensored$lloq - simulatedCensored$yValues) / stDev
   )
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
   censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
