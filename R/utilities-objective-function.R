@@ -5,9 +5,9 @@
 #' example that of a `DataCombined` object. It does not apply the LLOQ rule of
 #' the objective function. The objective function calculates the cost on
 #' numeric vectors with `.mappingCostTerms()`. Both use `.costKernel()`, and
-#' the tests compare both with the calculation of version 2.2.0.9009 by
-#' `identical()`, the objective function in the cases in which its handling
-#' of the LLOQ did not change since that version (see
+#' the tests compare both by `identical()` with a reference implementation on
+#' data frames, the objective function for the data on which the reference
+#' handles the LLOQ alike (see
 #' `tests/testthat/helper-frozen-objective-function.R`).
 #'
 #' @param df A dataframe containing the combined data for simulation and
@@ -294,8 +294,9 @@
 #'
 #'   When the observed values of the output mapping have no LLOQ, or all have
 #'   the same LLOQ and the same value below it, as without a y offset, the
-#'   steps are those of the objective function of version 2.2.0.9009 on data
-#'   frames before `.calculateCostMetrics()`, in the same order.
+#'   steps and their order are those of the reference objective function of
+#'   the tests on data frames, so the results are identical (see
+#'   `tests/testthat/helper-frozen-objective-function.R`).
 #'
 #' @param simulated A list with `xValues` and `yValues`, the simulated values
 #'   in base units (see `.simulatedValues()`).
@@ -624,8 +625,7 @@
 #' @description Sums the scalar cost terms of the output mappings in their
 #'   order and binds their per-observation terms into one `modelCost` object,
 #'   in one step. The result is identical to adding the `modelCost` objects of
-#'   the output mappings one after the other and binding their rows, as the
-#'   objective function of version 2.2.0.9009 did.
+#'   the output mappings one after the other and binding their rows.
 #'
 #' @param costTerms A list of results of `.costKernel()`, one per output
 #'   mapping.

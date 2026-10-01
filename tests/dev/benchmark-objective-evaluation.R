@@ -13,12 +13,12 @@
 #
 # - applyParameterValues is `.applyParameterValues()`;
 # - getSimulationContainer is the lookup of the simulation of every parameter
-#   path, which `.applyParameterValues()` does on every evaluation up to
-#   2.2.0.9009 (NA when the paths are resolved once per run);
+#   path on every evaluation, for a build of the package that does it there
+#   (NA for a build that resolves the paths once per run);
 # - simulation is `addRunValues()` and `runSimulationBatches()`;
 # - simulatedData is the conversion of the simulation results into the
-#   simulated values of every output mapping (`DataCombined` objects up to
-#   2.2.0.9009, numeric vectors afterwards);
+#   simulated values of every output mapping (`DataCombined` objects or
+#   numeric vectors, depending on the build);
 # - costAndDataFrames is the rest of the evaluation (observed data, unit
 #   conversion, LLOQ handling, cost calculation and result data frames).
 #

@@ -1,27 +1,25 @@
-# The objective function of version 2.2.0.9009 (commit 2d97936), which
-# calculated the cost on the data frames of `DataCombined` objects, frozen as
-# the reference for the objective function on numeric vectors (#303).
+# A reference objective function, which calculates the cost on the data
+# frames of `DataCombined` objects. The tests compare the objective function,
+# which calculates the cost on numeric vectors, with it by `identical()`.
 #
-# The code is copied from that version as it was, including the lints of that
-# version, so that it can be compared with it line by line; only the names of
-# the functions differ. lintr skips it (`nolint start` and `nolint end`). Do
-# not change it: the tests compare the objective function with it by
-# `identical()`. The functions it calls that are unchanged since that version
-# are those of the package: `.newModelCost()`, `.computeErrorWeights()`,
-# `.calculateHuberWeights()` and `.calculateBisquareWeights()`. It also calls
-# `.calculateCensoredContribution()` of the package, which has changed: it
-# pairs each censored value with its own LLOQ (#317), leaves a value without
-# an LLOQ uncensored, where 2.2.0.9009 gave it the lowest LLOQ of the other
-# values, and calculates the standard deviation with `linScaleCV` from the
-# LLOQ before a y offset (#331). So for M3, the frozen objective function
-# equals that of 2.2.0.9009 only when all observed values of an output
-# mapping have the same LLOQ and no y offset. With several LLOQs, comparing
-# with it shows that the objective function passes the same data to
-# `.calculateCensoredContribution()`.
+# lintr skips the code (`nolint start` and `nolint end`). Do not change it: it
+# is the reference of the tests. It calls these functions of the package:
+# `.newModelCost()`, `.computeErrorWeights()`, `.calculateHuberWeights()`,
+# `.calculateBisquareWeights()` and `.calculateCensoredContribution()`.
+#
+# The LLOQ rule of the reference for "lsq" replaces the simulated values below
+# the lowest LLOQ of an output mapping by half that LLOQ, for all its observed
+# values, and the reference passes no transformed value of 0 to
+# `.calculateCensoredContribution()`. So it equals the objective function for
+# "lsq" when all observed values of an output mapping have the same LLOQ and
+# no y offset, or none has an LLOQ, and for "m3" when no observed value with
+# an LLOQ has a y offset. The tests compare with it only for such data. For
+# "m3" with several LLOQs, the comparison shows that both pass the same data
+# to `.calculateCensoredContribution()`.
 
 # nolint start
 
-# `.objectiveFunction()` of 2.2.0.9009 after the simulations: the
+# The objective function after the simulations, on data frames: the
 # `DataCombined` objects of `.evaluate()`, their data frames in base units, the
 # LLOQ rule, the log transformation, the data weights and the cost of every
 # output mapping, summed over the output mappings. The observed data are read
@@ -48,8 +46,7 @@ frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
     simId <- .getSimulationContainer(currOutputMapping$quantity)$id
     # Construct group names out of output path and simulation id
     groupName <- currOutputMapping$quantity$path
-    # `.runSimulations()` names the results by the simulation IDs. 2.2.0.9009
-    # looked them up by the ID of the batch of the simulation.
+    # `.runSimulations()` names the results by the simulation IDs
     resultObject <- simulationResults[[simId]][[1]]
     obsVsPred$addSimulationResults(
       resultObject,
@@ -147,9 +144,8 @@ frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
   Reduce(frozenSummarizeCostLists, costSummaryList)
 }
 
-# `.calculateCostMetrics()` of 2.2.0.9009: the cost of one output mapping from
-# a data frame of simulated and observed data (see `.calculateCostMetrics()`
-# of the package for the arguments).
+# The cost of one output mapping from a data frame of simulated and observed
+# data (see `.calculateCostMetrics()` of the package for the arguments).
 frozenCalculateCostMetrics <- function(
   df,
   objectiveFunctionType = "lsq",
@@ -318,8 +314,7 @@ frozenCalculateCostMetrics <- function(
   return(modelCost)
 }
 
-# `.createErrorCostStructure()` of 2.2.0.9009: an infinite-cost `modelCost`
-# object.
+# An infinite-cost `modelCost` object.
 frozenCreateErrorCostStructure <- function(index = NA_real_) {
   .newModelCost(
     modelCost = Inf,
@@ -332,7 +327,7 @@ frozenCreateErrorCostStructure <- function(index = NA_real_) {
   )
 }
 
-# `.applyLogTransformation()` of 2.2.0.9009: transforms the `yValues` and
+# Transforms the `yValues` and
 # `lloq` columns of a data frame of observed and simulated data (a `tbl_df`
 # with `yDimension`, `yUnit`, `yValues` and `lloq`) with a log transformation
 # of the given base.
@@ -365,7 +360,7 @@ frozenApplyLogTransformation <- function(df, base = exp(1)) {
   return(df)
 }
 
-# `.summarizeCostLists()` of 2.2.0.9009: sums the model costs, minimum log
+# Sums the model costs, minimum log
 # probabilities and cost variables of two cost summaries and binds their
 # residual details by rows.
 frozenSummarizeCostLists <- function(list1, list2) {

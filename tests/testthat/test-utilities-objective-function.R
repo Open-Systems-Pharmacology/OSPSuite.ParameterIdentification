@@ -1040,7 +1040,7 @@ test_that("observed data equal the observed rows of a full evaluation", {
     xUnit = ospsuite::getBaseUnit("Time"),
     yUnit = ospsuite::getBaseUnit(task$outputMappings[[1]]$quantity$dimension)
   )
-  # The log transformation of 2.2.0.9009 takes its epsilon from the first,
+  # The log transformation of the reference takes its epsilon from the first,
   # simulated row
   logged <- frozenApplyLogTransformation(converted)
   isObserved <- converted$dataType == "observed"
@@ -1063,8 +1063,8 @@ test_that("observed data equal the observed rows of a full evaluation", {
   expect_identical(observed$logLloq, logged$lloq[isObserved])
 })
 
-# The objective function against that of 2.2.0.9009, which calculated the
-# cost on data frames (`frozenObjectiveFunction()`, see
+# The objective function against the reference objective function, which
+# calculates the cost on data frames (`frozenObjectiveFunction()`, see
 # helper-frozen-objective-function.R). Each test builds one task and applies
 # several settings to it. A setting sets the scaling of every output mapping
 # and every objective function option, so it does not depend on the settings
@@ -1098,7 +1098,7 @@ applyCostSetting <- function(task, scaling = "lin", options = list()) {
 }
 
 # Expects identical results and warnings from the objective function and from
-# the objective function of 2.2.0.9009, for each parameter value, in this
+# the reference objective function, for each parameter value, in this
 # order. The first evaluation reads the observed data, the later ones reuse
 # them.
 expectFrozenObjective <- function(task, values, bootstrapSeed = NULL) {
@@ -1172,7 +1172,7 @@ twoOutputsTask <- function(lloq = NULL, weights = FALSE) {
 
 lipophilicityValues <- c(-0.097, 0.3)
 
-test_that("objective function equals 2.2.0.9009 for scaling and options", {
+test_that("objective function equals the reference for scaling and options", {
   expectFrozenForSettings(
     twoOutputsTask(),
     list(
@@ -1187,7 +1187,7 @@ test_that("objective function equals 2.2.0.9009 for scaling and options", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with data weights", {
+test_that("objective function equals the reference with data weights", {
   expectFrozenForSettings(
     twoOutputsTask(weights = TRUE),
     list(
@@ -1198,7 +1198,7 @@ test_that("objective function equals 2.2.0.9009 with data weights", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with an LLOQ", {
+test_that("objective function equals the reference with an LLOQ", {
   expectFrozenForSettings(
     twoOutputsTask(lloq = 0.5),
     list(
@@ -1214,10 +1214,10 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
   )
 })
 
-test_that("objective function passes the data of 2.2.0.9009 to M3 with two LLOQs in an output mapping", {
-  # The frozen objective function calls the M3 contribution of the package
-  # (see helper-frozen-objective-function.R), so this shows that both pass
-  # the same data to it. With "lsq", the LLOQ rule of 2.2.0.9009 used the
+test_that("objective function passes the data of the reference to M3 with two LLOQs in an output mapping", {
+  # The reference calls the M3 contribution of the package (see
+  # helper-frozen-objective-function.R), so this shows that both pass the
+  # same data to it. With "lsq", the LLOQ rule of the reference uses the
   # lowest LLOQ for both data sets (see the next test).
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
@@ -1242,7 +1242,7 @@ test_that("values below the LLOQ contribute alike in one or in two output mappin
   # The cost terms with the data sets in the given output mappings. Each data
   # set has its own LLOQ, so the cost of one output mapping with both equals
   # the sum of the costs of one output mapping per data set, which has one
-  # LLOQ and equals 2.2.0.9009 (see the tests above).
+  # LLOQ and equals the reference (see the tests above).
   costVariables <- function(dataSetsByMapping, scaling, options) {
     sim <- ospsuite::loadSimulation(
       system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
@@ -1299,7 +1299,7 @@ test_that("values below the LLOQ contribute alike in one or in two output mappin
   }
 })
 
-test_that("objective function equals 2.2.0.9009 with observed values of zero", {
+test_that("objective function equals the reference with observed values of zero", {
   # A zero and a value below the epsilon of the log transformation
   dataSet <- ospsuite::DataSet$new(name = "withZeros")
   dataSet$xUnit <- ospsuite::ospUnits$Time$min
@@ -1355,11 +1355,9 @@ molarDataSet <- function(name, lloq = NULL) {
 # with x and y transformations.
 #
 # With `lloq = TRUE`, the first output has only the first two data sets, both
-# with the same LLOQ, and a y factor but no y offset. The objective function
-# equals that of 2.2.0.9009 only for such data, where all observed values of
-# an output mapping have the same LLOQ and no y offset: it now leaves the
-# values without an LLOQ uncensored, and a y offset changes the value below
-# the LLOQ and the standard deviation of "m3" (#331).
+# with the same LLOQ, and a y factor but no y offset: data with an LLOQ for
+# which the objective function equals the reference (see
+# helper-frozen-objective-function.R).
 severalDataSetsTask <- function(lloq = FALSE) {
   dataSets <- testObservedDataMultiple()
   if (lloq) {
@@ -1390,7 +1388,7 @@ severalDataSetsTask <- function(lloq = FALSE) {
   task
 }
 
-test_that("objective function equals 2.2.0.9009 for several data sets", {
+test_that("objective function equals the reference for several data sets", {
   expectFrozenForSettings(
     severalDataSetsTask(),
     list(
@@ -1420,7 +1418,7 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 for two simulations with grouped parameters", {
+test_that("objective function equals the reference for two simulations with grouped parameters", {
   # Mass data, parameter groups over both simulations and over one
   task <- testClarithromycinTask()
   startValues <- currStartValues(task)
@@ -1435,7 +1433,7 @@ test_that("objective function equals 2.2.0.9009 for two simulations with grouped
   )
 })
 
-test_that("objective function equals 2.2.0.9009 for the Midazolam model", {
+test_that("objective function equals the reference for the Midazolam model", {
   sim <- ospsuite::loadSimulation(
     getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml"),
     loadFromCache = FALSE,
@@ -1477,7 +1475,7 @@ test_that("objective function equals 2.2.0.9009 for the Midazolam model", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
+test_that("objective function equals the reference with bootstrap weights", {
   # Five individual data sets, the first with a data weight: the bootstrap
   # resamples the weights of the data sets, not their values
   dataSets <- syntheticObservedData()
@@ -1506,7 +1504,7 @@ test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
   expectFrozenObjective(task, lipophilicityValues[[2]])
 })
 
-test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
+test_that(".combineCostTerms equals the sum of the costs of the reference", {
   kernelTerms <- function(index) {
     .costKernel(
       simulatedYApprox = .simulatedAtObservedTimes(
@@ -1541,7 +1539,7 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
   )
 })
 
-test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
+test_that("calculateCostMetrics equals the reference in the settings above", {
   # The data frames of the tests of `.calculateCostMetrics()` above
   naDf <- obsVsPredDf
   firstObserved <- which(naDf$dataType == "observed")[1]
