@@ -8,7 +8,15 @@
 # not change it: the tests compare the objective function with it by
 # `identical()`. The functions it calls that are unchanged since that version
 # are those of the package: `.newModelCost()`, `.computeErrorWeights()`,
-# `.calculateHuberWeights()`, `.calculateBisquareWeights()` and
+# `.calculateHuberWeights()` and `.calculateBisquareWeights()`. It also calls
+# `.calculateCensoredContribution()` of the package, which has changed: it
+# pairs each censored value with its own LLOQ (#317), leaves a value without
+# an LLOQ uncensored, where 2.2.0.9009 gave it the lowest LLOQ of the other
+# values, and calculates the standard deviation with `linScaleCV` from the
+# LLOQ before a y offset (#331). So for M3, the frozen objective function
+# equals that of 2.2.0.9009 only when all observed values of an output
+# mapping have the same LLOQ and no y offset. With several LLOQs, comparing
+# with it shows that the objective function passes the same data to
 # `.calculateCensoredContribution()`.
 
 # nolint start

@@ -27,11 +27,15 @@ In the parameter identification (PI) process, measuring the discrepancy between 
 
 ### LSQ - Least Squares Error
 
-The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation. By default, selecting this method will transform BQL data by replacing it with LLOQ/2.
+The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation.
+
+With an LLOQ, the `lsq` method replaces the simulated values below the LLOQ of a data set by half the LLOQ (LLOQ/2). The importer stores BQL values as half the LLOQ, so for imported data, a simulated and an observed value that are both below the LLOQ count as equal. Each data set uses its own LLOQ, and the values of a data set without an LLOQ are compared as they are. With y transformations of the observed data, the LLOQ and half the LLOQ are transformed like the y values, and the simulated values below the transformed LLOQ are replaced by the transformed half LLOQ (see the Transformations section of `vignette("data-mapping")`).
 
 ### M3 - Extended Least Squares Error
 
 The `m3` method extends the least squares error by incorporating the likelihood of observed data being below the quantification limit. This method treats BQL data as censored, applying maximum likelihood estimation to include all data in the model fit, thus offering a more accurate and statistically robust approach to handling BQL observations.
+
+Each value is censored by the LLOQ of its own data set, and the values of a data set without an LLOQ are not censored. Every output mapping needs observed data with an LLOQ. The standard deviation of a censored value is `linScaleCV` times its LLOQ with linear scaling, and `logScaleSD` with log scaling. A y offset of the observed data shifts the values and the LLOQ, but not their spread, so with linear scaling the standard deviation is `linScaleCV` times the LLOQ without the y offset, times the absolute y factor. With log scaling, the LLOQ and half the LLOQ must be positive after the data transformations.
 
 ### Configuring Error Models in PI
 

@@ -193,15 +193,21 @@ PIOutputMapping <- R6::R6Class(
     #'   function uses the transformed values. The other columns of the
     #'   observed data follow the y values:
     #'
-    #'   - The LLOQ is transformed like the y values. With a negative
-    #'     `yFactors`, it is set to `NA`.
+    #'   - The LLOQ is transformed like the y values, and so are the values
+    #'     below it, which the importer stores as half the LLOQ. With a
+    #'     negative `yFactors`, the LLOQ is set to `NA`, and the values of the
+    #'     data set are used without an LLOQ, also its values below the LLOQ.
     #'   - Arithmetic standard deviations are multiplied by `abs(yFactors)`.
     #'   - Geometric standard deviations are not changed by `yFactors`. A y
     #'     offset adjusts them approximately, and sets them to `NA` where a y
     #'     value is not positive before or after the offset.
     #'
-    #'   See `ospsuite::DataCombined` for the limits of the approximation for
-    #'   geometric standard deviations.
+    #'   A negative y offset can make the LLOQ, or the values below it, 0 or
+    #'   negative. With log scaling, the parameter identification then stops
+    #'   with an error, because such values have no logarithm: the y offset
+    #'   must be greater than minus half the LLOQ. See `ospsuite::DataCombined`
+    #'   for the limits of the approximation for geometric standard
+    #'   deviations.
     #' @param labels List of dataset labels for targeted transformations.
     #'   Absence of labels applies transformations globally.
     #' @param xOffsets Numeric list/value for X-offset adjustments.

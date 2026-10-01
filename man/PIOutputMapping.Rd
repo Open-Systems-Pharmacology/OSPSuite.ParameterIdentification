@@ -122,16 +122,22 @@ are transformed as \code{(value + offset) * factor}, and the objective
 function uses the transformed values. The other columns of the
 observed data follow the y values:
 \itemize{
-\item The LLOQ is transformed like the y values. With a negative
-\code{yFactors}, it is set to \code{NA}.
+\item The LLOQ is transformed like the y values, and so are the values
+below it, which the importer stores as half the LLOQ. With a
+negative \code{yFactors}, the LLOQ is set to \code{NA}, and the values of the
+data set are used without an LLOQ, also its values below the LLOQ.
 \item Arithmetic standard deviations are multiplied by \code{abs(yFactors)}.
 \item Geometric standard deviations are not changed by \code{yFactors}. A y
 offset adjusts them approximately, and sets them to \code{NA} where a y
 value is not positive before or after the offset.
 }
 
-See \code{ospsuite::DataCombined} for the limits of the approximation for
-geometric standard deviations.
+A negative y offset can make the LLOQ, or the values below it, 0 or
+negative. With log scaling, the parameter identification then stops
+with an error, because such values have no logarithm: the y offset
+must be greater than minus half the LLOQ. See \code{ospsuite::DataCombined}
+for the limits of the approximation for geometric standard
+deviations.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(

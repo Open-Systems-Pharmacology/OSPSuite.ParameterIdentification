@@ -250,6 +250,22 @@ approximately. For data that an offset brings close to or below zero, such as
 baseline-corrected data, arithmetic standard deviations are the better choice
 (see `vignette("data-combined", package = "ospsuite")`).
 
+The values below the LLOQ move with the LLOQ. For an LLOQ of 2 and a y offset
+of 2, the LLOQ becomes 4, and a value below the LLOQ, which the importer
+stores as half the LLOQ, becomes 3 instead of 1. The objective function uses
+these transformed values (see `vignette("error-calculation")`):
+
+- A negative y offset can make the LLOQ, or the values below it, 0 or
+  negative. This works with linear scaling. With log scaling,
+  `ParameterIdentification` stops with an error when the y offset is minus
+  half the LLOQ or less, because the values below the LLOQ then have no
+  logarithm. Just above minus half the LLOQ, the values below the LLOQ are
+  close to 0 and weigh heavily on the log scale.
+- A negative y factor sets the LLOQ to `NA`, so the values of that data set
+  are used as they are, without an LLOQ: its values below the LLOQ are fitted
+  like measured values. With `objectiveFunctionType = "m3"`, an output
+  mapping in which no data set has an LLOQ stops with an error.
+
 
 ## Practical tips
 

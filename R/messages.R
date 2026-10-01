@@ -152,6 +152,60 @@ messages$errorSimulatedValuesMissing <- function() {
   )
 }
 
+# `dataSetNames` are the names of the data sets whose LLOQ is not positive and
+# `scaling` the scaling of their output mapping. `index` is the position of
+# the output mapping and `quantityPath` the path of its quantity, both `NULL`
+# for a cost calculated without an output mapping.
+messages$errorLloqNotPositive <- function(
+  dataSetNames,
+  scaling,
+  index = NULL,
+  quantityPath = NULL
+) {
+  several <- length(dataSetNames) > 1
+  dataSets <- paste0(
+    if (several) "The LLOQs of data sets " else "The LLOQ of data set ",
+    paste0("'", dataSetNames, "'", collapse = ", "),
+    if (!is.null(index)) {
+      paste0(" of output mapping ", index, " ('", quantityPath, "')")
+    }
+  )
+  if (scaling == "log") {
+    return(paste0(
+      dataSets,
+      ", or the values below ",
+      if (several) "them" else "it",
+      ", are not positive after the data transformations. With log ",
+      "scaling, the LLOQ and the values below it, which the importer stores ",
+      "as half the LLOQ, must be positive to have a logarithm. Use linear ",
+      "scaling for the output mapping, a positive LLOQ, or a y offset ",
+      "greater than minus half the LLOQ."
+    ))
+  }
+  paste0(
+    dataSets,
+    if (several) " are" else " is",
+    " not positive before the data transformations. With ",
+    "objectiveFunctionType 'm3' and linear scaling, the standard deviation ",
+    "of the values below the LLOQ is linScaleCV times this LLOQ, so it must ",
+    "be positive. Set a positive LLOQ, or use objectiveFunctionType 'lsq'."
+  )
+}
+
+# `index` is the position of the output mapping and `quantityPath` the path of
+# its quantity, both `NULL` for a cost calculated without an output mapping
+messages$errorNoLloqForM3 <- function(index = NULL, quantityPath = NULL) {
+  paste0(
+    "LLOQ value not provided with the data",
+    if (!is.null(index)) {
+      paste0(" of output mapping ", index, " ('", quantityPath, "')")
+    },
+    ". With objectiveFunctionType 'm3', the observed data of every output ",
+    "mapping need an LLOQ. A negative yFactors of setDataTransformations() ",
+    "sets the LLOQ of a data set to NA."
+  )
+}
+
 messages$profilesNotSupplied <- function() {
   "Supply the result of the calculateOFVProfiles() method as the argument to the plotOFVProfiles() method."
 }
