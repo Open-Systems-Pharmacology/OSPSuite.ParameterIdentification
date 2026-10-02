@@ -1837,6 +1837,36 @@ test_that(".computeErrorWeights converts arithmetic SDs to the log scale", {
   expect_equal(result, c(5.049429, 5.049429), tolerance = 1e-6)
 })
 
+test_that(".computeErrorWeights weights an SD like its GSD on the log scale", {
+  # CV = 0.1 and 0.4, and the GSD exp(sqrt(log(1 + CV^2))) of a log-normal
+  # value with the same CV: 1 / sqrt(log(1 + CV^2)) = 10.024927 and 2.595696
+  yValues <- c(10, 0.5)
+  arithmeticSd <- c(1, 0.2)
+  gsd <- exp(sqrt(log(1 + (arithmeticSd / yValues)^2)))
+
+  weights <- list(
+    arithmetic = .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = arithmeticSd,
+      yErrorType = rep("ArithmeticStdDev", 2),
+      scaling = "log"
+    ),
+    geometric = .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = gsd,
+      yErrorType = rep("GeometricStdDev", 2),
+      scaling = "log"
+    )
+  )
+
+  expected <- c(10.024927, 2.595696)
+  expect_equal(
+    weights,
+    list(arithmetic = expected, geometric = expected),
+    tolerance = 1e-6
+  )
+})
+
 # Cost terms of an output mapping with log scaling and error weights, for
 # observations at 1, 2 and 3 min
 logScaleErrorTerms <- function(
@@ -1918,4 +1948,34 @@ test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
 
   # 1 / log(GSD), rounded to 2 digits
   expect_equal(details$errorWeights, c(5.48, 3.81, 2.47, 2.97, 1.70, 1.44))
+})
+
+test_that("objective function weights arithmetic SDs by CV on the log scale", {
+  # Molar data in nmol/l with arithmetic SDs in mmol/l. In the base unit
+  # µmol/l, the CVs are 0.1 to 0.6, a different one for each observation
+  dataSet <- molarDataSet("dataSet")
+  dataSet$yErrorType <- ospsuite::DataErrorType$ArithmeticStdDev
+  dataSet$yErrorUnit <- "mmol/l"
+  dataSet$setValues(
+    xValues = dataSet$xValues,
+    yValues = dataSet$yValues,
+    yErrorValues = c(1.2, 1.8, 1.8, 1.2, 0.6, 0.3) / 1000
+  )
+  task <- aciclovirTask(stats::setNames(
+    list(list(dataSet)),
+    aciclovirPlasmaPaths[2]
+  ))
+  # The first observation, at 30 min, moves to -10 min and is not used
+  task$outputMappings[[1]]$setDataTransformations(xOffsets = -40)
+  applyCostSetting(
+    task,
+    scaling = "log",
+    options = list(residualWeightingMethod = "error")
+  )
+  priv <- task$.__enclos_env__$private
+
+  details <- priv$.objectiveFunction(lipophilicityValues[[1]])$residualDetails
+
+  # 1 / sqrt(log(1 + CV^2)) for the CVs 0.2 to 0.6, rounded to 2 digits
+  expect_equal(details$errorWeights, c(5.05, 3.41, 2.60, 2.12, 1.80))
 })
