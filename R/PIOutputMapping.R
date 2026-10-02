@@ -235,24 +235,25 @@ PIOutputMapping <- R6::R6Class(
     #'   minus half the LLOQ. Otherwise the parameter identification stops
     #'   with an error. See `ospsuite::DataCombined` for the limits of the
     #'   approximation for geometric standard deviations.
+    #'
+    #'   Each call sets all four transformations of the data sets it applies
+    #'   to: an offset or factor that is not given is set to its default, also
+    #'   with labels.
     #' @param labels Names of the observed data sets to transform. Without
     #'   labels, the transformations apply to all data sets of the output
     #'   mapping, also to data sets added later. With labels, they apply only
     #'   to these data sets, which must be added to the output mapping first,
     #'   and the other data sets keep their transformations. A data set added
-    #'   later gets the transformations of the last call without labels.
-    #' @param xOffsets Numeric, the offset of the x values: one value, or one
-    #'   value per label. Default is `0`.
-    #' @param yOffsets Numeric, the offset of the y values: one value, or one
-    #'   value per label. Default is `0`.
-    #' @param xFactors Numeric, the factor of the x values: one value, or one
-    #'   value per label. Default is `1`.
-    #' @param yFactors Numeric, the factor of the y values: one value, or one
-    #'   value per label. Default is `1`.
+    #'   later gets the single values of the last call without labels, and no
+    #'   transformation where that call gave one value per data set.
+    #' @param xOffsets Numeric, the offset of the x values. Default is `0`.
+    #' @param yOffsets Numeric, the offset of the y values. Default is `0`.
+    #' @param xFactors Numeric, the factor of the x values. Default is `1`.
+    #' @param yFactors Numeric, the factor of the y values. Default is `1`.
     #'
-    #'   An offset or factor that is not given is set to its default, also
-    #'   with labels: each call sets all four transformations of the data sets
-    #'   it applies to.
+    #'   Each offset and factor is one value, or one value per label. Without
+    #'   labels, it can also be one value per data set, in the order of the
+    #'   data sets; names of the values are ignored.
     setDataTransformations = function(
       labels = NULL,
       xOffsets = 0,
@@ -267,11 +268,13 @@ PIOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
 
       if (is.null(labels)) {
-        # If no labels are given, reuse parameters across datasets
-        private$.dataTransformations$xFactors <- xFactors
-        private$.dataTransformations$yFactors <- yFactors
-        private$.dataTransformations$xOffsets <- xOffsets
-        private$.dataTransformations$yOffsets <- yOffsets
+        # If no labels are given, reuse parameters across datasets. Values
+        # without labels apply by position, so their names are dropped: only
+        # values set with labels are named by the data sets.
+        private$.dataTransformations$xFactors <- unname(xFactors)
+        private$.dataTransformations$yFactors <- unname(yFactors)
+        private$.dataTransformations$xOffsets <- unname(xOffsets)
+        private$.dataTransformations$yOffsets <- unname(yOffsets)
         # Data sets added later get single values, and no transformation
         # instead of values given per data set
         for (name in names(.noDataTransformations)) {
@@ -285,7 +288,19 @@ PIOutputMapping <- R6::R6Class(
         return(invisible(self))
       }
 
-      # Otherwise, apply transformations only to labeled data
+      # Otherwise, apply transformations only to labeled data. Labels
+      # computed from other names can be empty, which sets nothing.
+      if (length(labels) == 0) {
+        return(invisible(self))
+      }
+      if (anyDuplicated(labels) > 0) {
+        stop(
+          messages$errorTransformationDuplicateLabels(
+            unique(labels[duplicated(labels)])
+          ),
+          call. = FALSE
+        )
+      }
       dataSetNames <- names(private$.observedDataSets)
       unknownLabels <- setdiff(labels, dataSetNames)
       if (length(unknownLabels) > 0) {
@@ -303,17 +318,35 @@ PIOutputMapping <- R6::R6Class(
       for (name in names(values)) {
         if (!length(values[[name]]) %in% c(1, length(labels))) {
           stop(
-            messages$errorTransformationValues(name, length(labels)),
+            messages$errorTransformationValues(
+              name,
+              length(values[[name]]),
+              length(labels)
+            ),
             call. = FALSE
           )
         }
       }
-      # One value per data set, in the order of the data sets: the labelled
-      # data sets get the given values, the others keep theirs
+      # One value per data set, in the order of the data sets: the labeled
+      # data sets get the given values, the others keep theirs. Values of an
+      # earlier call without labels that are neither one value nor one value
+      # per data set cannot be kept.
       transformations <- .transformationsByDataSet(
         private$.dataTransformations,
         dataSetNames
       )
+      for (name in names(values)) {
+        if (!identical(names(transformations[[name]]), dataSetNames)) {
+          stop(
+            messages$errorTransformationValuesPerDataSet(
+              name,
+              length(private$.dataTransformations[[name]]),
+              length(dataSetNames)
+            ),
+            call. = FALSE
+          )
+        }
+      }
       for (name in names(values)) {
         transformations[[name]][labels] <- values[[name]]
       }
@@ -405,7 +438,8 @@ PIOutputMapping <- R6::R6Class(
 #'   Values set by data set, with labels, are taken by the name of the data
 #'   set. Values given per data set without labels are kept in their order,
 #'   and are left unnamed when their number differs from that of the data
-#'   sets, for `DataCombined` to report it.
+#'   sets, for `.batchInitialization()` or `DataCombined` to stop with an
+#'   error.
 #'
 #' @param transformations The data transformations of the output mapping
 #'   (`PIOutputMapping$dataTransformations`).

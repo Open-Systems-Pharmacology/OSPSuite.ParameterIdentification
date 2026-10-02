@@ -31,10 +31,30 @@ messages$errorTransformationLabels <- function(labels, dataSetNames) {
   ))
 }
 
-messages$errorTransformationValues <- function(argument, nLabels) {
+messages$errorTransformationValues <- function(argument, nValues, nLabels) {
   ospsuite.utils::cliFormat(paste0(
-    "{.arg {argument}} must have one value, or one value for each of the ",
-    "{nLabels} labels."
+    "{.arg {argument}} has {nValues} value{?s}. Give one value, or one ",
+    "value per label ({nLabels} label{?s})."
+  ))
+}
+
+messages$errorTransformationDuplicateLabels <- function(labels) {
+  ospsuite.utils::cliFormat(paste0(
+    "{cli::qty(length(labels))}Each label can be given only once, but ",
+    "{.val {labels}} {?is/are} given more than once."
+  ))
+}
+
+messages$errorTransformationValuesPerDataSet <- function(
+  argument,
+  nValues,
+  nDataSets
+) {
+  ospsuite.utils::cliFormat(paste0(
+    "{.arg {argument}} of an earlier call without labels has {nValues} ",
+    "value{?s} for {nDataSets} data set{?s}. Set it again without labels, ",
+    "with one value or one value per data set, before setting the ",
+    "transformations of single data sets with labels."
   ))
 }
 

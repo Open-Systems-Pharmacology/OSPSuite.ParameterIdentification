@@ -300,7 +300,7 @@ cases$dataSetsLog <- function() {
   )
 }
 # Transformations for single data sets fail on the base commit (#311), in the
-# batch initialization or in the evaluation. They now apply to the labelled
+# batch initialization or in the evaluation. They now apply to the labeled
 # data sets
 cases$labelledTransformationOne <- structure(
   function() {
@@ -315,7 +315,8 @@ cases$labelledTransformationOne <- structure(
   expectChange = TRUE
 )
 # The base commit reports the error of the data transformations as a failed
-# simulation ("Initial simulation failed.")
+# simulation ("Initial simulation failed."). The values now apply to the
+# labeled data sets
 cases$labelledTransformationAll <- structure(
   function() {
     task <- aciclovirTask(dataSets = twoDataSets())

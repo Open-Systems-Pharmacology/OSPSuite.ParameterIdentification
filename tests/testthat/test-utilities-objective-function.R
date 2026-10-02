@@ -2387,7 +2387,12 @@ test_that("a task applies the data transformations of each label to its data set
     tolerance = 1e-6
   )
 
-  # Labels for both data sets, in another order
+  # Labels for both data sets, in another order, and the same values without
+  # labels, in the order of the data sets
+  transformedBoth <- ofv(list(
+    transformedCopy(dataSets$dataSet1, yFactor = 1.2),
+    transformedCopy(dataSets$dataSet2, xOffset = 0.2, yFactor = 0.8)
+  ))
   expect_equal(
     ofv(dataSets, function(mapping) {
       mapping$setDataTransformations(
@@ -2396,10 +2401,17 @@ test_that("a task applies the data transformations of each label to its data set
         yFactors = c(0.8, 1.2)
       )
     }),
-    ofv(list(
-      transformedCopy(dataSets$dataSet1, yFactor = 1.2),
-      transformedCopy(dataSets$dataSet2, xOffset = 0.2, yFactor = 0.8)
-    )),
+    transformedBoth,
+    tolerance = 1e-6
+  )
+  expect_equal(
+    ofv(dataSets, function(mapping) {
+      mapping$setDataTransformations(
+        xOffsets = c(0, 0.2),
+        yFactors = c(1.2, 0.8)
+      )
+    }),
+    transformedBoth,
     tolerance = 1e-6
   )
 })

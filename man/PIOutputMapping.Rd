@@ -144,6 +144,10 @@ cost too and must stay positive, so the y offset must be greater than
 minus half the LLOQ. Otherwise the parameter identification stops
 with an error. See \code{ospsuite::DataCombined} for the limits of the
 approximation for geometric standard deviations.
+
+Each call sets all four transformations of the data sets it applies
+to: an offset or factor that is not given is set to its default, also
+with labels.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(
@@ -163,19 +167,16 @@ labels, the transformations apply to all data sets of the output
 mapping, also to data sets added later. With labels, they apply only
 to these data sets, which must be added to the output mapping first,
 and the other data sets keep their transformations. A data set added
-later gets the transformations of the last call without labels.}
-      \item{\code{xOffsets}}{Numeric, the offset of the x values: one value, or one
-value per label. Default is \code{0}.}
-      \item{\code{yOffsets}}{Numeric, the offset of the y values: one value, or one
-value per label. Default is \code{0}.}
-      \item{\code{xFactors}}{Numeric, the factor of the x values: one value, or one
-value per label. Default is \code{1}.}
-      \item{\code{yFactors}}{Numeric, the factor of the y values: one value, or one
-value per label. Default is \code{1}.
+later gets the single values of the last call without labels, and no
+transformation where that call gave one value per data set.}
+      \item{\code{xOffsets}}{Numeric, the offset of the x values. Default is \code{0}.}
+      \item{\code{yOffsets}}{Numeric, the offset of the y values. Default is \code{0}.}
+      \item{\code{xFactors}}{Numeric, the factor of the x values. Default is \code{1}.}
+      \item{\code{yFactors}}{Numeric, the factor of the y values. Default is \code{1}.
 
-An offset or factor that is not given is set to its default, also
-with labels: each call sets all four transformations of the data sets
-it applies to.}
+Each offset and factor is one value, or one value per label. Without
+labels, it can also be one value per data set, in the order of the
+data sets; names of the values are ignored.}
     }
     \if{html}{\out{</div>}}
   }
