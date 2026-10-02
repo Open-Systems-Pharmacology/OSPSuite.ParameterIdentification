@@ -18,8 +18,9 @@ comparison with simulation outcomes.}
     \item{\code{dataTransformations}}{A named list of the offsets and factors of
 the data transformations, \code{xOffsets}, \code{yOffsets}, \code{xFactors} and
 \code{yFactors}. Each holds the values of the last call of
-\code{setDataTransformations()} without labels, or, after a call with
-labels, one value per observed data set, named by the data sets.}
+\code{setDataTransformations()} without labels, without their names, or,
+after a call with labels, one value per observed data set, named by
+the data sets.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
@@ -179,8 +180,7 @@ Each offset and factor is one value, or one value per label, in the
 order of the labels. Without labels, it can also be one value per data
 set, in the order of the data sets. Such values do not apply to data
 sets added later: after adding or removing a data set, set them again.
-Values named by the labels, or without labels by the data sets, are
-taken by their names, in any order. Other names are ignored.}
+The values are taken by their position, and their names are ignored.}
     }
     \if{html}{\out{</div>}}
   }

@@ -1968,10 +1968,16 @@ test_that("an observed time outside the simulated times by single-precision roun
   expect_lt(lastTime, lastObservedTime)
   simulatedX <- c(0, 720, 1440, lastTime)
   simulatedY <- c(0, 4, 2, 1)
-  # 360 min is halfway between 0 and 720 min
+  # 360 min is halfway between 0 and 720 min. A time after the last
+  # simulated time by 3e-8 of it, a typical rounding of a transformed time,
+  # takes the last simulated value too.
   expect_identical(
-    .simulatedAtObservedTimes(simulatedX, simulatedY, c(360, lastObservedTime)),
-    c(2, 1)
+    .simulatedAtObservedTimes(
+      simulatedX,
+      simulatedY,
+      c(360, lastObservedTime, lastTime * (1 + 3e-8))
+    ),
+    c(2, 1, 1)
   )
   # A time after the last simulated time by more than single precision has
   # no simulated value
@@ -2392,7 +2398,9 @@ transformedCopy <- function(
   copy$xUnit <- dataSet$xUnit
   copy$yDimension <- dataSet$yDimension
   copy$yUnit <- dataSet$yUnit
-  copy$molWeight <- dataSet$molWeight
+  if (!is.null(dataSet$molWeight)) {
+    copy$molWeight <- dataSet$molWeight
+  }
   copy$setValues(
     xValues = (dataSet$xValues + xOffset) * xFactor,
     yValues = (dataSet$yValues + yOffset) * yFactor
@@ -2433,13 +2441,19 @@ test_that("a task applies the data transformations of each label to its data set
   # labels, in the order of the data sets
   transformedBoth <- ofv(list(
     transformedCopy(dataSets$dataSet1, yFactor = 1.2),
-    transformedCopy(dataSets$dataSet2, xOffset = 0.2, yFactor = 0.8)
+    transformedCopy(
+      dataSets$dataSet2,
+      xOffset = 0.2,
+      xFactor = 1.37,
+      yFactor = 0.8
+    )
   ))
   expect_equal(
     ofv(dataSets, function(mapping) {
       mapping$setDataTransformations(
         labels = c("dataSet2", "dataSet1"),
         xOffsets = c(0.2, 0),
+        xFactors = c(1.37, 1),
         yFactors = c(0.8, 1.2)
       )
     }),
@@ -2450,11 +2464,24 @@ test_that("a task applies the data transformations of each label to its data set
     ofv(dataSets, function(mapping) {
       mapping$setDataTransformations(
         xOffsets = c(0, 0.2),
+        xFactors = c(1, 1.37),
         yFactors = c(1.2, 0.8)
       )
     }),
     transformedBoth,
     tolerance = 1e-6
+  )
+
+  # One value per data set without labels, and a data set added later
+  dataSet3 <- transformedCopy(dataSets$dataSet1)
+  dataSet3$name <- "dataSet3"
+  expect_error(
+    ofv(dataSets, function(mapping) {
+      mapping$setDataTransformations(xOffsets = c(0, 0.2))
+      mapping$addObservedDataSets(dataSet3)
+    }),
+    messages$errorTransformationValuesPerDataSet("xOffsets", 2, 3),
+    fixed = TRUE
   )
 })
 

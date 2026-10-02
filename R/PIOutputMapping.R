@@ -22,8 +22,9 @@ PIOutputMapping <- R6::R6Class(
     #' @field dataTransformations A named list of the offsets and factors of
     #'   the data transformations, `xOffsets`, `yOffsets`, `xFactors` and
     #'   `yFactors`. Each holds the values of the last call of
-    #'   `setDataTransformations()` without labels, or, after a call with
-    #'   labels, one value per observed data set, named by the data sets.
+    #'   `setDataTransformations()` without labels, without their names, or,
+    #'   after a call with labels, one value per observed data set, named by
+    #'   the data sets.
     dataTransformations = function(value) {
       if (missing(value)) {
         private$.dataTransformations
@@ -204,10 +205,13 @@ PIOutputMapping <- R6::R6Class(
     removeObservedDataSet = function(label) {
       private$.observedDataSets[[label]] <- NULL
       # Transformations set by data set lose the value of the data set
+      dataSetNames <- names(private$.observedDataSets)
       for (name in names(private$.dataTransformations)) {
         values <- private$.dataTransformations[[name]]
         if (!is.null(names(values))) {
-          private$.dataTransformations[[name]] <- values[names(values) != label]
+          private$.dataTransformations[[name]] <- values[
+            names(values) %in% dataSetNames
+          ]
         }
       }
       invisible(self)
@@ -256,8 +260,7 @@ PIOutputMapping <- R6::R6Class(
     #'   order of the labels. Without labels, it can also be one value per data
     #'   set, in the order of the data sets. Such values do not apply to data
     #'   sets added later: after adding or removing a data set, set them again.
-    #'   Values named by the labels, or without labels by the data sets, are
-    #'   taken by their names, in any order. Other names are ignored.
+    #'   The values are taken by their position, and their names are ignored.
     setDataTransformations = function(
       labels = NULL,
       xOffsets = 0,
@@ -277,26 +280,12 @@ PIOutputMapping <- R6::R6Class(
 
       if (is.null(labels)) {
         # If no labels are given, reuse parameters across datasets. Values
-        # without labels apply by position, unless they are named by the
-        # data sets, so they are stored without names: only values set with
-        # labels are named by the data sets.
-        dataSetNames <- names(private$.observedDataSets)
-        private$.dataTransformations$xFactors <- .valuesInOrder(
-          xFactors,
-          dataSetNames
-        )
-        private$.dataTransformations$yFactors <- .valuesInOrder(
-          yFactors,
-          dataSetNames
-        )
-        private$.dataTransformations$xOffsets <- .valuesInOrder(
-          xOffsets,
-          dataSetNames
-        )
-        private$.dataTransformations$yOffsets <- .valuesInOrder(
-          yOffsets,
-          dataSetNames
-        )
+        # without labels apply by position, so they are stored without their
+        # names: only values set with labels are named by the data sets.
+        private$.dataTransformations$xFactors <- unname(xFactors)
+        private$.dataTransformations$yFactors <- unname(yFactors)
+        private$.dataTransformations$xOffsets <- unname(xOffsets)
+        private$.dataTransformations$yOffsets <- unname(yOffsets)
         # Data sets added later get single values, and no transformation
         # instead of values given per data set
         for (name in names(.noDataTransformations)) {
@@ -350,30 +339,16 @@ PIOutputMapping <- R6::R6Class(
         }
       }
       # One value per data set, in the order of the data sets: the labeled
-      # data sets get the given values, the others keep theirs. Values of an
-      # earlier call without labels that are neither one value nor one value
-      # per data set cannot be kept.
+      # data sets get the given values, in the order of the labels, and the
+      # others keep theirs. `.transformationsByDataSet()` stops for values of
+      # an earlier call without labels that are neither one value nor one
+      # value per data set.
       transformations <- .transformationsByDataSet(
         private$.dataTransformations,
         dataSetNames
       )
       for (name in names(values)) {
-        if (!identical(names(transformations[[name]]), dataSetNames)) {
-          stop(
-            messages$errorTransformationValuesPerDataSet(
-              name,
-              length(private$.dataTransformations[[name]]),
-              length(dataSetNames)
-            ),
-            call. = FALSE
-          )
-        }
-      }
-      for (name in names(values)) {
-        transformations[[name]][labels] <- .valuesInOrder(
-          values[[name]],
-          labels
-        )
+        transformations[[name]][labels] <- unname(values[[name]])
       }
       private$.dataTransformations <- transformations
       invisible(self)
@@ -455,41 +430,13 @@ PIOutputMapping <- R6::R6Class(
   yFactors = 1
 )
 
-#' Values of a data transformation in a given order
-#'
-#' @description Values named by `targetNames`, each once and in any order, are
-#'   put in the order of `targetNames`. Other values are kept in their order.
-#'
-#' @param values The values of an offset or a factor.
-#' @param targetNames The names of the data sets or the labels the values are
-#'   for, in their order.
-#'
-#' @return `values` without names.
-#' @keywords internal
-#' @noRd
-.valuesInOrder <- function(values, targetNames) {
-  valueNames <- names(values)
-  if (
-    length(values) > 1 &&
-      length(values) == length(targetNames) &&
-      !anyDuplicated(valueNames) &&
-      setequal(valueNames, targetNames)
-  ) {
-    values <- values[targetNames]
-  }
-  unname(values)
-}
-
 #' Data transformations of every data set of an output mapping
 #'
 #' @description The offsets and factors of the data transformations of an
 #'   output mapping, one value per observed data set, in the order of the data
 #'   sets. A single value, set without labels, applies to every data set.
 #'   Values set by data set, with labels, are taken by the name of the data
-#'   set. Values given per data set without labels are kept in their order,
-#'   and are left unnamed when their number differs from that of the data
-#'   sets, for `.batchInitialization()` or `DataCombined` to stop with an
-#'   error.
+#'   set. Values given per data set without labels are taken in their order.
 #'
 #' @param transformations The data transformations of the output mapping
 #'   (`PIOutputMapping$dataTransformations`).
@@ -497,19 +444,34 @@ PIOutputMapping <- R6::R6Class(
 #'   mapping, in their order.
 #'
 #' @return A list with `xOffsets`, `yOffsets`, `xFactors` and `yFactors`, each
-#'   with one value per data set, named by the data sets.
+#'   with one value per data set, named by the data sets. Stops when values
+#'   given per data set without labels do not match the number of data sets,
+#'   for example after a data set was added or removed.
 #' @keywords internal
 #' @noRd
 .transformationsByDataSet <- function(transformations, dataSetNames) {
-  lapply(transformations, function(values) {
+  for (name in names(transformations)) {
+    values <- transformations[[name]]
     if (!is.null(names(values))) {
       values <- values[dataSetNames]
     } else if (length(values) == 1) {
       values <- rep(values, length(dataSetNames))
+    } else if (
+      length(dataSetNames) > 0 && length(values) != length(dataSetNames)
+    ) {
+      stop(
+        messages$errorTransformationValuesPerDataSet(
+          name,
+          length(values),
+          length(dataSetNames)
+        ),
+        call. = FALSE
+      )
     }
     if (length(values) == length(dataSetNames)) {
       names(values) <- dataSetNames
     }
-    values
-  })
+    transformations[[name]] <- values
+  }
+  transformations
 }

@@ -51,10 +51,10 @@ messages$errorTransformationValuesPerDataSet <- function(
   nDataSets
 ) {
   ospsuite.utils::cliFormat(paste0(
-    "{.arg {argument}} of an earlier call without labels has {nValues} ",
-    "value{?s} for {nDataSets} data set{?s}. Set it again without labels, ",
-    "with one value or one value per data set, before setting the ",
-    "transformations of single data sets with labels."
+    "{.arg {argument}} of the data transformations has {nValues} ",
+    "value{?s} for {nDataSets} observed data set{?s}. Set it again with ",
+    "{.fn setDataTransformations}, with one value, or one value per data ",
+    "set in their order, also after adding or removing a data set."
   ))
 }
 

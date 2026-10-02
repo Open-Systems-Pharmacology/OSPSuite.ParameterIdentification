@@ -133,9 +133,9 @@ test_that("PIOutputMapping applies values without labels by position, also named
     )
   )
 
-  # Values named by the data sets, in another order, are taken by name
+  # Names are ignored, also when they are the names of the data sets
   outputMapping$setDataTransformations(
-    xOffsets = c(dataSet2 = 0.2, dataSet1 = 0),
+    xOffsets = c(dataSet2 = 0, dataSet1 = 0.2),
     yFactors = c(second = 3, first = 4)
   )
   expect_equal(
@@ -190,11 +190,11 @@ test_that("PIOutputMapping sets the transformations of labeled data sets (#311)"
     )
   )
 
-  # Labels as a list, as the documentation of earlier versions described,
-  # and values named by the labels in another order, taken by name
+  # Labels as a list, as the documentation of earlier versions described.
+  # The values are taken in the order of the labels, whatever their names.
   outputMapping$setDataTransformations(
     labels = list("dataSet1", "dataSet2"),
-    xOffsets = c(dataSet2 = 0.2, dataSet1 = 0.1)
+    xOffsets = c(dataSet2 = 0.1, dataSet1 = 0.2)
   )
   expect_equal(
     outputMapping$dataTransformations,
@@ -266,6 +266,28 @@ test_that("PIOutputMapping keeps the transformations by data set when data sets 
   expect_identical(
     names(outputMapping$observedDataSets),
     c("dataSet1", "dataSet3")
+  )
+
+  # Removing a data set by its position
+  outputMapping$setDataTransformations(labels = "dataSet3", yOffsets = 2)
+  outputMapping$removeObservedDataSet(1)
+  expect_equal(
+    outputMapping$dataTransformations$yOffsets,
+    c(dataSet3 = 2)
+  )
+
+  # One value per data set without labels does not apply to a data set
+  # added later
+  outputMapping <- twoDataSetsMapping()
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2))
+  outputMapping$addObservedDataSets(dataSet3)
+  expect_error(
+    .transformationsByDataSet(
+      outputMapping$dataTransformations,
+      names(outputMapping$observedDataSets)
+    ),
+    messages$errorTransformationValuesPerDataSet("xOffsets", 2, 3),
+    fixed = TRUE
   )
 
   # After one value per data set without labels, a data set added after a
