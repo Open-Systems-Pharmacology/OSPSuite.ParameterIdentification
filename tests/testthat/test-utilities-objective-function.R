@@ -1040,7 +1040,7 @@ test_that("observed data equal the observed rows of a full evaluation", {
     xUnit = ospsuite::getBaseUnit("Time"),
     yUnit = ospsuite::getBaseUnit(task$outputMappings[[1]]$quantity$dimension)
   )
-  # The log transformation of 2.2.0.9009 takes its epsilon from the first,
+  # The log transformation of the reference takes its epsilon from the first,
   # simulated row
   logged <- frozenApplyLogTransformation(converted)
   isObserved <- converted$dataType == "observed"
@@ -1063,8 +1063,8 @@ test_that("observed data equal the observed rows of a full evaluation", {
   expect_identical(observed$logLloq, logged$lloq[isObserved])
 })
 
-# The objective function against that of 2.2.0.9009, which calculated the
-# cost on data frames (`frozenObjectiveFunction()`, see
+# The objective function against the reference objective function, which
+# calculates the cost on data frames (`frozenObjectiveFunction()`, see
 # helper-frozen-objective-function.R). Each test builds one task and applies
 # several settings to it. A setting sets the scaling of every output mapping
 # and every objective function option, so it does not depend on the settings
@@ -1098,7 +1098,7 @@ applyCostSetting <- function(task, scaling = "lin", options = list()) {
 }
 
 # Expects identical results and warnings from the objective function and from
-# the objective function of 2.2.0.9009, for each parameter value, in this
+# the reference objective function, for each parameter value, in this
 # order. The first evaluation reads the observed data, the later ones reuse
 # them.
 expectFrozenObjective <- function(task, values, bootstrapSeed = NULL) {
@@ -1153,9 +1153,13 @@ aciclovirTask <- function(dataSetsByPath) {
 }
 
 # Two outputs of one simulation with the same observed data, optionally with
-# an LLOQ, and with data weights for the first output
-twoOutputsTask <- function(lloq = NULL, weights = FALSE) {
+# an LLOQ, and with data weights for the first output. `changeData` changes
+# the observed data set before the task is created.
+twoOutputsTask <- function(lloq = NULL, weights = FALSE, changeData = NULL) {
   data <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  if (!is.null(changeData)) {
+    changeData(data)
+  }
   if (!is.null(lloq)) {
     data$LLOQ <- lloq
   }
@@ -1172,7 +1176,7 @@ twoOutputsTask <- function(lloq = NULL, weights = FALSE) {
 
 lipophilicityValues <- c(-0.097, 0.3)
 
-test_that("objective function equals 2.2.0.9009 for scaling and options", {
+test_that("objective function equals the reference for scaling and options", {
   expectFrozenForSettings(
     twoOutputsTask(),
     list(
@@ -1187,7 +1191,7 @@ test_that("objective function equals 2.2.0.9009 for scaling and options", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with data weights", {
+test_that("objective function equals the reference with data weights", {
   expectFrozenForSettings(
     twoOutputsTask(weights = TRUE),
     list(
@@ -1198,12 +1202,10 @@ test_that("objective function equals 2.2.0.9009 with data weights", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with an LLOQ", {
+test_that("objective function equals the reference for M3 with an LLOQ", {
   expectFrozenForSettings(
     twoOutputsTask(lloq = 0.5),
     list(
-      list(),
-      list(scaling = "log"),
       list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
       list(
         scaling = "log",
@@ -1214,15 +1216,153 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapping", {
+test_that("the LLOQ rule of the objective function compares the values below the LLOQ with the LLOQ", {
+  # The LLOQ rule of the reference replaces simulated values, so the
+  # objective function with an LLOQ is compared with the reference without
+  # it: the residuals are equal, apart from those of the values below the
+  # LLOQ, which are 0 for a simulated value below the LLOQ and the simulated
+  # value minus the LLOQ above it. The weights follow from these residuals
+  # and from the observed values.
+  #
+  # An LLOQ of 0.5 mg/l. The tenth value is raised from 0.16 to 0.6 mg/l,
+  # above the LLOQ, where the simulated values are below it. All values have
+  # a geometric standard deviation, so the error weights of the values below
+  # the LLOQ depend on their stored values.
+  gsd <- 1.3
+  changeData <- function(data) {
+    yValues <- data$yValues
+    yValues[[10]] <- 0.6
+    data$setValues(
+      xValues = data$xValues,
+      yValues = yValues,
+      yErrorValues = rep(gsd, length(yValues))
+    )
+    data$yErrorType <- ospsuite::DataErrorType$GeometricStdDev
+  }
+  task <- twoOutputsTask(lloq = 0.5, weights = TRUE, changeData = changeData)
+  referenceTask <- twoOutputsTask(weights = TRUE, changeData = changeData)
+  # The geometric standard deviations as stored, in single precision
+  storedGsd <- task$outputMappings[[1]]$observedDataSets[[1]]$yErrorValues
+  # The LLOQ of each output mapping in the base unit, read as the reference
+  # reads the observed data
+  baseLloq <- vapply(
+    task$outputMappings,
+    function(mapping) {
+      dataCombined <- ospsuite::DataCombined$new()
+      dataCombined$addDataSets(mapping$observedDataSets, groups = "data")
+      unique(
+        ospsuite:::.unitConverter(
+          dataCombined$toDataFrame(),
+          xUnit = ospsuite::getBaseUnit("Time"),
+          yUnit = ospsuite::getBaseUnit(mapping$quantity$dimension)
+        )$lloq
+      )
+    },
+    numeric(1)
+  )
+  cases <- character()
+
+  for (setting in list(
+    list(),
+    list(scaling = "log"),
+    list(scaling = c("lin", "log"), options = list(scaleVar = TRUE)),
+    list(
+      options = list(residualWeightingMethod = "error", robustMethod = "huber")
+    ),
+    list(
+      scaling = "log",
+      options = list(
+        residualWeightingMethod = "error",
+        robustMethod = "bisquare"
+      )
+    )
+  )) {
+    do.call(applyCostSetting, c(list(task), setting))
+    do.call(applyCostSetting, c(list(referenceTask), setting))
+    isLog <- vapply(
+      task$outputMappings,
+      function(mapping) mapping$scaling == "log",
+      logical(1)
+    )
+    options <- task$configuration$objectiveFunctionOptions
+    for (value in lipophilicityValues) {
+      expected <- frozenObjectiveFunction(referenceTask, value)
+      details <- expected$residualDetails
+      costLloq <- ifelse(
+        isLog[details$index],
+        log(baseLloq[details$index]),
+        baseLloq[details$index]
+      )
+      censored <- details$yObserved < costLloq
+      below <- details$ySimulated < costLloq
+      cases <- union(cases, paste(censored, below))
+
+      residuals <- details$rawResiduals
+      residuals[censored] <- pmax(
+        details$ySimulated[censored] - costLloq[censored],
+        0
+      )
+      normalized <- residuals * details$scaleFactor
+      # The error weights from the observed values, and the robust weights
+      # from the residuals of each output mapping
+      errorWeights <- rep(1, length(residuals))
+      robustWeights <- rep(1, length(residuals))
+      for (index in unique(details$index)) {
+        rows <- details$index == index
+        if (options$residualWeightingMethod == "error") {
+          errorWeights[rows] <- .computeErrorWeights(
+            yValues = details$yObserved[rows],
+            yErrorValues = storedGsd,
+            yErrorType = rep("GeometricStdDev", sum(rows))
+          )
+        }
+        robustWeights[rows] <- switch(
+          options$robustMethod,
+          "huber" = .calculateHuberWeights(normalized[rows]),
+          "bisquare" = .calculateBisquareWeights(normalized[rows]),
+          1
+        )
+      }
+      totalWeights <- errorWeights * details$userWeights * robustWeights
+      weighted <- normalized * totalWeights
+      details$rawResiduals <- residuals
+      details$weightedResiduals <- weighted
+      details$robustWeights <- round(robustWeights, 2)
+      details$totalWeights <- round(totalWeights, 2)
+      expected$residualDetails <- details
+      expected$modelCost <- sum(weighted^2)
+      expected$costVariables$rawSSR <- sum(residuals^2)
+      expected$costVariables$weightedSSR <- sum(weighted^2)
+      expected$minLogProbability <- -sum(stats::dnorm(
+        residuals,
+        sd = 1 / totalWeights,
+        log = TRUE
+      ))
+
+      expect_equal(
+        task$.__enclos_env__$private$.objectiveFunction(value),
+        expected
+      )
+    }
+  }
+  # Values below the LLOQ with simulated values below and above it, and
+  # values above the LLOQ with simulated values below it
+  expect_setequal(
+    cases,
+    c("TRUE TRUE", "TRUE FALSE", "FALSE TRUE", "FALSE FALSE")
+  )
+})
+
+test_that("objective function passes the data of the reference to M3 with two LLOQs in an output mapping", {
+  # The reference calls the M3 contribution of the package (see
+  # helper-frozen-objective-function.R), so this shows that both pass the
+  # same data to it.
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
   expectFrozenForSettings(
     aciclovirTask(stats::setNames(list(dataSets), aciclovirPlasmaPaths[[1]])),
     list(
-      list(),
-      list(scaling = "log"),
       list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
       list(
         scaling = "log",
@@ -1233,14 +1373,15 @@ test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapp
   )
 })
 
-test_that("censored values contribute alike in one or in two output mappings", {
+test_that("values below the LLOQ contribute alike in one or in two output mappings", {
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
-  # The M3 contribution with the data sets in the given output mappings. The
-  # frozen objective function uses `.calculateCensoredContribution()` of the
-  # package, so this compares with output mappings of one LLOQ each instead.
-  m3Contribution <- function(dataSetsByMapping, scaling, options) {
+  # The cost terms with the data sets in the given output mappings. Each data
+  # set has its own LLOQ, so the cost of one output mapping with both equals
+  # the sum of the costs of one output mapping per data set, which has one
+  # LLOQ (see the tests above).
+  costVariables <- function(dataSetsByMapping, scaling, options) {
     sim <- ospsuite::loadSimulation(
       system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
       loadFromCache = FALSE,
@@ -1264,10 +1405,12 @@ test_that("censored values contribute alike in one or in two output mappings", {
     applyCostSetting(task, scaling = scaling, options = options)
     task$.__enclos_env__$private$.objectiveFunction(
       lipophilicityValues[[1]]
-    )$costVariables$M3Contribution
+    )$costVariables
   }
 
   for (setting in list(
+    list(scaling = "lin", options = list()),
+    list(scaling = "log", options = list()),
     list(
       scaling = "lin",
       options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
@@ -1277,22 +1420,24 @@ test_that("censored values contribute alike in one or in two output mappings", {
       options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
     )
   )) {
-    together <- m3Contribution(
+    together <- costVariables(
       list(unname(dataSets)),
       setting$scaling,
       setting$options
     )
-    separate <- m3Contribution(
+    separate <- costVariables(
       list(dataSets$dataSet1, dataSets$dataSet2),
       setting$scaling,
       setting$options
     )
-    expect_gt(together, 0)
+    if (identical(setting$options$objectiveFunctionType, "m3")) {
+      expect_gt(together$M3Contribution, 0)
+    }
     expect_equal(together, separate)
   }
 })
 
-test_that("objective function equals 2.2.0.9009 with observed values of zero", {
+test_that("objective function equals the reference with observed values of zero", {
   # A zero and a value below the epsilon of the log transformation
   dataSet <- ospsuite::DataSet$new(name = "withZeros")
   dataSet$xUnit <- ospsuite::ospUnits$Time$min
@@ -1343,21 +1488,28 @@ molarDataSet <- function(name, lloq = NULL) {
 
 # One simulation with two outputs. The first output has three data sets, with
 # y transformations: the data of Laskin 1982 (mg/l, arithmetic SD) with a data
-# weight, the same data times 1.5 without the last point, with an LLOQ and a
-# data weight per point, and molar data. The second output has molar data
-# with an LLOQ, with x and y transformations.
-severalDataSetsTask <- function() {
+# weight, the same data times 1.5 without the last point, with a data weight
+# per point, and molar data. The second output has molar data, with x and y
+# transformations.
+#
+# With `lloq = TRUE`, the first output has only the first two data sets, both
+# with an LLOQ, and a y factor but no y offset, and the data of the second
+# output have an LLOQ: data with an LLOQ for which the objective function
+# with "m3" equals the reference (see helper-frozen-objective-function.R).
+severalDataSetsTask <- function(lloq = FALSE) {
   dataSets <- testObservedDataMultiple()
-  dataSets$dataSet2$LLOQ <- 1
+  if (lloq) {
+    dataSets$dataSet1$LLOQ <- 1
+    dataSets$dataSet2$LLOQ <- 1
+  } else {
+    dataSets$dataSet3 <- molarDataSet("dataSet3")
+  }
   task <- aciclovirTask(stats::setNames(
-    list(
-      c(dataSets, dataSet3 = molarDataSet("dataSet3")),
-      molarDataSet("dataSet4", lloq = 1000)
-    ),
+    list(dataSets, molarDataSet("dataSet4", lloq = if (lloq) 1000)),
     aciclovirPlasmaPaths
   ))
   task$outputMappings[[1]]$setDataTransformations(
-    yOffsets = 0.05,
+    yOffsets = if (lloq) 0 else 0.05,
     yFactors = 0.9
   )
   task$outputMappings[[1]]$setDataWeights(
@@ -1374,7 +1526,7 @@ severalDataSetsTask <- function() {
   task
 }
 
-test_that("objective function equals 2.2.0.9009 for several data sets", {
+test_that("objective function equals the reference for several data sets", {
   expectFrozenForSettings(
     severalDataSetsTask(),
     list(
@@ -1382,11 +1534,6 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
       list(scaling = "log"),
       list(options = list(residualWeightingMethod = "error")),
       list(scaling = "log", options = list(residualWeightingMethod = "error")),
-      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
-      list(
-        scaling = "log",
-        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
-      ),
       list(
         scaling = c("lin", "log"),
         options = list(robustMethod = "huber", scaleVar = TRUE)
@@ -1394,9 +1541,20 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
     ),
     lipophilicityValues
   )
+  expectFrozenForSettings(
+    severalDataSetsTask(lloq = TRUE),
+    list(
+      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(
+        scaling = "log",
+        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+      )
+    ),
+    lipophilicityValues
+  )
 })
 
-test_that("objective function equals 2.2.0.9009 for two simulations with grouped parameters", {
+test_that("objective function equals the reference for two simulations with grouped parameters", {
   # Mass data, parameter groups over both simulations and over one
   task <- testClarithromycinTask()
   startValues <- currStartValues(task)
@@ -1411,7 +1569,7 @@ test_that("objective function equals 2.2.0.9009 for two simulations with grouped
   )
 })
 
-test_that("objective function equals 2.2.0.9009 for the Midazolam model", {
+test_that("objective function equals the reference for the Midazolam model", {
   sim <- ospsuite::loadSimulation(
     getTestDataFilePath("Midazolam_Smith_1981_iv_5mg.pkml"),
     loadFromCache = FALSE,
@@ -1453,7 +1611,7 @@ test_that("objective function equals 2.2.0.9009 for the Midazolam model", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
+test_that("objective function equals the reference with bootstrap weights", {
   # Five individual data sets, the first with a data weight: the bootstrap
   # resamples the weights of the data sets, not their values
   dataSets <- syntheticObservedData()
@@ -1482,11 +1640,14 @@ test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
   expectFrozenObjective(task, lipophilicityValues[[2]])
 })
 
-test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
+test_that(".combineCostTerms equals the sum of the costs of the reference", {
   kernelTerms <- function(index) {
     .costKernel(
-      simulatedX = c(0, 1, 2, 3),
-      simulatedY = c(1, 2, 3, 2) * index,
+      simulatedYApprox = .simulatedAtObservedTimes(
+        simulatedX = c(0, 1, 2, 3),
+        simulatedY = c(1, 2, 3, 2) * index,
+        observedX = c(0.5, 1.5, 2.5)
+      ),
       observedX = c(0.5, 1.5, 2.5),
       observedY = c(1.4, 2.7, 2.2),
       userWeights = c(NA, 2, 0.5),
@@ -1514,7 +1675,7 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
   )
 })
 
-test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
+test_that("calculateCostMetrics equals the reference in the settings above", {
   # The data frames of the tests of `.calculateCostMetrics()` above
   naDf <- obsVsPredDf
   firstObserved <- which(naDf$dataType == "observed")[1]
@@ -1746,10 +1907,10 @@ test_that("new observed times without simulated values are warned about", {
   expect_identical(again, first)
 })
 
-test_that("the LLOQ rule stops when simulated values are missing", {
+test_that("missing simulated values are left out, with and without an LLOQ", {
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"
-  costTerms <- function(lloq) {
+  costTerms <- function(lloq, simulated) {
     dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
     if (!is.null(lloq)) {
       dataSet$LLOQ <- lloq
@@ -1757,7 +1918,7 @@ test_that("the LLOQ rule stops when simulated values are missing", {
     mapping <- PIOutputMapping$new(quantity = testQuantity())
     mapping$addObservedDataSets(dataSet)
     .mappingCostTerms(
-      simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
+      simulated = simulated,
       observed = .prepareObservedData(mapping),
       dataWeights = mapping$dataWeights,
       costControl = costControl,
@@ -1765,13 +1926,626 @@ test_that("the LLOQ rule stops when simulated values are missing", {
     )
   }
 
+  # The cost with a missing simulated value at 60 min equals the cost
+  # without that time
+  for (lloq in list(NULL, 0.5)) {
+    withMissing <- costTerms(
+      lloq,
+      list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1))
+    )
+    expect_true(is.finite(withMissing$modelCost))
+    expect_identical(
+      withMissing,
+      costTerms(lloq, list(xValues = c(0, 1e4), yValues = c(0, 1)))
+    )
+  }
+})
+
+# The LLOQ with y transformations (#331), for the example of the issue: values
+# of 10, 5 and 1 nmol/l at 60, 120 and 180 min, where 1 nmol/l is a value
+# below the LLOQ of 2 nmol/l, which the importer stores as half the LLOQ
+blqDataSet <- function(
+  name = "withLloq",
+  lloq = 2,
+  yValues = c(10, 5, 1),
+  yUnit = "nmol/l"
+) {
+  dataSet <- ospsuite::DataSet$new(name = name)
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- yUnit
+  dataSet$setValues(xValues = 60 * seq_along(yValues), yValues = yValues)
+  dataSet$LLOQ <- lloq
+  dataSet
+}
+
+# The y transformations of the example, and one with an offset and a factor,
+# with, in nmol/l, the transformed values and LLOQ and the transformed value
+# of 0, the lower limit of the values below the LLOQ. A negative y factor sets
+# the LLOQ to NA.
+blqTransformations <- list(
+  none = list(
+    yOffsets = 0,
+    yFactors = 1,
+    yValues = c(10, 5, 1),
+    lloq = 2,
+    zero = 0
+  ),
+  offset2 = list(
+    yOffsets = 2,
+    yFactors = 1,
+    yValues = c(12, 7, 3),
+    lloq = 4,
+    zero = 2
+  ),
+  offset2Factor3 = list(
+    yOffsets = 2,
+    yFactors = 3,
+    yValues = c(36, 21, 9),
+    lloq = 12,
+    zero = 6
+  ),
+  offsetMinus1.5 = list(
+    yOffsets = -1.5,
+    yFactors = 1,
+    yValues = c(8.5, 3.5, -0.5),
+    lloq = 0.5,
+    zero = -1.5
+  ),
+  offsetMinus2 = list(
+    yOffsets = -2,
+    yFactors = 1,
+    yValues = c(8, 3, -1),
+    lloq = 0,
+    zero = -2
+  ),
+  offsetMinus3 = list(
+    yOffsets = -3,
+    yFactors = 1,
+    yValues = c(7, 2, -2),
+    lloq = -1,
+    zero = -3
+  ),
+  factorMinus2 = list(
+    yOffsets = 0,
+    yFactors = -2,
+    yValues = c(-20, -10, -2),
+    lloq = NA_real_,
+    zero = 0
+  )
+)
+# The transformations with a positive LLOQ, which log scaling needs, and with
+# a positive value below the LLOQ, which M3 with log scaling needs too
+positiveLloq <- c("none", "offset2", "offset2Factor3", "offsetMinus1.5")
+positiveBlq <- c("none", "offset2", "offset2Factor3")
+
+# nmol/l in the base unit of the output, µmol/l
+nmolPerL <- 1e-3
+
+# The tolerance for observed values, which ospsuite stores in single precision
+singlePrecision <- 1e-6
+
+# The prepared observed data of an output mapping with the data sets and the
+# y transformations, without the warnings of ospsuite about the LLOQ
+blqObservedData <- function(dataSets, yOffsets = 0, yFactors = 1) {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSets)
+  mapping$setDataTransformations(yOffsets = yOffsets, yFactors = yFactors)
+  withoutLloqWarnings(.prepareObservedData(mapping))
+}
+
+withoutLloqWarnings <- function(expr) {
+  withCallingHandlers(expr, warning = function(w) {
+    if (grepl("LLOQ", conditionMessage(w))) {
+      invokeRestart("muffleWarning")
+    }
+  })
+}
+
+# The cost terms of the prepared observed data, with the given simulated
+# values at the observed times, every 60 min, in nmol/l or in the base unit
+# for `unitFactor = 1`, and other values at 0 min and after the last observed
+# time
+blqCostTerms <- function(
+  observed,
+  simulatedAtObserved,
+  options = list(),
+  scaling = "lin",
+  unitFactor = nmolPerL
+) {
+  costControl <- utils::modifyList(
+    PIConfiguration$new()$objectiveFunctionOptions,
+    options
+  )
+  costControl$scaling <- scaling
+  .mappingCostTerms(
+    simulated = list(
+      xValues = 60 * (seq_len(length(simulatedAtObserved) + 2) - 1),
+      yValues = c(20, simulatedAtObserved, 0.1) * unitFactor
+    ),
+    observed = observed,
+    dataWeights = NULL,
+    costControl = costControl,
+    index = 1L,
+    quantityPath = testQuantity()$path
+  )
+}
+
+# Simulated values 1 nmol/l above the first two values, and `fromLloq` nmol/l
+# from the LLOQ at the third, or from the third value without an LLOQ
+blqSimulated <- function(transformation, fromLloq = -0.5) {
+  third <- if (is.na(transformation$lloq)) {
+    transformation$yValues[[3]]
+  } else {
+    transformation$lloq
+  }
+  c(transformation$yValues[1:2] + 1, third + fromLloq)
+}
+
+test_that("prepared observed data hold the transformed LLOQ and the value below it", {
+  for (name in names(blqTransformations)) {
+    transformation <- blqTransformations[[name]]
+    observed <- blqObservedData(
+      blqDataSet(),
+      transformation$yOffsets,
+      transformation$yFactors
+    )
+    lloq <- rep(transformation$lloq, 3)
+    expect_equal(
+      observed[c("yValues", "lloq", "transformedZero", "blqValue")],
+      list(
+        yValues = transformation$yValues * nmolPerL,
+        lloq = lloq * nmolPerL,
+        transformedZero = rep(transformation$zero, 3) * nmolPerL,
+        # The transformed value below the LLOQ, the third value
+        blqValue = ifelse(is.na(lloq), NA, transformation$yValues[[3]]) *
+          nmolPerL
+      ),
+      tolerance = singlePrecision,
+      info = name
+    )
+  }
+})
+
+test_that("the LLOQ rule compares the values below the LLOQ with the transformed LLOQ", {
+  # The simulated value at the value below the LLOQ is 0.25 nmol/l below or
+  # 0.5 nmol/l above the LLOQ: the residual is 0 below the LLOQ and the
+  # distance to the LLOQ above it. Without an LLOQ, the value is compared as
+  # it is.
+  for (fromLloq in c(-0.25, 0.5)) {
+    for (name in names(blqTransformations)) {
+      transformation <- blqTransformations[[name]]
+      observed <- blqObservedData(
+        blqDataSet(),
+        transformation$yOffsets,
+        transformation$yFactors
+      )
+      simulated <- blqSimulated(transformation, fromLloq)
+      terms <- blqCostTerms(observed, simulated)
+      third <- if (is.na(transformation$lloq)) fromLloq else max(fromLloq, 0)
+      expect_equal(
+        terms[c("rawResiduals", "ySimulated")],
+        list(
+          rawResiduals = c(1, 1, third) * nmolPerL,
+          ySimulated = simulated * nmolPerL
+        ),
+        tolerance = singlePrecision,
+        info = paste(name, fromLloq)
+      )
+    }
+
+    # With log scaling, for a positive LLOQ, also when the values below it
+    # are 0 or negative
+    for (name in positiveLloq) {
+      transformation <- blqTransformations[[name]]
+      observed <- blqObservedData(
+        blqDataSet(),
+        transformation$yOffsets,
+        transformation$yFactors
+      )
+      simulated <- blqSimulated(transformation, fromLloq)
+      terms <- blqCostTerms(observed, simulated, scaling = "log")
+      yValues <- transformation$yValues
+      lloq <- transformation$lloq
+      expect_equal(
+        terms[c("rawResiduals", "ySimulated")],
+        list(
+          rawResiduals = c(
+            log((yValues[1:2] + 1) / yValues[1:2]),
+            max(log((lloq + fromLloq) / lloq), 0)
+          ),
+          ySimulated = log(simulated * nmolPerL)
+        ),
+        tolerance = singlePrecision,
+        info = paste(name, fromLloq)
+      )
+    }
+  }
+})
+
+test_that("the LLOQ rule compares values above the LLOQ with the simulated values and does not change with a y offset", {
+  # Values of 10, 5, 1, 3 and 1 nmol/l with an LLOQ of 2 nmol/l, where 1 is a
+  # value below the LLOQ, and simulated values of 8, 6, 3, 1.5 and 1.5. The
+  # value of 3 is compared with the simulated value below the LLOQ, and the
+  # values below the LLOQ with the LLOQ or with a simulated value below it.
+  simulated <- c(8, 6, 3, 1.5, 1.5)
+  expected <- list(
+    lin = c(-2, 1, 1, -1.5, 0) * nmolPerL,
+    log = c(log(8 / 10), log(6 / 5), log(3 / 2), log(1.5 / 3), 0)
+  )
+  # The same values with a baseline of 2 nmol/l that the model does not
+  # contain: measured with an LLOQ of 4 nmol/l, where 2 is a value below the
+  # LLOQ, and a y offset of -2. The values below the LLOQ become 0.
+  dataSets <- list(
+    noBaseline = list(
+      dataSet = blqDataSet(yValues = c(10, 5, 1, 3, 1)),
+      yOffsets = 0
+    ),
+    baseline = list(
+      dataSet = blqDataSet(lloq = 4, yValues = c(12, 7, 2, 5, 2)),
+      yOffsets = -2
+    )
+  )
+  for (name in names(dataSets)) {
+    observed <- blqObservedData(
+      dataSets[[name]]$dataSet,
+      yOffsets = dataSets[[name]]$yOffsets
+    )
+    for (scaling in c("lin", "log")) {
+      terms <- blqCostTerms(observed, simulated, scaling = scaling)
+      expect_equal(
+        terms[c("rawResiduals", "modelCost")],
+        list(
+          rawResiduals = expected[[scaling]],
+          modelCost = sum(expected[[scaling]]^2)
+        ),
+        tolerance = singlePrecision,
+        info = paste(name, scaling)
+      )
+    }
+  }
+})
+
+test_that("the residual of a value below the LLOQ is continuous at the LLOQ", {
+  observed <- blqObservedData(blqDataSet())
+  lloq <- 2
+  below <- blqCostTerms(observed, c(11, 6, lloq * (1 - 1e-6)))
+  above <- blqCostTerms(observed, c(11, 6, lloq * (1 + 1e-6)))
+  expect_identical(below$rawResiduals[[3]], 0)
+  expect_equal(above$rawResiduals[[3]], lloq * 1e-6 * nmolPerL, tolerance = 0.1)
+})
+
+test_that("the LLOQ rule does not depend on the stored values below the LLOQ", {
+  # Two data sets with the same LLOQ of 4 µmol/l after their transformations
+  # and different values below it: 3 µmol/l with an LLOQ of 2 and a y offset
+  # of 2, and 2 µmol/l with an LLOQ of 4 without an offset. The values are in
+  # the base unit, so that both LLOQs are exactly 4.
+  observed <- blqObservedData(
+    list(
+      blqDataSet("offset", lloq = 2, yUnit = "µmol/l"),
+      blqDataSet("noOffset", lloq = 4, yValues = c(12, 7, 2), yUnit = "µmol/l")
+    ),
+    yOffsets = c(2, 0)
+  )
+  expect_identical(observed$lloq, rep(4, 6))
+  for (third in c(3.5, 5)) {
+    terms <- blqCostTerms(observed, c(9, 6, third), unitFactor = 1)
+    residuals <- c(-3, -1, max(third - 4, 0))
+    expect_equal(
+      split(terms$rawResiduals, observed$name),
+      list(noOffset = residuals, offset = residuals),
+      info = third
+    )
+  }
+})
+
+test_that("the LLOQ rule uses the LLOQ of each data set", {
+  # Values of 10, 5 and 1 nmol/l with an LLOQ of 2 nmol/l, and of 10, 5 and 2
+  # nmol/l with an LLOQ of 4 nmol/l, where 1 and 2 are values below the LLOQ.
+  # The simulated value of 3 nmol/l at the third time is above the first
+  # LLOQ and below the second.
+  observed <- blqObservedData(list(
+    blqDataSet("lloq2"),
+    blqDataSet("lloq4", lloq = 4, yValues = c(10, 5, 2))
+  ))
+  terms <- blqCostTerms(observed, c(9, 4, 3))
+  expect_equal(
+    split(terms$rawResiduals, observed$name),
+    list(lloq2 = c(-1, -1, 1) * nmolPerL, lloq4 = c(-1, -1, 0) * nmolPerL),
+    tolerance = singlePrecision
+  )
+})
+
+test_that("M3 calculates the standard deviation from the LLOQ before a y offset", {
+  # The simulated value at the censored value is 0.5 nmol/l above the LLOQ,
+  # and the standard deviation of the censored value is linScaleCV times the
+  # LLOQ of 2 nmol/l times the y factor, whatever the y offset
+  for (name in setdiff(names(blqTransformations), "factorMinus2")) {
+    transformation <- blqTransformations[[name]]
+    observed <- blqObservedData(
+      blqDataSet(),
+      transformation$yOffsets,
+      transformation$yFactors
+    )
+    terms <- blqCostTerms(
+      observed,
+      blqSimulated(transformation, fromLloq = 0.5),
+      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+    )
+    expect_equal(
+      terms$M3Contribution,
+      -2 * log10(stats::pnorm(-0.5 / (0.2 * 2 * transformation$yFactors))),
+      tolerance = singlePrecision,
+      info = name
+    )
+  }
+
+  # With log scaling
+  for (name in positiveBlq) {
+    transformation <- blqTransformations[[name]]
+    observed <- blqObservedData(
+      blqDataSet(),
+      transformation$yOffsets,
+      transformation$yFactors
+    )
+    terms <- blqCostTerms(
+      observed,
+      blqSimulated(transformation, fromLloq = 0.5),
+      options = list(objectiveFunctionType = "m3", logScaleSD = 0.086),
+      scaling = "log"
+    )
+    lloq <- transformation$lloq
+    expect_equal(
+      terms$M3Contribution,
+      -2 * log10(stats::pnorm((log(lloq) - log(lloq + 0.5)) / 0.086)),
+      tolerance = singlePrecision,
+      info = name
+    )
+  }
+
+  # A negative y factor leaves the output mapping without an LLOQ
+  observed <- blqObservedData(blqDataSet(), yFactors = -2)
+  for (scaling in c("lin", "log")) {
+    expect_error(
+      blqCostTerms(
+        observed,
+        c(9, 4, 0.5),
+        options = list(objectiveFunctionType = "m3"),
+        scaling = scaling
+      ),
+      messages$errorNoLloqForM3(1L, testQuantity()$path),
+      fixed = TRUE
+    )
+  }
+})
+
+test_that("an LLOQ that is not positive stops log scaling and linear M3", {
+  path <- testQuantity()$path
+  expect_identical(
+    messages$errorLloqNotPositive("withLloq", "log", "lsq", 1L, path),
+    paste0(
+      "The LLOQ of data set 'withLloq' of output mapping 1 ('",
+      path,
+      "') ",
+      "is not positive after the data transformations. With log scaling, ",
+      "the LLOQ must be positive to have a logarithm. Use linear scaling for ",
+      "the output mapping, a positive LLOQ, or a y offset greater than minus ",
+      "the LLOQ."
+    )
+  )
+  expect_identical(
+    messages$errorLloqNotPositive(c("first", "second"), "log", "lsq"),
+    paste0(
+      "The LLOQs of data sets 'first', 'second' are not positive after the ",
+      "data transformations. With log scaling, the LLOQ must be positive to ",
+      "have a logarithm. Use linear scaling for the output mapping, a ",
+      "positive LLOQ, or a y offset greater than minus the LLOQ."
+    )
+  )
+  expect_identical(
+    messages$errorLloqNotPositive("withLloq", "log", "m3", 1L, path),
+    paste0(
+      "The LLOQ of data set 'withLloq' of output mapping 1 ('",
+      path,
+      "'), ",
+      "or the values below it, are not positive after the data ",
+      "transformations. With objectiveFunctionType 'm3' and log scaling, ",
+      "the LLOQ and the values below it, which the importer stores as half ",
+      "the LLOQ, must be positive to have a logarithm. Use linear scaling ",
+      "for the output mapping, a positive LLOQ, a y offset greater than ",
+      "minus half the LLOQ, or objectiveFunctionType 'lsq', which needs only ",
+      "a positive LLOQ."
+    )
+  )
+  expect_identical(
+    messages$errorLloqNotPositive(c("first", "second"), "lin", "m3"),
+    paste0(
+      "The LLOQs of data sets 'first', 'second' are not positive before the ",
+      "data transformations. With objectiveFunctionType 'm3' and linear ",
+      "scaling, the standard deviation of the values below the LLOQ is ",
+      "linScaleCV times this LLOQ, so it must be positive. Set a positive ",
+      "LLOQ, or use objectiveFunctionType 'lsq'."
+    )
+  )
+
+  # With log scaling and an LLOQ of 2 nmol/l: a y offset of minus the LLOQ or
+  # less makes the LLOQ 0 or negative, and minus half the LLOQ or less the
+  # value below it. "lsq" needs a positive LLOQ, "m3" a positive value below
+  # it.
+  m3 <- list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+  for (yOffsets in c(-1, -1.5, -2, -3)) {
+    observed <- blqObservedData(blqDataSet(), yOffsets = yOffsets)
+    expect_error(
+      blqCostTerms(observed, c(9, 4, 0.5), m3, scaling = "log"),
+      messages$errorLloqNotPositive("withLloq", "log", "m3", 1L, path),
+      fixed = TRUE
+    )
+    if (yOffsets <= -2) {
+      expect_error(
+        blqCostTerms(observed, c(9, 4, 0.5), scaling = "log"),
+        messages$errorLloqNotPositive("withLloq", "log", "lsq", 1L, path),
+        fixed = TRUE
+      )
+    } else {
+      expect_true(is.finite(
+        blqCostTerms(observed, c(9, 4, 0.5), scaling = "log")$modelCost
+      ))
+    }
+  }
+  # Just above minus half the LLOQ
+  observed <- blqObservedData(blqDataSet(), yOffsets = -0.99)
+  for (options in list(list(), m3)) {
+    expect_true(is.finite(
+      blqCostTerms(observed, c(9, 4, 0.5), options, scaling = "log")$modelCost
+    ))
+  }
+  # ospsuite stores the LLOQ in single precision, so a y offset of minus an
+  # LLOQ of 0.3 nmol/l leaves an LLOQ close to 0, which counts as 0
+  observed <- blqObservedData(
+    blqDataSet(lloq = 0.3, yValues = c(10, 5, 0.15)),
+    yOffsets = -0.3
+  )
+  expect_gt(observed$lloq[[1]], 0)
   expect_error(
-    costTerms(lloq = 0.5),
-    messages$errorSimulatedValuesMissing(),
+    blqCostTerms(observed, c(9, 4, 0.5), scaling = "log"),
+    messages$errorLloqNotPositive("withLloq", "log", "lsq", 1L, path),
     fixed = TRUE
   )
-  # Without an LLOQ, a missing simulated value is left out
-  expect_true(is.finite(costTerms(lloq = NULL)$modelCost))
+
+  # With linear scaling, an LLOQ that a y offset makes 0 or negative is valid
+  # (see above), but not an LLOQ of 0 before the data transformations with M3
+  observed <- blqObservedData(blqDataSet(lloq = 0))
+  expect_error(
+    blqCostTerms(
+      observed,
+      c(9, 4, 0.5),
+      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+    ),
+    messages$errorLloqNotPositive("withLloq", "lin", "m3", 1L, path),
+    fixed = TRUE
+  )
+  expect_true(is.finite(blqCostTerms(observed, c(9, 4, 0.5))$modelCost))
+
+  # The error stops the call
+  task <- testPiTask()
+  mapping <- task$outputMappings[[1]]
+  dataSet <- mapping$observedDataSets[[1]]
+  dataSet$LLOQ <- 0.5
+  mapping$scaling <- "log"
+  mapping$setDataTransformations(yOffsets = -1)
+  expect_error(
+    withoutLloqWarnings(
+      task$gridSearch(lower = -0.5, upper = 0.5, totalEvaluations = 2)
+    ),
+    messages$errorLloqNotPositive(
+      names(mapping$observedDataSets),
+      "log",
+      "lsq",
+      1,
+      mapping$quantity$path
+    ),
+    fixed = TRUE
+  )
+})
+
+test_that("values without an LLOQ are not censored by the LLOQ of another data set", {
+  # A data set with an LLOQ of 2 nmol/l, and one whose LLOQ a negative y
+  # factor sets to NA. Its transformed values are below 2 nmol/l.
+  observed <- blqObservedData(
+    list(
+      blqDataSet(),
+      blqDataSet("negativeFactor", yValues = c(8, 1.5, 0.5))
+    ),
+    yFactors = c(1, -1)
+  )
+  simulated <- c(9, 4, 0.5)
+
+  # The LLOQ rule gives the value below the LLOQ of the first data set a
+  # residual of 0, and compares the values of the second data set as they
+  # are. With log scaling, its negative values are replaced by the epsilon of
+  # the log transformation.
+  expected <- list(
+    lin = list(
+      negativeFactor = (simulated - c(-8, -1.5, -0.5)) * nmolPerL,
+      withLloq = c(-1, -1, 0) * nmolPerL
+    ),
+    log = list(
+      negativeFactor = log(simulated * nmolPerL) -
+        log(ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON")),
+      withLloq = c(log(9 / 10), log(4 / 5), 0)
+    )
+  )
+  for (scaling in c("lin", "log")) {
+    terms <- blqCostTerms(observed, simulated, scaling = scaling)
+    expect_equal(
+      split(terms$rawResiduals, observed$name),
+      expected[[scaling]],
+      tolerance = singlePrecision,
+      info = scaling
+    )
+  }
+
+  # M3 censors the value below the LLOQ of the first data set only
+  terms <- blqCostTerms(
+    observed,
+    c(9, 4, 2.5),
+    options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+  )
+  expect_equal(
+    terms$M3Contribution,
+    -2 * log10(stats::pnorm((2 - 2.5) / (0.2 * 2))),
+    tolerance = singlePrecision
+  )
+
+  # A value of the second data set at a time that was not simulated is
+  # interpolated, so it has a simulated value. The censored value of the
+  # first data set at such a time has none.
+  costControl <- list(objectiveFunctionType = "m3", scaling = "lin")
+  hasUnsimulatedTimes <- function(simulatedTimes) {
+    .hasUnsimulatedObservedTimes(
+      simulated = list(
+        xValues = simulatedTimes,
+        yValues = rep(1, length(simulatedTimes)) * nmolPerL
+      ),
+      observed = observed,
+      costControl = costControl,
+      outputTimePoints = simulatedTimes
+    )
+  }
+  expect_false(hasUnsimulatedTimes(c(0, 60, 180, 240)))
+  expect_true(hasUnsimulatedTimes(c(0, 60, 120, 240)))
+})
+
+test_that("a value at the LLOQ is not censored", {
+  # Values of 10, 2 and 1 nmol/l with an LLOQ of 2 nmol/l: 2 is a measured
+  # value at the LLOQ, and 1 a value below it. The simulated values at 2 and
+  # 1 are below the LLOQ for "lsq" and above it for "m3".
+  observed <- blqObservedData(blqDataSet(yValues = c(10, 2, 1)))
+  lsq <- blqCostTerms(observed, c(11, 1.5, 1.5))
+  expect_equal(
+    lsq$rawResiduals,
+    c(1, -0.5, 0) * nmolPerL,
+    tolerance = singlePrecision
+  )
+  m3 <- blqCostTerms(
+    observed,
+    c(11, 2.5, 2.5),
+    options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+  )
+  expect_equal(
+    m3$M3Contribution,
+    -2 * log10(stats::pnorm((2 - 2.5) / (0.2 * 2))),
+    tolerance = singlePrecision
+  )
+
+  # With M3, the value at the LLOQ at a time that was not simulated is
+  # interpolated, so it has a simulated value
+  expect_false(.hasUnsimulatedObservedTimes(
+    simulated = list(xValues = c(0, 60, 180, 240), yValues = rep(nmolPerL, 4)),
+    observed = observed,
+    costControl = list(objectiveFunctionType = "m3", scaling = "lin"),
+    outputTimePoints = c(0, 60, 180, 240)
+  ))
 })
 
 # .computeErrorWeights

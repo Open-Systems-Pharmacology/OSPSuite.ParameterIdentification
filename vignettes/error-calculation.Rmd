@@ -27,11 +27,22 @@ In the parameter identification (PI) process, measuring the discrepancy between 
 
 ### LSQ - Least Squares Error
 
-The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation. By default, selecting this method will transform BQL data by replacing it with LLOQ/2.
+The `lsq` method is a traditional approach that minimizes the sum of the squared differences between observed and simulated values. This method is widely used in pharmacokinetic modeling, offering a straightforward and intuitive error calculation.
+
+With an LLOQ, the `lsq` method compares each observed value with the simulated value at its time as follows:
+
+- A measured value at or above the LLOQ is compared with the simulated value, as without an LLOQ.
+- A BQL value, below the LLOQ, has a residual of 0 while the simulated value is below the LLOQ too: both agree that the concentration is below the LLOQ. Above the LLOQ, the residual is the simulated value minus the LLOQ.
+
+The importer stores BQL values as half the LLOQ (LLOQ/2), but this stored value does not enter the residual, so the residual changes continuously with the simulated value, without a jump where it crosses the LLOQ. For example, with an LLOQ of 2, a BQL value has a residual of 0 for a simulated value of 1.5 and of 1 for a simulated value of 3, and a measured value of 3 has a residual of -1.5 for a simulated value of 1.5. With log scaling, the same rule applies to the logarithms of the values and of the LLOQ, so the LLOQ must be positive after the data transformations. Each data set uses its own LLOQ, and the values of a data set without an LLOQ are compared as they are. With y transformations of the observed data, the rule uses the transformed LLOQ (see the Transformations section of `vignette("data-mapping")`).
+
+With `residualWeightingMethod = "error"`, a BQL value that has an error value is weighted by it, calculated with its stored value, as for any other observed value. In `costDetails` of `piResult$toList()`, `ySimulated` is the simulated value and `yObserved` the stored observed value, so for a BQL value, `rawResiduals` is not `ySimulated - yObserved`.
 
 ### M3 - Extended Least Squares Error
 
 The `m3` method extends the least squares error by incorporating the likelihood of observed data being below the quantification limit. This method treats BQL data as censored, applying maximum likelihood estimation to include all data in the model fit, thus offering a more accurate and statistically robust approach to handling BQL observations.
+
+Each value below the LLOQ of its own data set is censored. A value at the LLOQ is a measured value and is not censored, and the values of a data set without an LLOQ are not censored either. Every output mapping needs observed data with an LLOQ. The standard deviation of a censored value is `linScaleCV` times its LLOQ with linear scaling, and `logScaleSD` with log scaling. A y offset of the observed data shifts the values and the LLOQ, but not their spread, so with linear scaling the standard deviation is `linScaleCV` times the LLOQ without the y offset, times the absolute y factor. With log scaling, the LLOQ and the stored BQL values, half the LLOQ before the data transformations, must be positive after the transformations, because the BQL values also enter the sum of squared residuals at their stored value. So a y offset must be greater than minus half the LLOQ.
 
 ### Configuring Error Models in PI
 

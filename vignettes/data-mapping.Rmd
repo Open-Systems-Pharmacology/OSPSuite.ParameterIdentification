@@ -241,6 +241,40 @@ outputMapping$setDataTransformations(
 outputMapping$dataTransformations
 ```
 
+The LLOQ and the error values of the observed data are transformed with the y
+values, so the objective function compares them on the same scale. The LLOQ is
+transformed like the y values, and arithmetic standard deviations are
+multiplied by the absolute value of the y factor. Geometric standard deviations are factors without
+a unit, so the y factor does not change them. A y offset adjusts them
+approximately. For data that an offset brings close to or below zero, such as
+baseline-corrected data, arithmetic standard deviations are the better choice
+(see `vignette("data-combined", package = "ospsuite")`).
+
+The values below the LLOQ move with the LLOQ. For an LLOQ of 2 and a y offset
+of 2, the LLOQ becomes 4, and a value below the LLOQ, which the importer
+stores as half the LLOQ, becomes 3 instead of 1. The objective function
+compares the simulated values with the transformed LLOQ (see
+`vignette("error-calculation")`). With `objectiveFunctionType = "lsq"`, the
+residuals of the values below the LLOQ do not depend on their stored values.
+So data from which a y offset removes a baseline give the same cost as the
+same data measured without the baseline.
+
+- A negative y offset can make the LLOQ, or the values below it, 0 or
+  negative. This works with linear scaling. With log scaling and
+  `objectiveFunctionType = "lsq"`, values below the LLOQ that are 0 or
+  negative are accepted, but `ParameterIdentification` stops with an error
+  when the y offset is minus the LLOQ or less, because the LLOQ then has no
+  logarithm. Just above minus the LLOQ, the logarithm of the LLOQ is very
+  negative, so a value below the LLOQ gets a large residual when the
+  simulated value is above the LLOQ. With `objectiveFunctionType = "m3"`, the
+  values below the LLOQ also enter the cost, so with log scaling it already
+  stops for a y offset of minus half the LLOQ or less. Just above minus half
+  the LLOQ, these values are close to 0 and weigh heavily on the log scale.
+- A negative y factor sets the LLOQ to `NA`, so the values of that data set
+  are used as they are, without an LLOQ: its values below the LLOQ are fitted
+  like measured values. With `objectiveFunctionType = "m3"`, an output
+  mapping in which no data set has an LLOQ stops with an error.
+
 
 ## Practical tips
 

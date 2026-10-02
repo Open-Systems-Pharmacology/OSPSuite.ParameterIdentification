@@ -188,7 +188,28 @@ PIOutputMapping <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Configures transformations for datasets.
+    #' @description Configures transformations for datasets. X and y values
+    #'   are transformed as `(value + offset) * factor`, and the objective
+    #'   function uses the transformed values. The other columns of the
+    #'   observed data follow the y values:
+    #'
+    #'   - The LLOQ is transformed like the y values, and so are the values
+    #'     below it, which the importer stores as half the LLOQ. With a
+    #'     negative `yFactors`, the LLOQ is set to `NA`, and the values of the
+    #'     data set are used without an LLOQ, also its values below the LLOQ.
+    #'   - Arithmetic standard deviations are multiplied by `abs(yFactors)`.
+    #'   - Geometric standard deviations are not changed by `yFactors`. A y
+    #'     offset adjusts them approximately, and sets them to `NA` where a y
+    #'     value is not positive before or after the offset.
+    #'
+    #'   A negative y offset can make the LLOQ, or the values below it, 0 or
+    #'   negative. With log scaling, the LLOQ must stay positive to have a
+    #'   logarithm, so the y offset must be greater than minus the LLOQ. With
+    #'   `objectiveFunctionType = "m3"`, the values below the LLOQ enter the
+    #'   cost too and must stay positive, so the y offset must be greater than
+    #'   minus half the LLOQ. Otherwise the parameter identification stops
+    #'   with an error. See `ospsuite::DataCombined` for the limits of the
+    #'   approximation for geometric standard deviations.
     #' @param labels List of dataset labels for targeted transformations.
     #'   Absence of labels applies transformations globally.
     #' @param xOffsets Numeric list/value for X-offset adjustments.
