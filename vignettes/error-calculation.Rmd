@@ -58,7 +58,9 @@ The error calculation between simulated results and observer datasets within eac
 - **`error`**: Requires both `yErrorValues` and `yErrorType` to be provided in the observed data `DataSet`. Ideal when individual data points come with variance estimates, allowing for weighting by the inverse of these variances. The `yErrorType` must be a supported OSP Suite error type: `ArithmeticStdDev` or `GeometricStdDev`.
   *Limitation:* When the error field holds population SD for group means, the correct weight is `n / SD²`, not `1 / SD` (where `n` is the group size). Because `DataSet` does not store `n` per time point, this cannot be corrected automatically. Group mean observations will be under-weighted by `1 / √n` relative to the optimal value.
 
-For proportional error handling across outputs of different magnitudes, use `outputMapping$scaling = "log"` instead. Log residuals are dimensionless and automatically comparable across mappings spanning different concentration ranges.
+  The weight is `1 / SD`, with the SD on the scale of the residuals. With `outputMapping$scaling = "log"`, the residuals are differences of log values, so the SD of the log values is used: `log(GSD)` for a geometric SD, and `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD `SD` of an observed value `y`. For a small coefficient of variation, the latter is close to `SD / y`.
+
+For proportional error handling across outputs of different magnitudes, use `outputMapping$scaling = "log"`, with or without `error` weighting. Log residuals are dimensionless and automatically comparable across mappings spanning different concentration ranges.
 
 To apply error-based residual weighting, set the `residualWeightingMethod` attribute in `objectiveFunctionOptions` of the `PIConfiguration` object:
 

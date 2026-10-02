@@ -26,7 +26,8 @@
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #'   Defaults to `NA_real_`.
 #' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#'   including `scaling`, `linScaleCV`, and `logScaleSD`.
+#'   including `scaling`, `linScaleCV`, and `logScaleSD`. `scaling` is not
+#'   used for the error weights, which assume `yValues` on the linear scale.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -160,6 +161,10 @@
 #' @param censoredContribution Contribution of the censored observations
 #'   (M3 method), 0 otherwise.
 #' @param index Output-mapping index stored on every `residualDetails` row.
+#' @param scaling Scale of `simulatedY` and `observedY`, `"lin"` or `"log"`,
+#'   for the error weights.
+#' @param observedYLinear Observed values on the linear scale, for the error
+#'   weights. The same as `observedY` for `scaling = "lin"`.
 #'
 #' @return A list of the arguments of `.newModelCost()`. When the model cost
 #'   is `NA`, a warning and the terms of `.createErrorCostStructure()`.
@@ -177,7 +182,9 @@
   robustMethod,
   scaleVar,
   censoredContribution,
-  index
+  index,
+  scaling = "lin",
+  observedYLinear = observedY
 ) {
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedX)) > 1) {
@@ -206,9 +213,10 @@
       residualWeightingMethod,
       "none" = 1,
       "error" = .computeErrorWeights(
-        yValues = observedY,
+        yValues = observedYLinear,
         yErrorValues = yErrorValues,
-        yErrorType = yErrorType
+        yErrorType = yErrorType,
+        scaling = scaling
       )
     )
 
@@ -380,7 +388,9 @@
     robustMethod = costControl$robustMethod,
     scaleVar = costControl$scaleVar,
     censoredContribution = censoredContribution,
-    index = index
+    index = index,
+    scaling = costControl$scaling,
+    observedYLinear = observed$yValues[keepObserved]
   )
 }
 
@@ -706,10 +716,14 @@
 
 #' Compute error-based residual weights
 #'
-#' @param yValues Vector of y-values, required for conversion
+#' @param yValues Vector of y-values on the linear scale, required for
+#'   conversion
 #' @param yErrorValues Vector of y-value errors
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
 #'   `GeometricStdDev`)
+#' @param scaling Scale of the residuals the weights apply to, `"lin"` or
+#'   `"log"`. On the log scale, the SD is that of the log of a log-normal
+#'   value: `log(GSD)`, or `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD.
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
@@ -719,6 +733,7 @@
   yValues,
   yErrorValues,
   yErrorType,
+  scaling = "lin",
   defaultWeight = 1
 ) {
   ospsuite.utils::validateIsNumeric(yValues)
@@ -733,15 +748,26 @@
     yErrorType == "ArithmeticStdDev" & yValues > 0 & yErrorValues > 0
   )
   if (length(idxArith) > 0) {
-    weights[idxArith] <- 1 / yErrorValues[idxArith]
+    stDev <- yErrorValues[idxArith]
+    if (scaling == "log") {
+      # sigma = sqrt(log(1 + CV^2)) for a log-normal value with CV = SD / mean
+      stDev <- sqrt(log(1 + (stDev / yValues[idxArith])^2))
+    }
+    weights[idxArith] <- 1 / stDev
   }
 
   idxGSD <- which(
     yErrorType == "GeometricStdDev" & yValues > 0 & yErrorValues > 1
   )
   if (length(idxGSD) > 0) {
-    # SD = mean * sqrt(e^(sigma^2) - 1), sigma = log(GSD)
-    stDev <- yValues[idxGSD] * sqrt(exp(log(yErrorValues[idxGSD])^2) - 1)
+    sigma <- log(yErrorValues[idxGSD])
+    # SD = mean * sqrt(e^(sigma^2) - 1) on the linear scale, sigma on the log
+    # scale
+    stDev <- if (scaling == "log") {
+      sigma
+    } else {
+      yValues[idxGSD] * sqrt(exp(sigma^2) - 1)
+    }
     weights[idxGSD] <- 1 / stDev
   }
 
