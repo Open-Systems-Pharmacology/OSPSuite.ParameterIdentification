@@ -200,7 +200,12 @@ CIDefaults <- list(
 #' - **`scaleVar`** – Whether residual scaling is applied. Default is `FALSE`.
 #' - **`linScaleCV`** – Coefficient of variation for linear scaling. Default is
 #'   `0.2`.
-#' - **`logScaleSD`** – Standard deviation for log scaling. Default is `NULL`.
+#' - **`logScaleSD`** – Standard deviation for log scaling: the standard
+#'   deviation of the natural logarithm of the values, used by
+#'   `objectiveFunctionType = "m3"` for the values below the LLOQ in output
+#'   mappings with log scaling. For a coefficient of variation `CV`, it is
+#'   `sqrt(log(1 + CV^2))`. Default is `sqrt(log(1 + 0.2^2))`, about `0.198`,
+#'   for a coefficient of variation of 20%.
 #'
 #'   These options are configurable in `PIConfiguration` and define how the
 #'   objective function of `ParameterIdentification` calculates the model cost.
@@ -210,7 +215,7 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
   robustMethod = "none",
   scaleVar = FALSE,
   linScaleCV = 0.2,
-  logScaleSD = sqrt(log(1 + 0.2^2, base = 10) / log(10))
+  logScaleSD = sqrt(log(1 + 0.2^2))
 ))
 
 #' Scaling Options for Output Mapping

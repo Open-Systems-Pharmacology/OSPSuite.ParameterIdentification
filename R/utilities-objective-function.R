@@ -1066,8 +1066,10 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'   for linear scaling, applied to the LLOQ of each censored observation
 #'   before a y offset: `linScaleCV * (lloq - transformedZero)`. A y offset
 #'   shifts the values but does not change their standard deviation.
-#' @param logScaleSD Numeric, standard deviation for logarithmic scaling,
-#'   applied uniformly to all censored observations.
+#' @param logScaleSD Numeric, standard deviation for logarithmic scaling: the
+#'   standard deviation of the natural logarithm of the values, applied
+#'   uniformly to all censored observations. For a coefficient of variation
+#'   `CV`, it is `sqrt(log(1 + CV^2))`.
 #' @return Numeric value representing the sum of squared errors for censored
 #'   observations, contributing to the model's total cost.
 #' @keywords internal

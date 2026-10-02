@@ -25,7 +25,12 @@ Settings include:
 \item \strong{\code{scaleVar}} – Whether residual scaling is applied. Default is \code{FALSE}.
 \item \strong{\code{linScaleCV}} – Coefficient of variation for linear scaling. Default is
 \code{0.2}.
-\item \strong{\code{logScaleSD}} – Standard deviation for log scaling. Default is \code{NULL}.
+\item \strong{\code{logScaleSD}} – Standard deviation for log scaling: the standard
+deviation of the natural logarithm of the values, used by
+\code{objectiveFunctionType = "m3"} for the values below the LLOQ in output
+mappings with log scaling. For a coefficient of variation \code{CV}, it is
+\code{sqrt(log(1 + CV^2))}. Default is \code{sqrt(log(1 + 0.2^2))}, about \code{0.198},
+for a coefficient of variation of 20\%.
 
 These options are configurable in \code{PIConfiguration} and define how the
 objective function of \code{ParameterIdentification} calculates the model cost.

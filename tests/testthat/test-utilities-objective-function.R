@@ -2319,6 +2319,52 @@ test_that("M3 calculates the standard deviation from the LLOQ before a y offset"
   }
 })
 
+test_that("the default logScaleSD is the SD of the natural logarithm for a CV of 20% (#333)", {
+  # The coefficient of variation of a log-normal value whose natural
+  # logarithm has the standard deviation of the default, from the moments of
+  # the distribution by numerical integration
+  logScaleSD <- ObjectiveFunctionOptions$logScaleSD
+  moment <- function(k) {
+    stats::integrate(
+      function(y) y^k * stats::dlnorm(y, sdlog = logScaleSD),
+      lower = 0,
+      upper = Inf,
+      rel.tol = 1e-10
+    )$value
+  }
+  expect_equal(
+    sqrt(moment(2) - moment(1)^2) / moment(1),
+    0.2,
+    tolerance = 1e-6
+  )
+})
+
+test_that("M3 with log scaling uses the default logScaleSD (#333)", {
+  # The example of #333: an LLOQ of 2 nmol/l and a value below it with
+  # simulated values of 3 and 1.5 nmol/l, with the standard deviation of the
+  # natural logarithm for a CV of 20%, from CV^2 = exp(sigma^2) - 1
+  sigma <- stats::uniroot(
+    function(s) sqrt(exp(s^2) - 1) - 0.2,
+    interval = c(0.01, 1),
+    tol = 1e-12
+  )$root
+  observed <- blqObservedData(blqDataSet())
+  for (simulated in c(3, 1.5)) {
+    terms <- blqCostTerms(
+      observed,
+      c(11, 6, simulated),
+      options = list(objectiveFunctionType = "m3"),
+      scaling = "log"
+    )
+    expect_equal(
+      terms$M3Contribution,
+      -2 * log10(stats::pnorm((log(2) - log(simulated)) / sigma)),
+      tolerance = singlePrecision,
+      info = paste("simulated value", simulated)
+    )
+  }
+})
+
 test_that("an LLOQ that is not positive stops log scaling and linear M3", {
   path <- testQuantity()$path
   expect_identical(
