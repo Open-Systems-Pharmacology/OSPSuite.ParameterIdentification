@@ -60,8 +60,9 @@ messages$errorTransformationValuesPerDataSet <- function(
     "{.arg {argument}} of the data transformations of ",
     mapping,
     " has {nValues} value{?s} for {nDataSets} observed data set{?s}. ",
-    "Set it again with {.fn setDataTransformations} without labels, with ",
-    "one value or one value per data set."
+    "Give one value, or one value per data set, with ",
+    "{.fn setDataTransformations} without labels, or add or remove data ",
+    "sets until their number matches."
   ))
 }
 

@@ -123,12 +123,12 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
   # Observed values without `yValues`
   expect_error(
     .calculateCensoredContribution(
-      observed = obsDf[c("xValues", "lloq")],
+      observed = as.data.frame(obsDf[c("xValues", "lloq")]),
       simulated = predDf,
       scaling = "lin",
       linScaleCV = 0.2
     ),
-    "yValues"
+    "not included"
   )
   # Simulated values without `xValues` and `yValues`
   expect_error(
@@ -2499,17 +2499,30 @@ test_that("a task applies the data transformations of each label to its data set
     tolerance = 1e-6
   )
 
-  # A number of values that does not match the data sets
+  # A number of values that does not match the data sets, before the first
+  # call, and between two calls
+  mismatch <- messages$errorTransformationValuesPerDataSet(
+    "xOffsets",
+    3,
+    2,
+    aciclovirPlasmaPaths[[1]]
+  )
   expect_error(
     ofv(dataSets, function(mapping) {
       mapping$setDataTransformations(xOffsets = c(0, 0.2, 0.3))
     }),
-    messages$errorTransformationValuesPerDataSet(
-      "xOffsets",
-      3,
-      2,
-      aciclovirPlasmaPaths[[1]]
-    ),
+    mismatch,
+    fixed = TRUE
+  )
+  task <- aciclovirTask(stats::setNames(
+    list(dataSets),
+    aciclovirPlasmaPaths[[1]]
+  ))
+  task$gridSearch(lower = -0.097, upper = -0.097, totalEvaluations = 1)
+  task$outputMappings[[1]]$setDataTransformations(xOffsets = c(0, 0.2, 0.3))
+  expect_error(
+    task$gridSearch(lower = -0.097, upper = -0.097, totalEvaluations = 1),
+    mismatch,
     fixed = TRUE
   )
 })

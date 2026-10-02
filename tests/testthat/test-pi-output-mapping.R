@@ -322,9 +322,33 @@ test_that("PIOutputMapping keeps the transformations by data set when data sets 
     c(dataSet2 = 0.2, dataSet3 = 0)
   )
 
+  # Values given before more data sets are added than there are values
+  # apply once removing a data set makes the numbers equal
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2))
+  outputMapping$addObservedDataSets(
+    c(unname(testObservedDataMultiple()), dataSet3)
+  )
+  expect_equal(outputMapping$dataTransformations$xOffsets, c(0.1, 0.2))
+  expect_error(
+    .transformationsByDataSet(
+      outputMapping$dataTransformations,
+      names(outputMapping$observedDataSets)
+    ),
+    messages$errorTransformationValuesPerDataSet("xOffsets", 2, 3),
+    fixed = TRUE
+  )
+  outputMapping$removeObservedDataSet("dataSet1")
+  outputMapping$addObservedDataSets(testObservedDataMultiple()$dataSet1)
+  expect_equal(
+    outputMapping$dataTransformations$xOffsets,
+    c(dataSet2 = 0.1, dataSet3 = 0.2, dataSet1 = 0)
+  )
+
   # A number of values that does not match the data sets
-  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2, 0.3))
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2, 0.3, 0.4))
   outputMapping$removeObservedDataSet("dataSet3")
+  outputMapping$removeObservedDataSet("dataSet1")
   expect_error(
     .transformationsByDataSet(
       outputMapping$dataTransformations,
@@ -333,7 +357,7 @@ test_that("PIOutputMapping keeps the transformations by data set when data sets 
     ),
     messages$errorTransformationValuesPerDataSet(
       "xOffsets",
-      3,
+      4,
       1,
       testQuantity$path
     ),
@@ -419,18 +443,33 @@ test_that("PIOutputMapping stops for labels that are not data sets of the mappin
 
 test_that("PIOutputMapping stops for offsets and factors that are NULL (#311)", {
   outputMapping <- twoDataSetsMapping()
-  for (arguments in list(
-    list(xOffsets = NULL),
-    list(labels = "dataSet1", yFactors = NULL)
-  )) {
-    expect_error(
-      do.call(outputMapping$setDataTransformations, arguments),
-      "NULL"
-    )
+  for (name in c("xOffsets", "yOffsets", "xFactors", "yFactors")) {
+    for (labels in list(NULL, "dataSet1")) {
+      arguments <- list(labels = labels)
+      arguments[name] <- list(NULL)
+      expect_error(
+        do.call(outputMapping$setDataTransformations, arguments),
+        "NULL",
+        info = name
+      )
+    }
   }
   expect_equal(
     outputMapping$dataTransformations,
     list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+  )
+})
+
+test_that("PIOutputMapping uses values given as a list as numbers (#311)", {
+  outputMapping <- twoDataSetsMapping()
+  outputMapping$setDataTransformations(yFactors = list(0.9))
+  outputMapping$setDataTransformations(labels = "dataSet2", yOffsets = 0.1)
+  dataSet3 <- testObservedDataMultiple()$dataSet2
+  dataSet3$name <- "dataSet3"
+  outputMapping$addObservedDataSets(dataSet3)
+  expect_identical(
+    outputMapping$dataTransformations$yFactors,
+    c(dataSet1 = 0.9, dataSet2 = 1, dataSet3 = 0.9)
   )
 })
 

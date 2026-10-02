@@ -19,8 +19,9 @@ comparison with simulation outcomes.}
 the data transformations, \code{xOffsets}, \code{yOffsets}, \code{xFactors} and
 \code{yFactors}. Each is one value for all data sets of the output mapping,
 or one value per observed data set, named by the data sets. Values
-given per data set before the data sets were added are kept in their
-order until the data sets are added. Before any call of
+given per data set while the number of data sets differs, for example
+before the data sets are added, are kept in their order, without
+names, until the numbers match. Before any call of
 \code{setDataTransformations()}, the offsets are 0 and the factors 1.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
@@ -181,9 +182,11 @@ Each offset and factor is one value, or one value per label, in the
 order of the labels. Without labels, it can also be one value per data
 set, in the order of the data sets. Such values stay with their data
 sets when data sets are added or removed. Values given per data set
-before the data sets are added apply in the order in which the data
-sets are added. The values are taken by their position, and their
-names are ignored.}
+while the number of data sets differs, for example before the data
+sets are added, apply in the order of the data sets once a call of
+\code{addObservedDataSets()} or \code{removeObservedDataSet()} makes the numbers
+equal. Until then, the parameter identification stops with an error.
+The values are taken by their position, and their names are ignored.}
     }
     \if{html}{\out{</div>}}
   }

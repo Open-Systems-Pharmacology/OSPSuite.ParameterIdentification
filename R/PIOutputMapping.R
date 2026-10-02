@@ -23,8 +23,9 @@ PIOutputMapping <- R6::R6Class(
     #'   the data transformations, `xOffsets`, `yOffsets`, `xFactors` and
     #'   `yFactors`. Each is one value for all data sets of the output mapping,
     #'   or one value per observed data set, named by the data sets. Values
-    #'   given per data set before the data sets were added are kept in their
-    #'   order until the data sets are added. Before any call of
+    #'   given per data set while the number of data sets differs, for example
+    #'   before the data sets are added, are kept in their order, without
+    #'   names, until the numbers match. Before any call of
     #'   `setDataTransformations()`, the offsets are 0 and the factors 1.
     dataTransformations = function(value) {
       if (missing(value)) {
@@ -120,12 +121,11 @@ PIOutputMapping <- R6::R6Class(
           private$.dataTransformations[[name]] <- values
         }
       }
-      private$.bindTransformationsToDataSets()
     },
 
     # Names values given per data set without labels by the data sets, once
-    # there is one value per data set, so that they stay with their data sets
-    # when data sets are added or removed
+    # a call makes the number of data sets equal to the number of values, so
+    # that they stay with their data sets when data sets are added or removed
     .bindTransformationsToDataSets = function() {
       dataSetNames <- names(private$.observedDataSets)
       for (name in names(private$.dataTransformations)) {
@@ -211,6 +211,7 @@ PIOutputMapping <- R6::R6Class(
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
         private$.addDataSetTransformations(data[[idx]]$name)
       }
+      private$.bindTransformationsToDataSets()
 
       # Handle optional weights
       if (!is.null(weights)) {
@@ -234,6 +235,7 @@ PIOutputMapping <- R6::R6Class(
           ]
         }
       }
+      private$.bindTransformationsToDataSets()
       invisible(self)
     },
 
@@ -280,9 +282,11 @@ PIOutputMapping <- R6::R6Class(
     #'   order of the labels. Without labels, it can also be one value per data
     #'   set, in the order of the data sets. Such values stay with their data
     #'   sets when data sets are added or removed. Values given per data set
-    #'   before the data sets are added apply in the order in which the data
-    #'   sets are added. The values are taken by their position, and their
-    #'   names are ignored.
+    #'   while the number of data sets differs, for example before the data
+    #'   sets are added, apply in the order of the data sets once a call of
+    #'   `addObservedDataSets()` or `removeObservedDataSet()` makes the numbers
+    #'   equal. Until then, the parameter identification stops with an error.
+    #'   The values are taken by their position, and their names are ignored.
     setDataTransformations = function(
       labels = NULL,
       xOffsets = 0,
@@ -295,6 +299,11 @@ PIOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(xFactors)
       ospsuite.utils::validateIsNumeric(yFactors)
       ospsuite.utils::validateIsNumeric(yOffsets)
+      # Values given as a list are used as plain numbers
+      xOffsets <- unlist(xOffsets)
+      yOffsets <- unlist(yOffsets)
+      xFactors <- unlist(xFactors)
+      yFactors <- unlist(yFactors)
 
       if (is.list(labels)) {
         labels <- as.character(unlist(labels))
