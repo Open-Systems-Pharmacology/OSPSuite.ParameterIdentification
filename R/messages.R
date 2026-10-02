@@ -16,6 +16,28 @@ messages$errorWeightsNames <- function() {
   "All weights must be a named list with names matching observed data set names."
 }
 
+messages$errorTransformationLabels <- function(labels, dataSetNames) {
+  if (length(dataSetNames) == 0) {
+    return(ospsuite.utils::cliFormat(paste0(
+      "Cannot set data transformations for {.val {labels}}: the output ",
+      "mapping has no observed data sets. Add them with ",
+      "{.fn addObservedDataSets} first."
+    )))
+  }
+  ospsuite.utils::cliFormat(paste0(
+    "{cli::qty(length(labels))}Cannot set data transformations for ",
+    "{.val {labels}}: not {?an observed data set/observed data sets} of the ",
+    "output mapping, which has {.val {dataSetNames}}."
+  ))
+}
+
+messages$errorTransformationValues <- function(argument, nLabels) {
+  ospsuite.utils::cliFormat(paste0(
+    "{.arg {argument}} must have one value, or one value for each of the ",
+    "{nLabels} labels."
+  ))
+}
+
 messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",

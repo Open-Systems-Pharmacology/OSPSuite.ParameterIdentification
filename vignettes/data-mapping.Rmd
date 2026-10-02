@@ -230,6 +230,10 @@ with the corresponding simulation output. This is done per dataset or globally
 for all datasets in the mapping. Transformations allow offsets and scaling
 factors to be applied to x- and y-values, for example to account for systematic
 shifts between experiments or to align starting points across datasets.
+Without `labels`, the transformations apply to all datasets of the mapping,
+also to datasets added later. With `labels`, they apply only to the named
+datasets, which must be added to the mapping first, and the other datasets
+keep their transformations.
 
 ```{r set-transformations}
 outputMapping$setDataTransformations(

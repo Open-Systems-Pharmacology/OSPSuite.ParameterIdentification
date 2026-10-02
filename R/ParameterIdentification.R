@@ -257,19 +257,18 @@ ParameterIdentification <- R6::R6Class(
               quantitiesOrPaths = outputMapping$quantity,
               simulation = simulation
             )
-            for (dataset in outputMapping$observedDataSets) {
-              label <- dataset$name
-              xFactor <- outputMapping$dataTransformations$xFactors
-              if (length(xFactor) != 1) {
-                xFactor <- xFactor[[label]]
-              }
-              xOffset <- outputMapping$dataTransformations$xOffsets
-              if (length(xOffset) != 1) {
-                xOffset <- xOffset[[label]]
-              }
+            observedDataSets <- outputMapping$observedDataSets
+            transformations <- .transformationsByDataSet(
+              outputMapping$dataTransformations,
+              names(observedDataSets)
+            )
+            for (label in names(observedDataSets)) {
+              dataset <- observedDataSets[[label]]
               xVals <- ospsuite::toBaseUnit(
                 ospsuite::ospDimensions$Time,
-                values = (dataset$xValues + xOffset) * xFactor,
+                values = (dataset$xValues +
+                  transformations$xOffsets[[label]]) *
+                  transformations$xFactors[[label]],
                 unit = dataset$xUnit
               )
               simulation$outputSchema$addTimePoints(xVals)

@@ -15,7 +15,11 @@ instances to align and compare simulation outputs with empirical data.
     \item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for
 comparison with simulation outcomes.}
 
-    \item{\code{dataTransformations}}{A named list of factors and offsets.}
+    \item{\code{dataTransformations}}{A named list of the offsets and factors of
+the data transformations, \code{xOffsets}, \code{yOffsets}, \code{xFactors} and
+\code{yFactors}. Each holds the values of the last call of
+\code{setDataTransformations()} without labels, or, after a call with
+labels, one value per observed data set, named by the data sets.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
@@ -154,12 +158,24 @@ approximation for geometric standard deviations.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{labels}}{List of dataset labels for targeted transformations.
-Absence of labels applies transformations globally.}
-      \item{\code{xOffsets}}{Numeric list/value for X-offset adjustments.}
-      \item{\code{yOffsets}}{Numeric list/value for Y-offset adjustments.}
-      \item{\code{xFactors}}{Numeric list/value for X-scaling factors.}
-      \item{\code{yFactors}}{Numeric list/value for Y-scaling factors.}
+      \item{\code{labels}}{Names of the observed data sets to transform. Without
+labels, the transformations apply to all data sets of the output
+mapping, also to data sets added later. With labels, they apply only
+to these data sets, which must be added to the output mapping first,
+and the other data sets keep their transformations. A data set added
+later gets the transformations of the last call without labels.}
+      \item{\code{xOffsets}}{Numeric, the offset of the x values: one value, or one
+value per label. Default is \code{0}.}
+      \item{\code{yOffsets}}{Numeric, the offset of the y values: one value, or one
+value per label. Default is \code{0}.}
+      \item{\code{xFactors}}{Numeric, the factor of the x values: one value, or one
+value per label. Default is \code{1}.}
+      \item{\code{yFactors}}{Numeric, the factor of the y values: one value, or one
+value per label. Default is \code{1}.
+
+An offset or factor that is not given is set to its default, also
+with labels: each call sets all four transformations of the data sets
+it applies to.}
     }
     \if{html}{\out{</div>}}
   }

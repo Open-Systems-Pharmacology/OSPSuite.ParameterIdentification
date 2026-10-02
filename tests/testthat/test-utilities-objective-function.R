@@ -2107,6 +2107,123 @@ test_that("prepared observed data hold the transformed LLOQ and the value below 
   }
 })
 
+test_that("the LLOQ of each data set is transformed with the transformations of its label (#311)", {
+  # Two data sets with LLOQs of 4 and 2 nmol/l, the first with a y offset of
+  # -1 and a y factor of 3: its LLOQ becomes (4 - 1) * 3 = 9, the transformed
+  # value of 0 is (0 - 1) * 3 = -3, and its value below the LLOQ, stored as
+  # half the LLOQ, becomes (2 - 1) * 3 = 3
+  dataSets <- list(
+    blqDataSet("first", lloq = 4, yValues = c(20, 10, 2)),
+    blqDataSet("second", lloq = 2)
+  )
+  expected <- list(
+    name = rep(c("first", "second"), each = 3),
+    yValues = c(57, 27, 3, 10, 5, 1) * nmolPerL,
+    lloq = rep(c(9, 2), each = 3) * nmolPerL,
+    transformedZero = rep(c(-3, 0), each = 3) * nmolPerL,
+    blqValue = rep(c(3, 1), each = 3) * nmolPerL
+  )
+  preparedWithLabels <- function(setTransformations) {
+    mapping <- PIOutputMapping$new(quantity = testQuantity())
+    mapping$addObservedDataSets(dataSets)
+    setTransformations(mapping)
+    observed <- withoutLloqWarnings(.prepareObservedData(mapping))
+    observed[names(expected)]
+  }
+
+  # Labels for one data set, and for both in another order
+  expect_equal(
+    preparedWithLabels(function(mapping) {
+      mapping$setDataTransformations(
+        labels = "first",
+        yOffsets = -1,
+        yFactors = 3
+      )
+    }),
+    expected,
+    tolerance = singlePrecision
+  )
+  expect_equal(
+    preparedWithLabels(function(mapping) {
+      mapping$setDataTransformations(
+        labels = c("second", "first"),
+        yOffsets = c(0, -1),
+        yFactors = c(1, 3)
+      )
+    }),
+    expected,
+    tolerance = singlePrecision
+  )
+})
+
+# A copy of a data set with its values transformed as by the data
+# transformations of an output mapping
+transformedCopy <- function(
+  dataSet,
+  xOffset = 0,
+  xFactor = 1,
+  yOffset = 0,
+  yFactor = 1
+) {
+  copy <- ospsuite::DataSet$new(name = dataSet$name)
+  copy$xDimension <- dataSet$xDimension
+  copy$xUnit <- dataSet$xUnit
+  copy$yDimension <- dataSet$yDimension
+  copy$yUnit <- dataSet$yUnit
+  copy$molWeight <- dataSet$molWeight
+  copy$setValues(
+    xValues = (dataSet$xValues + xOffset) * xFactor,
+    yValues = (dataSet$yValues + yOffset) * yFactor
+  )
+  copy
+}
+
+test_that("a task applies the data transformations of each label to its data set (#311)", {
+  # The objective function value with the data sets of
+  # `testObservedDataMultiple()` in one output mapping
+  ofv <- function(dataSets, setTransformations = function(mapping) NULL) {
+    task <- aciclovirTask(stats::setNames(
+      list(dataSets),
+      aciclovirPlasmaPaths[[1]]
+    ))
+    setTransformations(task$outputMappings[[1]])
+    task$gridSearch(lower = -0.097, upper = -0.097, totalEvaluations = 1)$ofv
+  }
+  dataSets <- testObservedDataMultiple()
+
+  # Labels for one data set
+  expect_equal(
+    ofv(dataSets, function(mapping) {
+      mapping$setDataTransformations(
+        labels = "dataSet2",
+        xOffsets = 0.2,
+        yFactors = 0.8
+      )
+    }),
+    ofv(list(
+      dataSets$dataSet1,
+      transformedCopy(dataSets$dataSet2, xOffset = 0.2, yFactor = 0.8)
+    )),
+    tolerance = 1e-6
+  )
+
+  # Labels for both data sets, in another order
+  expect_equal(
+    ofv(dataSets, function(mapping) {
+      mapping$setDataTransformations(
+        labels = c("dataSet2", "dataSet1"),
+        xOffsets = c(0.2, 0),
+        yFactors = c(0.8, 1.2)
+      )
+    }),
+    ofv(list(
+      transformedCopy(dataSets$dataSet1, yFactor = 1.2),
+      transformedCopy(dataSets$dataSet2, xOffset = 0.2, yFactor = 0.8)
+    )),
+    tolerance = 1e-6
+  )
+})
+
 test_that("the LLOQ rule compares the values below the LLOQ with the transformed LLOQ", {
   # The simulated value at the value below the LLOQ is 0.25 nmol/l below or
   # 0.5 nmol/l above the LLOQ: the residual is 0 below the LLOQ and the

@@ -669,7 +669,11 @@
 #' @noRd
 .addObservedData <- function(dataCombined, outputMapping) {
   observedDataSets <- outputMapping$observedDataSets
-  transformations <- outputMapping$dataTransformations
+  # `DataCombined` takes the values in the order of `forNames`
+  transformations <- .transformationsByDataSet(
+    outputMapping$dataTransformations,
+    names(observedDataSets)
+  )
   dataCombined$addDataSets(
     observedDataSets,
     groups = outputMapping$quantity$path
