@@ -620,12 +620,13 @@ cases$transformationsBetweenCalls <- structure(
   expectChange = TRUE
 )
 
-# A data set added between two calls, at times that the simulations do not
-# reach, because their output time points are set at the first call: with
-# least squares, times after the last simulated time, and with M3, censored
-# values at times that were not simulated. The cost is infinite, with a
-# warning that says why. The base commit keeps the observed data it read until
-# run() or the end of estimateCI(), so it ignores the new data set
+# A data set added between two calls, at times that were not output time
+# points, because these are set at the first call: with least squares, times
+# after the last simulated time, where the cost is infinite, with a warning
+# that says why, and with M3, censored values at times inside the simulated
+# times, which are interpolated (#320). The base commit keeps the observed
+# data it read until run() or the end of estimateCI(), so it ignores the new
+# data set
 cases$observedTimesBetweenCalls <- structure(
   function() {
     laterData <- function(xValues, yValues, lloq = NULL) {

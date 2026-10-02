@@ -1515,9 +1515,6 @@ severalDataSetsTask <- function(lloq = FALSE) {
   task$outputMappings[[1]]$setDataWeights(
     list(dataSet1 = 2, dataSet2 = seq(1, 0.1, length.out = 10))
   )
-  # M3 compares the censored observations with the simulated values at the
-  # same times, so the transformed times must be times of the simulation
-  # results, which are single precision numbers
   task$outputMappings[[2]]$setDataTransformations(
     xOffsets = 2,
     xFactors = 1.5,
@@ -1869,41 +1866,44 @@ test_that("new observed times without simulated values are warned about", {
     searchesAroundNewData(laterData(c(97, 1500, 3000), c(1, 0.05, 0.01)))
   )
 
-  # M3 with censored values at times that were not simulated
+  # M3 with censored values at times after the last simulated time
+  m3 <- list(objectiveFunctionType = "m3", linScaleCV = 0.2)
   expectWarnedCalls(searchesAroundNewData(
-    laterData(c(97, 193, 1013), rep(0.1, 3), lloq = 0.5),
+    laterData(c(97, 1500, 3000), rep(0.1, 3), lloq = 0.5),
     lloq = 0.5,
-    options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+    options = m3
   ))
 
-  # With least squares, new times inside the simulated times are
-  # interpolated, without a warning
-  inside <- searchesAroundNewData(laterData(c(97, 193, 1013), c(3, 2, 0.5)))
-  expect_length(inside$after$warnings, 0)
-  expect_true(all(is.finite(inside$after$ofv)))
-  expect_false(identical(inside$after$ofv, inside$before$ofv))
+  # New times inside the simulated times are interpolated, without a
+  # warning, with least squares and for the censored values of M3 (#320)
+  for (inside in list(
+    searchesAroundNewData(laterData(c(97, 193, 1013), c(3, 2, 0.5))),
+    searchesAroundNewData(
+      laterData(c(97, 193, 1013), rep(0.1, 3), lloq = 0.5),
+      lloq = 0.5,
+      options = m3
+    )
+  )) {
+    expect_length(inside$after$warnings, 0)
+    expect_true(all(is.finite(inside$after$ofv)))
+    expect_false(identical(inside$after$ofv, inside$before$ofv))
+  }
 
   # Observed times that were output time points at the first call are not
   # new. With M3 and x transformations set before the first call, the
-  # censored values have no simulated value at exactly their times, which
-  # are not exact in single precision, so the cost is infinite in every
-  # call. A later call without a change does not warn about new times.
+  # censored values are at times that are not single-precision numbers, and
+  # their simulated values are interpolated (#320). A later call without a
+  # change does not warn about new times.
   task <- testPiTask()
-  task$configuration$objectiveFunctionOptions <- list(
-    objectiveFunctionType = "m3",
-    linScaleCV = 0.2
-  )
+  task$configuration$objectiveFunctionOptions <- m3
   mapping <- task$outputMappings[[1]]
   firstDataSet <- mapping$observedDataSets[[1]]
   firstDataSet$LLOQ <- 0.5
   mapping$setDataTransformations(xOffsets = 0.1, xFactors = 1.05)
   first <- gridSearch(task)
-  expect_identical(first$ofv, c(Inf, Inf))
+  expect_length(first$warnings, 0)
+  expect_true(all(is.finite(first$ofv)))
   again <- gridSearch(task)
-  expect_false(
-    messages$warningObservedTimesNotSimulated(1, mapping$quantity$path) %in%
-      again$warnings
-  )
   expect_identical(again, first)
 })
 
@@ -1939,6 +1939,186 @@ test_that("missing simulated values are left out, with and without an LLOQ", {
       costTerms(lloq, list(xValues = c(0, 1e4), yValues = c(0, 1)))
     )
   }
+})
+
+# Single-precision simulated times (#320). The simulation engine returns the
+# simulated times as single-precision numbers, here computed independently by
+# writing the values as 4-byte numbers.
+asSinglePrecision <- function(x) {
+  readBin(writeBin(x, raw(), size = 4), "double", size = 4, n = length(x))
+}
+# Times in min of the examples of #320, which are not single-precision
+# numbers: 4 h with `xOffsets = 0.1, xFactors = 1.05` is above its single-
+# precision value, and 32.2 h too
+transformedTime <- (4 + 0.1) * 1.05 * 60
+lastObservedTime <- 32.2 * 60
+
+test_that("an observed time outside the simulated times by single-precision rounding takes the simulated value at the boundary (#320)", {
+  lastTime <- asSinglePrecision(lastObservedTime)
+  expect_lt(lastTime, lastObservedTime)
+  simulatedX <- c(0, 720, 1440, lastTime)
+  simulatedY <- c(0, 4, 2, 1)
+  # 360 min is halfway between 0 and 720 min
+  expect_identical(
+    .simulatedAtObservedTimes(simulatedX, simulatedY, c(360, lastObservedTime)),
+    c(2, 1)
+  )
+  # A time after the last simulated time by more than single precision has
+  # no simulated value
+  expect_identical(
+    .simulatedAtObservedTimes(simulatedX, simulatedY, lastTime * (1 + 1e-5)),
+    NA_real_
+  )
+
+  # Before the first simulated time, the same
+  firstTime <- asSinglePrecision(transformedTime)
+  simulatedX <- c(firstTime, 360)
+  simulatedY <- c(3, 1)
+  expect_identical(
+    .simulatedAtObservedTimes(
+      simulatedX,
+      simulatedY,
+      firstTime * c(1 - 1e-7, 1 - 1e-5)
+    ),
+    c(3, NA_real_)
+  )
+
+  # With one simulated time
+  expect_identical(
+    .simulatedAtObservedTimes(
+      lastTime,
+      2,
+      c(lastObservedTime, lastTime * (1 + 1e-5))
+    ),
+    c(2, NA_real_)
+  )
+})
+
+test_that("M3 interpolates the simulated values of the censored values (#320)", {
+  # Censored values (LLOQ 2) at a time that is not a single-precision
+  # number, simulated at its single-precision value, and at 300 min, which
+  # is not simulated, with a measured value at 60 min
+  simulatedTime <- asSinglePrecision(transformedTime)
+  observed <- data.frame(
+    xValues = c(60, transformedTime, 300),
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = c(5, 1, 1),
+    lloq = 2
+  )
+  simulated <- data.frame(
+    xValues = c(0, 60, simulatedTime, 360),
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = c(0.5, 6, 3, 1)
+  )
+  for (scaling in c("lin", "log")) {
+    logged <- if (scaling == "log") log else identity
+    # Linear interpolation, on the scale of the cost, between the simulated
+    # values at the simulated time and at 360 min
+    simulatedY <- logged(3) +
+      (logged(1) - logged(3)) *
+        (c(transformedTime, 300) - simulatedTime) /
+        (360 - simulatedTime)
+    stDev <- if (scaling == "log") 0.2 else 0.2 * 2
+    expected <- sum(-2 * log10(stats::pnorm((logged(2) - simulatedY) / stDev)))
+    expect_equal(
+      .calculateCensoredContribution(
+        observed = transform(
+          observed,
+          yValues = logged(yValues),
+          lloq = logged(lloq)
+        ),
+        simulated = transform(simulated, yValues = logged(yValues)),
+        scaling = scaling,
+        linScaleCV = 0.2,
+        logScaleSD = 0.2
+      ),
+      expected,
+      tolerance = 1e-10,
+      info = scaling
+    )
+  }
+})
+
+test_that("observed times outside the simulated times only by single-precision rounding are simulated (#320)", {
+  # The last observed time was not an output time point, and the simulation
+  # ends at the single-precision value of 32.2 h
+  lastTime <- asSinglePrecision(lastObservedTime)
+  hasUnsimulatedTimes <- function(lastObserved) {
+    .hasUnsimulatedObservedTimes(
+      simulated = list(
+        xValues = c(0, 60, 120, lastTime),
+        yValues = c(0, 10, 5, 1)
+      ),
+      observed = list(
+        xValues = c(60, 120, lastObserved),
+        yValues = c(10, 5, 1),
+        lloq = rep(NA_real_, 3)
+      ),
+      costControl = list(objectiveFunctionType = "lsq", scaling = "lin"),
+      outputTimePoints = c(60, 120)
+    )
+  }
+  expect_false(hasUnsimulatedTimes(lastObservedTime))
+  expect_true(hasUnsimulatedTimes(lastTime * (1 + 1e-5)))
+})
+
+test_that("single-precision simulated times give a finite cost in a task (#320)", {
+  # The examples of #320 with the Aciclovir model
+  newDataSet <- function(xValues, yValues, lloq = NULL) {
+    dataSet <- ospsuite::DataSet$new(name = "observed")
+    dataSet$xDimension <- ospsuite::ospDimensions$Time
+    dataSet$xUnit <- "h"
+    dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (mass)`
+    dataSet$yUnit <- "mg/l"
+    dataSet$molWeight <- 225.21
+    dataSet$setValues(xValues = xValues, yValues = yValues)
+    if (!is.null(lloq)) {
+      dataSet$LLOQ <- lloq
+    }
+    dataSet
+  }
+  ofv <- function(dataSet, options = list(), xOffsets = 0, xFactors = 1) {
+    task <- aciclovirTask(stats::setNames(
+      list(dataSet),
+      aciclovirPlasmaPaths[[1]]
+    ))
+    task$outputMappings[[1]]$setDataTransformations(
+      xOffsets = xOffsets,
+      xFactors = xFactors
+    )
+    task$configuration$objectiveFunctionOptions <- options
+    expect_no_warning(
+      value <- task$gridSearch(
+        lower = -0.097,
+        upper = -0.097,
+        totalEvaluations = 1
+      )$ofv
+    )
+    value
+  }
+  m3 <- list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+
+  # M3 with censored values (LLOQ 0.2 mg/l) at 4, 6 and 8 h, with x
+  # transformations
+  censored <- newDataSet(
+    c(0.5, 1, 2, 3, 4, 6, 8),
+    c(2.9, 3.1, 1.9, 1.3, 0.1, 0.1, 0.1),
+    lloq = 0.2
+  )
+  expect_true(is.finite(ofv(censored, m3, xOffsets = 0.1, xFactors = 1.05)))
+  # M3 with a censored value at 16.01 h, without transformations
+  expect_true(is.finite(ofv(
+    newDataSet(c(0.5, 1, 2, 3, 16.01), c(2.9, 3.1, 1.9, 1.3, 0.1), lloq = 0.2),
+    m3
+  )))
+  # Least squares with the last observation at 32.2 h, after the output
+  # intervals, which end at 24 h
+  expect_true(is.finite(ofv(newDataSet(
+    c(0.5, 1, 2, 4, 8, 12, 24, 32.2),
+    c(2.9, 3.1, 1.9, 1.2, 0.4, 0.15, 0.02, 0.01)
+  ))))
 })
 
 # The LLOQ with y transformations (#331), for the example of the issue: values
@@ -2660,9 +2840,9 @@ test_that("values without an LLOQ are not censored by the LLOQ of another data s
     tolerance = singlePrecision
   )
 
-  # A value of the second data set at a time that was not simulated is
-  # interpolated, so it has a simulated value. The censored value of the
-  # first data set at such a time has none.
+  # Values at a time that was not simulated are interpolated, so they have a
+  # simulated value, also the censored value of the first data set (#320).
+  # After the last simulated time, they have none.
   costControl <- list(objectiveFunctionType = "m3", scaling = "lin")
   hasUnsimulatedTimes <- function(simulatedTimes) {
     .hasUnsimulatedObservedTimes(
@@ -2676,7 +2856,8 @@ test_that("values without an LLOQ are not censored by the LLOQ of another data s
     )
   }
   expect_false(hasUnsimulatedTimes(c(0, 60, 180, 240)))
-  expect_true(hasUnsimulatedTimes(c(0, 60, 120, 240)))
+  expect_false(hasUnsimulatedTimes(c(0, 60, 120, 240)))
+  expect_true(hasUnsimulatedTimes(c(0, 60, 120)))
 })
 
 test_that("a value at the LLOQ is not censored", {

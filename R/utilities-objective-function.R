@@ -263,11 +263,60 @@
   )
 }
 
+#' Relative tolerance of single precision
+#'
+#' @description ospsuite stores the values of observed data and the simulation
+#'   engine returns the simulated times in single precision, with a relative
+#'   rounding error of about 6e-8. Values computed from them in double
+#'   precision can differ from the single-precision values by that much, and
+#'   are compared with this relative tolerance.
+#' @keywords internal
+#' @noRd
+.singlePrecisionTolerance <- 1e-6
+
+#' Observed times within the simulated times
+#'
+#' @description Moves an observed time that lies before the first or after
+#'   the last simulated time by less than `.singlePrecisionTolerance` of that
+#'   time to it. The simulated times are single-precision values of the
+#'   output time points, which include the observed times, so an observed
+#'   time can lie outside them only by their rounding. Other times are kept.
+#'
+#' @param observedX Observed times.
+#' @param simulatedX Simulated times, finite.
+#'
+#' @return `observedX`, with the times outside the simulated times only by
+#'   single-precision rounding replaced by the first or the last simulated
+#'   time.
+#' @keywords internal
+#' @noRd
+.withinSimulatedTimes <- function(observedX, simulatedX) {
+  if (length(simulatedX) == 0) {
+    return(observedX)
+  }
+  firstX <- min(simulatedX)
+  lastX <- max(simulatedX)
+  afterLast <- which(
+    observedX > lastX &
+      observedX - lastX <= .singlePrecisionTolerance * abs(lastX)
+  )
+  beforeFirst <- which(
+    observedX < firstX &
+      firstX - observedX <= .singlePrecisionTolerance * abs(firstX)
+  )
+  observedX[afterLast] <- lastX
+  observedX[beforeFirst] <- firstX
+  observedX
+}
+
 #' Simulated values at the observed times
 #'
 #' @description Interpolates the simulated values linearly at the observed
 #'   times. With a single simulated time, takes the simulated value at an
-#'   observed time equal to it, and `NA` at other times.
+#'   observed time equal to it, and `NA` at other times. An observed time
+#'   outside the simulated times only by single-precision rounding takes the
+#'   value at the first or the last simulated time (see
+#'   `.withinSimulatedTimes()`). Other times outside them get `NA`.
 #'
 #' @param simulatedX,simulatedY Simulated times and values, finite and with
 #'   times of at least zero.
@@ -277,6 +326,7 @@
 #' @keywords internal
 #' @noRd
 .simulatedAtObservedTimes <- function(simulatedX, simulatedY, observedX) {
+  observedX <- .withinSimulatedTimes(observedX, simulatedX)
   if (length(unique(simulatedX)) > 1) {
     return(stats::approx(simulatedX, simulatedY, xout = observedX)$y)
   }
@@ -410,18 +460,11 @@
     censoredContribution <- .calculateCensoredContribution(
       observed = data.frame(
         xValues = observedX,
-        xUnit = observed$xUnit,
-        xDimension = observed$xDimension[keepObserved],
         yValues = observedY,
         lloq = lloq[keepObserved],
         transformedZero = observed$transformedZero[keepObserved]
       ),
-      simulated = data.frame(
-        xValues = curve$xValues,
-        xUnit = observed$xUnit,
-        xDimension = ospsuite::ospDimensions$Time,
-        yValues = curve$yValues
-      ),
+      simulated = curve,
       scaling = costControl$scaling,
       linScaleCV = costControl$linScaleCV %||% NULL,
       logScaleSD = costControl$logScaleSD %||% NULL
@@ -497,7 +540,8 @@
     # the LLOQ, or minus half the LLOQ for the value below it, leaves a value
     # close to 0 instead of 0
     lowest <- if (isM3) observed$blqValue else observed$lloq
-    notPositive <- hasLloq & lowest <= 1e-6 * abs(lloqBefore)
+    notPositive <- hasLloq &
+      lowest <= .singlePrecisionTolerance * abs(lloqBefore)
   } else if (isM3) {
     notPositive <- hasLloq & lloqBefore <= 0
   } else {
@@ -523,11 +567,11 @@
 #' @description Whether observed data of an output mapping that enter its cost
 #'   are at times that were not output time points of the simulation when its
 #'   batch was built, and have no simulated value there. That is the case for
-#'   such a time outside the simulated times, where the simulated values
-#'   cannot be interpolated, and, with the M3 method, for a censored value at
-#'   such a time that was not simulated, because
-#'   `.calculateCensoredContribution()` needs a simulated value at exactly its
-#'   time. The cost of the output mapping is then infinite.
+#'   such a time outside the simulated times, beyond their single-precision
+#'   rounding, where the simulated values cannot be interpolated (see
+#'   `.simulatedAtObservedTimes()`). The cost of the output mapping is then
+#'   infinite. Times inside the simulated times are interpolated, also for
+#'   the censored values of the M3 method.
 #'
 #' @param simulated The simulated values of the output mapping (see
 #'   `.simulatedValues()`).
@@ -548,12 +592,10 @@
   costControl,
   outputTimePoints
 ) {
-  if (costControl$scaling == "log") {
-    observedY <- observed$logYValues
-    lloq <- observed$logLloq
+  observedY <- if (costControl$scaling == "log") {
+    observed$logYValues
   } else {
-    observedY <- observed$yValues
-    lloq <- observed$lloq
+    observed$yValues
   }
   # The observed values that enter the cost (see `.mappingCostTerms()`), at
   # times that were no output time points
@@ -566,22 +608,9 @@
     return(FALSE)
   }
 
-  outside <- observed$xValues < min(simulatedX) |
-    observed$xValues > max(simulatedX)
-  if (any(newTimes & outside)) {
-    return(TRUE)
-  }
-  if (costControl$objectiveFunctionType != "m3" || all(is.na(lloq[enters]))) {
-    return(FALSE)
-  }
-  # As in `.calculateCensoredContribution()`: a value below its LLOQ is
-  # censored, a value without an LLOQ is not, and `merge()` finds the
-  # simulated value of a censored value by its time, compared as by
-  # `as.character()`
-  censored <- !is.na(lloq) & observedY < lloq
-  simulatedTimes <- as.character(simulatedX)
-  notSimulated <- !(as.character(observed$xValues) %in% simulatedTimes)
-  any(newTimes & censored & notSimulated)
+  observedX <- .withinSimulatedTimes(observed$xValues, simulatedX)
+  outside <- observedX < min(simulatedX) | observedX > max(simulatedX)
+  any(newTimes & outside)
 }
 
 #' Values that enter the cost
@@ -1057,13 +1086,16 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #' enhancing overall model cost assessment with respect to detection limits.
 #'
 #' @param observed Data frame containing observed data, must include 'lloq',
-#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns. An observation
-#'   below its LLOQ is censored. An observation at its LLOQ, or without an
-#'   LLOQ (`NA`), is not censored. An optional 'transformedZero'
-#'   column holds the transformed value of 0 of each observation (see
-#'   `.prepareObservedData()`), 0 if it is missing.
-#' @param simulated Data frame containing simulated data, must include
-#'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns.
+#'   'xValues' and 'yValues' columns. An observation below its LLOQ is
+#'   censored. An observation at its LLOQ, or without an LLOQ (`NA`), is not
+#'   censored. An optional 'transformedZero' column holds the transformed
+#'   value of 0 of each observation (see `.prepareObservedData()`), 0 if it
+#'   is missing.
+#' @param simulated Data frame or list containing simulated data, with
+#'   'xValues' and 'yValues', in the same units as the observed data. The
+#'   simulated value of a censored observation is interpolated at its time
+#'   with `.simulatedAtObservedTimes()`, as for the least-squares part of the
+#'   cost, so the simulated times do not need to include it.
 #' @param scaling Character string specifying the scaling method; should be one
 #'   of the predefined scaling options.
 #' @param linScaleCV Numeric, coefficient used to calculate standard deviation
@@ -1107,25 +1139,15 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     !is.na(observed$lloq) &
       (observed$yValues < observed$lloq),
   ]
-  # `merge()` sorts the rows by time, so the LLOQ of each censored value is
-  # merged along with it, to stay with the simulated value at its time when
-  # the data sets of an output mapping have different LLOQs
-  keys <- c("xValues", "xUnit", "xDimension")
-  simulatedCensored <- merge(
-    observedCensored[c(keys, "lloq", "transformedZero")],
-    simulated[c(keys, "yValues")],
-    by = keys,
-    all.x = TRUE
-  )
 
   # No censored data to process
-  if (nrow(simulatedCensored) == 0) {
+  if (nrow(observedCensored) == 0) {
     return(0)
   }
 
   if (scaling == "lin" && !is.null(linScaleCV)) {
     stDev <- abs(
-      linScaleCV * (simulatedCensored$lloq - simulatedCensored$transformedZero)
+      linScaleCV * (observedCensored$lloq - observedCensored$transformedZero)
     )
   } else if (scaling == "log" && !is.null(logScaleSD)) {
     stDev <- logScaleSD
@@ -1133,8 +1155,16 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     stop("Scaling method and scaling parameters are not compatible.")
   }
 
+  # The simulated values at the times of the censored values, interpolated
+  # as for the least-squares part of the cost, so that a censored value needs
+  # no simulated value at exactly its time
+  simulatedCensored <- .simulatedAtObservedTimes(
+    simulated$xValues,
+    simulated$yValues,
+    observedCensored$xValues
+  )
   censoredProbabilities <- stats::pnorm(
-    (simulatedCensored$lloq - simulatedCensored$yValues) / stDev
+    (observedCensored$lloq - simulatedCensored) / stDev
   )
   censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
   censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)

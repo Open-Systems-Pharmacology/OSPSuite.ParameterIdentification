@@ -183,9 +183,9 @@ ParameterIdentification <- R6::R6Class(
       # first call. After a change of the x values of the observed data (for
       # example of `xOffsets` or `xFactors`) or with a new data set, the
       # simulated values at new observed times are therefore interpolated
-      # between the output time points of the first call. A new observed time
-      # outside the simulated times, or a censored value at a new time with
-      # the M3 method, has no simulated value, so the cost of its output
+      # between the output time points of the first call, also for the
+      # censored values of the M3 method. A new observed time outside the
+      # simulated times has no simulated value, so the cost of its output
       # mapping is infinite. `.checkObservedTimes()` warns about it at the
       # first evaluation of the call; it has nothing to check when the
       # batches are built below, from the current observed data.
