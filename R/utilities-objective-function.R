@@ -1121,6 +1121,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   logScaleSD = NULL
 ) {
   ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
+  ospsuite.utils::validateIsIncluded(c("xValues", "yValues"), names(simulated))
   ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
   ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
 

@@ -133,6 +133,16 @@ test_that("PIOutputMapping applies values without labels by position, also named
     )
   )
 
+  # Values named by the data sets, in another order, are taken by name
+  outputMapping$setDataTransformations(
+    xOffsets = c(dataSet2 = 0.2, dataSet1 = 0),
+    yFactors = c(second = 3, first = 4)
+  )
+  expect_equal(
+    outputMapping$dataTransformations,
+    list(xOffsets = c(0, 0.2), yOffsets = 0, xFactors = 1, yFactors = c(3, 4))
+  )
+
   # Labels then keep the values of the other data sets
   outputMapping$setDataTransformations(labels = "dataSet1", yOffsets = 1)
   expect_equal(
@@ -176,6 +186,22 @@ test_that("PIOutputMapping sets the transformations of labeled data sets (#311)"
       xOffsets = c(dataSet1 = 0, dataSet2 = 0),
       yOffsets = c(dataSet1 = 0.5, dataSet2 = 0.5),
       xFactors = c(dataSet1 = 2, dataSet2 = 3),
+      yFactors = c(dataSet1 = 1, dataSet2 = 1)
+    )
+  )
+
+  # Labels as a list, as the documentation of earlier versions described,
+  # and values named by the labels in another order, taken by name
+  outputMapping$setDataTransformations(
+    labels = list("dataSet1", "dataSet2"),
+    xOffsets = c(dataSet2 = 0.2, dataSet1 = 0.1)
+  )
+  expect_equal(
+    outputMapping$dataTransformations,
+    list(
+      xOffsets = c(dataSet1 = 0.1, dataSet2 = 0.2),
+      yOffsets = c(dataSet1 = 0, dataSet2 = 0),
+      xFactors = c(dataSet1 = 1, dataSet2 = 1),
       yFactors = c(dataSet1 = 1, dataSet2 = 1)
     )
   )
@@ -240,6 +266,22 @@ test_that("PIOutputMapping keeps the transformations by data set when data sets 
   expect_identical(
     names(outputMapping$observedDataSets),
     c("dataSet1", "dataSet3")
+  )
+
+  # After one value per data set without labels, a data set added after a
+  # call with labels gets no transformation
+  outputMapping <- twoDataSetsMapping()
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2), yFactors = 2)
+  outputMapping$setDataTransformations(labels = "dataSet1", xOffsets = 0.3)
+  outputMapping$addObservedDataSets(dataSet3)
+  expect_equal(
+    outputMapping$dataTransformations,
+    list(
+      xOffsets = c(dataSet1 = 0.3, dataSet2 = 0.2, dataSet3 = 0),
+      yOffsets = c(dataSet1 = 0, dataSet2 = 0, dataSet3 = 0),
+      xFactors = c(dataSet1 = 1, dataSet2 = 1, dataSet3 = 1),
+      yFactors = c(dataSet1 = 1, dataSet2 = 2, dataSet3 = 2)
+    )
   )
 })
 

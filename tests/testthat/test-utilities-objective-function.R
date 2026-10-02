@@ -120,6 +120,16 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
 
 test_that(".calculateCensoredContribution throws errors on invalid options", {
   obsDf$lloq <- 2.5
+  # Simulated values without `xValues` and `yValues`
+  expect_error(
+    .calculateCensoredContribution(
+      observed = obsDf,
+      simulated = data.frame(time = predDf$xValues, value = predDf$yValues),
+      scaling = "lin",
+      linScaleCV = 0.2
+    ),
+    "xValues"
+  )
   expect_error(
     result <- .calculateCensoredContribution(
       observed = obsDf,
@@ -1992,6 +2002,32 @@ test_that("an observed time outside the simulated times by single-precision roun
     ),
     c(2, NA_real_)
   )
+
+  # A censored value of M3 (LLOQ 2) at the last observed time takes the last
+  # simulated value, 3, on the scale of the cost
+  for (scaling in c("lin", "log")) {
+    logged <- if (scaling == "log") log else identity
+    stDev <- if (scaling == "log") 0.2 else 0.2 * 2
+    expect_equal(
+      .calculateCensoredContribution(
+        observed = data.frame(
+          xValues = c(60, lastObservedTime),
+          yValues = logged(c(5, 1)),
+          lloq = logged(2)
+        ),
+        simulated = list(
+          xValues = c(0, 60, lastTime),
+          yValues = logged(c(0.5, 6, 3))
+        ),
+        scaling = scaling,
+        linScaleCV = 0.2,
+        logScaleSD = 0.2
+      ),
+      -2 * log10(stats::pnorm((logged(2) - logged(3)) / stDev)),
+      tolerance = 1e-10,
+      info = scaling
+    )
+  }
 })
 
 test_that("M3 interpolates the simulated values of the censored values (#320)", {
@@ -2113,12 +2149,18 @@ test_that("single-precision simulated times give a finite cost in a task (#320)"
     newDataSet(c(0.5, 1, 2, 3, 16.01), c(2.9, 3.1, 1.9, 1.3, 0.1), lloq = 0.2),
     m3
   )))
-  # Least squares with the last observation at 32.2 h, after the output
-  # intervals, which end at 24 h
-  expect_true(is.finite(ofv(newDataSet(
-    c(0.5, 1, 2, 4, 8, 12, 24, 32.2),
-    c(2.9, 3.1, 1.9, 1.2, 0.4, 0.15, 0.02, 0.01)
-  ))))
+  # The last observation at 32.2 h, after the output intervals, which end at
+  # 24 h, with least squares, and with M3 as a censored value (LLOQ 0.05
+  # mg/l)
+  lastAfterOutputs <- function(lloq = NULL) {
+    newDataSet(
+      c(0.5, 1, 2, 4, 8, 12, 24, 32.2),
+      c(2.9, 3.1, 1.9, 1.2, 0.4, 0.15, 0.02, 0.01),
+      lloq = lloq
+    )
+  }
+  expect_true(is.finite(ofv(lastAfterOutputs())))
+  expect_true(is.finite(ofv(lastAfterOutputs(lloq = 0.05), m3)))
 })
 
 # The LLOQ with y transformations (#331), for the example of the issue: values

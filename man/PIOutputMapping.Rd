@@ -164,19 +164,23 @@ with labels.
     \describe{
       \item{\code{labels}}{Names of the observed data sets to transform. Without
 labels, the transformations apply to all data sets of the output
-mapping, also to data sets added later. With labels, they apply only
-to these data sets, which must be added to the output mapping first,
-and the other data sets keep their transformations. A data set added
-later gets the single values of the last call without labels, and no
-transformation where that call gave one value per data set.}
+mapping, and single values also to data sets added later. With labels,
+they apply only to these data sets, which must be added to the output
+mapping first, and the other data sets keep their transformations. A
+data set added after a call with labels gets the single values of the
+last call without labels, and no transformation where that call gave
+one value per data set.}
       \item{\code{xOffsets}}{Numeric, the offset of the x values. Default is \code{0}.}
       \item{\code{yOffsets}}{Numeric, the offset of the y values. Default is \code{0}.}
       \item{\code{xFactors}}{Numeric, the factor of the x values. Default is \code{1}.}
       \item{\code{yFactors}}{Numeric, the factor of the y values. Default is \code{1}.
 
-Each offset and factor is one value, or one value per label. Without
-labels, it can also be one value per data set, in the order of the
-data sets; names of the values are ignored.}
+Each offset and factor is one value, or one value per label, in the
+order of the labels. Without labels, it can also be one value per data
+set, in the order of the data sets. Such values do not apply to data
+sets added later: after adding or removing a data set, set them again.
+Values named by the labels, or without labels by the data sets, are
+taken by their names, in any order. Other names are ignored.}
     }
     \if{html}{\out{</div>}}
   }
