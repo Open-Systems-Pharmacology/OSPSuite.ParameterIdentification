@@ -9,13 +9,14 @@
 #
 # The LLOQ rule of the reference for "lsq" replaces the simulated values below
 # the lowest LLOQ of an output mapping by half that LLOQ, for all its observed
-# values, and the reference passes no transformed value of 0 to
+# values, while the objective function compares the values below the LLOQ
+# with the LLOQ. The reference passes no transformed value of 0 to
 # `.calculateCensoredContribution()`. So it equals the objective function for
-# "lsq" when all observed values of an output mapping have the same LLOQ and
-# no y offset, or none has an LLOQ, and for "m3" when no observed value with
-# an LLOQ has a y offset. The tests compare with it only for such data. For
-# "m3" with several LLOQs, the comparison shows that both pass the same data
-# to `.calculateCensoredContribution()`.
+# "lsq" when no observed value of an output mapping has an LLOQ, and for "m3"
+# when no observed value with an LLOQ has a y offset. The tests compare with
+# it only for such data, and for "lsq" with an LLOQ with the reference without
+# the LLOQ. For "m3" with several LLOQs, the comparison shows that both pass
+# the same data to `.calculateCensoredContribution()`.
 
 # nolint start
 

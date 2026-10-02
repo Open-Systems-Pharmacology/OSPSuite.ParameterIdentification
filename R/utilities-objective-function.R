@@ -158,6 +158,10 @@
 #' @param simulatedYApprox The simulated values at the observed times (see
 #'   `.simulatedAtObservedTimes()`).
 #' @param observedX,observedY Observed times and values.
+#' @param referenceY The values the simulated values are compared with, the
+#'   observed values by default. The LLOQ rule of the objective function
+#'   changes them for the values below the LLOQ (see `.mappingCostTerms()`).
+#'   The error weights and `yObserved` stay based on `observedY`.
 #' @param userWeights Data weights of the observations, `NA` for none.
 #' @param yErrorValues,yErrorType Error values and error types of the
 #'   observations, used when `residualWeightingMethod` is `"error"`.
@@ -182,10 +186,11 @@
   robustMethod,
   scaleVar,
   censoredContribution,
-  index
+  index,
+  referenceY = observedY
 ) {
   # Calculate raw residuals
-  rawResiduals <- simulatedYApprox - observedY
+  rawResiduals <- simulatedYApprox - referenceY
 
   # Scaling residuals by the number of observations if requested
   scaleFactor <- if (scaleVar) 1 / length(observedY) else 1
@@ -223,7 +228,7 @@
   # Calculating log probability to evaluate model fit
   logProbability <- -sum(stats::dnorm(
     simulatedYApprox,
-    observedY,
+    referenceY,
     1 / totalWeights,
     log = TRUE
   ))
@@ -284,18 +289,22 @@
 #'   weights to the simulated values and the prepared observed data of one
 #'   output mapping and calculates its cost terms with `.costKernel()`.
 #'
-#'   The LLOQ rule of `objectiveFunctionType = "lsq"` compares each observed
-#'   value that has an LLOQ with the simulated values in which the values
-#'   below its LLOQ are replaced by the value of its observations below the
-#'   LLOQ (`blqValue`, see `.prepareObservedData()`). An observed and a
-#'   simulated value that are both below the LLOQ so have a residual of 0.
-#'   Observed values without an LLOQ are compared with the simulated values
-#'   as they are.
+#'   The LLOQ rule of `objectiveFunctionType = "lsq"` changes the values that
+#'   the simulated values are compared with, not the simulated values. An
+#'   observed value at or above its LLOQ, and a value without an LLOQ, is
+#'   compared with the simulated value. An observed value below its LLOQ is
+#'   censored: its residual is 0 when the simulated value is below the LLOQ
+#'   too, and the simulated value minus the LLOQ otherwise, on the scale of
+#'   the cost. The value stored for a censored value (`blqValue`, see
+#'   `.prepareObservedData()`) so does not enter its residual, and the
+#'   residual is continuous in the simulated value. Data from which a y
+#'   offset removes a baseline so give the same residuals as the same data
+#'   without the baseline.
 #'
-#'   When the observed values of the output mapping have no LLOQ, or all have
-#'   the same LLOQ and the same value below it, as without a y offset, the
-#'   steps and their order are those of the reference objective function of
-#'   the tests on data frames, so the results are identical (see
+#'   When the observed values of the output mapping have no LLOQ, or with
+#'   `"m3"` when no observed value with an LLOQ has a y offset, the steps and
+#'   their order are those of the reference objective function of the tests
+#'   on data frames, so the results are identical (see
 #'   `tests/testthat/helper-frozen-objective-function.R`).
 #'
 #' @param simulated A list with `xValues` and `yValues`, the simulated values
@@ -324,9 +333,6 @@
 ) {
   isLog <- costControl$scaling == "log"
   lloqRule <- costControl$objectiveFunctionType == "lsq" && observed$hasLloq
-  if (lloqRule && anyNA(simulated$yValues)) {
-    stop(messages$errorSimulatedValuesMissing())
-  }
 
   if (isLog) {
     observedY <- observed$logYValues
@@ -344,18 +350,19 @@
 
   # The simulated values on the scale of the cost that enter it, with their
   # times
-  simulatedCurve <- function(yValues) {
-    if (isLog) {
-      yValues <- ospsuite.utils::logSafe(
-        yValues,
-        epsilon = observed$logEpsilon,
-        base = exp(1)
-      )
-    }
-    keep <- .finiteValues(simulated$xValues, yValues)
-    list(xValues = simulated$xValues[keep], yValues = yValues[keep])
+  simulatedY <- simulated$yValues
+  if (isLog) {
+    simulatedY <- ospsuite.utils::logSafe(
+      simulatedY,
+      epsilon = observed$logEpsilon,
+      base = exp(1)
+    )
   }
-  curve <- simulatedCurve(simulated$yValues)
+  keepSimulated <- .finiteValues(simulated$xValues, simulatedY)
+  curve <- list(
+    xValues = simulated$xValues[keepSimulated],
+    yValues = simulatedY[keepSimulated]
+  )
   keepObserved <- .finiteValues(observed$xValues, observedY)
   observedX <- observed$xValues[keepObserved]
   observedY <- observedY[keepObserved]
@@ -375,32 +382,26 @@
   }
   .validateLloq(observed, costControl, keepObserved, index, quantityPath)
 
-  # The simulated values at the observed times, with the LLOQ rule for the
-  # observed values that have an LLOQ. The simulated values are replaced
-  # once for all observed values with the same LLOQ and value below it.
-  simulatedYApprox <- rep(NA_real_, length(observedX))
-  withLloqRule <- rep(FALSE, length(observedX))
+  simulatedYApprox <- .simulatedAtObservedTimes(
+    curve$xValues,
+    curve$yValues,
+    observedX
+  )
+
+  # The LLOQ rule: a censored value is compared with the simulated value
+  # while it is below the LLOQ, and with the LLOQ above it. The censoring
+  # compares the values before the log transformation, which can map values
+  # close to 0 to the same value.
+  referenceY <- observedY
   if (lloqRule) {
     observedLloq <- observed$lloq[keepObserved]
-    blqValue <- observed$blqValue[keepObserved]
-    withLloqRule <- is.finite(observedLloq) & is.finite(blqValue)
-    for (rows in .lloqGroups(observedLloq, blqValue)) {
-      yValues <- simulated$yValues
-      yValues[yValues < observedLloq[[rows[[1]]]]] <- blqValue[[rows[[1]]]]
-      replaced <- simulatedCurve(yValues)
-      simulatedYApprox[rows] <- .simulatedAtObservedTimes(
-        replaced$xValues,
-        replaced$yValues,
-        observedX[rows]
-      )
-    }
-  }
-  if (!all(withLloqRule)) {
-    simulatedYApprox[!withLloqRule] <- .simulatedAtObservedTimes(
-      curve$xValues,
-      curve$yValues,
-      observedX[!withLloqRule]
-    )
+    censored <- is.finite(observedLloq) &
+      observed$yValues[keepObserved] < observedLloq
+    costLloq <- lloq[keepObserved]
+    belowLloq <- which(censored & simulatedYApprox < costLloq)
+    aboveLloq <- which(censored & simulatedYApprox >= costLloq)
+    referenceY[belowLloq] <- simulatedYApprox[belowLloq]
+    referenceY[aboveLloq] <- costLloq[aboveLloq]
   }
 
   # Applying M3 method for censored error calculation
@@ -438,35 +439,9 @@
     robustMethod = costControl$robustMethod,
     scaleVar = costControl$scaleVar,
     censoredContribution = censoredContribution,
-    index = index
+    index = index,
+    referenceY = referenceY
   )
-}
-
-#' Observed values with the same LLOQ rule
-#'
-#' @description Groups the observed values that have an LLOQ by their LLOQ
-#'   and the value of their observations below it, for which the LLOQ rule
-#'   replaces the same simulated values (see `.mappingCostTerms()`). The
-#'   values of a data set are in one group, and data sets with the same LLOQ
-#'   and y transformation share their group.
-#'
-#' @param lloq,blqValue The LLOQ and the value below it of each observed
-#'   value (see `.prepareObservedData()`), `NA` without an LLOQ. Values
-#'   without a finite LLOQ and value below it are in no group.
-#'
-#' @return A list with the positions of the values of each group.
-#' @keywords internal
-#' @noRd
-.lloqGroups <- function(lloq, blqValue) {
-  withLloq <- is.finite(lloq) & is.finite(blqValue)
-  groups <- list()
-  for (value in unique(lloq[withLloq])) {
-    sameLloq <- which(withLloq & lloq == value)
-    for (blq in unique(blqValue[sameLloq])) {
-      groups[[length(groups) + 1]] <- sameLloq[blqValue[sameLloq] == blq]
-    }
-  }
-  groups
 }
 
 #' Check that the LLOQs of an output mapping are positive
@@ -475,14 +450,15 @@
 #'   that enter its cost is not positive where the cost needs a positive one,
 #'   and, with `objectiveFunctionType = "m3"`, when none of them has an LLOQ.
 #'
-#'   With log scaling, the LLOQ and the value below it (`blqValue`, see
-#'   `.prepareObservedData()`) after the data transformations must be
-#'   positive to have a logarithm. A y offset of minus half the LLOQ or less
-#'   makes the value below the LLOQ 0 or negative, and the LLOQ rule of
-#'   `"lsq"` would replace simulated values by it. With `"m3"`, the observed
-#'   values below the LLOQ also enter the sum of squared residuals with this
-#'   value. As the value below the LLOQ is below the LLOQ, checking it checks
-#'   both. A value within single precision of 0 counts as 0.
+#'   With log scaling, the LLOQ after the data transformations must be
+#'   positive to have a logarithm: the LLOQ rule of `"lsq"` and the censoring
+#'   of `"m3"` compare the simulated values with it. A y offset of minus the
+#'   LLOQ or less makes it 0 or negative. With `"m3"`, the observed values
+#'   below the LLOQ also enter the sum of squared residuals with their stored
+#'   value (`blqValue`, see `.prepareObservedData()`), which must be positive
+#'   too. A y offset of minus half the LLOQ or less makes it 0 or negative.
+#'   As the value below the LLOQ is below the LLOQ, checking it checks both.
+#'   A value within single precision of 0 counts as 0.
 #'
 #'   With `objectiveFunctionType = "m3"` and linear scaling, the LLOQ before
 #'   the data transformations must be positive: the standard deviation of the
@@ -510,16 +486,19 @@
   hasLloq <- keep &
     is.finite(observed$lloq) &
     is.finite(observed$transformedZero)
-  if (costControl$objectiveFunctionType == "m3" && !any(hasLloq)) {
+  isM3 <- costControl$objectiveFunctionType == "m3"
+  if (isM3 && !any(hasLloq)) {
     stop(messages$errorNoLloqForM3(index, quantityPath), call. = FALSE)
   }
   # The LLOQ before the data transformations, times the absolute y factor
   lloqBefore <- observed$lloq - observed$transformedZero
   if (costControl$scaling == "log") {
     # ospsuite stores the LLOQ in single precision, so a y offset of minus
-    # half the LLOQ leaves a value below the LLOQ close to 0 instead of 0
-    notPositive <- hasLloq & observed$blqValue <= 1e-6 * abs(lloqBefore)
-  } else if (costControl$objectiveFunctionType == "m3") {
+    # the LLOQ, or minus half the LLOQ for the value below it, leaves a value
+    # close to 0 instead of 0
+    lowest <- if (isM3) observed$blqValue else observed$lloq
+    notPositive <- hasLloq & lowest <= 1e-6 * abs(lloqBefore)
+  } else if (isM3) {
     notPositive <- hasLloq & lloqBefore <= 0
   } else {
     return(invisible(observed))
@@ -529,6 +508,7 @@
       messages$errorLloqNotPositive(
         unique(observed$name[notPositive]),
         costControl$scaling,
+        costControl$objectiveFunctionType,
         index,
         quantityPath
       ),
@@ -594,10 +574,11 @@
   if (costControl$objectiveFunctionType != "m3" || all(is.na(lloq[enters]))) {
     return(FALSE)
   }
-  # As in `.calculateCensoredContribution()`: a value without an LLOQ is not
-  # censored, and `merge()` finds the simulated value of a censored value by
-  # its time, compared as by `as.character()`
-  censored <- !is.na(lloq) & observedY <= lloq
+  # As in `.calculateCensoredContribution()`: a value below its LLOQ is
+  # censored, a value without an LLOQ is not, and `merge()` finds the
+  # simulated value of a censored value by its time, compared as by
+  # `as.character()`
+  censored <- !is.na(lloq) & observedY < lloq
   simulatedTimes <- as.character(simulatedX)
   notSimulated <- !(as.character(observed$xValues) %in% simulatedTimes)
   any(newTimes & censored & notSimulated)
@@ -1073,7 +1054,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 #'
 #' @param observed Data frame containing observed data, must include 'lloq',
 #'   'xValues', 'xUnit', 'xDimension', and 'yValues' columns. An observation
-#'   without an LLOQ (`NA`) is not censored. An optional 'transformedZero'
+#'   below its LLOQ is censored. An observation at its LLOQ, or without an
+#'   LLOQ (`NA`), is not censored. An optional 'transformedZero'
 #'   column holds the transformed value of 0 of each observation (see
 #'   `.prepareObservedData()`), 0 if it is missing.
 #' @param simulated Data frame containing simulated data, must include
@@ -1114,14 +1096,10 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
     observed$transformedZero <- 0
   }
 
-  # Identify censored and uncensored observations based on LLOQ
-  observedUncensored <- observed[
-    is.na(observed$lloq) |
-      (observed$yValues > observed$lloq),
-  ]
+  # Identify censored observations based on LLOQ
   observedCensored <- observed[
     !is.na(observed$lloq) &
-      (observed$yValues <= observed$lloq),
+      (observed$yValues < observed$lloq),
   ]
   # `merge()` sorts the rows by time, so the LLOQ of each censored value is
   # merged along with it, to stay with the simulated value at its time when

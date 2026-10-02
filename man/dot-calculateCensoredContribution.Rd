@@ -15,7 +15,8 @@
 \arguments{
 \item{observed}{Data frame containing observed data, must include 'lloq',
 'xValues', 'xUnit', 'xDimension', and 'yValues' columns. An observation
-without an LLOQ (\code{NA}) is not censored. An optional 'transformedZero'
+below its LLOQ is censored. An observation at its LLOQ, or without an
+LLOQ (\code{NA}), is not censored. An optional 'transformedZero'
 column holds the transformed value of 0 of each observation (see
 \code{.prepareObservedData()}), 0 if it is missing.}
 

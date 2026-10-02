@@ -133,11 +133,13 @@ value is not positive before or after the offset.
 }
 
 A negative y offset can make the LLOQ, or the values below it, 0 or
-negative. With log scaling, the parameter identification then stops
-with an error, because such values have no logarithm: the y offset
-must be greater than minus half the LLOQ. See \code{ospsuite::DataCombined}
-for the limits of the approximation for geometric standard
-deviations.
+negative. With log scaling, the LLOQ must stay positive to have a
+logarithm, so the y offset must be greater than minus the LLOQ. With
+\code{objectiveFunctionType = "m3"}, the values below the LLOQ enter the
+cost too and must stay positive, so the y offset must be greater than
+minus half the LLOQ. Otherwise the parameter identification stops
+with an error. See \code{ospsuite::DataCombined} for the limits of the
+approximation for geometric standard deviations.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(

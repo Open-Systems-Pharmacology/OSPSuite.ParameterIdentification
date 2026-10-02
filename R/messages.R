@@ -145,20 +145,15 @@ messages$errorNoDataForCost <- function(
   text
 }
 
-messages$errorSimulatedValuesMissing <- function() {
-  paste0(
-    "Simulated values are missing, so the LLOQ of the observed data cannot ",
-    "be applied to them."
-  )
-}
-
-# `dataSetNames` are the names of the data sets whose LLOQ is not positive and
-# `scaling` the scaling of their output mapping. `index` is the position of
-# the output mapping and `quantityPath` the path of its quantity, both `NULL`
-# for a cost calculated without an output mapping.
+# `dataSetNames` are the names of the data sets whose LLOQ is not positive,
+# and `scaling` and `objectiveFunctionType` the scaling of their output
+# mapping and the objective function type. `index` is the position of the
+# output mapping and `quantityPath` the path of its quantity, both `NULL` for
+# a cost calculated without an output mapping.
 messages$errorLloqNotPositive <- function(
   dataSetNames,
   scaling,
+  objectiveFunctionType,
   index = NULL,
   quantityPath = NULL
 ) {
@@ -170,16 +165,27 @@ messages$errorLloqNotPositive <- function(
       paste0(" of output mapping ", index, " ('", quantityPath, "')")
     }
   )
-  if (scaling == "log") {
+  if (scaling == "log" && objectiveFunctionType == "m3") {
     return(paste0(
       dataSets,
       ", or the values below ",
       if (several) "them" else "it",
-      ", are not positive after the data transformations. With log ",
-      "scaling, the LLOQ and the values below it, which the importer stores ",
-      "as half the LLOQ, must be positive to have a logarithm. Use linear ",
-      "scaling for the output mapping, a positive LLOQ, or a y offset ",
-      "greater than minus half the LLOQ."
+      ", are not positive after the data transformations. With ",
+      "objectiveFunctionType 'm3' and log scaling, the LLOQ and the values ",
+      "below it, which the importer stores as half the LLOQ, must be ",
+      "positive to have a logarithm. Use linear scaling for the output ",
+      "mapping, a positive LLOQ, a y offset greater than minus half the ",
+      "LLOQ, or objectiveFunctionType 'lsq', which needs only a positive LLOQ."
+    ))
+  }
+  if (scaling == "log") {
+    return(paste0(
+      dataSets,
+      if (several) " are" else " is",
+      " not positive after the data transformations. With log scaling, the ",
+      "LLOQ must be positive to have a logarithm. Use linear scaling for the ",
+      "output mapping, a positive LLOQ, or a y offset greater than minus the ",
+      "LLOQ."
     ))
   }
   paste0(

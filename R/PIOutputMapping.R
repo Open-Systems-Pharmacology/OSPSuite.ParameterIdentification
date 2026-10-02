@@ -203,11 +203,13 @@ PIOutputMapping <- R6::R6Class(
     #'     value is not positive before or after the offset.
     #'
     #'   A negative y offset can make the LLOQ, or the values below it, 0 or
-    #'   negative. With log scaling, the parameter identification then stops
-    #'   with an error, because such values have no logarithm: the y offset
-    #'   must be greater than minus half the LLOQ. See `ospsuite::DataCombined`
-    #'   for the limits of the approximation for geometric standard
-    #'   deviations.
+    #'   negative. With log scaling, the LLOQ must stay positive to have a
+    #'   logarithm, so the y offset must be greater than minus the LLOQ. With
+    #'   `objectiveFunctionType = "m3"`, the values below the LLOQ enter the
+    #'   cost too and must stay positive, so the y offset must be greater than
+    #'   minus half the LLOQ. Otherwise the parameter identification stops
+    #'   with an error. See `ospsuite::DataCombined` for the limits of the
+    #'   approximation for geometric standard deviations.
     #' @param labels List of dataset labels for targeted transformations.
     #'   Absence of labels applies transformations globally.
     #' @param xOffsets Numeric list/value for X-offset adjustments.
