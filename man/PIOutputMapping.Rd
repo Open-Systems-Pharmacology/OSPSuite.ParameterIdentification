@@ -17,10 +17,11 @@ comparison with simulation outcomes.}
 
     \item{\code{dataTransformations}}{A named list of the offsets and factors of
 the data transformations, \code{xOffsets}, \code{yOffsets}, \code{xFactors} and
-\code{yFactors}. Each holds the values of the last call of
-\code{setDataTransformations()} without labels, without their names, or,
-after a call with labels, one value per observed data set, named by
-the data sets.}
+\code{yFactors}. Each is one value for all data sets of the output mapping,
+or one value per observed data set, named by the data sets. Values
+given per data set before the data sets were added are kept in their
+order until the data sets are added. Before any call of
+\code{setDataTransformations()}, the offsets are 0 and the factors 1.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
@@ -168,9 +169,9 @@ labels, the transformations apply to all data sets of the output
 mapping, and single values also to data sets added later. With labels,
 they apply only to these data sets, which must be added to the output
 mapping first, and the other data sets keep their transformations. A
-data set added after a call with labels gets the single values of the
-last call without labels, and no transformation where that call gave
-one value per data set.}
+data set added later gets the single values of the last call without
+labels, and no transformation where that call gave one value per data
+set.}
       \item{\code{xOffsets}}{Numeric, the offset of the x values. Default is \code{0}.}
       \item{\code{yOffsets}}{Numeric, the offset of the y values. Default is \code{0}.}
       \item{\code{xFactors}}{Numeric, the factor of the x values. Default is \code{1}.}
@@ -178,9 +179,11 @@ one value per data set.}
 
 Each offset and factor is one value, or one value per label, in the
 order of the labels. Without labels, it can also be one value per data
-set, in the order of the data sets. Such values do not apply to data
-sets added later: after adding or removing a data set, set them again.
-The values are taken by their position, and their names are ignored.}
+set, in the order of the data sets. Such values stay with their data
+sets when data sets are added or removed. Values given per data set
+before the data sets are added apply in the order in which the data
+sets are added. The values are taken by their position, and their
+names are ignored.}
     }
     \if{html}{\out{</div>}}
   }

@@ -701,7 +701,8 @@
   # `DataCombined` takes the values in the order of `forNames`
   transformations <- .transformationsByDataSet(
     outputMapping$dataTransformations,
-    names(observedDataSets)
+    names(observedDataSets),
+    outputMapping$quantity$path
   )
   dataCombined$addDataSets(
     observedDataSets,

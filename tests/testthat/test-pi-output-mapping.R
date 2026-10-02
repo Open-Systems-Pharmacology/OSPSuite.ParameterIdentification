@@ -133,14 +133,22 @@ test_that("PIOutputMapping applies values without labels by position, also named
     )
   )
 
-  # Names are ignored, also when they are the names of the data sets
+  # Names are ignored, also when they are the names of the data sets. One
+  # value per data set is stored by data set, one value for all as it is.
   outputMapping$setDataTransformations(
     xOffsets = c(dataSet2 = 0, dataSet1 = 0.2),
+    yOffsets = c(dataSet2 = 0, dataSet1 = 0.1),
+    xFactors = c(scale = 2),
     yFactors = c(second = 3, first = 4)
   )
   expect_equal(
     outputMapping$dataTransformations,
-    list(xOffsets = c(0, 0.2), yOffsets = 0, xFactors = 1, yFactors = c(3, 4))
+    list(
+      xOffsets = c(dataSet1 = 0, dataSet2 = 0.2),
+      yOffsets = c(dataSet1 = 0, dataSet2 = 0.1),
+      xFactors = 2,
+      yFactors = c(dataSet1 = 3, dataSet2 = 4)
+    )
   )
 
   # Labels then keep the values of the other data sets
@@ -149,10 +157,19 @@ test_that("PIOutputMapping applies values without labels by position, also named
     outputMapping$dataTransformations,
     list(
       xOffsets = c(dataSet1 = 0, dataSet2 = 0.2),
-      yOffsets = c(dataSet1 = 1, dataSet2 = 0),
-      xFactors = c(dataSet1 = 1, dataSet2 = 1),
+      yOffsets = c(dataSet1 = 1, dataSet2 = 0.1),
+      xFactors = c(dataSet1 = 1, dataSet2 = 2),
       yFactors = c(dataSet1 = 1, dataSet2 = 4)
     )
+  )
+
+  # Values stored by data set are taken by name
+  expect_equal(
+    .transformationsByDataSet(
+      list(xOffsets = c(dataSet2 = 0.2, dataSet1 = 0.1)),
+      c("dataSet1", "dataSet2")
+    ),
+    list(xOffsets = c(dataSet1 = 0.1, dataSet2 = 0.2))
   )
 })
 
@@ -276,17 +293,50 @@ test_that("PIOutputMapping keeps the transformations by data set when data sets 
     c(dataSet3 = 2)
   )
 
-  # One value per data set without labels does not apply to a data set
-  # added later
+  # One value per data set without labels stays with its data set when
+  # data sets are removed or added, and a data set added later gets no
+  # transformation
   outputMapping <- twoDataSetsMapping()
-  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2))
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2), yFactors = 2)
+  outputMapping$removeObservedDataSet("dataSet1")
   outputMapping$addObservedDataSets(dataSet3)
+  expect_equal(
+    outputMapping$dataTransformations,
+    list(
+      xOffsets = c(dataSet2 = 0.2, dataSet3 = 0),
+      yOffsets = 0,
+      xFactors = 1,
+      yFactors = 2
+    )
+  )
+
+  # Values given per data set before the data sets are added apply in the
+  # order in which the data sets are added
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2))
+  outputMapping$addObservedDataSets(testObservedDataMultiple())
+  outputMapping$removeObservedDataSet("dataSet1")
+  outputMapping$addObservedDataSets(dataSet3)
+  expect_equal(
+    outputMapping$dataTransformations$xOffsets,
+    c(dataSet2 = 0.2, dataSet3 = 0)
+  )
+
+  # A number of values that does not match the data sets
+  outputMapping$setDataTransformations(xOffsets = c(0.1, 0.2, 0.3))
+  outputMapping$removeObservedDataSet("dataSet3")
   expect_error(
     .transformationsByDataSet(
       outputMapping$dataTransformations,
-      names(outputMapping$observedDataSets)
+      names(outputMapping$observedDataSets),
+      testQuantity$path
     ),
-    messages$errorTransformationValuesPerDataSet("xOffsets", 2, 3),
+    messages$errorTransformationValuesPerDataSet(
+      "xOffsets",
+      3,
+      1,
+      testQuantity$path
+    ),
     fixed = TRUE
   )
 
@@ -356,10 +406,32 @@ test_that("PIOutputMapping stops for labels that are not data sets of the mappin
   outputMapping$setDataTransformations(yFactors = c(2, 3, 4))
   expect_error(
     outputMapping$setDataTransformations(labels = "dataSet1", xOffsets = 1),
-    messages$errorTransformationValuesPerDataSet("yFactors", 3, 2),
+    messages$errorTransformationValuesPerDataSet(
+      "yFactors",
+      3,
+      2,
+      testQuantity$path
+    ),
     fixed = TRUE
   )
   expect_equal(outputMapping$dataTransformations$yFactors, c(2, 3, 4))
+})
+
+test_that("PIOutputMapping stops for offsets and factors that are NULL (#311)", {
+  outputMapping <- twoDataSetsMapping()
+  for (arguments in list(
+    list(xOffsets = NULL),
+    list(labels = "dataSet1", yFactors = NULL)
+  )) {
+    expect_error(
+      do.call(outputMapping$setDataTransformations, arguments),
+      "NULL"
+    )
+  }
+  expect_equal(
+    outputMapping$dataTransformations,
+    list(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+  )
 })
 
 test_that("PIOutputMapping changes nothing for an empty set of labels (#311)", {

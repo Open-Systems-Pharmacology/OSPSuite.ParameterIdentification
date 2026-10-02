@@ -21,10 +21,11 @@ PIOutputMapping <- R6::R6Class(
 
     #' @field dataTransformations A named list of the offsets and factors of
     #'   the data transformations, `xOffsets`, `yOffsets`, `xFactors` and
-    #'   `yFactors`. Each holds the values of the last call of
-    #'   `setDataTransformations()` without labels, without their names, or,
-    #'   after a call with labels, one value per observed data set, named by
-    #'   the data sets.
+    #'   `yFactors`. Each is one value for all data sets of the output mapping,
+    #'   or one value per observed data set, named by the data sets. Values
+    #'   given per data set before the data sets were added are kept in their
+    #'   order until the data sets are added. Before any call of
+    #'   `setDataTransformations()`, the offsets are 0 and the factors 1.
     dataTransformations = function(value) {
       if (missing(value)) {
         private$.dataTransformations
@@ -116,6 +117,25 @@ PIOutputMapping <- R6::R6Class(
         values <- private$.dataTransformations[[name]]
         if (!is.null(names(values)) && !label %in% names(values)) {
           values[[label]] <- private$.transformationDefaults[[name]]
+          private$.dataTransformations[[name]] <- values
+        }
+      }
+      private$.bindTransformationsToDataSets()
+    },
+
+    # Names values given per data set without labels by the data sets, once
+    # there is one value per data set, so that they stay with their data sets
+    # when data sets are added or removed
+    .bindTransformationsToDataSets = function() {
+      dataSetNames <- names(private$.observedDataSets)
+      for (name in names(private$.dataTransformations)) {
+        values <- private$.dataTransformations[[name]]
+        if (
+          is.null(names(values)) &&
+            length(values) > 1 &&
+            length(values) == length(dataSetNames)
+        ) {
+          names(values) <- dataSetNames
           private$.dataTransformations[[name]] <- values
         }
       }
@@ -248,9 +268,9 @@ PIOutputMapping <- R6::R6Class(
     #'   mapping, and single values also to data sets added later. With labels,
     #'   they apply only to these data sets, which must be added to the output
     #'   mapping first, and the other data sets keep their transformations. A
-    #'   data set added after a call with labels gets the single values of the
-    #'   last call without labels, and no transformation where that call gave
-    #'   one value per data set.
+    #'   data set added later gets the single values of the last call without
+    #'   labels, and no transformation where that call gave one value per data
+    #'   set.
     #' @param xOffsets Numeric, the offset of the x values. Default is `0`.
     #' @param yOffsets Numeric, the offset of the y values. Default is `0`.
     #' @param xFactors Numeric, the factor of the x values. Default is `1`.
@@ -258,9 +278,11 @@ PIOutputMapping <- R6::R6Class(
     #'
     #'   Each offset and factor is one value, or one value per label, in the
     #'   order of the labels. Without labels, it can also be one value per data
-    #'   set, in the order of the data sets. Such values do not apply to data
-    #'   sets added later: after adding or removing a data set, set them again.
-    #'   The values are taken by their position, and their names are ignored.
+    #'   set, in the order of the data sets. Such values stay with their data
+    #'   sets when data sets are added or removed. Values given per data set
+    #'   before the data sets are added apply in the order in which the data
+    #'   sets are added. The values are taken by their position, and their
+    #'   names are ignored.
     setDataTransformations = function(
       labels = NULL,
       xOffsets = 0,
@@ -269,10 +291,10 @@ PIOutputMapping <- R6::R6Class(
       yFactors = 1
     ) {
       ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xOffsets)
+      ospsuite.utils::validateIsNumeric(xFactors)
+      ospsuite.utils::validateIsNumeric(yFactors)
+      ospsuite.utils::validateIsNumeric(yOffsets)
 
       if (is.list(labels)) {
         labels <- as.character(unlist(labels))
@@ -296,6 +318,7 @@ PIOutputMapping <- R6::R6Class(
             .noDataTransformations[[name]]
           }
         }
+        private$.bindTransformationsToDataSets()
         return(invisible(self))
       }
 
@@ -345,7 +368,8 @@ PIOutputMapping <- R6::R6Class(
       # value per data set.
       transformations <- .transformationsByDataSet(
         private$.dataTransformations,
-        dataSetNames
+        dataSetNames,
+        private$.quantity$path
       )
       for (name in names(values)) {
         transformations[[name]][labels] <- unname(values[[name]])
@@ -436,20 +460,26 @@ PIOutputMapping <- R6::R6Class(
 #'   output mapping, one value per observed data set, in the order of the data
 #'   sets. A single value, set without labels, applies to every data set.
 #'   Values set by data set, with labels, are taken by the name of the data
-#'   set. Values given per data set without labels are taken in their order.
+#'   set. Values given per data set without labels before the data sets were
+#'   added are taken in their order.
 #'
 #' @param transformations The data transformations of the output mapping
 #'   (`PIOutputMapping$dataTransformations`).
 #' @param dataSetNames The names of the observed data sets of the output
 #'   mapping, in their order.
+#' @param quantityPath The path of the quantity of the output mapping, for
+#'   the message.
 #'
 #' @return A list with `xOffsets`, `yOffsets`, `xFactors` and `yFactors`, each
 #'   with one value per data set, named by the data sets. Stops when values
-#'   given per data set without labels do not match the number of data sets,
-#'   for example after a data set was added or removed.
+#'   given per data set without labels do not match the number of data sets.
 #' @keywords internal
 #' @noRd
-.transformationsByDataSet <- function(transformations, dataSetNames) {
+.transformationsByDataSet <- function(
+  transformations,
+  dataSetNames,
+  quantityPath = NULL
+) {
   for (name in names(transformations)) {
     values <- transformations[[name]]
     if (!is.null(names(values))) {
@@ -463,7 +493,8 @@ PIOutputMapping <- R6::R6Class(
         messages$errorTransformationValuesPerDataSet(
           name,
           length(values),
-          length(dataSetNames)
+          length(dataSetNames),
+          quantityPath
         ),
         call. = FALSE
       )

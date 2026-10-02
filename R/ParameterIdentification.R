@@ -260,7 +260,8 @@ ParameterIdentification <- R6::R6Class(
             observedDataSets <- outputMapping$observedDataSets
             transformations <- .transformationsByDataSet(
               outputMapping$dataTransformations,
-              names(observedDataSets)
+              names(observedDataSets),
+              outputMapping$quantity$path
             )
             for (label in names(observedDataSets)) {
               dataset <- observedDataSets[[label]]

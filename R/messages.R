@@ -48,13 +48,20 @@ messages$errorTransformationDuplicateLabels <- function(labels) {
 messages$errorTransformationValuesPerDataSet <- function(
   argument,
   nValues,
-  nDataSets
+  nDataSets,
+  quantityPath = NULL
 ) {
+  mapping <- if (is.null(quantityPath)) {
+    "the output mapping"
+  } else {
+    "the output mapping of {.val {quantityPath}}"
+  }
   ospsuite.utils::cliFormat(paste0(
-    "{.arg {argument}} of the data transformations has {nValues} ",
-    "value{?s} for {nDataSets} observed data set{?s}. Set it again with ",
-    "{.fn setDataTransformations}, with one value, or one value per data ",
-    "set in their order, also after adding or removing a data set."
+    "{.arg {argument}} of the data transformations of ",
+    mapping,
+    " has {nValues} value{?s} for {nDataSets} observed data set{?s}. ",
+    "Set it again with {.fn setDataTransformations} without labels, with ",
+    "one value or one value per data set."
   ))
 }
 
