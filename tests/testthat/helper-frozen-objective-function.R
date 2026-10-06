@@ -6,6 +6,11 @@
 # is the reference of the tests. It calls these functions of the package:
 # `.newModelCost()`, `.computeErrorWeights()`, `.calculateHuberWeights()`,
 # `.calculateBisquareWeights()` and `.calculateCensoredContribution()`.
+# `.computeErrorWeights()` has the argument `scaling` since #325. The
+# reference calls it with the default `"lin"`, so with log scaling it
+# calculates the error weights from the log values, as the objective function
+# did before #325. The tests compare with it for error weights only without
+# log scaling.
 #
 # The LLOQ rule of the reference for "lsq" replaces the simulated values below
 # the lowest LLOQ of an output mapping by half that LLOQ, for all its observed
