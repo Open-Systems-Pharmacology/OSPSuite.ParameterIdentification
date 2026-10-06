@@ -14,20 +14,30 @@
 }
 \arguments{
 \item{observed}{Data frame containing observed data, must include 'lloq',
-'xValues', 'xUnit', 'xDimension', and 'yValues' columns.}
+'xValues' and 'yValues' columns. An observation below its LLOQ is
+censored. An observation at its LLOQ, or without an LLOQ (\code{NA}), is not
+censored. An optional 'transformedZero' column holds the transformed
+value of 0 of each observation (see \code{.prepareObservedData()}), 0 if it
+is missing.}
 
-\item{simulated}{Data frame containing simulated data, must include
-'xValues', 'xUnit', 'xDimension', and 'yValues' columns.}
+\item{simulated}{Data frame or list containing simulated data, with
+'xValues' and 'yValues', in the same units as the observed data. The
+simulated value of a censored observation is interpolated at its time
+with \code{.simulatedAtObservedTimes()}, as for the least-squares part of the
+cost, so the simulated times do not need to include it.}
 
 \item{scaling}{Character string specifying the scaling method; should be one
 of the predefined scaling options.}
 
 \item{linScaleCV}{Numeric, coefficient used to calculate standard deviation
-for linear scaling, applied to the 'lloq' value of each censored
-observation.}
+for linear scaling, applied to the LLOQ of each censored observation
+before a y offset: \code{linScaleCV * (lloq - transformedZero)}. A y offset
+shifts the values but does not change their standard deviation.}
 
-\item{logScaleSD}{Numeric, standard deviation for logarithmic scaling,
-applied uniformly to all censored observations.}
+\item{logScaleSD}{Numeric, standard deviation for logarithmic scaling: the
+standard deviation of the natural logarithm of the values, applied
+uniformly to all censored observations. For a coefficient of variation
+\code{CV}, it is \code{sqrt(log(1 + CV^2))}.}
 }
 \value{
 Numeric value representing the sum of squared errors for censored

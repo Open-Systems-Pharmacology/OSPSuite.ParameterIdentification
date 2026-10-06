@@ -19,7 +19,14 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field dataTransformations A named list of factors and offsets.
+    #' @field dataTransformations A named list of the offsets and factors of
+    #'   the data transformations, `xOffsets`, `yOffsets`, `xFactors` and
+    #'   `yFactors`. Each is one value for all data sets of the output mapping,
+    #'   or one value per observed data set, named by the data sets. Values
+    #'   given per data set while the number of data sets differs, for example
+    #'   before the data sets are added, are kept in their order, without
+    #'   names, until the numbers match. Before any call of
+    #'   `setDataTransformations()`, the offsets are 0 and the factors 1.
     dataTransformations = function(value) {
       if (missing(value)) {
         private$.dataTransformations
@@ -96,8 +103,43 @@ PIOutputMapping <- R6::R6Class(
     .observedDataSets = NULL,
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
+    # The transformations of the last call of `setDataTransformations()`
+    # without labels, which a data set added later gets when the
+    # transformations are set by data set
+    .transformationDefaults = NULL,
     .dataWeights = NULL,
-    .scaling = NULL
+    .scaling = NULL,
+
+    # Gives a new data set the default transformations, where the
+    # transformations are set by data set, and keeps those of a data set that
+    # replaces one with its name
+    .addDataSetTransformations = function(label) {
+      for (name in names(private$.dataTransformations)) {
+        values <- private$.dataTransformations[[name]]
+        if (!is.null(names(values)) && !label %in% names(values)) {
+          values[[label]] <- private$.transformationDefaults[[name]]
+          private$.dataTransformations[[name]] <- values
+        }
+      }
+    },
+
+    # Names values given per data set without labels by the data sets, once
+    # a call makes the number of data sets equal to the number of values, so
+    # that they stay with their data sets when data sets are added or removed
+    .bindTransformationsToDataSets = function() {
+      dataSetNames <- names(private$.observedDataSets)
+      for (name in names(private$.dataTransformations)) {
+        values <- private$.dataTransformations[[name]]
+        if (
+          is.null(names(values)) &&
+            length(values) > 1 &&
+            length(values) == length(dataSetNames)
+        ) {
+          names(values) <- dataSetNames
+          private$.dataTransformations[[name]] <- values
+        }
+      }
+    }
   ),
   public = list(
     #' @description Initialize a new instance of the class.
@@ -108,12 +150,8 @@ PIOutputMapping <- R6::R6Class(
       private$.quantity <- quantity
       private$.simId <- .getSimulationContainer(quantity)$id
       private$.observedDataSets <- list()
-      private$.dataTransformations <- list(
-        xOffsets = 0,
-        yOffsets = 0,
-        xFactors = 1,
-        yFactors = 1
-      )
+      private$.dataTransformations <- .noDataTransformations
+      private$.transformationDefaults <- .noDataTransformations
       private$.scaling <- "lin"
     },
 
@@ -171,7 +209,9 @@ PIOutputMapping <- R6::R6Class(
         }
 
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
+        private$.addDataSetTransformations(data[[idx]]$name)
       }
+      private$.bindTransformationsToDataSets()
 
       # Handle optional weights
       if (!is.null(weights)) {
@@ -185,16 +225,68 @@ PIOutputMapping <- R6::R6Class(
     #' @param label The label of the observed data series to remove.
     removeObservedDataSet = function(label) {
       private$.observedDataSets[[label]] <- NULL
+      # Transformations set by data set lose the value of the data set
+      dataSetNames <- names(private$.observedDataSets)
+      for (name in names(private$.dataTransformations)) {
+        values <- private$.dataTransformations[[name]]
+        if (!is.null(names(values))) {
+          private$.dataTransformations[[name]] <- values[
+            names(values) %in% dataSetNames
+          ]
+        }
+      }
+      private$.bindTransformationsToDataSets()
       invisible(self)
     },
 
-    #' @description Configures transformations for datasets.
-    #' @param labels List of dataset labels for targeted transformations.
-    #'   Absence of labels applies transformations globally.
-    #' @param xOffsets Numeric list/value for X-offset adjustments.
-    #' @param yOffsets Numeric list/value for Y-offset adjustments.
-    #' @param xFactors Numeric list/value for X-scaling factors.
-    #' @param yFactors Numeric list/value for Y-scaling factors.
+    #' @description Configures transformations for datasets. X and y values
+    #'   are transformed as `(value + offset) * factor`, and the objective
+    #'   function uses the transformed values. The other columns of the
+    #'   observed data follow the y values:
+    #'
+    #'   - The LLOQ is transformed like the y values, and so are the values
+    #'     below it, which the importer stores as half the LLOQ. With a
+    #'     negative `yFactors`, the LLOQ is set to `NA`, and the values of the
+    #'     data set are used without an LLOQ, also its values below the LLOQ.
+    #'   - Arithmetic standard deviations are multiplied by `abs(yFactors)`.
+    #'   - Geometric standard deviations are not changed by `yFactors`. A y
+    #'     offset adjusts them approximately, and sets them to `NA` where a y
+    #'     value is not positive before or after the offset.
+    #'
+    #'   A negative y offset can make the LLOQ, or the values below it, 0 or
+    #'   negative. With log scaling, the LLOQ must stay positive to have a
+    #'   logarithm, so the y offset must be greater than minus the LLOQ. With
+    #'   `objectiveFunctionType = "m3"`, the values below the LLOQ enter the
+    #'   cost too and must stay positive, so the y offset must be greater than
+    #'   minus half the LLOQ. Otherwise the parameter identification stops
+    #'   with an error. See `ospsuite::DataCombined` for the limits of the
+    #'   approximation for geometric standard deviations.
+    #'
+    #'   Each call sets all four transformations of the data sets it applies
+    #'   to: an offset or factor that is not given is set to its default, also
+    #'   with labels.
+    #' @param labels Names of the observed data sets to transform. Without
+    #'   labels, the transformations apply to all data sets of the output
+    #'   mapping, and single values also to data sets added later. With labels,
+    #'   they apply only to these data sets, which must be added to the output
+    #'   mapping first, and the other data sets keep their transformations. A
+    #'   data set added later gets the single values of the last call without
+    #'   labels, and no transformation where that call gave one value per data
+    #'   set.
+    #' @param xOffsets Numeric, the offset of the x values. Default is `0`.
+    #' @param yOffsets Numeric, the offset of the y values. Default is `0`.
+    #' @param xFactors Numeric, the factor of the x values. Default is `1`.
+    #' @param yFactors Numeric, the factor of the y values. Default is `1`.
+    #'
+    #'   Each offset and factor is one value, or one value per label, in the
+    #'   order of the labels. Without labels, it can also be one value per data
+    #'   set, in the order of the data sets. Such values stay with their data
+    #'   sets when data sets are added or removed. Values given per data set
+    #'   while the number of data sets differs, for example before the data
+    #'   sets are added, apply in the order of the data sets once a call of
+    #'   `addObservedDataSets()` or `removeObservedDataSet()` makes the numbers
+    #'   equal. Until then, the parameter identification stops with an error.
+    #'   The values are taken by their position, and their names are ignored.
     setDataTransformations = function(
       labels = NULL,
       xOffsets = 0,
@@ -203,47 +295,95 @@ PIOutputMapping <- R6::R6Class(
       yFactors = 1
     ) {
       ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
+      ospsuite.utils::validateIsNumeric(xOffsets)
+      ospsuite.utils::validateIsNumeric(xFactors)
+      ospsuite.utils::validateIsNumeric(yFactors)
+      ospsuite.utils::validateIsNumeric(yOffsets)
+      # Values given as a list are used as plain numbers
+      xOffsets <- unlist(xOffsets)
+      yOffsets <- unlist(yOffsets)
+      xFactors <- unlist(xFactors)
+      yFactors <- unlist(yFactors)
 
-      if (missing(labels)) {
-        # If no labels are given, reuse parameters across datasets
-        private$.dataTransformations$xFactors <- xFactors
-        private$.dataTransformations$yFactors <- yFactors
-        private$.dataTransformations$xOffsets <- xOffsets
-        private$.dataTransformations$yOffsets <- yOffsets
+      if (is.list(labels)) {
+        labels <- as.character(unlist(labels))
+      }
+
+      if (is.null(labels)) {
+        # If no labels are given, reuse parameters across datasets. Values
+        # without labels apply by position, so they are stored without their
+        # names: only values set with labels are named by the data sets.
+        private$.dataTransformations$xFactors <- unname(xFactors)
+        private$.dataTransformations$yFactors <- unname(yFactors)
+        private$.dataTransformations$xOffsets <- unname(xOffsets)
+        private$.dataTransformations$yOffsets <- unname(yOffsets)
+        # Data sets added later get single values, and no transformation
+        # instead of values given per data set
+        for (name in names(.noDataTransformations)) {
+          value <- private$.dataTransformations[[name]]
+          private$.transformationDefaults[[name]] <- if (length(value) == 1) {
+            value
+          } else {
+            .noDataTransformations[[name]]
+          }
+        }
+        private$.bindTransformationsToDataSets()
         return(invisible(self))
       }
 
-      # Otherwise, apply transformations only to labeled data
-      for (idx in seq_along(labels)) {
-        if (length(xFactors) == 1) {
-          xFactors <- rep(xFactors, length(labels))
-        }
-        if (length(xOffsets) == 1) {
-          xOffsets <- rep(xOffsets, length(labels))
-        }
-        if (length(yFactors) == 1) {
-          yFactors <- rep(yFactors, length(labels))
-        }
-        if (length(yOffsets) == 1) {
-          yOffsets <- rep(yOffsets, length(labels))
-        }
-        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[
-          idx
-        ]]
-        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[
-          idx
-        ]]
-        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[
-          idx
-        ]]
-        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[
-          idx
-        ]]
+      # Otherwise, apply transformations only to labeled data. Labels
+      # computed from other names can be empty, which sets nothing.
+      if (length(labels) == 0) {
+        return(invisible(self))
       }
+      if (anyDuplicated(labels) > 0) {
+        stop(
+          messages$errorTransformationDuplicateLabels(
+            unique(labels[duplicated(labels)])
+          ),
+          call. = FALSE
+        )
+      }
+      dataSetNames <- names(private$.observedDataSets)
+      unknownLabels <- setdiff(labels, dataSetNames)
+      if (length(unknownLabels) > 0) {
+        stop(
+          messages$errorTransformationLabels(unknownLabels, dataSetNames),
+          call. = FALSE
+        )
+      }
+      values <- list(
+        xOffsets = xOffsets,
+        yOffsets = yOffsets,
+        xFactors = xFactors,
+        yFactors = yFactors
+      )
+      for (name in names(values)) {
+        if (!length(values[[name]]) %in% c(1, length(labels))) {
+          stop(
+            messages$errorTransformationValues(
+              name,
+              length(values[[name]]),
+              length(labels)
+            ),
+            call. = FALSE
+          )
+        }
+      }
+      # One value per data set, in the order of the data sets: the labeled
+      # data sets get the given values, in the order of the labels, and the
+      # others keep theirs. `.transformationsByDataSet()` stops for values of
+      # an earlier call without labels that are neither one value nor one
+      # value per data set.
+      transformations <- .transformationsByDataSet(
+        private$.dataTransformations,
+        dataSetNames,
+        private$.quantity$path
+      )
+      for (name in names(values)) {
+        transformations[[name]][labels] <- unname(values[[name]])
+      }
+      private$.dataTransformations <- transformations
       invisible(self)
     },
 
@@ -314,3 +454,64 @@ PIOutputMapping <- R6::R6Class(
     }
   )
 )
+
+# The data transformations of an output mapping without a transformation
+.noDataTransformations <- list(
+  xOffsets = 0,
+  yOffsets = 0,
+  xFactors = 1,
+  yFactors = 1
+)
+
+#' Data transformations of every data set of an output mapping
+#'
+#' @description The offsets and factors of the data transformations of an
+#'   output mapping, one value per observed data set, in the order of the data
+#'   sets. A single value, set without labels, applies to every data set.
+#'   Values set by data set, with labels, are taken by the name of the data
+#'   set. Values given per data set without labels before the data sets were
+#'   added are taken in their order.
+#'
+#' @param transformations The data transformations of the output mapping
+#'   (`PIOutputMapping$dataTransformations`).
+#' @param dataSetNames The names of the observed data sets of the output
+#'   mapping, in their order.
+#' @param quantityPath The path of the quantity of the output mapping, for
+#'   the message.
+#'
+#' @return A list with `xOffsets`, `yOffsets`, `xFactors` and `yFactors`, each
+#'   with one value per data set, named by the data sets. Stops when values
+#'   given per data set without labels do not match the number of data sets.
+#' @keywords internal
+#' @noRd
+.transformationsByDataSet <- function(
+  transformations,
+  dataSetNames,
+  quantityPath = NULL
+) {
+  for (name in names(transformations)) {
+    values <- transformations[[name]]
+    if (!is.null(names(values))) {
+      values <- values[dataSetNames]
+    } else if (length(values) == 1) {
+      values <- rep(values, length(dataSetNames))
+    } else if (
+      length(dataSetNames) > 0 && length(values) != length(dataSetNames)
+    ) {
+      stop(
+        messages$errorTransformationValuesPerDataSet(
+          name,
+          length(values),
+          length(dataSetNames),
+          quantityPath
+        ),
+        call. = FALSE
+      )
+    }
+    if (length(values) == length(dataSetNames)) {
+      names(values) <- dataSetNames
+    }
+    transformations[[name]] <- values
+  }
+  transformations
+}

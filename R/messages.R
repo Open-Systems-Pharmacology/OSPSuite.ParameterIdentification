@@ -16,6 +16,56 @@ messages$errorWeightsNames <- function() {
   "All weights must be a named list with names matching observed data set names."
 }
 
+messages$errorTransformationLabels <- function(labels, dataSetNames) {
+  if (length(dataSetNames) == 0) {
+    return(ospsuite.utils::cliFormat(paste0(
+      "Cannot set data transformations for {.val {labels}}: the output ",
+      "mapping has no observed data sets. Add them with ",
+      "{.fn addObservedDataSets} first."
+    )))
+  }
+  ospsuite.utils::cliFormat(paste0(
+    "{cli::qty(length(labels))}Cannot set data transformations for ",
+    "{.val {labels}}: not {?an observed data set/observed data sets} of the ",
+    "output mapping, which has {.val {dataSetNames}}."
+  ))
+}
+
+messages$errorTransformationValues <- function(argument, nValues, nLabels) {
+  ospsuite.utils::cliFormat(paste0(
+    "{.arg {argument}} has {nValues} value{?s}. Give one value, or one ",
+    "value per label ({nLabels} label{?s})."
+  ))
+}
+
+messages$errorTransformationDuplicateLabels <- function(labels) {
+  ospsuite.utils::cliFormat(paste0(
+    "{cli::qty(length(labels))}Each label can be given only once, but ",
+    "{.val {labels}} {?is/are} given more than once."
+  ))
+}
+
+messages$errorTransformationValuesPerDataSet <- function(
+  argument,
+  nValues,
+  nDataSets,
+  quantityPath = NULL
+) {
+  mapping <- if (is.null(quantityPath)) {
+    "the output mapping"
+  } else {
+    "the output mapping of {.val {quantityPath}}"
+  }
+  ospsuite.utils::cliFormat(paste0(
+    "{.arg {argument}} of the data transformations of ",
+    mapping,
+    " has {nValues} value{?s} for {nDataSets} observed data set{?s}. ",
+    "Give one value, or one value per data set, with ",
+    "{.fn setDataTransformations} without labels, or add or remove data ",
+    "sets until their number matches."
+  ))
+}
+
 messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   sprintf(
     "Weights for '%s' must have length %d matching y-values, but got %d.",
@@ -106,9 +156,8 @@ messages$warningObservedTimesNotSimulated <- function(
     "The observed data of ",
     if (several) "output mappings " else "output mapping ",
     paste0(mappingIndices, " ('", quantityPaths, "')", collapse = ", "),
-    " have times without simulated values: outside the simulated times or, ",
-    "with objectiveFunctionType 'm3', censored values at times that were ",
-    "not simulated. The output time points of the simulations are set at ",
+    " have times without simulated values, outside the simulated times. ",
+    "The output time points of the simulations are set at ",
     "the first call of a ParameterIdentification object, and these observed ",
     "times were added or changed later, so the cost of ",
     if (several) "these output mappings" else "the output mapping",
@@ -145,10 +194,70 @@ messages$errorNoDataForCost <- function(
   text
 }
 
-messages$errorSimulatedValuesMissing <- function() {
+# `dataSetNames` are the names of the data sets whose LLOQ is not positive,
+# and `scaling` and `objectiveFunctionType` the scaling of their output
+# mapping and the objective function type. `index` is the position of the
+# output mapping and `quantityPath` the path of its quantity, both `NULL` for
+# a cost calculated without an output mapping.
+messages$errorLloqNotPositive <- function(
+  dataSetNames,
+  scaling,
+  objectiveFunctionType,
+  index = NULL,
+  quantityPath = NULL
+) {
+  several <- length(dataSetNames) > 1
+  dataSets <- paste0(
+    if (several) "The LLOQs of data sets " else "The LLOQ of data set ",
+    paste0("'", dataSetNames, "'", collapse = ", "),
+    if (!is.null(index)) {
+      paste0(" of output mapping ", index, " ('", quantityPath, "')")
+    }
+  )
+  if (scaling == "log" && objectiveFunctionType == "m3") {
+    return(paste0(
+      dataSets,
+      ", or the values below ",
+      if (several) "them" else "it",
+      ", are not positive after the data transformations. With ",
+      "objectiveFunctionType 'm3' and log scaling, the LLOQ and the values ",
+      "below it, which the importer stores as half the LLOQ, must be ",
+      "positive to have a logarithm. Use linear scaling for the output ",
+      "mapping, a positive LLOQ, a y offset greater than minus half the ",
+      "LLOQ, or objectiveFunctionType 'lsq', which needs only a positive LLOQ."
+    ))
+  }
+  if (scaling == "log") {
+    return(paste0(
+      dataSets,
+      if (several) " are" else " is",
+      " not positive after the data transformations. With log scaling, the ",
+      "LLOQ must be positive to have a logarithm. Use linear scaling for the ",
+      "output mapping, a positive LLOQ, or a y offset greater than minus the ",
+      "LLOQ."
+    ))
+  }
   paste0(
-    "Simulated values are missing, so the LLOQ of the observed data cannot ",
-    "be applied to them."
+    dataSets,
+    if (several) " are" else " is",
+    " not positive before the data transformations. With ",
+    "objectiveFunctionType 'm3' and linear scaling, the standard deviation ",
+    "of the values below the LLOQ is linScaleCV times this LLOQ, so it must ",
+    "be positive. Set a positive LLOQ, or use objectiveFunctionType 'lsq'."
+  )
+}
+
+# `index` is the position of the output mapping and `quantityPath` the path of
+# its quantity, both `NULL` for a cost calculated without an output mapping
+messages$errorNoLloqForM3 <- function(index = NULL, quantityPath = NULL) {
+  paste0(
+    "LLOQ value not provided with the data",
+    if (!is.null(index)) {
+      paste0(" of output mapping ", index, " ('", quantityPath, "')")
+    },
+    ". With objectiveFunctionType 'm3', the observed data of every output ",
+    "mapping need an LLOQ. A negative yFactors of setDataTransformations() ",
+    "sets the LLOQ of a data set to NA."
   )
 }
 

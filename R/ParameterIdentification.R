@@ -183,9 +183,9 @@ ParameterIdentification <- R6::R6Class(
       # first call. After a change of the x values of the observed data (for
       # example of `xOffsets` or `xFactors`) or with a new data set, the
       # simulated values at new observed times are therefore interpolated
-      # between the output time points of the first call. A new observed time
-      # outside the simulated times, or a censored value at a new time with
-      # the M3 method, has no simulated value, so the cost of its output
+      # between the output time points of the first call, also for the
+      # censored values of the M3 method. A new observed time outside the
+      # simulated times has no simulated value, so the cost of its output
       # mapping is infinite. `.checkObservedTimes()` warns about it at the
       # first evaluation of the call; it has nothing to check when the
       # batches are built below, from the current observed data.
@@ -257,19 +257,19 @@ ParameterIdentification <- R6::R6Class(
               quantitiesOrPaths = outputMapping$quantity,
               simulation = simulation
             )
-            for (dataset in outputMapping$observedDataSets) {
-              label <- dataset$name
-              xFactor <- outputMapping$dataTransformations$xFactors
-              if (length(xFactor) != 1) {
-                xFactor <- xFactor[[label]]
-              }
-              xOffset <- outputMapping$dataTransformations$xOffsets
-              if (length(xOffset) != 1) {
-                xOffset <- xOffset[[label]]
-              }
+            observedDataSets <- outputMapping$observedDataSets
+            transformations <- .transformationsByDataSet(
+              outputMapping$dataTransformations,
+              names(observedDataSets),
+              outputMapping$quantity$path
+            )
+            for (label in names(observedDataSets)) {
+              dataset <- observedDataSets[[label]]
               xVals <- ospsuite::toBaseUnit(
                 ospsuite::ospDimensions$Time,
-                values = (dataset$xValues + xOffset) * xFactor,
+                values = (dataset$xValues +
+                  transformations$xOffsets[[label]]) *
+                  transformations$xFactors[[label]],
                 unit = dataset$xUnit
               )
               simulation$outputSchema$addTimePoints(xVals)

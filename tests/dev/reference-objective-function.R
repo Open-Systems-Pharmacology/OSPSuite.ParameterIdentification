@@ -300,21 +300,23 @@ cases$dataSetsLog <- function() {
   )
 }
 # Transformations for single data sets fail on the base commit (#311), in the
-# batch initialization or in the evaluation. When they fail in the batch
-# initialization, they must fail the same way
-cases$labelledTransformationOne <- function() {
-  task <- aciclovirTask(dataSets = twoDataSets())
-  task$outputMappings[[1]]$setDataTransformations(
-    labels = "dataSet2",
-    xOffsets = 0.2,
-    yFactors = 0.8
-  )
-  evaluateObjective(task, lipophilicitySets[1])
-}
+# batch initialization or in the evaluation. They now apply to the labeled
+# data sets
+cases$labelledTransformationOne <- structure(
+  function() {
+    task <- aciclovirTask(dataSets = twoDataSets())
+    task$outputMappings[[1]]$setDataTransformations(
+      labels = "dataSet2",
+      xOffsets = 0.2,
+      yFactors = 0.8
+    )
+    evaluateObjective(task, lipophilicitySets[1])
+  },
+  expectChange = TRUE
+)
 # The base commit reports the error of the data transformations as a failed
-# simulation ("Initial simulation failed."). The observed data are now
-# prepared before the simulations run, so the evaluation stops with the error
-# itself
+# simulation ("Initial simulation failed."). The values now apply to the
+# labeled data sets
 cases$labelledTransformationAll <- structure(
   function() {
     task <- aciclovirTask(dataSets = twoDataSets())
@@ -624,12 +626,13 @@ cases$transformationsBetweenCalls <- structure(
   expectChange = TRUE
 )
 
-# A data set added between two calls, at times that the simulations do not
-# reach, because their output time points are set at the first call: with
-# least squares, times after the last simulated time, and with M3, censored
-# values at times that were not simulated. The cost is infinite, with a
-# warning that says why. The base commit keeps the observed data it read until
-# run() or the end of estimateCI(), so it ignores the new data set
+# A data set added between two calls, at times that were not output time
+# points, because these are set at the first call: with least squares, times
+# after the last simulated time, where the cost is infinite, with a warning
+# that says why, and with M3, censored values at times inside the simulated
+# times, which are interpolated (#320). The base commit keeps the observed
+# data it read until run() or the end of estimateCI(), so it ignores the new
+# data set
 cases$observedTimesBetweenCalls <- structure(
   function() {
     laterData <- function(xValues, yValues, lloq = NULL) {

@@ -15,7 +15,14 @@ instances to align and compare simulation outputs with empirical data.
     \item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for
 comparison with simulation outcomes.}
 
-    \item{\code{dataTransformations}}{A named list of factors and offsets.}
+    \item{\code{dataTransformations}}{A named list of the offsets and factors of
+the data transformations, \code{xOffsets}, \code{yOffsets}, \code{xFactors} and
+\code{yFactors}. Each is one value for all data sets of the output mapping,
+or one value per observed data set, named by the data sets. Values
+given per data set while the number of data sets differs, for example
+before the data sets are added, are kept in their order, without
+names, until the numbers match. Before any call of
+\code{setDataTransformations()}, the offsets are 0 and the factors 1.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
@@ -117,7 +124,33 @@ names must match the names of the observed datasets.}
 \if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
 \subsection{\code{PIOutputMapping$setDataTransformations()}}{
-  Configures transformations for datasets.
+  Configures transformations for datasets. X and y values
+are transformed as \code{(value + offset) * factor}, and the objective
+function uses the transformed values. The other columns of the
+observed data follow the y values:
+\itemize{
+\item The LLOQ is transformed like the y values, and so are the values
+below it, which the importer stores as half the LLOQ. With a
+negative \code{yFactors}, the LLOQ is set to \code{NA}, and the values of the
+data set are used without an LLOQ, also its values below the LLOQ.
+\item Arithmetic standard deviations are multiplied by \code{abs(yFactors)}.
+\item Geometric standard deviations are not changed by \code{yFactors}. A y
+offset adjusts them approximately, and sets them to \code{NA} where a y
+value is not positive before or after the offset.
+}
+
+A negative y offset can make the LLOQ, or the values below it, 0 or
+negative. With log scaling, the LLOQ must stay positive to have a
+logarithm, so the y offset must be greater than minus the LLOQ. With
+\code{objectiveFunctionType = "m3"}, the values below the LLOQ enter the
+cost too and must stay positive, so the y offset must be greater than
+minus half the LLOQ. Otherwise the parameter identification stops
+with an error. See \code{ospsuite::DataCombined} for the limits of the
+approximation for geometric standard deviations.
+
+Each call sets all four transformations of the data sets it applies
+to: an offset or factor that is not given is set to its default, also
+with labels.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(
@@ -132,12 +165,28 @@ names must match the names of the observed datasets.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{labels}}{List of dataset labels for targeted transformations.
-Absence of labels applies transformations globally.}
-      \item{\code{xOffsets}}{Numeric list/value for X-offset adjustments.}
-      \item{\code{yOffsets}}{Numeric list/value for Y-offset adjustments.}
-      \item{\code{xFactors}}{Numeric list/value for X-scaling factors.}
-      \item{\code{yFactors}}{Numeric list/value for Y-scaling factors.}
+      \item{\code{labels}}{Names of the observed data sets to transform. Without
+labels, the transformations apply to all data sets of the output
+mapping, and single values also to data sets added later. With labels,
+they apply only to these data sets, which must be added to the output
+mapping first, and the other data sets keep their transformations. A
+data set added later gets the single values of the last call without
+labels, and no transformation where that call gave one value per data
+set.}
+      \item{\code{xOffsets}}{Numeric, the offset of the x values. Default is \code{0}.}
+      \item{\code{yOffsets}}{Numeric, the offset of the y values. Default is \code{0}.}
+      \item{\code{xFactors}}{Numeric, the factor of the x values. Default is \code{1}.}
+      \item{\code{yFactors}}{Numeric, the factor of the y values. Default is \code{1}.
+
+Each offset and factor is one value, or one value per label, in the
+order of the labels. Without labels, it can also be one value per data
+set, in the order of the data sets. Such values stay with their data
+sets when data sets are added or removed. Values given per data set
+while the number of data sets differs, for example before the data
+sets are added, apply in the order of the data sets once a call of
+\code{addObservedDataSets()} or \code{removeObservedDataSet()} makes the numbers
+equal. Until then, the parameter identification stops with an error.
+The values are taken by their position, and their names are ignored.}
     }
     \if{html}{\out{</div>}}
   }
