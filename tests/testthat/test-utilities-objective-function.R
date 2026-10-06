@@ -1867,6 +1867,29 @@ test_that(".computeErrorWeights weights an SD like its GSD on the log scale", {
   )
 })
 
+test_that(".computeErrorWeights stops when its inputs differ in length", {
+  # Two error values, then two error types, for three observations: each case
+  # covers one of the two length checks. Without them, R recycles the shorter
+  # input, and the error values 1 and 2 give the weights 1, 0.5 and NA (#335)
+  yValues <- c(10, 20, 30)
+  expect_snapshot(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = c(1, 2),
+      yErrorType = rep("ArithmeticStdDev", 3)
+    ),
+    error = TRUE
+  )
+  expect_snapshot(
+    .computeErrorWeights(
+      yValues = yValues,
+      yErrorValues = c(1, 2, 3),
+      yErrorType = rep("ArithmeticStdDev", 2)
+    ),
+    error = TRUE
+  )
+})
+
 # Cost terms of an output mapping with log scaling and error weights, for
 # observations at 1, 2 and 3 min
 logScaleErrorTerms <- function(
