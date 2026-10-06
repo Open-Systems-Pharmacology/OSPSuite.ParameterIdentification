@@ -267,77 +267,88 @@
 
 #' Stores current simulation output state
 #'
-#' @description Stores simulation output intervals, output time points, and
-#'   output selections in the current state.
+#' @description Stores the output selections, output intervals, and output
+#'   time points of simulations in their current state.
 #'
 #' @param simulations List of `Simulation` objects
 #'
-#' @return A named list with entries `outputIntervals`, `timePoints`, and
-#'   `outputSelections`. Every entry is a named list with names being the IDs of
-#'   the simulations.
+#' @return A named list with names being the IDs of the simulations. Every
+#'   entry is a list with the paths of the output selections (`outputs`), the
+#'   output time points (`timePoints`), and the name, start time, end time and
+#'   resolution of every output interval (`intervals`).
 #' @keywords internal
 .storeSimulationState <- function(simulations) {
   simulations <- c(simulations)
-  # Create named vectors for the output intervals, time points, and output
-  # selections of the simulations in their initial state. Names are IDs of
-  # simulations.
-  oldOutputIntervals <-
-    oldTimePoints <-
-      oldOutputSelections <-
-        ids <- vector("list", length(simulations))
+  simStateList <- lapply(simulations, .outputStateValues)
+  names(simStateList) <- vapply(
+    simulations,
+    function(simulation) simulation$id,
+    character(1)
+  )
+  simStateList
+}
 
-  for (idx in seq_along(simulations)) {
-    simulation <- simulations[[idx]]
-    simId <- simulation$id
-    # Have to reset both the output intervals and the time points!
-    oldOutputIntervals[[idx]] <- simulation$outputSchema$intervals
-    oldTimePoints[[idx]] <- simulation$outputSchema$timePoints
-    oldOutputSelections[[idx]] <- simulation$outputSelections$allOutputs
-    ids[[idx]] <- simId
-  }
-  names(oldOutputIntervals) <-
-    names(oldTimePoints) <-
-      names(oldOutputSelections) <- ids
-
-  return(list(
-    outputIntervals = oldOutputIntervals,
-    timePoints = oldTimePoints,
-    outputSelections = oldOutputSelections
-  ))
+#' Values of the output state of a simulation
+#'
+#' @param simulation A `Simulation` object
+#'
+#' @return The entry of one simulation in the output of
+#'   `.storeSimulationState()`.
+#' @keywords internal
+#' @noRd
+.outputStateValues <- function(simulation) {
+  list(
+    outputs = vapply(
+      simulation$outputSelections$allOutputs,
+      function(output) output$path,
+      character(1)
+    ),
+    timePoints = simulation$outputSchema$timePoints,
+    intervals = lapply(simulation$outputSchema$intervals, function(interval) {
+      list(
+        name = interval$name,
+        startTime = interval$startTime$value,
+        endTime = interval$endTime$value,
+        resolution = interval$resolution$value
+      )
+    })
+  )
 }
 
 #' Restore simulation output state
 #'
 #' @inheritParams .storeSimulationState
-#' @param simStateList Output of the function `.storeSimulationState`. A named
-#'   list with entries `outputIntervals`, `timePoints`, and `outputSelections`.
-#'   Every entry is a named list with names being the IDs of the simulations.
+#' @param simStateList Output of the function `.storeSimulationState`.
+#'
+#' @details A simulation whose output state has not changed is left as it is,
+#'   so that the output interval objects of its output schema stay the same.
 #'
 #' @keywords internal
 .restoreSimulationState <- function(simulations, simStateList) {
   simulations <- c(simulations)
   for (simulation in simulations) {
-    simId <- simulation$id
-    # reset the output intervals
+    savedState <- simStateList[[simulation$id]]
+    if (identical(.outputStateValues(simulation), savedState)) {
+      next
+    }
+    # Reset both the output intervals and the time points
     simulation$outputSchema$clear()
-    for (outputInterval in simStateList$outputIntervals[[simId]]) {
+    for (outputInterval in savedState$intervals) {
       ospsuite::addOutputInterval(
         simulation = simulation,
-        startTime = outputInterval$startTime$value,
-        endTime = outputInterval$endTime$value,
-        resolution = outputInterval$resolution$value
+        startTime = outputInterval$startTime,
+        endTime = outputInterval$endTime,
+        resolution = outputInterval$resolution,
+        intervalName = outputInterval$name
       )
     }
-    if (length(simStateList$timePoints[[simId]]) > 0) {
-      simulation$outputSchema$addTimePoints(simStateList$timePoints[[simId]])
+    if (length(savedState$timePoints) > 0) {
+      simulation$outputSchema$addTimePoints(savedState$timePoints)
     }
     # Reset output selections
     ospsuite::clearOutputs(simulation)
-    for (outputSelection in simStateList$outputSelections[[simId]]) {
-      ospsuite::addOutputs(
-        quantitiesOrPaths = outputSelection$path,
-        simulation = simulation
-      )
+    for (path in savedState$outputs) {
+      ospsuite::addOutputs(quantitiesOrPaths = path, simulation = simulation)
     }
   }
 }
