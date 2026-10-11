@@ -376,27 +376,32 @@ cases$errorArithmetic <- function() {
     lipophilicitySets
   )
 }
-cases$errorGeometric <- function() {
-  laskin <- laskinData()
-  dataSet <- syntheticData(
-    "geometric",
-    xValues = laskin$xValues,
-    yValues = laskin$yValues,
-    yUnit = laskin$yUnit,
-    yDimension = laskin$yDimension,
-    yErrorValues = seq(1.1, 2, length.out = 11),
-    yErrorType = DataErrorType$GeometricStdDev
-  )
-  dataSet$molWeight <- laskin$molWeight
-  evaluateObjective(
-    aciclovirTask(
-      "log",
-      objectiveFunctionOptions = list(residualWeightingMethod = "error"),
-      dataSets = dataSet
-    ),
-    lipophilicitySets
-  )
-}
+# The base commit calculates the error weights on the log scale from the log
+# values (#325)
+cases$errorGeometric <- structure(
+  function() {
+    laskin <- laskinData()
+    dataSet <- syntheticData(
+      "geometric",
+      xValues = laskin$xValues,
+      yValues = laskin$yValues,
+      yUnit = laskin$yUnit,
+      yDimension = laskin$yDimension,
+      yErrorValues = seq(1.1, 2, length.out = 11),
+      yErrorType = DataErrorType$GeometricStdDev
+    )
+    dataSet$molWeight <- laskin$molWeight
+    evaluateObjective(
+      aciclovirTask(
+        "log",
+        objectiveFunctionOptions = list(residualWeightingMethod = "error"),
+        dataSets = dataSet
+      ),
+      lipophilicitySets
+    )
+  },
+  expectChange = TRUE
+)
 
 cases$huber <- function() {
   evaluateObjective(
