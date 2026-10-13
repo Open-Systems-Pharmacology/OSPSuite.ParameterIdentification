@@ -51,6 +51,7 @@ Suggests:
     mockthat,
     readr,
     rmarkdown,
+    rSharp (>= 2.0.0),
     testthat (>= 3.1.7),
     vdiffr
 Roxygen: list(markdown = TRUE)
@@ -59,4 +60,5 @@ Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Encoding: UTF-8
 Remotes:
-    ospsuite=Open-Systems-Pharmacology/OSPSuite-R
+    ospsuite=Open-Systems-Pharmacology/OSPSuite-R,
+    rSharp=Open-Systems-Pharmacology/rSharp@v2.0.0
