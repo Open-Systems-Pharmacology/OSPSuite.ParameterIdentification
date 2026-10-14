@@ -4,10 +4,11 @@
 
 ### Breaking changes
 
-- Minimum required `ospsuite` version is now 13.0.1. The vignettes and
-  tests use the example `Aciclovir.pkml` shipped with `ospsuite` 13.0.1,
-  in which the dose parameter has a new path
-  ([\#313](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/313)).
+- Minimum required `ospsuite` version is now 12.4.3. The vignettes and
+  tests use the example `Aciclovir.pkml` shipped with `ospsuite` 12.4.3
+  or later, in which the dose parameter is below `Events` instead of
+  `Applications`
+  ([\#322](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322)).
 
 ### Major changes
 
@@ -16,6 +17,15 @@
   model. Previously they were applied unconverted, so a non-base unit
   silently optimized the wrong quantity
   ([\#300](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/300)).
+- With `residualWeightingMethod = "error"` and `scaling = "log"`, the
+  error weights now use the SD of the log values: `1 / log(GSD)` for
+  geometric standard deviations and `1 / sqrt(log(1 + (SD / y)^2))` for
+  arithmetic standard deviations. Previously they were calculated from
+  the log-transformed observed values as if these were on the linear
+  scale, so the weights were wrong, and observations with a value of 1
+  or less in the base unit silently got weight 1. Results change for
+  output mappings with log scaling and error weights
+  ([\#325](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/325)).
 - The objective function of `ParameterIdentification` is faster, most of
   all for tasks with many simulations, parameters and output mappings.
   Apart from the simulations themselves, little work is left in an
@@ -120,6 +130,13 @@
   the data sets were added to the output mapping. With one LLOQ per
   output mapping, the results are unchanged
   ([\#317](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317)).
+- `ospsuite` and the other Open Systems Pharmacology packages that this
+  package needs are now installed from the [OSP
+  R-universe](https://open-systems-pharmacology.r-universe.dev), also
+  when you install the development version from GitHub. Add the
+  R-universe to your repositories before you install, as shown in the
+  README
+  ([\#322](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322)).
 
 ## ospsuite.parameteridentification 2.2.0
 
@@ -146,12 +163,15 @@
   options and emits a message
   ([\#228](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/228)).
 - `ParameterIdentification$plotResults()` migrated from the
-  soft-deprecated `{tlf}`-based `ospsuite` plotting functions
-  (`plotIndividualTimeProfile()`, `plotObservedVsSimulated()`,
-  `plotResidualsVsTime()`) to the new
+  soft-deprecated
+  [tlf](https://github.com/open-systems-pharmacology/tlf-library)-based
+  `ospsuite` plotting functions
+  ([`plotIndividualTimeProfile()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotIndividualTimeProfile.html),
+  [`plotObservedVsSimulated()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotObservedVsSimulated.html),
+  [`plotResidualsVsTime()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsTime.html))
+  to the new
   [ospsuite.plots](https://www.open-systems-pharmacology.org/OSPSuite.Plots/)-based
-  equivalents
-  ([`plotTimeProfile()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotTimeProfile.html),
+  equivalents (`plotTimeProfile()`,
   [`plotPredictedVsObserved()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotPredictedVsObserved.html),
   [`plotResidualsVsCovariate()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/plotResidualsVsCovariate.html)).
   The `DefaultPlotConfiguration` object is no longer used; axis scales
@@ -160,7 +180,7 @@
   hard-coded to linear. Visual output of `plotResults()` changes
   accordingly.
 - Sub-plot composition in `plotResults()` switched from
-  `ospsuite::plotGrid()` to
+  [`ospsuite::plotGrid()`](https://rdrr.io/pkg/tlf/man/plotGrid.html) to
   [`patchwork::wrap_plots()`](https://patchwork.data-imaginist.com/reference/wrap_plots.html);
   the returned objects are now `patchwork` objects rather than the
   previous `ospsuite` plot-grid objects.

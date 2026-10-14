@@ -53,6 +53,7 @@ through the `residualWeightingMethod`. This option specifies how
 residuals are weighted. Available options include:
 
 - **`none`** (default): No residual weighting.
+
 - **`error`**: Requires both `yErrorValues` and `yErrorType` to be
   provided in the observed data `DataSet`. Ideal when individual data
   points come with variance estimates, allowing for weighting by the
@@ -64,10 +65,17 @@ residuals are weighted. Available options include:
   cannot be corrected automatically. Group mean observations will be
   under-weighted by `1 / √n` relative to the optimal value.
 
+  The weight is `1 / SD`, with the SD on the scale of the residuals.
+  With `outputMapping$scaling = "log"`, the residuals are differences of
+  log values, so the SD of the log values is used: `log(GSD)` for a
+  geometric SD, and `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD
+  `SD` of an observed value `y`. For a small coefficient of variation,
+  the latter is close to `SD / y`.
+
 For proportional error handling across outputs of different magnitudes,
-use `outputMapping$scaling = "log"` instead. Log residuals are
-dimensionless and automatically comparable across mappings spanning
-different concentration ranges.
+use `outputMapping$scaling = "log"`, with or without `error` weighting.
+Log residuals are dimensionless and automatically comparable across
+mappings spanning different concentration ranges.
 
 To apply error-based residual weighting, set the
 `residualWeightingMethod` attribute in `objectiveFunctionOptions` of the

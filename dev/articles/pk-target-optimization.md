@@ -41,13 +41,15 @@ sim <- loadSimulation(
 
 #### Parameter to optimize
 
-The parameter is retrieved by its full path in the simulation.
-`minValue` and `maxValue` define the search space.
+The parameter is retrieved by its path in the simulation. The wildcard
+`**` stands for any number of containers, here the formulation container
+that newer versions of the model have between the event and the
+application. `minValue` and `maxValue` define the search space.
 
 ``` r
 
 doseParam <- getParameter(
-  path = "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
+  path = "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose",
   container = sim
 )
 
@@ -127,7 +129,7 @@ print(piResult)
 #>   • Objective value: 0.00e+00
 #>   • Iterations: 13
 #>   • Function evaluations: 13
-#>   • Elapsed: 1.706 s
+#>   • Elapsed: 1.361 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 30.00 µmol/l
 ```
@@ -192,7 +194,7 @@ print(piResultMulti)
 #>   • Objective value: 5.90e-05
 #>   • Iterations: 13
 #>   • Function evaluations: 13
-#>   • Elapsed: 1.394 s
+#>   • Elapsed: 1.334 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 29.84 µmol/l
 #>   • AUC_tEnd: Target = 2400. µmol*min/l, Achieved = 2413. µmol*min/l
