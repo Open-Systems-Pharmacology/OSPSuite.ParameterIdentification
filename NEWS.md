@@ -1,5 +1,9 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- Minimum required `ospsuite` version is now 12.4.3. The vignettes and tests use the example `Aciclovir.pkml` shipped with `ospsuite` 12.4.3 or later, in which the dose parameter is below `Events` instead of `Applications` (#322).
+
 ## Major changes
 
 - `ParameterIdentification` now converts parameter values from `PIParameters$unit` to the base unit before applying them to the model. Previously they were applied unconverted, so a non-base unit silently optimized the wrong quantity (#300).

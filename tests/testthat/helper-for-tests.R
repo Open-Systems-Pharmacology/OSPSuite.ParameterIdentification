@@ -1,8 +1,9 @@
 # Simulation, Parameter, and Mapping Factories
 
-# Path of the dose parameter in the Aciclovir.pkml shipped with ospsuite. The
-# file of ospsuite 13 has a "No formulation" container in the event path, which
-# the "**" wildcard matches, so the tests run with ospsuite 12 and 13. A path
+# Path of the dose parameter in the Aciclovir.pkml shipped with ospsuite 12.4.3
+# or later. The file of ospsuite 13 has a "No formulation" container in the
+# event path, which the "**" wildcard matches, so the tests run with ospsuite
+# 12.4.3 and 13. Before 12.4.3, the dose is below "Applications". A path
 # with a wildcard works with getParameter(), but not with
 # setParameterValuesByPath().
 testDosePath <- "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"
