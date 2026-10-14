@@ -1,5 +1,22 @@
 # Simulation, Parameter, and Mapping Factories
 
+# Path of the dose parameter in the Aciclovir.pkml shipped with ospsuite. The
+# file of ospsuite 13 has a "No formulation" container in the event path, which
+# the "**" wildcard matches, so the tests run with ospsuite 12 and 13. A path
+# with a wildcard works with getParameter(), but not with
+# setParameterValuesByPath().
+testDosePath <- "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"
+
+# Makes the simulation fail when a variable becomes negative. ospsuite 13 has
+# this setting in the solver of the simulation. ospsuite 12 has it in
+# SimulationRunOptions, where it is on by default.
+enableNegativeValuesCheck <- function(simulation) {
+  if ("checkForNegativeValues" %in% names(simulation$solver)) {
+    simulation$solver$checkForNegativeValues <- TRUE
+  }
+  invisible(simulation)
+}
+
 getTestSimulation <- function() {
   .simulation <- NULL
   function() {
@@ -53,7 +70,7 @@ getTestPKParameters <- function() {
   function(simulation = NULL) {
     if (!is.null(simulation)) {
       param <- ospsuite::getParameter(
-        path = "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
+        path = testDosePath,
         container = simulation
       )
       piParameter <- PIParameters$new(parameters = list(param))

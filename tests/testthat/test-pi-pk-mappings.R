@@ -190,11 +190,11 @@ test_that(".getPKValues uses each mapping's own simulation batch, not always the
   ospsuite::setParameterValues(cl2, cl2$value * 0.1)
 
   doseParam1 <- ospsuite::getParameter(
-    "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
+    testDosePath,
     container = sim1
   )
   doseParam2 <- ospsuite::getParameter(
-    "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose",
+    testDosePath,
     container = sim2
   )
   piParam <- PIParameters$new(parameters = list(doseParam1, doseParam2))
@@ -294,10 +294,7 @@ test_that("a failed simulation without a PK mapping only warns", {
     dose <- PIParameters$new(
       parameters = lapply(simulations, function(simulation) {
         ospsuite::getParameter(
-          paste0(
-            "Events|IV 250mg 10min|No formulation|Application_1|",
-            "ProtocolSchemaItem|Dose"
-          ),
+          testDosePath,
           simulation
         )
       })
@@ -414,7 +411,6 @@ test_that(".getPKValues routes a state-variable parameter as a molecule", {
 
 test_that("run() applies a non-base parameter unit in PK mode", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
-  dosePath <- "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 
   # Own simulation per task: earlier run()s mutate the cached simulation's Dose
@@ -422,7 +418,7 @@ test_that("run() applies a non-base parameter unit in PK mode", {
   doseTask <- function(unit, startValue, minValue, maxValue) {
     sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
     piParameter <- PIParameters$new(
-      parameters = list(getParameter(dosePath, container = sim))
+      parameters = list(getParameter(testDosePath, container = sim))
     )
     piParameter$unit <- unit
     # Start, then max, then min: $unit does not rescale the values left from

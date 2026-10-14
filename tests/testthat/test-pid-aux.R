@@ -124,7 +124,7 @@ test_that("gridSearch() logs the full reason of a failed simulation once", {
   )
   # A negative dose makes the simulation fail with a reason of many lines,
   # which lists the variables that became negative
-  sim$solver$checkForNegativeValues <- TRUE
+  enableNegativeValuesCheck(sim)
   piTask <- ParameterIdentification$new(
     simulations = sim,
     parameters = testPKParameters(sim),
@@ -168,14 +168,11 @@ test_that("gridSearch() logs the full reason once if the failure time varies", {
   # A negative dose makes the simulation fail with negative values. The
   # engine gives the time of the failure in the first line of the reason, so
   # the reasons differ when the start time of the dose changes.
-  sim$solver$checkForNegativeValues <- TRUE
-  schemaItem <- paste0(
-    "Events|IV 250mg 10min|No formulation|Application_1|",
-    "ProtocolSchemaItem|"
-  )
-  ospsuite::setParameterValuesByPath(paste0(schemaItem, "Dose"), -5e-4, sim)
+  enableNegativeValuesCheck(sim)
+  dose <- ospsuite::getParameter(testDosePath, container = sim)
+  dose$value <- -5e-4
   startTime <- ospsuite::getParameter(
-    paste0(schemaItem, "Start time"),
+    sub("Dose$", "Start time", testDosePath),
     container = sim
   )
   startTime$value <- 10
