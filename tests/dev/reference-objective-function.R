@@ -770,10 +770,9 @@ cases$plotResults <- function() {
 
 # ---- PK metric mode ----------------------------------------------------------
 
-dosePath <- paste0(
-  "Events|IV 250mg 10min|No formulation|Application_1|",
-  "ProtocolSchemaItem|Dose"
-)
+# "**" matches the "No formulation" container that the Aciclovir.pkml of
+# ospsuite 13 has in the event path
+dosePath <- "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"
 
 # A task that fits the dose of Aciclovir to a target C_max
 pkTask <- function(mxStep = NULL) {

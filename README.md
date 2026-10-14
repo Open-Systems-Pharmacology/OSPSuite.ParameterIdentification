@@ -19,18 +19,30 @@ package to run the simulations.
 
 ## Installation
 
-The package can be installed from GitHub using the `{pak}` package.
-Simply run the following code:
+### From the OSP R-universe (recommended)
+
+Install the released version from the [OSP
+R-universe](https://open-systems-pharmacology.r-universe.dev):
 
 ``` r
-install.packages("pak")
-
-pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification@*release")
+install.packages(
+  "ospsuite.parameteridentification",
+  repos = c(OSP = "https://open-systems-pharmacology.r-universe.dev", getOption("repos"))
+)
 ```
 
-Get the latest development version with:
+### Development version
+
+To install the unreleased development version from GitHub, use
+[pak](https://pak.r-lib.org):
 
 ``` r
+# install.packages("pak")
+options(repos = c(
+  OSP = "https://open-systems-pharmacology.r-universe.dev",
+  getOption("repos")
+))
+
 pak::pak("Open-Systems-Pharmacology/OSPSuite.ParameterIdentification")
 ```
 

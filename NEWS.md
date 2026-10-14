@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-- Minimum required `ospsuite` version is now 13.0.1. The vignettes and tests use the example `Aciclovir.pkml` shipped with `ospsuite` 13.0.1, in which the dose parameter has a new path (#313).
+- Minimum required `ospsuite` version is now 12.4.3. The vignettes and tests use the example `Aciclovir.pkml` shipped with `ospsuite` 12.4.3 or later, in which the dose parameter is below `Events` instead of `Applications` (#322).
 
 ## Major changes
 
@@ -22,6 +22,7 @@
 - With an LLOQ and `objectiveFunctionType = "lsq"`, a missing simulated value still stops the evaluation, now with an explicit message instead of an error from `tibble` (#310).
 - When no observed or simulated values of an output mapping enter the cost, for example because `xOffsets` of `setDataTransformations()` shift all observed times below 0, the error of `ParameterIdentification` now names the output mapping by its position and quantity path and gives the reason. Previously it said "No observed data found when calculating cost function." (#310).
 - With `objectiveFunctionType = "m3"`, the contribution of the values below the LLOQ is now correct when they have different LLOQs, for example in two data sets with different LLOQs in one output mapping. Each such value is now compared with the simulated value at its own time, and with `linScaleCV` its standard deviation is calculated from its own LLOQ. Previously an LLOQ could be compared with the simulated value at another time, and a value could get the standard deviation of another LLOQ, so the cost was wrong and depended on the order in which the data sets were added to the output mapping. With one LLOQ per output mapping, the results are unchanged (#317).
+- `ospsuite` and the other Open Systems Pharmacology packages that this package needs are now installed from the [OSP R-universe](https://open-systems-pharmacology.r-universe.dev), also when you install the development version from GitHub. Add the R-universe to your repositories before you install, as shown in the README (#322).
 
 # ospsuite.parameteridentification 2.2.0
 
