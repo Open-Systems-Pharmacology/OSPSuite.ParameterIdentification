@@ -75,8 +75,10 @@ sim_500mg <- loadSimulation(system.file(
 In the next step, we will retrieve the objects of the application dose parameters and change the dose of the second simulation to 500 mg.
 
 ```{r setDose}
-# Path to the dose parameter
-doseParameterPath <- "Events|IV 250mg 10min|No formulation|Application_1|ProtocolSchemaItem|Dose"
+# Path to the dose parameter. The wildcard "**" stands for any number of
+# containers, here the formulation container that newer versions of the model
+# have between the event and the application.
+doseParameterPath <- "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
