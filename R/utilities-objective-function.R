@@ -739,8 +739,8 @@
   ospsuite.utils::validateIsNumeric(yValues)
   ospsuite.utils::validateIsNumeric(yErrorValues)
   ospsuite.utils::validateIsCharacter(yErrorType)
-  ospsuite.utils::isSameLength(yValues, yErrorValues)
-  ospsuite.utils::isSameLength(yValues, yErrorType)
+  ospsuite.utils::validateIsSameLength(yValues, yErrorValues)
+  ospsuite.utils::validateIsSameLength(yValues, yErrorType)
 
   weights <- rep(defaultWeight, length(yValues))
 

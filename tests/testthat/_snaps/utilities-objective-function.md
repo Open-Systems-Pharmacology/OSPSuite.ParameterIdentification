@@ -33,3 +33,21 @@
 
     642.4931
 
+# .computeErrorWeights stops when its inputs differ in length
+
+    Code
+      .computeErrorWeights(yValues = yValues, yErrorValues = c(1, 2), yErrorType = rep(
+        "ArithmeticStdDev", 3))
+    Condition
+      Error in `ospsuite.utils::validateIsSameLength()`:
+      ! Arguments "yValues, yErrorValues" must have the same length, but they don't!
+
+---
+
+    Code
+      .computeErrorWeights(yValues = yValues, yErrorValues = c(1, 2, 3), yErrorType = rep(
+        "ArithmeticStdDev", 2))
+    Condition
+      Error in `ospsuite.utils::validateIsSameLength()`:
+      ! Arguments "yValues, yErrorType" must have the same length, but they don't!
+
