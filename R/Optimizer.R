@@ -543,17 +543,11 @@ Optimizer <- R6::R6Class(
       } else if (private$.configuration$algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
-        relChange <- try(
-          {
-            abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
-          },
-          silent = TRUE
+        values <- tail(bestvalit, lastN)
+        # multiplied out instead of divided, so a best value of 0 gives no NaN
+        baseResult$convergence <- all(
+          abs(diff(values)) <= 1e-5 * abs(tail(values, lastN - 1))
         )
-        baseResult$convergence <- if (inherits(relChange, "try-error")) {
-          FALSE
-        } else {
-          all(relChange < 1e-5)
-        }
         baseResult$convergenceMessage <- messages$convergenceDEoptim(
           optimResult$optim$iter,
           controlOptim$itermax %||% DEoptim::DEoptim.control()$itermax,

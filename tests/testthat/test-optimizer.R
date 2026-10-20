@@ -216,6 +216,21 @@ test_that("HJKB reports the stop reason when no step ran", {
   })
 })
 
+test_that("DEoptim with a constant zero objective counts as converged", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = function(p) 0,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, TRUE)
+})
+
 test_that("DEoptim reports generations used against itermax", {
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "DEoptim"
