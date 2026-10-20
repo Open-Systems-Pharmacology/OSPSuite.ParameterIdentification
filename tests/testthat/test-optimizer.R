@@ -130,6 +130,82 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
+test_that("BOBYQA stopped at maxeval is reported as not converged", {
+  nCalls <- 0
+  fnCounted <- function(p) {
+    nCalls <<- nCalls + 1
+    fnObjective(p)
+  }
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithmOptions <- list(maxeval = 3)
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnCounted,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_match(optResult$convergenceMessage, "NLOPT_MAXEVAL_REACHED")
+  expect_equal(optResult$fnEvaluations, nCalls)
+})
+
+test_that("BOBYQA convergence is a single logical when nloptr fails", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- optimizer$.__enclos_env__$private$.formatOptimizationOutput(
+    list(
+      par = parTest,
+      value = Inf,
+      convergence = -1L,
+      message = "NLOPT_FAILURE: Generic failure code.",
+      iter = 0L,
+      nCalls = 2
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_identical(
+    optResult$convergenceMessage,
+    "NLOPT_FAILURE: Generic failure code."
+  )
+})
+
+test_that("HJKB stopped at maxfeval reports why it stopped", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$algorithmOptions <- list(maxfeval = 3)
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- suppressWarnings(suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  ))
+  expect_identical(optResult$convergence, FALSE)
+  expect_snapshot(cat(optResult$convergenceMessage))
+})
+
+test_that("DEoptim reports generations used against itermax", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  optimizer <- Optimizer$new(piConfig)
+  set.seed(2203)
+  optResult <- suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_snapshot(cat(optResult$convergenceMessage))
+})
+
 test_that("Optimizer output has correct structure and values for HJKB", {
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "HJKB"

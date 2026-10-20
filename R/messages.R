@@ -504,3 +504,20 @@ messages$errorNoResidualsToPlot <- function() {
     "No residuals to plot: this {.cls modelCost} has no finite residuals."
   )
 }
+
+messages$convergenceHJKB <- function(converged) {
+  if (converged) {
+    ospsuite.utils::cliFormat("Step size fell below {.arg tol}.")
+  } else {
+    ospsuite.utils::cliFormat(
+      "Stopped because {.arg maxfeval} was reached before step size fell below {.arg tol}."
+    )
+  }
+}
+
+messages$convergenceDEoptim <- function(iterations, itermax, converged) {
+  rule <- if (converged) "is" else "is not"
+  ospsuite.utils::cliFormat(
+    "Used {iterations} of {.arg itermax} = {itermax} generations. Relative change of the best value over the last 5 generations {rule} below 1e-5."
+  )
+}

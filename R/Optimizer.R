@@ -78,17 +78,24 @@ Optimizer <- R6::R6Class(
       controlOptim,
       fixedParams = NULL
     ) {
-      nloptr::bobyqa(
+      # nloptr evaluates fn at x0 before NLopt starts counting, so `iter`
+      # undercounts the evaluations actually run
+      nCalls <- 0
+      result <- nloptr::bobyqa(
         x0 = par,
-        fn = if (!is.null(fixedParams)) {
-          function(p) fn(private$.updateFixedParams(p, fixedParams))
-        } else {
-          fn
+        fn = function(p) {
+          nCalls <<- nCalls + 1
+          if (!is.null(fixedParams)) {
+            p <- private$.updateFixedParams(p, fixedParams)
+          }
+          fn(p)
         },
         lower = lower,
         upper = upper,
         control = controlOptim
       )
+      result$nCalls <- nCalls
+      result
     },
 
     # Differential Evolution optimization using DEoptim::DEoptim
@@ -496,11 +503,12 @@ Optimizer <- R6::R6Class(
     },
 
     # Formats the optimization output into a standardized result structure
-    .formatOptimizationOutput = function(optimResult) {
+    .formatOptimizationOutput = function(optimResult, controlOptim = list()) {
       baseResult <- list(
         par = NULL,
         value = NULL,
         convergence = NULL,
+        convergenceMessage = NULL,
         iterations = NULL,
         fnEvaluations = NULL,
         algorithm = private$.configuration$algorithm,
@@ -511,17 +519,19 @@ Optimizer <- R6::R6Class(
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
         baseResult$convergence <- optimResult$convergence == 0
+        baseResult$convergenceMessage <- messages$convergenceHJKB(
+          baseResult$convergence
+        )
         baseResult$iterations <- optimResult$niter
         baseResult$fnEvaluations <- optimResult$feval
       } else if (private$.configuration$algorithm == "BOBYQA") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
-        baseResult$convergence <- optimResult$convergence > 0
-        if (!baseResult$convergence) {
-          baseResult$convergence$error <- optimResult$convergence
-        }
+        # NLopt codes 5 (maxeval) and 6 (maxtime) are positive but not converged
+        baseResult$convergence <- optimResult$convergence %in% 1:4
+        baseResult$convergenceMessage <- optimResult$message
         baseResult$iterations <- optimResult$iter
-        baseResult$fnEvaluations <- optimResult$iter
+        baseResult$fnEvaluations <- optimResult$nCalls
       } else if (private$.configuration$algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
@@ -536,6 +546,11 @@ Optimizer <- R6::R6Class(
         } else {
           all(relChange < 1e-5)
         }
+        baseResult$convergenceMessage <- messages$convergenceDEoptim(
+          optimResult$optim$iter,
+          controlOptim$itermax %||% DEoptim::DEoptim.control()$itermax,
+          baseResult$convergence
+        )
         baseResult$par <- unname(optimResult$optim$bestmem)
         baseResult$value <- optimResult$optim$bestval
         baseResult$iterations <- optimResult$optim$iter
@@ -625,7 +640,10 @@ Optimizer <- R6::R6Class(
       )
       elapsedTime <- proc.time() - startTime
 
-      optimResult <- private$.formatOptimizationOutput(rawResult)
+      optimResult <- private$.formatOptimizationOutput(
+        rawResult,
+        algorithmOptions
+      )
       optimResult$elapsed <- elapsedTime[["elapsed"]]
 
       optimResult$par <- private$.updateFixedParams(

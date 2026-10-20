@@ -94,7 +94,8 @@ test_that("ParameterIdentification$run() with pkOutputMappings returns PKResult"
 test_that("PKResult from pkOutputMappings has convergence field", {
   result <- testPKTask()$run()
   resultList <- result$toList()
-  expect_equal(resultList$convergence, TRUE)
+  expect_identical(resultList$convergence, FALSE)
+  expect_match(resultList$convergenceMessage, "NLOPT_MAXEVAL_REACHED")
 })
 
 test_that("PKResult$toDataFrame() returns mapping-centric frame for pkOutputMappings", {

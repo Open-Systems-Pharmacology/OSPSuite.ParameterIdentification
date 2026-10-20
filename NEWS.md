@@ -12,6 +12,7 @@
 
 ## Minor improvements and bug fixes
 
+- `PIResult` and `PKResult` now report `convergence = FALSE` for a BOBYQA run that stopped because it reached `maxeval` or `maxtime`, which was previously reported as converged. A new field `convergenceMessage` says why the optimizer stopped, for all algorithms, and `fnEvaluations` for BOBYQA now counts every evaluation of the objective function (#304).
 - `ParameterIdentification` now reads the observed data once per call of a method and per bootstrap replicate and caches them, instead of re-reading them from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).
 - `plot.modelCost()` now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (#275).
 - `ParameterIdentification` can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (#280).
