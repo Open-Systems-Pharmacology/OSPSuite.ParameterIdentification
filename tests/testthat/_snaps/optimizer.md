@@ -40,6 +40,17 @@
     Output
       Stopped because `maxfeval` was reached before step size fell below `tol`.
 
+# HJKB reports the stop reason when no step ran
+
+    Code
+      cat(atMaxfeval$convergenceMessage)
+    Output
+      Stopped because `maxfeval` was reached before step size fell below `tol`.
+    Code
+      cat(pastTarget$convergenceMessage)
+    Output
+      Stopped because the absolute objective value exceeded `target`.
+
 # DEoptim reports generations used against itermax
 
     Code

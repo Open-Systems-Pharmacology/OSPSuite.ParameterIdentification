@@ -518,10 +518,18 @@ Optimizer <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
-        baseResult$convergence <- optimResult$convergence == 0
-        baseResult$convergenceMessage <- messages$convergenceHJKB(
-          baseResult$convergence
-        )
+        # hjkb flags a stop exactly at maxfeval as converged, so derive the
+        # reason from the loop state it stopped in
+        nSteps <- floor(log2(1 / (controlOptim$tol %||% 1e-6)))
+        stopReason <- if (optimResult$niter >= nSteps) {
+          "tol"
+        } else if (optimResult$feval >= (controlOptim$maxfeval %||% Inf)) {
+          "maxfeval"
+        } else {
+          "target"
+        }
+        baseResult$convergence <- stopReason == "tol"
+        baseResult$convergenceMessage <- messages$convergenceHJKB(stopReason)
         baseResult$iterations <- optimResult$niter
         baseResult$fnEvaluations <- optimResult$feval
       } else if (private$.configuration$algorithm == "BOBYQA") {

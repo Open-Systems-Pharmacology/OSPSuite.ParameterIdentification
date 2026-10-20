@@ -192,6 +192,30 @@ test_that("HJKB stopped at maxfeval reports why it stopped", {
   expect_snapshot(cat(optResult$convergenceMessage))
 })
 
+test_that("HJKB reports the stop reason when no step ran", {
+  runHJKB <- function(options) {
+    piConfig <- PIConfiguration$new()
+    piConfig$algorithm <- "HJKB"
+    piConfig$algorithmOptions <- options
+    suppressWarnings(suppressMessages(
+      Optimizer$new(piConfig)$run(
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
+      )
+    ))
+  }
+  atMaxfeval <- runHJKB(list(maxfeval = 1))
+  pastTarget <- runHJKB(list(target = 0))
+  expect_identical(atMaxfeval$convergence, FALSE)
+  expect_identical(pastTarget$convergence, FALSE)
+  expect_snapshot({
+    cat(atMaxfeval$convergenceMessage)
+    cat(pastTarget$convergenceMessage)
+  })
+})
+
 test_that("DEoptim reports generations used against itermax", {
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "DEoptim"

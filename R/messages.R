@@ -505,14 +505,17 @@ messages$errorNoResidualsToPlot <- function() {
   )
 }
 
-messages$convergenceHJKB <- function(converged) {
-  if (converged) {
-    ospsuite.utils::cliFormat("Step size fell below {.arg tol}.")
-  } else {
-    ospsuite.utils::cliFormat(
+messages$convergenceHJKB <- function(stopReason) {
+  switch(
+    stopReason,
+    tol = ospsuite.utils::cliFormat("Step size fell below {.arg tol}."),
+    maxfeval = ospsuite.utils::cliFormat(
       "Stopped because {.arg maxfeval} was reached before step size fell below {.arg tol}."
+    ),
+    target = ospsuite.utils::cliFormat(
+      "Stopped because the absolute objective value exceeded {.arg target}."
     )
-  }
+  )
 }
 
 messages$convergenceDEoptim <- function(iterations, itermax, converged) {
