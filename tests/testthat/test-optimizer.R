@@ -124,6 +124,9 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
     fixed = TRUE
   )
+  # NLopt reports SUCCESS or XTOL_REACHED depending on platform rounding
+  expect_match(optResult$convergenceMessage, "^NLOPT_(SUCCESS|XTOL_REACHED):")
+  optResult$convergenceMessage <- "NLOPT_SUCCESS: Generic success return value."
   optResult$elapsed <- 0L
   optResult$iterations <- 100L
   optResult$fnEvaluations <- 100L
