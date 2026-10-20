@@ -11,7 +11,8 @@
 # `.calculateHuberWeights()`, `.calculateBisquareWeights()` and
 # `.calculateCensoredContribution()`. `.computeErrorWeights()` has the argument
 # `scaling` since #325; with its default `"lin"`, it calculates the weights as
-# 2.2.0.9009 did, also from the log values on the log scale.
+# 2.2.0.9009 did, also from the log values on the log scale, except for
+# geometric SDs, whose y is the geometric mean since #332.
 
 # nolint start
 
