@@ -154,6 +154,13 @@ piConfiguration$algorithmOptions <- list(
 )
 ```
 
+**Start values and the initial population:** The start values of the
+parameters are one member of the initial population. The other members
+are drawn uniformly within the parameter bounds on the raw parameter
+scale. For a range that spans several orders of magnitude, most
+candidates therefore fall into its top decade. An `initialpop` given in
+`algorithmOptions` is used as it is, without the start values.
+
 For detailed documentation on DEoptim and its implementation, refer to
 the [`DEoptim` package documentation on
 CRAN](https://CRAN.R-project.org/package=DEoptim).

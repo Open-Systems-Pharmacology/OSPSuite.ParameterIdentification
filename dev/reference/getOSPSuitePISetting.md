@@ -24,5 +24,5 @@ an error is thrown.
 ``` r
 getOSPSuitePISetting("packageVersion")
 #>      version 
-#> "2.2.0.9018" 
+#> "2.2.0.9019" 
 ```

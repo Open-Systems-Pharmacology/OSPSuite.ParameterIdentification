@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9018</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9019</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -246,6 +246,13 @@ process.</li>
 <span>  VTR <span class="op">=</span> <span class="op">-</span><span class="fl">1e-06</span>,</span>
 <span>  strategy <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p><strong>Start values and the initial population:</strong> The start
+values of the parameters are one member of the initial population. The
+other members are drawn uniformly within the parameter bounds on the raw
+parameter scale. For a range that spans several orders of magnitude,
+most candidates therefore fall into its top decade. An
+<code>initialpop</code> given in <code>algorithmOptions</code> is used
+as it is, without the start values.</p>
 <p>For detailed documentation on DEoptim and its implementation, refer
 to the <a href="https://CRAN.R-project.org/package=DEoptim" class="external-link"><code>DEoptim</code>
 package documentation on CRAN</a>.</p>

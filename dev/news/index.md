@@ -51,6 +51,20 @@
 
 ### Minor improvements and bug fixes
 
+- `run()` now simulates the start values once before the optimization
+  and stops only if that simulation fails, with the reason and possible
+  remedies. A simulation that fails during the optimization, also at its
+  first evaluation, returns the infinite cost, so DEoptim no longer
+  stops when its first random candidate fails, and `estimateCI()` no
+  longer stops when a profile likelihood step or bootstrap replicate
+  fails at its first evaluation. Errors that are not failed simulations
+  now stop the run at any evaluation. DEoptim includes the start values
+  in its initial population unless `initialpop` is given, and `run()`
+  warns when the simulations failed in more than half of its
+  evaluations. DEoptim results under a fixed seed differ from earlier
+  versions, because the initial population is now drawn before DEoptim
+  starts
+  ([\#307](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/307)).
 - The user guide vignette now sets the maximal number of function
   evaluations of `BOBYQA` with the option `maxeval` of
   `AlgorithmOptions_BOBYQA`. Previously it used
