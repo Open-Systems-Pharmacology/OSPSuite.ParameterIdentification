@@ -17,7 +17,7 @@
           .estimateBootstrapCI: function (par, fn, lower, upper, controlCI, optimizer = NULL, 
           .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer, resetFn = NULL) 
           .estimateHessianCI: function (par, fn, controlCI) 
-          .formatOptimizationOutput: function (optimResult) 
+          .formatOptimizationOutput: function (optimResult, controlOptim = list()) 
           .initializeCIResult: function () 
           .preprocessFn: function (fn, fixedParams) 
           .runBOBYQA: function (par, fn, lower, upper, controlOptim, fixedParams = NULL) 
@@ -29,20 +29,59 @@
 # Optimizer returns correct parameters for BOBYQA
 
     list(par = c(5.51056363987369, 0.384109285445577, 0.683844281729887
-    ), value = 0.421489866588719, convergence = TRUE, iterations = 100L, 
-        fnEvaluations = 100L, algorithm = "BOBYQA", elapsed = 0L)
+    ), value = 0.421489866588719, convergence = TRUE, convergenceMessage = "NLOPT_SUCCESS: Generic success return value.", 
+        iterations = 100L, fnEvaluations = 100L, algorithm = "BOBYQA", 
+        elapsed = 0L)
+
+# HJKB stopped at maxfeval reports why it stopped
+
+    Code
+      cat(optResult$convergenceMessage)
+    Output
+      Stopped because `maxfeval` was reached before step size fell below `tol`.
+
+# HJKB reports the stop reason at its limits
+
+    Code
+      cat(atMaxfeval$convergenceMessage)
+    Output
+      Stopped because `maxfeval` was reached before step size fell below `tol`.
+    Code
+      cat(pastTarget$convergenceMessage)
+    Output
+      Stopped because the absolute objective value exceeded `target`.
+    Code
+      cat(overshotLastStep$convergenceMessage)
+    Output
+      Stopped because `maxfeval` was reached before step size fell below `tol`.
+
+# A non-finite objective value is not converged and says why
+
+    Code
+      cat(optResult$convergenceMessage)
+    Output
+      Used 2 of `itermax` = 2 generations. Relative change of the best value over the last 2 generations is not below 1e-5. The objective value is not finite.
+
+# DEoptim reports generations used against itermax
+
+    Code
+      cat(optResult$convergenceMessage)
+    Output
+      Used 3 of `itermax` = 3 generations. Relative change of the best value over the last 3 generations is below 1e-5.
 
 # Optimizer output has correct structure and values for HJKB
 
-    list(par = c(5.51054840087891, 0.3841064453125, 0.683838348388672
-    ), value = 0.421489866678708, convergence = TRUE, iterations = 19, 
-        fnEvaluations = NA_real_, algorithm = "HJKB", elapsed = 0)
+    list(par = c(5.51062088012695, 0.384121704101562, 0.683872680664062
+    ), value = 0.421489868224619, convergence = TRUE, convergenceMessage = "Step size fell below `tol`.", 
+        iterations = 19, fnEvaluations = NA_real_, algorithm = "HJKB", 
+        elapsed = 0)
 
 # Optimizer output has correct structure and values for DEoptim
 
-    list(par = c(5.51056393151954, 0.384109269437653, 0.683844224608981
-    ), value = 0.421489866588654, convergence = TRUE, iterations = 200L, 
-        fnEvaluations = NA_real_, algorithm = "DEoptim", elapsed = 0)
+    list(par = c(5.51056395063057, 0.384109273755908, 0.683844221712587
+    ), value = 0.421489866588652, convergence = TRUE, convergenceMessage = "Used 200 of `itermax` = 200 generations. Relative change of the best value over the last 5 generations is below 1e-5.", 
+        iterations = 200L, fnEvaluations = NA_real_, algorithm = "DEoptim", 
+        elapsed = 0)
 
 # Optimizer works with fixed parameter
 

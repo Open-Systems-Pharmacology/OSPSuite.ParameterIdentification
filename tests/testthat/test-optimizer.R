@@ -124,10 +124,164 @@ test_that("Optimizer returns correct parameters for BOBYQA", {
     messages$optimizationAlgorithm(piConfig$algorithm, par = parTest),
     fixed = TRUE
   )
+  # NLopt reports SUCCESS or XTOL_REACHED depending on platform rounding
+  expect_match(optResult$convergenceMessage, "^NLOPT_(SUCCESS|XTOL_REACHED):")
+  optResult$convergenceMessage <- "NLOPT_SUCCESS: Generic success return value."
   optResult$elapsed <- 0L
   optResult$iterations <- 100L
   optResult$fnEvaluations <- 100L
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
+})
+
+test_that("BOBYQA stopped at maxeval is reported as not converged", {
+  nCalls <- 0
+  fnCounted <- function(p) {
+    nCalls <<- nCalls + 1
+    fnObjective(p)
+  }
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithmOptions <- list(maxeval = 3)
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnCounted,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_match(optResult$convergenceMessage, "NLOPT_MAXEVAL_REACHED")
+  expect_equal(optResult$fnEvaluations, nCalls)
+})
+
+test_that("BOBYQA convergence is a single logical when nloptr fails", {
+  piConfig <- PIConfiguration$new()
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- optimizer$.__enclos_env__$private$.formatOptimizationOutput(
+    list(
+      par = parTest,
+      value = Inf,
+      convergence = -1L,
+      message = "NLOPT_FAILURE: Generic failure code.",
+      iter = 0L,
+      nCalls = 2
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_identical(
+    optResult$convergenceMessage,
+    "NLOPT_FAILURE: Generic failure code. The objective value is not finite."
+  )
+})
+
+test_that("HJKB stopped at maxfeval reports why it stopped", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$algorithmOptions <- list(maxfeval = 3)
+  optimizer <- Optimizer$new(piConfig)
+  optResult <- suppressWarnings(suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  ))
+  expect_identical(optResult$convergence, FALSE)
+  expect_snapshot(cat(optResult$convergenceMessage))
+})
+
+test_that("HJKB reports the stop reason at its limits", {
+  runHJKB <- function(options) {
+    piConfig <- PIConfiguration$new()
+    piConfig$algorithm <- "HJKB"
+    piConfig$algorithmOptions <- options
+    suppressWarnings(suppressMessages(
+      Optimizer$new(piConfig)$run(
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
+      )
+    ))
+  }
+  atMaxfeval <- runHJKB(list(maxfeval = 1))
+  pastTarget <- runHJKB(list(target = 0))
+  # with tol = 0.1 an unlimited run needs 37 evaluations, so its last step
+  # overshoots maxfeval = 36
+  overshotLastStep <- runHJKB(list(tol = 0.1, maxfeval = 36))
+  expect_identical(atMaxfeval$convergence, FALSE)
+  expect_identical(pastTarget$convergence, FALSE)
+  expect_identical(overshotLastStep$convergence, FALSE)
+  expect_snapshot({
+    cat(atMaxfeval$convergenceMessage)
+    cat(pastTarget$convergenceMessage)
+    cat(overshotLastStep$convergenceMessage)
+  })
+})
+
+test_that("DEoptim with a single generation is not converged", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 1, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+})
+
+test_that("A non-finite objective value is not converged and says why", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 2, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = function(p) Inf,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_snapshot(cat(optResult$convergenceMessage))
+})
+
+test_that("DEoptim with a constant zero objective counts as converged", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = function(p) 0,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, TRUE)
+})
+
+test_that("DEoptim reports generations used against itermax", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 3, trace = FALSE)
+  optimizer <- Optimizer$new(piConfig)
+  set.seed(2203)
+  optResult <- suppressMessages(
+    optimizer$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_snapshot(cat(optResult$convergenceMessage))
 })
 
 test_that("Optimizer output has correct structure and values for HJKB", {

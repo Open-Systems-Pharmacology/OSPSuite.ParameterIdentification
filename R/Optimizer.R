@@ -78,17 +78,24 @@ Optimizer <- R6::R6Class(
       controlOptim,
       fixedParams = NULL
     ) {
-      nloptr::bobyqa(
+      # nloptr evaluates fn at x0 before NLopt starts counting, so `iter`
+      # undercounts the evaluations actually run
+      nCalls <- 0
+      result <- nloptr::bobyqa(
         x0 = par,
-        fn = if (!is.null(fixedParams)) {
-          function(p) fn(private$.updateFixedParams(p, fixedParams))
-        } else {
-          fn
+        fn = function(p) {
+          nCalls <<- nCalls + 1
+          if (!is.null(fixedParams)) {
+            p <- private$.updateFixedParams(p, fixedParams)
+          }
+          fn(p)
         },
         lower = lower,
         upper = upper,
         control = controlOptim
       )
+      result$nCalls <- nCalls
+      result
     },
 
     # Differential Evolution optimization using DEoptim::DEoptim
@@ -505,11 +512,12 @@ Optimizer <- R6::R6Class(
     },
 
     # Formats the optimization output into a standardized result structure
-    .formatOptimizationOutput = function(optimResult) {
+    .formatOptimizationOutput = function(optimResult, controlOptim = list()) {
       baseResult <- list(
         par = NULL,
         value = NULL,
         convergence = NULL,
+        convergenceMessage = NULL,
         iterations = NULL,
         fnEvaluations = NULL,
         algorithm = private$.configuration$algorithm,
@@ -519,36 +527,56 @@ Optimizer <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
-        baseResult$convergence <- optimResult$convergence == 0
+        # hjkb flags a stop exactly at maxfeval as converged, and its last step
+        # can overshoot maxfeval, so both its flag and the loop state must agree
+        nSteps <- floor(log2(1 / (controlOptim$tol %||% 1e-6)))
+        stopReason <- if (
+          optimResult$niter >= nSteps && optimResult$convergence == 0
+        ) {
+          "tol"
+        } else if (optimResult$feval >= (controlOptim$maxfeval %||% Inf)) {
+          "maxfeval"
+        } else {
+          "target"
+        }
+        baseResult$convergence <- stopReason == "tol"
+        baseResult$convergenceMessage <- messages$convergenceHJKB(stopReason)
         baseResult$iterations <- optimResult$niter
         baseResult$fnEvaluations <- optimResult$feval
       } else if (private$.configuration$algorithm == "BOBYQA") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
-        baseResult$convergence <- optimResult$convergence > 0
-        if (!baseResult$convergence) {
-          baseResult$convergence$error <- optimResult$convergence
-        }
+        # NLopt codes 5 (maxeval) and 6 (maxtime) are positive but not converged
+        baseResult$convergence <- optimResult$convergence %in% 1:4
+        baseResult$convergenceMessage <- optimResult$message
         baseResult$iterations <- optimResult$iter
-        baseResult$fnEvaluations <- optimResult$iter
+        baseResult$fnEvaluations <- optimResult$nCalls
       } else if (private$.configuration$algorithm == "DEoptim") {
         bestvalit <- optimResult$member$bestvalit
         lastN <- min(5, length(bestvalit))
-        relChange <- try(
-          {
-            abs(diff(tail(bestvalit, lastN))) / tail(bestvalit, lastN - 1)
-          },
-          silent = TRUE
+        values <- tail(bestvalit, lastN)
+        # multiplied out instead of divided, so a best value of 0 gives no NaN
+        baseResult$convergence <- lastN > 1 &&
+          all(is.finite(values)) &&
+          all(abs(diff(values)) <= 1e-5 * abs(tail(values, lastN - 1)))
+        baseResult$convergenceMessage <- messages$convergenceDEoptim(
+          optimResult$optim$iter,
+          controlOptim$itermax %||% DEoptim::DEoptim.control()$itermax,
+          lastN,
+          baseResult$convergence
         )
-        baseResult$convergence <- if (inherits(relChange, "try-error")) {
-          FALSE
-        } else {
-          all(relChange < 1e-5)
-        }
         baseResult$par <- unname(optimResult$optim$bestmem)
         baseResult$value <- optimResult$optim$bestval
         baseResult$iterations <- optimResult$optim$iter
         baseResult$fnEvaluations <- optimResult$optim$nfeval
+      }
+
+      if (!is.finite(baseResult$value)) {
+        baseResult$convergence <- FALSE
+        baseResult$convergenceMessage <- paste(
+          baseResult$convergenceMessage,
+          messages$objectiveValueNotFinite()
+        )
       }
 
       return(baseResult)
@@ -634,7 +662,10 @@ Optimizer <- R6::R6Class(
       )
       elapsedTime <- proc.time() - startTime
 
-      optimResult <- private$.formatOptimizationOutput(rawResult)
+      optimResult <- private$.formatOptimizationOutput(
+        rawResult,
+        algorithmOptions
+      )
       optimResult$elapsed <- elapsedTime[["elapsed"]]
 
       optimResult$par <- private$.updateFixedParams(

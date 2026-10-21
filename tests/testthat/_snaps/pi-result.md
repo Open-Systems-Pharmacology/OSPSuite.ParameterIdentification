@@ -13,7 +13,10 @@
       [1] -0.097
       
       $convergence
-      [1] TRUE
+      [1] FALSE
+      
+      $convergenceMessage
+      [1] "NLOPT_MAXEVAL_REACHED: Optimization stopped because maxeval (above) was reached."
       
       $algorithm
       [1] "BOBYQA"
@@ -25,7 +28,7 @@
       [1] 10
       
       $fnEvaluations
-      [1] 10
+      [1] 12
       
       $ciMethod
       [1] "hessian"
@@ -121,10 +124,12 @@
       Optimization Summary:
         * Algorithm: BOBYQA
         * CI Method: hessian
-        * Convergence: TRUE
+        * Convergence: FALSE
+        * Convergence message: NLOPT_MAXEVAL_REACHED: Optimization stopped because
+        maxeval (above) was reached.
         * Objective value: 156.3
         * Iterations: 10
-        * Function evaluations: 10
+        * Function evaluations: 12
         * Elapsed (optimization): 0.00e+00 s
         * Elapsed (CI): 0.00e+00 s
       Parameter Estimates:
