@@ -53,6 +53,7 @@ PIResult <- R6::R6Class(
     # - objectiveValue: numeric (final cost)
     # - initialParameters: numeric vector
     # - convergence: logical
+    # - convergenceMessage: character (why the optimizer stopped)
     # - algorithm: character
     # - elapsed: numeric (seconds)
     # - iterations: integer
@@ -121,6 +122,7 @@ PIResult <- R6::R6Class(
         } else {
           optimResult$convergence
         },
+        convergenceMessage = optimResult$convergenceMessage,
         algorithm = optimResult$algorithm,
         elapsed = optimResult$elapsed,
         iterations = optimResult$iterations,
@@ -196,6 +198,7 @@ PIResult <- R6::R6Class(
         "Algorithm" = x$algorithm,
         "CI Method" = x$ciMethod,
         "Convergence" = x$convergence,
+        "Convergence message" = x$convergenceMessage,
         "Objective value" = .formatValues(x$objectiveValue),
         "Iterations" = x$iterations,
         "Function evaluations" = x$fnEvaluations,

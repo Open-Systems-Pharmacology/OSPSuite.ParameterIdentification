@@ -73,6 +73,7 @@ PKResult <- R6::R6Class(
         } else {
           optimResult$convergence
         },
+        convergenceMessage = optimResult$convergenceMessage,
         algorithm = optimResult$algorithm,
         elapsed = optimResult$elapsed,
         iterations = optimResult$iterations,
@@ -162,6 +163,7 @@ PKResult <- R6::R6Class(
       metaSummary <- list(
         "Algorithm" = x$algorithm,
         "Convergence" = x$convergence,
+        "Convergence message" = x$convergenceMessage,
         "Objective value" = .formatValues(x$objectiveValue),
         "Iterations" = x$iterations,
         "Function evaluations" = x$fnEvaluations,

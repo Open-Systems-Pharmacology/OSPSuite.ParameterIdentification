@@ -525,3 +525,32 @@ messages$errorNoResidualsToPlot <- function() {
     "No residuals to plot: this {.cls modelCost} has no finite residuals."
   )
 }
+
+messages$convergenceHJKB <- function(stopReason) {
+  switch(
+    stopReason,
+    tol = ospsuite.utils::cliFormat("Step size fell below {.arg tol}."),
+    maxfeval = ospsuite.utils::cliFormat(
+      "Stopped because {.arg maxfeval} was reached before step size fell below {.arg tol}."
+    ),
+    target = ospsuite.utils::cliFormat(
+      "Stopped because the absolute objective value exceeded {.arg target}."
+    )
+  )
+}
+
+messages$convergenceDEoptim <- function(
+  iterations,
+  itermax,
+  lastN,
+  converged
+) {
+  rule <- if (converged) "is" else "is not"
+  ospsuite.utils::cliFormat(
+    "Used {iterations} of {.arg itermax} = {itermax} generation{?s}. Relative change of the best value over the last {lastN} generation{?s} {rule} below 1e-5."
+  )
+}
+
+messages$objectiveValueNotFinite <- function() {
+  ospsuite.utils::cliFormat("The objective value is not finite.")
+}
