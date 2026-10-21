@@ -42,6 +42,12 @@ messages$logSimulationError <- function(values, errorCondition) {
   message("Error: ", errorCondition$message)
 }
 
+messages$warningMostEvaluationsFailed <- function(failed, total) {
+  ospsuite.utils::cliFormat(
+    "The simulations failed in {.val {failed}} of {.val {total}} evaluations. Check the parameter bounds and the solver settings."
+  )
+}
+
 messages$simulationError <- function(values) {
   paste0("Returning infinite cost structure due to simulation failure.")
 }

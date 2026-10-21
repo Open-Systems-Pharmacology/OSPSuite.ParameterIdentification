@@ -143,11 +143,8 @@ test_that("ParameterIdentification returns infinite value if simulation fails", 
     outputMappings = testOutputMapping()
   )
 
-  suppressMessages(
-    expect_message(
-      piResult <- testTask$run(),
-      "Returning infinite cost structure due to simulation failure"
-    )
+  expect_snapshot(
+    suppressMessages(piResult <- testTask$run())
   )
 
   piResult <- piResult$toList()
@@ -155,6 +152,12 @@ test_that("ParameterIdentification returns infinite value if simulation fails", 
   expect_identical(piResult$objectiveValue, Inf)
   expect_false(piResult$convergence)
   expect_true(is.na(piResult$sd))
+})
+
+test_that("run() does not warn when few evaluations fail", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  expect_no_warning(suppressMessages(piTask$run()))
 })
 
 # modelFolder <- file.path(testthat::test_path("../dev/Models/Simulations"))

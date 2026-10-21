@@ -109,6 +109,8 @@ ParameterIdentification <- R6::R6Class(
     .lastCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
+    # Number of evaluations of `run()` whose simulations failed
+    .failedEvaluations = 0,
     # List of `PKOutputMapping` objects (PK metric mode)
     .pkMappings = NULL,
 
@@ -366,6 +368,7 @@ ParameterIdentification <- R6::R6Class(
 
       if (anyNA(simulatedList)) {
         message(messages$simulationError())
+        private$.failedEvaluations <- private$.failedEvaluations + 1
         return(.createErrorCostStructure())
       }
 
@@ -446,6 +449,7 @@ ParameterIdentification <- R6::R6Class(
 
       if (any(!vapply(pkValues, is.finite, logical(1)))) {
         message(messages$simulationError())
+        private$.failedEvaluations <- private$.failedEvaluations + 1
         return(.Machine$double.xmax)
       }
 
@@ -999,7 +1003,11 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
-      private$.checkStartSimulation(currValues)
+      # After `run()`, the estimate was evaluated by the optimizer, and a stop
+      # would discard the finished fit
+      if (!fromRun) {
+        private$.checkStartSimulation(currValues)
+      }
 
       if (
         private$.configuration$ciMethod == "bootstrap" &&
@@ -1162,9 +1170,16 @@ ParameterIdentification <- R6::R6Class(
       private$.lastCostSummary <- NULL
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
+      private$.failedEvaluations <- 0
 
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()
+      if (private$.failedEvaluations > private$.fnEvaluations / 2) {
+        warning(messages$warningMostEvaluationsFailed(
+          private$.failedEvaluations,
+          private$.fnEvaluations
+        ))
+      }
       private$.lastOptimResult <- optimResult
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
