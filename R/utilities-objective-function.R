@@ -722,8 +722,11 @@
 #' @param yErrorType Vector of error type strings (`ArithmeticStdDev`,
 #'   `GeometricStdDev`)
 #' @param scaling Scale of the residuals the weights apply to, `"lin"` or
-#'   `"log"`. On the log scale, the SD is that of the log of a log-normal
-#'   value: `log(GSD)`, or `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD.
+#'   `"log"`. On the linear scale, a GSD is that of a log-normal value with
+#'   geometric mean `y`, so the SD is
+#'   `y * exp(log(GSD)^2 / 2) * sqrt(exp(log(GSD)^2) - 1)`. On the log scale,
+#'   the SD is that of the log of a log-normal value: `log(GSD)`, or
+#'   `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD.
 #' @param defaultWeight Fallback weight value when inputs are missing or invalid
 #' @return Numeric vector of residual weights computed as 1 / StdDev
 #'
@@ -761,12 +764,12 @@
   )
   if (length(idxGSD) > 0) {
     sigma <- log(yErrorValues[idxGSD])
-    # SD = mean * sqrt(e^(sigma^2) - 1) on the linear scale, sigma on the log
-    # scale
+    # y is the geometric mean exp(mu), so the SD on the linear scale is
+    # exp(mu + sigma^2 / 2) * sqrt(e^(sigma^2) - 1), and sigma on the log scale
     stDev <- if (scaling == "log") {
       sigma
     } else {
-      yValues[idxGSD] * sqrt(exp(sigma^2) - 1)
+      yValues[idxGSD] * exp(sigma^2 / 2) * sqrt(exp(sigma^2) - 1)
     }
     weights[idxGSD] <- 1 / stDev
   }

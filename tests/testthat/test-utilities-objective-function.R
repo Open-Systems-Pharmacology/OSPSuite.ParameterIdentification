@@ -367,21 +367,21 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
   )
   expect_snapshot_value(resultArith$modelCost, tolerance = 1e-3)
 
-  # GeometricStdDev: convert ArithSD to exact lognormal-equivalent GSD values
-  # GSD = exp(sqrt(log(1 + CV^2))) where CV = arithSD / mean
+  # GeometricStdDev: the GSD whose SD is the arithmetic SD when y is the
+  # geometric mean. With u = exp(sigma^2), CV^2 = u^2 - u, so
+  # GSD = exp(sqrt(log((1 + sqrt(1 + 4 * CV^2)) / 2))) where CV = arithSD / y
   obsVsPredDfGeom <- obsVsPredDf
   obs <- obsVsPredDfGeom[obsVsPredDfGeom$dataType == "observed", ]
   validIdx <- !is.na(obs$yErrorValues) & obs$yErrorValues > 0
-  obs$yErrorValues[validIdx] <- exp(
-    sqrt(log(1 + (obs$yErrorValues[validIdx] / obs$yValues[validIdx])^2))
-  )
+  cv <- obs$yErrorValues[validIdx] / obs$yValues[validIdx]
+  obs$yErrorValues[validIdx] <- exp(sqrt(log((1 + sqrt(1 + 4 * cv^2)) / 2)))
   obsVsPredDfGeom[obsVsPredDfGeom$dataType == "observed", ] <- obs
   obsVsPredDfGeom$yErrorType <- "GeometricStdDev"
   resultGeom <- .calculateCostMetrics(
     obsVsPredDfGeom,
     residualWeightingMethod = "error"
   )
-  expect_equal(resultArith$modelCost, resultGeom$modelCost, tolerance = 1e-3)
+  expect_equal(resultArith$modelCost, resultGeom$modelCost)
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
@@ -1785,9 +1785,19 @@ test_that(".computeErrorWeights uses exact lognormal SD formula for GeometricStd
 
   result <- .computeErrorWeights(yValues, yErrorValues, yErrorType)
 
-  # GSD=2, mean=10: sigma=ln(2)=0.6931, exp(sigma^2)-1=0.617, SD=10*sqrt(0.617)=7.854
-  # GSD=3, mean=20: sigma=ln(3)=1.0986, exp(sigma^2)-1=2.343, SD=20*sqrt(2.343)=30.62
-  expect_equal(result, c(1 / 7.854, 1 / 30.62), tolerance = 1e-3)
+  # y is the geometric mean, SD = y * exp(sigma^2 / 2) * sqrt(exp(sigma^2) - 1)
+  # GSD=2, y=10: sigma^2=0.4805, SD=10*1.2716*0.7854=9.986
+  # GSD=3, y=20: sigma^2=1.2069, SD=20*1.8285*1.5308=55.98
+  expect_equal(result, c(1 / 9.986, 1 / 55.98), tolerance = 1e-3)
+})
+
+test_that(".computeErrorWeights treats y as the geometric mean of a GSD (#332)", {
+  # The SD of log-normal samples with median 1 and GSD 2.5 is 1.745
+  expect_equal(
+    .computeErrorWeights(1, 2.5, "GeometricStdDev"),
+    1 / 1.7452,
+    tolerance = 1e-4
+  )
 })
 
 test_that(".computeErrorWeights warns when error weighting falls back to unit weights", {
