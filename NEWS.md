@@ -1,4 +1,4 @@
-# ospsuite.parameteridentification (development version)
+# ospsuite.parameteridentification 2.3.0
 
 ## Breaking changes
 
