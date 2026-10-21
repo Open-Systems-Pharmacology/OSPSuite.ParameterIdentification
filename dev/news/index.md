@@ -26,6 +26,11 @@
   or less in the base unit silently got weight 1. Results change for
   output mappings with log scaling and error weights
   ([\#325](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/325)).
+- With `residualWeightingMethod = "error"` and `scaling = "lin"`,
+  observed values with a geometric standard deviation now get the
+  correct, lower weight. Previously they were weighted too high, the
+  more so the larger the GSD, so results of such fits change
+  ([\#332](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/332)).
 - The objective function of `ParameterIdentification` is faster, most of
   all for tasks with many simulations, parameters and output mappings.
   Apart from the simulations themselves, little work is left in an

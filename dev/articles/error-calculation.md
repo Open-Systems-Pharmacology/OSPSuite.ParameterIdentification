@@ -65,9 +65,12 @@ residuals are weighted. Available options include:
   cannot be corrected automatically. Group mean observations will be
   under-weighted by `1 / √n` relative to the optimal value.
 
-  The weight is `1 / SD`, with the SD on the scale of the residuals.
-  With `outputMapping$scaling = "log"`, the residuals are differences of
-  log values, so the SD of the log values is used: `log(GSD)` for a
+  The weight is `1 / SD`, with the SD on the scale of the residuals. On
+  the linear scale, an observed value `y` with a geometric SD is the
+  geometric mean of a log-normal distribution, so its SD is
+  `y * exp(log(GSD)^2 / 2) * sqrt(exp(log(GSD)^2) - 1)`. With
+  `outputMapping$scaling = "log"`, the residuals are differences of log
+  values, so the SD of the log values is used: `log(GSD)` for a
   geometric SD, and `sqrt(log(1 + (SD / y)^2))` for an arithmetic SD
   `SD` of an observed value `y`. For a small coefficient of variation,
   the latter is close to `SD / y`.

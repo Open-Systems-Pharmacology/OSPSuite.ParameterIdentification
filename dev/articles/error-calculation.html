@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9017</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9018</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -151,9 +151,12 @@ the group size). Because <code>DataSet</code> does not store
 Group mean observations will be under-weighted by <code>1 / √n</code>
 relative to the optimal value.</p>
 <p>The weight is <code>1 / SD</code>, with the SD on the scale of the
-residuals. With <code>outputMapping$scaling = "log"</code>, the
-residuals are differences of log values, so the SD of the log values is
-used: <code>log(GSD)</code> for a geometric SD, and
+residuals. On the linear scale, an observed value <code>y</code> with a
+geometric SD is the geometric mean of a log-normal distribution, so its
+SD is <code>y * exp(log(GSD)^2 / 2) * sqrt(exp(log(GSD)^2) - 1)</code>.
+With <code>outputMapping$scaling = "log"</code>, the residuals are
+differences of log values, so the SD of the log values is used:
+<code>log(GSD)</code> for a geometric SD, and
 <code>sqrt(log(1 + (SD / y)^2))</code> for an arithmetic SD
 <code>SD</code> of an observed value <code>y</code>. For a small
 coefficient of variation, the latter is close to
