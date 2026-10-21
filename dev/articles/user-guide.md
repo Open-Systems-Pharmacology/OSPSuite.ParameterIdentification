@@ -447,7 +447,7 @@ E.g. to set the maximal number of function evaluations to 1500 for the
 ``` r
 
 algOptions <- AlgorithmOptions_BOBYQA
-algOptions$maxFunctionEvaluations <- 1500
+algOptions$maxeval <- 1500
 piConfiguration$algorithmOptions <- algOptions
 ```
 
@@ -501,8 +501,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 112
-#>   • Elapsed (optimization): 16.50 s
-#>   • Elapsed (CI): 7.164 s
+#>   • Elapsed (optimization): 16.20 s
+#>   • Elapsed (CI): 7.116 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]

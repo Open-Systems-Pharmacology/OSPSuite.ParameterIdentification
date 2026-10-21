@@ -46,6 +46,12 @@
 
 ### Minor improvements and bug fixes
 
+- The user guide vignette now sets the maximal number of function
+  evaluations of `BOBYQA` with the option `maxeval` of
+  `AlgorithmOptions_BOBYQA`. Previously it used
+  `maxFunctionEvaluations`, which `PIConfiguration$algorithmOptions`
+  ignored with a warning
+  ([\#261](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/261)).
 - `ParameterIdentification` now reads the observed data once per call of
   a method and per bootstrap replicate and caches them, instead of
   re-reading them from the underlying datasets on every objective
