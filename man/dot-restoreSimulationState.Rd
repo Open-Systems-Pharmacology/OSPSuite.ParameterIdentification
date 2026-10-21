@@ -9,11 +9,17 @@
 \arguments{
 \item{simulations}{List of \code{Simulation} objects}
 
-\item{simStateList}{Output of the function \code{.storeSimulationState}. A named
-list with entries \code{outputIntervals}, \code{timePoints}, and \code{outputSelections}.
-Every entry is a named list with names being the IDs of the simulations.}
+\item{simStateList}{Output of the function \code{.storeSimulationState}.}
 }
 \description{
 Restore simulation output state
+}
+\details{
+The output selections and the output schema are restored only if
+they changed. The output schema gets its original output interval
+objects back, so that interval objects held by the user stay part of the
+simulation. If a simulation cannot be restored, a warning names it and
+the other simulations are still restored, so that the result or the
+error of the calling method is kept.
 }
 \keyword{internal}
