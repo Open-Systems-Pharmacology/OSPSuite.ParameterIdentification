@@ -67,7 +67,7 @@
     Code
       cat(optResult$convergenceMessage)
     Output
-      Used 3 of `itermax` = 3 generations. Relative change of the best value over the last 3 generations is not below 1e-5.
+      Used 3 of `itermax` = 3 generations. Relative change of the best value over the last 3 generations is below 1e-5.
 
 # Optimizer output has correct structure and values for HJKB
 
