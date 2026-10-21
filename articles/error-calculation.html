@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,11 +133,10 @@ calculation through the <code>residualWeightingMethod</code>. This
 option specifies how residuals are weighted. Available options
 include:</p>
 <ul>
+<li><p><strong><code>none</code></strong> (default): No residual
+weighting.</p></li>
 <li>
-<strong><code>none</code></strong> (default): No residual
-weighting.</li>
-<li>
-<strong><code>error</code></strong>: Requires both
+<p><strong><code>error</code></strong>: Requires both
 <code>yErrorValues</code> and <code>yErrorType</code> to be provided in
 the observed data <code>DataSet</code>. Ideal when individual data
 points come with variance estimates, allowing for weighting by the
@@ -149,12 +148,25 @@ holds population SD for group means, the correct weight is
 the group size). Because <code>DataSet</code> does not store
 <code>n</code> per time point, this cannot be corrected automatically.
 Group mean observations will be under-weighted by <code>1 / √n</code>
-relative to the optimal value.</li>
+relative to the optimal value.</p>
+<p>The weight is <code>1 / SD</code>, with the SD on the scale of the
+residuals. On the linear scale, an observed value <code>y</code> with a
+geometric SD is the geometric mean of a log-normal distribution, so its
+SD is <code>y * exp(log(GSD)^2 / 2) * sqrt(exp(log(GSD)^2) - 1)</code>.
+With <code>outputMapping$scaling = "log"</code>, the residuals are
+differences of log values, so the SD of the log values is used:
+<code>log(GSD)</code> for a geometric SD, and
+<code>sqrt(log(1 + (SD / y)^2))</code> for an arithmetic SD
+<code>SD</code> of an observed value <code>y</code>. For a small
+coefficient of variation, the latter is close to
+<code>SD / y</code>.</p>
+</li>
 </ul>
 <p>For proportional error handling across outputs of different
-magnitudes, use <code>outputMapping$scaling = "log"</code> instead. Log
-residuals are dimensionless and automatically comparable across mappings
-spanning different concentration ranges.</p>
+magnitudes, use <code>outputMapping$scaling = "log"</code>, with or
+without <code>error</code> weighting. Log residuals are dimensionless
+and automatically comparable across mappings spanning different
+concentration ranges.</p>
 <p>To apply error-based residual weighting, set the
 <code>residualWeightingMethod</code> attribute in
 <code>objectiveFunctionOptions</code> of the
@@ -229,7 +241,7 @@ Liberal Arts - Statistics, Minneapolis.</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

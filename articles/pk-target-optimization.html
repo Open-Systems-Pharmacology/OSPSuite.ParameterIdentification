@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,12 +118,14 @@ simulated quantity, a PK metric, and the target value.</li>
 <div class="section level4">
 <h4 id="parameter-to-optimize">Parameter to optimize<a class="anchor" aria-label="anchor" href="#parameter-to-optimize"></a>
 </h4>
-<p>The parameter is retrieved by its full path in the simulation.
-<code>minValue</code> and <code>maxValue</code> define the search
-space.</p>
+<p>The parameter is retrieved by its path in the simulation. The
+wildcard <code>**</code> stands for any number of containers, here the
+formulation container that newer versions of the model have between the
+event and the application. <code>minValue</code> and
+<code>maxValue</code> define the search space.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">doseParam</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/getParameter.html" class="external-link">getParameter</a></span><span class="op">(</span></span>
-<span>  path <span class="op">=</span> <span class="st">"Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"</span>,</span>
+<span>  path <span class="op">=</span> <span class="st">"Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"</span>,</span>
 <span>  container <span class="op">=</span> <span class="va">sim</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -194,10 +196,12 @@ is the base unit of the PK parameter’s dimension.</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Optimization Summary</span>:</span></span>
 <span><span class="co">#&gt;   • Algorithm: BOBYQA</span></span>
 <span><span class="co">#&gt;   • Convergence: TRUE</span></span>
+<span><span class="co">#&gt;   • Convergence message: NLOPT_XTOL_REACHED: Optimization stopped because</span></span>
+<span><span class="co">#&gt;   xtol_rel or xtol_abs (above) was reached.</span></span>
 <span><span class="co">#&gt;   • Objective value: 0.00e+00</span></span>
 <span><span class="co">#&gt;   • Iterations: 13</span></span>
-<span><span class="co">#&gt;   • Function evaluations: 13</span></span>
-<span><span class="co">#&gt;   • Elapsed: 2.607 s</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 15</span></span>
+<span><span class="co">#&gt;   • Elapsed: 2.149 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">PK Parameters</span>:</span></span>
 <span><span class="co">#&gt;   • C_max: Target = 30.00 µmol/l, Achieved = 30.00 µmol/l</span></span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -253,10 +257,12 @@ mappings simultaneously.</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Optimization Summary</span>:</span></span>
 <span><span class="co">#&gt;   • Algorithm: BOBYQA</span></span>
 <span><span class="co">#&gt;   • Convergence: TRUE</span></span>
+<span><span class="co">#&gt;   • Convergence message: NLOPT_XTOL_REACHED: Optimization stopped because</span></span>
+<span><span class="co">#&gt;   xtol_rel or xtol_abs (above) was reached.</span></span>
 <span><span class="co">#&gt;   • Objective value: 5.90e-05</span></span>
 <span><span class="co">#&gt;   • Iterations: 13</span></span>
-<span><span class="co">#&gt;   • Function evaluations: 13</span></span>
-<span><span class="co">#&gt;   • Elapsed: 2.457 s</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 15</span></span>
+<span><span class="co">#&gt;   • Elapsed: 2.140 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">PK Parameters</span>:</span></span>
 <span><span class="co">#&gt;   • C_max: Target = 30.00 µmol/l, Achieved = 29.84 µmol/l</span></span>
 <span><span class="co">#&gt;   • AUC_tEnd: Target = 2400. µmol*min/l, Achieved = 2413. µmol*min/l</span></span>
@@ -289,7 +295,7 @@ vignette</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

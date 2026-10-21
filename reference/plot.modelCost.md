@@ -1,7 +1,7 @@
 # Plot Model Cost Residuals
 
-Plots raw residuals and, if different, weighted and robust weighted
-residuals from a `modelCost` object.
+Plots raw residuals and, if different, weighted residuals from a
+`modelCost` object.
 
 ## Usage
 

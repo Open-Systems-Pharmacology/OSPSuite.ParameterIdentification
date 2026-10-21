@@ -29,7 +29,10 @@ A parameter to be optimized in a parameter identification routine
 - `unit`:
 
   Parameter value units. Changing the unit does NOT automatically adjust
-  min/max/start values.
+  min/max/start values. Values are converted from this unit to the
+  parameter's base unit before they are applied to the model. With the
+  `HJKB` algorithm, the declared unit also affects the search resolution
+  because `HJKB` probes with absolute step sizes.
 
 ## Methods
 
@@ -56,13 +59,27 @@ unified value.
 
 #### Usage
 
-    PIParameters$new(parameters)
+    PIParameters$new(parameters, minValue = NULL, maxValue = NULL)
 
 #### Arguments
 
 - `parameters`:
 
   List of `Parameter` class objects to be optimized.
+
+- `minValue`:
+
+  Optional lower bound. Defaults to `NULL`, in which case it is derived
+  from the start value as `start * 0.1` (or `start * 10` when the start
+  value is negative, so the bound stays below the start value). Required
+  when the start value is zero.
+
+- `maxValue`:
+
+  Optional upper bound. Defaults to `NULL`, in which case it is derived
+  from the start value as `start * 10` (or `start * 0.1` when the start
+  value is negative, so the bound stays above the start value). Required
+  when the start value is zero.
 
 #### Returns
 

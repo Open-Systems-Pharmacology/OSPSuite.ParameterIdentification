@@ -1,7 +1,7 @@
 # Stores current simulation output state
 
-Stores simulation output intervals, output time points, and output
-selections in the current state.
+Stores the output selections, output intervals, and output time points
+of simulations in their current state.
 
 ## Usage
 
@@ -17,6 +17,8 @@ selections in the current state.
 
 ## Value
 
-A named list with entries `outputIntervals`, `timePoints`, and
-`outputSelections`. Every entry is a named list with names being the IDs
-of the simulations.
+A named list with names being the IDs of the simulations. Every entry is
+a list with the paths of the output selections (`outputs`), the output
+time points (`timePoints`), the name, start time, end time and
+resolution of every output interval (`intervals`), and the output
+interval objects (`intervalObjects`).

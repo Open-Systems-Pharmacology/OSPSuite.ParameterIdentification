@@ -24,17 +24,14 @@
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/PKResult.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ParameterIdentification.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/ScalingOptions.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-applyLogTransformation.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateBisquareWeights.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateCensoredContribution.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-calculateHuberWeights.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-createErrorCostStructure.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-getSimulationContainer.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-isSameDimension.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-removeFormulaPaths.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-restoreSimulationState.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-storeSimulationState.html</loc></url>
-<url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-summarizeCostLists.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-validateIsSameDimension.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-validateOutputMappingHasData.html</loc></url>
 <url><loc>https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/dot-validateSimulationIds.html</loc></url>

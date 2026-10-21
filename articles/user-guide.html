@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">2.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,8 +145,10 @@ file, they represent two independent instances of a simulation.</p>
 dose parameters and change the dose of the second simulation to 500
 mg.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Path to the dose parameter</span></span>
-<span><span class="va">doseParameterPath</span> <span class="op">&lt;-</span> <span class="st">"Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"</span></span>
+<code class="sourceCode R"><span><span class="co"># Path to the dose parameter. The wildcard "**" stands for any number of</span></span>
+<span><span class="co"># containers, here the formulation container that newer versions of the model</span></span>
+<span><span class="co"># have between the event and the application.</span></span>
+<span><span class="va">doseParameterPath</span> <span class="op">&lt;-</span> <span class="st">"Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"</span></span>
 <span><span class="co"># Get the parameter from the first simulation</span></span>
 <span></span>
 <span><span class="co"># Get the instances of the parameters</span></span>
@@ -253,8 +255,10 @@ start, min, and max values of the renal clearance parameter are given in
 <span><span class="co">#&gt;   • Max value: 9.412</span></span>
 <span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
 <p>Setting the unit to <code>1/h</code> will cause the identification to
-start at <code>0.94 1/h</code>, while the current value is still
-<code>0.94 1/h</code> or <code>0.94 1/h * 60 min = 56.47 1/h</code>:</p>
+start at <code>0.9412 1/h</code>, the same stored number simply
+relabeled, while the current value is correctly converted from
+<code>0.9412 1/min</code> to
+<code>0.9412 1/min * 60 min/h = 56.47 1/h</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/h`</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterCl_250mg</span><span class="op">)</span></span>
@@ -271,13 +275,12 @@ renal clearance to [0, 10] <code>1/min</code>:</p>
 <code class="sourceCode R"><span><span class="va">piParameterLipo</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fl">10</span></span>
 <span><span class="va">piParameterLipo</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
 <span></span>
+<span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
-<span><span class="va">piParameterCl_250mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span></span>
 <span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">minValue</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">maxValue</span> <span class="op">&lt;-</span> <span class="fl">10</span></span>
-<span><span class="va">piParameterCl_500mg</span><span class="op">$</span><span class="va">unit</span> <span class="op">&lt;-</span> <span class="va">ospUnits</span><span class="op">$</span><span class="va">`Inversed time`</span><span class="op">$</span><span class="va">`1/min`</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">piParameterLipo</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #0000BB;">&lt;PIParameters&gt;</span></span></span>
@@ -303,6 +306,20 @@ renal clearance to [0, 10] <code>1/min</code>:</p>
 <span><span class="co">#&gt;   • Min value: 0</span></span>
 <span><span class="co">#&gt;   • Max value: 10</span></span>
 <span><span class="co">#&gt;   • Unit: 1/min</span></span></code></pre></div>
+<p>Values declared in <code>$unit</code> are converted to the
+parameter’s base unit before they are applied to the model, so an
+identification can be set up in any unit of the parameter’s dimension.
+The reset of <code>piParameterCl_250mg$unit</code> to <code>1/min</code>
+above is required because changing <code>$unit</code> relabels the
+stored numbers without rescaling them: without it, its bounds and start
+value would be interpreted as <code>1/h</code>, producing an interval
+that excludes the parameter’s own current value of
+<code>0.9412 1/min</code>.</p>
+<p>One caveat is algorithm-specific. <code>HJKB</code> probes with
+absolute step sizes in the declared unit, so the choice of
+<code>$unit</code> changes its search resolution. The search performed
+by <code>BOBYQA</code> and <code>DEoptim</code> is unaffected, because
+their step and population scales derive from the bounds.</p>
 </div>
 <div class="section level4">
 <h4 id="mapping-of-model-output-to-observed-data">Mapping of model output to observed data<a class="anchor" aria-label="anchor" href="#mapping-of-model-output-to-observed-data"></a>
@@ -444,7 +461,7 @@ settings for the <code>BOBYQA</code> algorithm are stored in
 the <code>BOBYQA</code> algorithm, we can use the following code:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">algOptions</span> <span class="op">&lt;-</span> <span class="va">AlgorithmOptions_BOBYQA</span></span>
-<span><span class="va">algOptions</span><span class="op">$</span><span class="va">maxFunctionEvaluations</span> <span class="op">&lt;-</span> <span class="fl">1500</span></span>
+<span><span class="va">algOptions</span><span class="op">$</span><span class="va">maxeval</span> <span class="op">&lt;-</span> <span class="fl">1500</span></span>
 <span><span class="va">piConfiguration</span><span class="op">$</span><span class="va">algorithmOptions</span> <span class="op">&lt;-</span> <span class="va">algOptions</span></span></code></pre></div>
 </div>
 <div class="section level4">
@@ -481,11 +498,12 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Algorithm: BOBYQA</span></span>
 <span><span class="co">#&gt;   • CI Method: hessian</span></span>
 <span><span class="co">#&gt;   • Convergence: TRUE</span></span>
+<span><span class="co">#&gt;   • Convergence message: NLOPT_SUCCESS: Generic success return value.</span></span>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 112</span></span>
-<span><span class="co">#&gt;   • Function evaluations: 112</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 28.36 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 12.50 s</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 114</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 16.44 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 7.278 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
@@ -527,20 +545,21 @@ estimates and related fields:</li>
 <span><span class="co">#&gt; 4     0.941241</span></span></code></pre></div>
 <ul>
 <li>Use <code>$toList()</code> to export full details, including
-diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>SSR</code>,
-<code>residuals</code>, <code>errorWeights</code>,
+diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes items such as <code>rawSSR</code>,
+<code>weightedSSR</code>, <code>rawResiduals</code>,
+<code>weightedResiduals</code>, <code>errorWeights</code>,
 <code>userWeights</code>, <code>yObserved</code>, and
 <code>ySimulated</code>:</li>
 </ul>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">piResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "finalParameters"   "objectiveValue"    "initialParameters"</span></span>
-<span><span class="co">#&gt;  [4] "convergence"       "algorithm"         "elapsed"          </span></span>
-<span><span class="co">#&gt;  [7] "iterations"        "fnEvaluations"     "ciMethod"         </span></span>
-<span><span class="co">#&gt; [10] "ciElapsed"         "ciError"           "ciDetails"        </span></span>
-<span><span class="co">#&gt; [13] "sd"                "cv"                "lowerCI"          </span></span>
-<span><span class="co">#&gt; [16] "upperCI"           "ciType"            "paramNames"       </span></span>
-<span><span class="co">#&gt; [19] "costDetails"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "finalParameters"    "objectiveValue"     "initialParameters" </span></span>
+<span><span class="co">#&gt;  [4] "convergence"        "convergenceMessage" "algorithm"         </span></span>
+<span><span class="co">#&gt;  [7] "elapsed"            "iterations"         "fnEvaluations"     </span></span>
+<span><span class="co">#&gt; [10] "ciMethod"           "ciElapsed"          "ciError"           </span></span>
+<span><span class="co">#&gt; [13] "ciDetails"          "sd"                 "cv"                </span></span>
+<span><span class="co">#&gt; [16] "lowerCI"            "upperCI"            "ciType"            </span></span>
+<span><span class="co">#&gt; [19] "paramNames"         "costDetails"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>
@@ -606,7 +625,7 @@ suggests poor identifiability of that parameter.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

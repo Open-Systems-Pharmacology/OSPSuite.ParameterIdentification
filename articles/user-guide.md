@@ -78,8 +78,10 @@ parameters and change the dose of the second simulation to 500 mg.
 
 ``` r
 
-# Path to the dose parameter
-doseParameterPath <- "Events|IV 250mg 10min|Application_1|ProtocolSchemaItem|Dose"
+# Path to the dose parameter. The wildcard "**" stands for any number of
+# containers, here the formulation container that newer versions of the model
+# have between the event and the application.
+doseParameterPath <- "Events|IV 250mg 10min|**|Application_1|ProtocolSchemaItem|Dose"
 # Get the parameter from the first simulation
 
 # Get the instances of the parameters
@@ -196,8 +198,9 @@ print(piParameterCl_250mg)
 ```
 
 Setting the unit to `1/h` will cause the identification to start at
-`0.94 1/h`, while the current value is still `0.94 1/h` or
-`0.94 1/h * 60 min = 56.47 1/h`:
+`0.9412 1/h`, the same stored number simply relabeled, while the current
+value is correctly converted from `0.9412 1/min` to
+`0.9412 1/min * 60 min/h = 56.47 1/h`:
 
 ``` r
 
@@ -220,13 +223,12 @@ renal clearance to \[0, 10\] `1/min`:
 piParameterLipo$minValue <- -10
 piParameterLipo$maxValue <- 10
 
+piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
 piParameterCl_250mg$minValue <- 0
 piParameterCl_250mg$maxValue <- 10
-piParameterCl_250mg$unit <- ospUnits$`Inversed time`$`1/min`
 
 piParameterCl_500mg$minValue <- 0
 piParameterCl_500mg$maxValue <- 10
-piParameterCl_500mg$unit <- ospUnits$`Inversed time`$`1/min`
 
 print(piParameterLipo)
 #> <PIParameters>
@@ -253,6 +255,21 @@ print(piParameterCl_500mg)
 #>   • Max value: 10
 #>   • Unit: 1/min
 ```
+
+Values declared in `$unit` are converted to the parameter’s base unit
+before they are applied to the model, so an identification can be set up
+in any unit of the parameter’s dimension. The reset of
+`piParameterCl_250mg$unit` to `1/min` above is required because changing
+`$unit` relabels the stored numbers without rescaling them: without it,
+its bounds and start value would be interpreted as `1/h`, producing an
+interval that excludes the parameter’s own current value of
+`0.9412 1/min`.
+
+One caveat is algorithm-specific. `HJKB` probes with absolute step sizes
+in the declared unit, so the choice of `$unit` changes its search
+resolution. The search performed by `BOBYQA` and `DEoptim` is
+unaffected, because their step and population scales derive from the
+bounds.
 
 #### Mapping of model output to observed data
 
@@ -430,7 +447,7 @@ E.g. to set the maximal number of function evaluations to 1500 for the
 ``` r
 
 algOptions <- AlgorithmOptions_BOBYQA
-algOptions$maxFunctionEvaluations <- 1500
+algOptions$maxeval <- 1500
 piConfiguration$algorithmOptions <- algOptions
 ```
 
@@ -481,11 +498,12 @@ print(piResult)
 #>   • Algorithm: BOBYQA
 #>   • CI Method: hessian
 #>   • Convergence: TRUE
+#>   • Convergence message: NLOPT_SUCCESS: Generic success return value.
 #>   • Objective value: 6.536
 #>   • Iterations: 112
-#>   • Function evaluations: 112
-#>   • Elapsed (optimization): 28.36 s
-#>   • Elapsed (CI): 12.50 s
+#>   • Function evaluations: 114
+#>   • Elapsed (optimization): 16.44 s
+#>   • Elapsed (CI): 7.278 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -529,19 +547,20 @@ piResult$toDataFrame()
 
 - Use `$toList()` to export full details, including diagnostics, cost
   metrics, and residuals.  
-  `costDetails` includes items such as `SSR`, `residuals`,
-  `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
+  `costDetails` includes items such as `rawSSR`, `weightedSSR`,
+  `rawResiduals`, `weightedResiduals`, `errorWeights`, `userWeights`,
+  `yObserved`, and `ySimulated`:
 
 ``` r
 
 names(piResult$toList())
-#>  [1] "finalParameters"   "objectiveValue"    "initialParameters"
-#>  [4] "convergence"       "algorithm"         "elapsed"          
-#>  [7] "iterations"        "fnEvaluations"     "ciMethod"         
-#> [10] "ciElapsed"         "ciError"           "ciDetails"        
-#> [13] "sd"                "cv"                "lowerCI"          
-#> [16] "upperCI"           "ciType"            "paramNames"       
-#> [19] "costDetails"
+#>  [1] "finalParameters"    "objectiveValue"     "initialParameters" 
+#>  [4] "convergence"        "convergenceMessage" "algorithm"         
+#>  [7] "elapsed"            "iterations"         "fnEvaluations"     
+#> [10] "ciMethod"           "ciElapsed"          "ciError"           
+#> [13] "ciDetails"          "sd"                 "cv"                
+#> [16] "lowerCI"            "upperCI"            "ciType"            
+#> [19] "paramNames"         "costDetails"
 ```
 
 #### Diagnostics

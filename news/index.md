@@ -1,5 +1,183 @@
 # Changelog
 
+## ospsuite.parameteridentification 2.3.0
+
+### Breaking changes
+
+- Minimum required `ospsuite` version is now 12.4.3. The vignettes and
+  tests use the example `Aciclovir.pkml` shipped with `ospsuite` 12.4.3
+  or later, in which the dose parameter is below `Events` instead of
+  `Applications`
+  ([\#322](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322)).
+
+### Major changes
+
+- `ParameterIdentification` now converts parameter values from
+  `PIParameters$unit` to the base unit before applying them to the
+  model. Previously they were applied unconverted, so a non-base unit
+  silently optimized the wrong quantity
+  ([\#300](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/300)).
+- With `residualWeightingMethod = "error"` and `scaling = "log"`, the
+  error weights now use the SD of the log values: `1 / log(GSD)` for
+  geometric standard deviations and `1 / sqrt(log(1 + (SD / y)^2))` for
+  arithmetic standard deviations. Previously they were calculated from
+  the log-transformed observed values as if these were on the linear
+  scale, so the weights were wrong, and observations with a value of 1
+  or less in the base unit silently got weight 1. Results change for
+  output mappings with log scaling and error weights
+  ([\#325](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/325)).
+- With `residualWeightingMethod = "error"` and `scaling = "lin"`,
+  observed values with a geometric standard deviation now get the
+  correct, lower weight. Previously they were weighted too high, the
+  more so the larger the GSD, so results of such fits change
+  ([\#332](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/332)).
+- The objective function of `ParameterIdentification` is faster, most of
+  all for tasks with many simulations, parameters and output mappings.
+  Apart from the simulations themselves, little work is left in an
+  evaluation: the model parameters are looked up once per task, the
+  observed data are converted to base units once per call, and the
+  simulated values and the cost are calculated on numeric vectors
+  instead of `DataCombined` objects and data frames, apart from the
+  contribution of censored values with `objectiveFunctionType = "m3"`.
+  The results are identical, apart from the correction of the M3 method
+  for several LLOQs in one output mapping below
+  ([\#317](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317)).
+  In the examples of
+  [\#303](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/303),
+  an evaluation is about 2 to 2.5 times faster, and 7 to 9 times faster
+  where the simulations themselves are fast
+  ([\#302](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/302),
+  [\#303](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/303)).
+
+### Minor improvements and bug fixes
+
+- `PIResult` and `PKResult` now report `convergence = FALSE` for a
+  BOBYQA run that stopped because it reached `maxeval` or `maxtime`,
+  which was previously reported as converged. A new field
+  `convergenceMessage` says why the optimizer stopped, for all
+  algorithms, and `fnEvaluations` for BOBYQA now counts every evaluation
+  of the objective function
+  ([\#304](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/304)).
+- `run()` now simulates the start values once before the optimization
+  and stops only if that simulation fails, with the reason and possible
+  remedies. A simulation that fails during the optimization, also at its
+  first evaluation, returns the infinite cost, so DEoptim no longer
+  stops when its first random candidate fails, and `estimateCI()` no
+  longer stops when a profile likelihood step or bootstrap replicate
+  fails at its first evaluation. Errors that are not failed simulations
+  now stop the run at any evaluation. DEoptim includes the start values
+  in its initial population unless `initialpop` is given, and `run()`
+  warns when the simulations failed in more than half of its
+  evaluations. DEoptim results under a fixed seed differ from earlier
+  versions, because the initial population is now drawn before DEoptim
+  starts
+  ([\#307](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/307)).
+- The user guide vignette now sets the maximal number of function
+  evaluations of `BOBYQA` with the option `maxeval` of
+  `AlgorithmOptions_BOBYQA`. Previously it used
+  `maxFunctionEvaluations`, which `PIConfiguration$algorithmOptions`
+  ignored with a warning
+  ([\#261](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/261)).
+- `ParameterIdentification` now reads the observed data once per call of
+  a method and per bootstrap replicate and caches them, instead of
+  re-reading them from the underlying datasets on every objective
+  function evaluation. This removes the dominant source of R heap growth
+  during long optimizations and bootstrap runs
+  ([\#271](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/271)).
+- [`plot.modelCost()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/reference/plot.modelCost.md)
+  now reads the residual columns produced by the cost kernel, so it
+  correctly plots raw residuals against time and overlays the weighted
+  residuals
+  ([\#275](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/275)).
+- `ParameterIdentification` can now optimize state-variable parameters
+  (those defined by a right-hand-side formula), which previously crashed
+  ([\#280](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/280)).
+- `PIParameters$new()` accepts optional `minValue`/`maxValue`, errors on
+  a zero start value when no bounds are supplied, and rejects zero-width
+  bounds (`minValue == maxValue`) that leave nothing to optimize
+  ([\#282](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/282)).
+- Every method of `ParameterIdentification` that runs the simulations
+  (`run()`, `estimateCI()`, `gridSearch()`, `calculateOFVProfiles()` and
+  `plotResults()`) reads the observed data again at its start, so
+  changes of the observed data sets or of their data transformations
+  between two calls take effect. `run()` with `autoEstimateCI = TRUE`
+  reads them once, for the optimization and the confidence intervals
+  ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- Every method of `ParameterIdentification` that runs the simulations
+  now builds the simulation batches again at its start, so changes of
+  the simulations (for example of a dose or a solver setting) and of the
+  observed times (a new data set, or `xOffsets` and `xFactors` of
+  `setDataTransformations()`) after the first call take effect, with the
+  results of a new `ParameterIdentification` object. Previously the
+  batches of the first call were reused: such changes were ignored, the
+  simulated values at new observed times were interpolated, and new
+  times outside the simulated times gave an infinite cost. The warning
+  about observed times without simulated values is removed
+  ([\#319](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/319),
+  [\#329](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/329)).
+- A failed simulation is now reported by its name and the reason given
+  by the simulation engine (“Simulation ‘…’ failed: …”), instead of as
+  an error about a `NULL` argument, also with `pkOutputMappings`. If
+  other simulations of the task have the same name, the message gives
+  the position of the failed simulation in the list of simulations.
+  `run()`, `estimateCI()`, `gridSearch()` and `calculateOFVProfiles()`
+  no longer show the warning of the simulation engine on every failed
+  evaluation. They log a reason in full only at the first failure of its
+  kind in a call, and later reasons of that kind with their first line
+  only, because a reason can be long, for example the list of all
+  variables that became negative. Reasons are of one kind if their first
+  lines differ only in numbers, such as the time of the failure.
+  `plotResults()` still shows the warning. With `pkOutputMappings`, the
+  failure of a simulation that no PK mapping uses does not fail the
+  evaluation and shows the warning, as before
+  ([\#299](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/299)).
+- An error in the observed data sets of an output mapping or in their
+  data transformations, for example
+  [\#311](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/311)
+  with labels for all data sets, now stops `run()`, `estimateCI()`,
+  `gridSearch()` and `calculateOFVProfiles()` with its own message, as
+  an error in the unit conversion of the observed data already did.
+  Previously it was reported as a failed simulation: `run()` and
+  `estimateCI()` stopped with “Initial simulation failed.”, and
+  `gridSearch()` and `calculateOFVProfiles()` returned an infinite
+  objective function value for every point
+  ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- With an LLOQ and `objectiveFunctionType = "lsq"`, a missing simulated
+  value still stops the evaluation, now with an explicit message instead
+  of an error from `tibble`
+  ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- When no observed or simulated values of an output mapping enter the
+  cost, for example because `xOffsets` of `setDataTransformations()`
+  shift all observed times below 0, the error of
+  `ParameterIdentification` now names the output mapping by its position
+  and quantity path and gives the reason. Previously it said “No
+  observed data found when calculating cost function.”
+  ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- With `objectiveFunctionType = "m3"`, the contribution of the values
+  below the LLOQ is now correct when they have different LLOQs, for
+  example in two data sets with different LLOQs in one output mapping.
+  Each such value is now compared with the simulated value at its own
+  time, and with `linScaleCV` its standard deviation is calculated from
+  its own LLOQ. Previously an LLOQ could be compared with the simulated
+  value at another time, and a value could get the standard deviation of
+  another LLOQ, so the cost was wrong and depended on the order in which
+  the data sets were added to the output mapping. With one LLOQ per
+  output mapping, the results are unchanged
+  ([\#317](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317)).
+- `ospsuite` and the other Open Systems Pharmacology packages that this
+  package needs are now installed from the [OSP
+  R-universe](https://open-systems-pharmacology.r-universe.dev), also
+  when you install the development version from GitHub. Add the
+  R-universe to your repositories before you install, as shown in the
+  README
+  ([\#322](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322)).
+- The methods of `ParameterIdentification` no longer change the output
+  selections and output intervals of the simulations, also when they
+  stop with an error. Previously, a later
+  [`runSimulations()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/runSimulations.html)
+  could return other outputs at other times
+  ([\#327](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/327)).
+
 ## ospsuite.parameteridentification 2.2.0
 
 ### Breaking changes
