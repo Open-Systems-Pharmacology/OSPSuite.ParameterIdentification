@@ -16,6 +16,13 @@ Restore simulation output state
 
 - simStateList:
 
-  Output of the function `.storeSimulationState`. A named list with
-  entries `outputIntervals`, `timePoints`, and `outputSelections`. Every
-  entry is a named list with names being the IDs of the simulations.
+  Output of the function `.storeSimulationState`.
+
+## Details
+
+The output selections and the output schema are restored only if they
+changed. The output schema gets its original output interval objects
+back, so that interval objects held by the user stay part of the
+simulation. If a simulation cannot be restored, a warning names it and
+the other simulations are still restored, so that the result or the
+error of the calling method is kept.

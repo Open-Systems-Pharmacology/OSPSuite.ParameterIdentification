@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9015</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9016</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,11 +64,18 @@
 
 
 <dt id="arg-simstatelist">simStateList<a class="anchor" aria-label="anchor" href="#arg-simstatelist"></a></dt>
-<dd><p>Output of the function <code>.storeSimulationState</code>. A named
-list with entries <code>outputIntervals</code>, <code>timePoints</code>, and <code>outputSelections</code>.
-Every entry is a named list with names being the IDs of the simulations.</p></dd>
+<dd><p>Output of the function <code>.storeSimulationState</code>.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The output selections and the output schema are restored only if
+they changed. The output schema gets its original output interval
+objects back, so that interval objects held by the user stay part of the
+simulation. If a simulation cannot be restored, a warning names it and
+the other simulations are still restored, so that the result or the
+error of the calling method is kept.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

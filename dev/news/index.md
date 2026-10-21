@@ -137,6 +137,12 @@
   R-universe to your repositories before you install, as shown in the
   README
   ([\#322](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322)).
+- The methods of `ParameterIdentification` no longer change the output
+  selections and output intervals of the simulations, also when they
+  stop with an error. Previously, a later
+  [`runSimulations()`](https://www.open-systems-pharmacology.org/OSPSuite-R/reference/runSimulations.html)
+  could return other outputs at other times
+  ([\#327](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/327)).
 
 ## ospsuite.parameteridentification 2.2.0
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9015</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9016</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,6 +76,7 @@
 <li>With <code>objectiveFunctionType = "m3"</code>, the contribution of the values below the LLOQ is now correct when they have different LLOQs, for example in two data sets with different LLOQs in one output mapping. Each such value is now compared with the simulated value at its own time, and with <code>linScaleCV</code> its standard deviation is calculated from its own LLOQ. Previously an LLOQ could be compared with the simulated value at another time, and a value could get the standard deviation of another LLOQ, so the cost was wrong and depended on the order in which the data sets were added to the output mapping. With one LLOQ per output mapping, the results are unchanged (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/317" class="external-link">#317</a>).</li>
 <li>
 <code>ospsuite</code> and the other Open Systems Pharmacology packages that this package needs are now installed from the <a href="https://open-systems-pharmacology.r-universe.dev" class="external-link">OSP R-universe</a>, also when you install the development version from GitHub. Add the R-universe to your repositories before you install, as shown in the README (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/322" class="external-link">#322</a>).</li>
+<li>The methods of <code>ParameterIdentification</code> no longer change the output selections and output intervals of the simulations, also when they stop with an error. Previously, a later <code><a href="https://www.open-systems-pharmacology.org/OSPSuite-R/reference/runSimulations.html" class="external-link">runSimulations()</a></code> could return other outputs at other times (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/327" class="external-link">#327</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">
