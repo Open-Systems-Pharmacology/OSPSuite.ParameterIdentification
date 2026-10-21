@@ -269,7 +269,7 @@ E.g. to set the maximal number of function evaluations to 1500 for the `BOBYQA` 
 
 ```{r}
 algOptions <- AlgorithmOptions_BOBYQA
-algOptions$maxFunctionEvaluations <- 1500
+algOptions$maxeval <- 1500
 piConfiguration$algorithmOptions <- algOptions
 ```
 
