@@ -174,6 +174,61 @@ test_that("Optimizer output has correct structure and values for DEoptim", {
   expect_snapshot_value(optResult, style = "deparse", tolerance = 1e-4)
 })
 
+test_that(".deoptimInitialPopulation() puts the start values in the first row", {
+  population <- .deoptimInitialPopulation(parTest, lowerTest, upperTest, NA)
+  expect_identical(dim(population), c(30L, 3L))
+  expect_identical(population[1, ], parTest)
+  for (idx in seq_along(parTest)) {
+    expect_true(all(population[, idx] >= lowerTest[idx]))
+    expect_true(all(population[, idx] <= upperTest[idx]))
+  }
+  expect_identical(
+    nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, 8)),
+    8L
+  )
+  expect_identical(
+    nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, NULL)),
+    30L
+  )
+})
+
+test_that("DEoptim starts from the start values unless initialpop is given", {
+  passedControl <- NULL
+  local_mocked_bindings(
+    DEoptim = function(fn, lower, upper, control) {
+      passedControl <<- control
+      stop("captured")
+    },
+    .package = "DEoptim"
+  )
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  optimizer <- Optimizer$new(piConfig)
+  runCaptured <- function() {
+    try(
+      suppressMessages(optimizer$run(
+        par = parTest,
+        fn = fnObjective,
+        lower = lowerTest,
+        upper = upperTest
+      )),
+      silent = TRUE
+    )
+  }
+
+  runCaptured()
+  expect_identical(passedControl$initialpop[1, ], parTest)
+  expect_identical(passedControl$NP, 30L)
+
+  userPopulation <- matrix(
+    c(1, 2, 3, 4, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8),
+    nrow = 4
+  )
+  piConfig$algorithmOptions <- list(NP = 4, initialpop = userPopulation)
+  runCaptured()
+  expect_identical(passedControl$initialpop, userPopulation)
+})
+
 test_that("Optimizer works when objective function returns numeric cost", {
   fnObjectiveNumeric <- function(p) {
     ySim <- fnSimulate(p)
