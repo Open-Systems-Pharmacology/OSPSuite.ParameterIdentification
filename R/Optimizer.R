@@ -737,6 +737,7 @@ Optimizer <- R6::R6Class(
   if (is.null(NP) || is.na(NP) || NP < 4) {
     NP <- 10L * length(lower)
   }
+  NP <- as.integer(NP)
   population <- matrix(
     stats::runif(
       NP * length(lower),

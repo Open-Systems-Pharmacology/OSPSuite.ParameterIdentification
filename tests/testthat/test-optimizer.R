@@ -190,6 +190,11 @@ test_that(".deoptimInitialPopulation() puts the start values in the first row", 
     nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, NULL)),
     30L
   )
+  # DEoptim truncates a fractional population size
+  expect_identical(
+    dim(.deoptimInitialPopulation(parTest, lowerTest, upperTest, 8.5)),
+    c(8L, 3L)
+  )
   # DEoptim replaces a population size below 4 with its default
   expect_identical(
     nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, 3)),
