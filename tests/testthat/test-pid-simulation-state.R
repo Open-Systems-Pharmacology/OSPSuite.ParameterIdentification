@@ -199,20 +199,9 @@ test_that("the simulations are restored after an error", {
   )
   expect_identical(simulationState(simulation), before)
 
-  # estimateCI() needs the result of run(), after which the batches are
-  # built. They are built again here, so that estimateCI() prepares the
-  # simulations before its error.
-  simulation <- userStateSimulation()
-  before <- simulationState(simulation)
-  task <- stateTask(simulation)
-  suppressMessages(task$run())
-  task$.__enclos_env__$private$.needBatchInitialization <- TRUE
-  localFailingCost()
-  suppressMessages(expect_error(task$estimateCI(), "Injected cost failure"))
-  expect_identical(simulationState(simulation), before)
-
   # An error in the cost calculation of the first call on a task. The mock
-  # of `localFailingCost()` above is active until the end of this test.
+  # of `localFailingCost()` is active until the end of this test.
+  localFailingCost()
   calls <- list(
     run = function(task) task$run(),
     gridSearch = function(task) task$gridSearch(totalEvaluations = 3),
@@ -351,4 +340,131 @@ test_that("results do not depend on the state of the simulations", {
   suppressMessages(laterTask$run())
   laterResult <- suppressMessages(suppressWarnings(laterTask$estimateCI()))
   expect_identical(laterResult$toDataFrame(), autoResult$toDataFrame())
+})
+
+test_that("the first call keeps the interval objects of the user", {
+  simulation <- userStateSimulation()
+  interval <- simulation$outputSchema$intervals[[1]]
+  task <- stateTask(simulation)
+  suppressMessages(task$gridSearch(totalEvaluations = 3))
+  interval$resolution$setValue(2 / 60)
+  expect_equal(simulation$outputSchema$intervals[[1]]$resolution$value, 2 / 60)
+})
+
+test_that("run() with PK mappings keeps the interval objects of the user", {
+  simulation <- userStateSimulation()
+  before <- simulationState(simulation)
+  interval <- simulation$outputSchema$intervals[[1]]
+  task <- ParameterIdentification$new(
+    simulations = simulation,
+    parameters = testPKParameters(simulation),
+    pkOutputMappings = PKOutputMapping$new(
+      quantity = testQuantity(simulation),
+      pkParameter = "C_max",
+      targetValue = 30,
+      targetUnit = testQuantity(simulation)$unit
+    ),
+    configuration = lowIterPiConfiguration()
+  )
+  for (i in 1:2) {
+    suppressMessages(suppressWarnings(task$run()))
+    expect_identical(simulationState(simulation), before)
+  }
+  interval$resolution$setValue(2 / 60)
+  expect_equal(simulation$outputSchema$intervals[[1]]$resolution$value, 2 / 60)
+})
+
+test_that("intervals with the same name are restored", {
+  simulation <- userStateSimulation()
+  addOutputInterval(simulation, startTime = 0, endTime = 60, resolution = 1)
+  intervals <- simulation$outputSchema$intervals
+  intervals[[2]]$name <- intervals[[1]]$name
+  before <- simulationState(simulation)
+  task <- stateTask(simulation)
+  # The batch cannot be built from such a simulation. Its error is not hidden
+  # by the restore, and the intervals of the user survive.
+  expect_error(suppressMessages(task$run()), "NotUniqueNameException")
+  expect_identical(simulationState(simulation), before)
+  intervals[[2]]$resolution$setValue(2)
+  expect_equal(simulation$outputSchema$intervals[[2]]$resolution$value, 2)
+})
+
+# Makes the restore fail: only the restore adds the output of the user
+userPath <- "Organism|VenousBlood|Plasma|Aciclovir|Plasma Unbound"
+
+localFailingRestore <- function(env = parent.frame()) {
+  originalAddOutputs <- ospsuite::addOutputs
+  testthat::local_mocked_bindings(
+    addOutputs = function(quantitiesOrPaths, simulation) {
+      if (is.character(quantitiesOrPaths) && userPath %in% quantitiesOrPaths) {
+        stop("Injected restore failure")
+      }
+      originalAddOutputs(quantitiesOrPaths, simulation)
+    },
+    .package = "ospsuite",
+    .env = env
+  )
+}
+
+test_that("run() returns its result and warns when the restore fails", {
+  simulation <- userStateSimulation()
+  task <- stateTask(simulation)
+  localFailingRestore()
+  expect_warning(
+    result <- suppressMessages(task$run()),
+    messages$warningSimulationStateNotRestored(
+      simulation$name,
+      "Injected restore failure"
+    ),
+    fixed = TRUE
+  )
+  expect_s3_class(result, "PIResult")
+})
+
+test_that("a method keeps its own error and warns when the restore fails", {
+  simulation <- userStateSimulation()
+  task <- stateTask(simulation)
+  localFailingRestore()
+  expect_warning(
+    expect_error(
+      task$plotResults(par = c(1, 2)),
+      messages$errorParameterValuesLengthMismatch(length(task$parameters), 2),
+      fixed = TRUE
+    ),
+    messages$warningSimulationStateNotRestored(
+      simulation$name,
+      "Injected restore failure"
+    ),
+    fixed = TRUE
+  )
+})
+
+test_that("a failing restore of one simulation still restores the others", {
+  first <- userStateSimulation()
+  second <- userStateSimulation()
+  secondBefore <- simulationState(second)
+  savedState <- .storeSimulationState(list(first, second))
+  for (simulation in list(first, second)) {
+    clearOutputs(simulation)
+    simulation$outputSchema$addTimePoints(c(5, 6))
+  }
+  originalAddOutputs <- ospsuite::addOutputs
+  calls <- 0
+  testthat::local_mocked_bindings(
+    addOutputs = function(quantitiesOrPaths, simulation) {
+      calls <<- calls + 1
+      if (calls == 1) stop("Injected restore failure")
+      originalAddOutputs(quantitiesOrPaths, simulation)
+    },
+    .package = "ospsuite"
+  )
+  expect_warning(
+    .restoreSimulationState(list(first, second), savedState),
+    messages$warningSimulationStateNotRestored(
+      first$name,
+      "Injected restore failure"
+    ),
+    fixed = TRUE
+  )
+  expect_identical(simulationState(second), secondBefore)
 })

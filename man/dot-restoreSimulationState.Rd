@@ -15,7 +15,11 @@
 Restore simulation output state
 }
 \details{
-A simulation whose output state has not changed is left as it is,
-so that the output interval objects of its output schema stay the same.
+The output selections and the output schema are restored only if
+they changed. The output schema gets its original output interval
+objects back, so that interval objects held by the user stay part of the
+simulation. If a simulation cannot be restored, a warning names it and
+the other simulations are still restored, so that the result or the
+error of the calling method is kept.
 }
 \keyword{internal}

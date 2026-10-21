@@ -493,6 +493,12 @@ messages$warnAchievedPKValuesFailure <- function(detail) {
   )
 }
 
+messages$warningSimulationStateNotRestored <- function(simulationName, error) {
+  ospsuite.utils::cliFormat(
+    "The output selections and output schema of simulation {.val {simulationName}} could not be restored: {error}"
+  )
+}
+
 messages$warningNoValidErrorValues <- function() {
   ospsuite.utils::cliFormat(
     "Some error values are invalid and will use unit weights (equivalent to {.val none})."

@@ -204,13 +204,7 @@ ParameterIdentification <- R6::R6Class(
       # function. This way, the function call be called repeatedly with minimal
       # overhead
       if (private$.needBatchInitialization) {
-        # Prepare simulations. Every public method that calls this method
-        # stores the output selections and the output schema of the
-        # simulations before, and restores them when it exits (see
-        # `.storeSimulationState()`). A batch takes the outputs and the output
-        # schema of its simulation when it is built, so later calls run it
-        # while the simulation is in the state of the user again. Only the PK
-        # outputs are selected again at every call (see above).
+        # Prepare simulations; the calling public method restores them on exit
 
         # 2DO: Enable steady-state
         # If steady-state should be simulated, get the set of all state variables for each simulation
@@ -1208,15 +1202,8 @@ ParameterIdentification <- R6::R6Class(
 
       private$.assertNotPKMode("estimateCI")
 
-      # Store the output selections and the output schema of the simulations,
-      # and restore them when this method exits, also on an error. After
-      # `run()`, the batches are built already, so this matters only if they
-      # are built again.
-      savedState <- .storeSimulationState(private$.simulations)
-      on.exit(
-        .restoreSimulationState(private$.simulations, savedState),
-        add = TRUE
-      )
+      # The batches are built by `run()` already, so this method does not
+      # change the simulations
       private$.estimateCI()
     },
 

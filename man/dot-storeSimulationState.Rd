@@ -12,8 +12,9 @@
 \value{
 A named list with names being the IDs of the simulations. Every
 entry is a list with the paths of the output selections (\code{outputs}), the
-output time points (\code{timePoints}), and the name, start time, end time and
-resolution of every output interval (\code{intervals}).
+output time points (\code{timePoints}), the name, start time, end time and
+resolution of every output interval (\code{intervals}), and the output
+interval objects (\code{intervalObjects}).
 }
 \description{
 Stores the output selections, output intervals, and output
