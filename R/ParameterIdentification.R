@@ -903,12 +903,12 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Simulates the point the optimizer starts from, the start values or the
-    # estimate. The start values are not validated: they come from the model
-    # or the user. This check does not prove the model is sound. It tells
-    # whether the setup runs at the one point the user vouched for, and if
-    # that point fails, stopping is right. Afterwards, a failed simulation
-    # only returns the infinite cost.
+    # Only a failed simulation at the start point stops the run. Later failures
+    # get the infinite cost.
+    # Why: the start point is the one the user vouched for. A success there
+    # indirectly indicates that the setup runs elsewhere.
+    # Limitation: it does not prove the model is sound, and the start point
+    # itself can lie in a region where the simulation fails.
     #
     # @param values Vector of parameter values, one per `PIParameters`.
     .checkStartSimulation = function(values) {
