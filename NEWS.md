@@ -12,6 +12,7 @@
 
 ## Minor improvements and bug fixes
 
+- The user guide vignette now sets the maximal number of function evaluations of `BOBYQA` with the option `maxeval` of `AlgorithmOptions_BOBYQA`. Previously it used `maxFunctionEvaluations`, which `PIConfiguration$algorithmOptions` ignored with a warning (#261).
 - `ParameterIdentification` now reads the observed data once per call of a method and per bootstrap replicate and caches them, instead of re-reading them from the underlying datasets on every objective function evaluation. This removes the dominant source of R heap growth during long optimizations and bootstrap runs (#271).
 - `plot.modelCost()` now reads the residual columns produced by the cost kernel, so it correctly plots raw residuals against time and overlays the weighted residuals (#275).
 - `ParameterIdentification` can now optimize state-variable parameters (those defined by a right-hand-side formula), which previously crashed (#280).
