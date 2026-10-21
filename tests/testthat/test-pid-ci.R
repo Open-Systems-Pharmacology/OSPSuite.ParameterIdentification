@@ -42,6 +42,24 @@ test_that("estimateCI() works as expected using Hessian", {
   )
 })
 
+test_that("estimateCI() stops when the estimate fails to simulate", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+  # Every simulation returns no results
+  local_mocked_bindings(
+    runSimulationBatches = function(simulationBatches, ...) {
+      lapply(simulationBatches, function(batch) list())
+    },
+    .package = "ospsuite"
+  )
+  expect_error(
+    suppressMessages(piTask$estimateCI()),
+    class = "initialSimulationError"
+  )
+})
+
 test_that("run() reads the observed data once when it estimates the CI", {
   piTask <- testPiTask()
   piTask$configuration <- lowIterPiConfiguration()

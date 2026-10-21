@@ -2,14 +2,35 @@
 
 resetTestFactories()
 
-test_that("run() errors if initial simulation fails", {
+test_that("run() stops when the start values fail to simulate", {
   modPiTask <- testModifiedTask()
-  suppressMessages(suppressWarnings(
-    expect_error(
-      modPiTask$run(),
-      messages$initialSimulationError()
-    )
-  ))
+  runError <- expect_error(
+    suppressMessages(modPiTask$run()),
+    class = "initialSimulationError"
+  )
+  expect_s3_class(runError, "simulationsFailedError")
+})
+
+test_that("the error of failed start values gives the reason and the remedies", {
+  expect_snapshot(
+    cat(messages$initialSimulationError(
+      "The following variables became negative: Aciclovir"
+    ))
+  )
+})
+
+test_that("an error that is not a failed simulation stops every evaluation", {
+  piTask <- testPiTask()
+  priv <- piTask$.__enclos_env__$private
+  priv$.batchInitialization()
+  priv$.fnEvaluations <- 5
+  local_mocked_bindings(
+    .simulatedValues = function(...) stop("Output not in the results")
+  )
+  expect_snapshot(
+    priv$.objectiveFunction(piTask$parameters[[1]]$startValue),
+    error = TRUE
+  )
 })
 
 test_that("run() stops on unconvertible observed data", {
@@ -45,21 +66,20 @@ test_that("a failed simulation is reported by name and reason", {
   expect_s3_class(plotError, "simulationsFailedError")
 
   # The objective function reports the same failure without the warning of
-  # the simulation engine
+  # the simulation engine and returns the infinite cost, also at the first
+  # evaluation
   logged <- character()
+  priv$.fnEvaluations <- 0
   expect_no_warning(
-    expect_error(
-      withCallingHandlers(
-        priv$.objectiveFunction(startValues),
-        message = function(m) {
-          logged <<- c(logged, conditionMessage(m))
-          invokeRestart("muffleMessage")
-        }
-      ),
-      messages$initialSimulationError(),
-      fixed = TRUE
+    cost <- withCallingHandlers(
+      priv$.objectiveFunction(startValues),
+      message = function(m) {
+        logged <<- c(logged, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
     )
   )
+  expect_identical(cost$modelCost, Inf)
   expect_true(any(grepl(failedMessage, logged, fixed = TRUE)))
 })
 

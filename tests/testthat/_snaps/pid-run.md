@@ -1,3 +1,21 @@
+# the error of failed start values gives the reason and the remedies
+
+    Code
+      cat(messages$initialSimulationError(
+        "The following variables became negative: Aciclovir"))
+    Output
+      Stopping optimization: the simulation failed at the start values.
+      The following variables became negative: Aciclovir
+      Try other start values, check the solver tolerances, or set checkForNegativeValues to FALSE.
+
+# an error that is not a failed simulation stops every evaluation
+
+    Code
+      priv$.objectiveFunction(piTask$parameters[[1]]$startValue)
+    Condition
+      Error in `.simulatedValues()`:
+      ! Output not in the results
+
 # run() runs successfully using default BOBYQA algorithm
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
