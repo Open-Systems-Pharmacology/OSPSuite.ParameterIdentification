@@ -224,9 +224,18 @@ PISimFailureTester <- R6::R6Class(
   inherit = ParameterIdentification,
   cloneable = FALSE,
   private = list(
+    .simulated = FALSE,
+    # The start values simulate, every later simulation fails
     .simulateOutputs = function(currVals, outputMappings = NULL) {
-      private$.fnEvaluations <- private$.fnEvaluations + 2
-      stop("Simulated failure in evaluation")
+      if (!private$.simulated) {
+        private$.simulated <- TRUE
+        return(super$.simulateOutputs(currVals))
+      }
+      stop(.simulationsFailedError(
+        "Aciclovir",
+        1L,
+        "Simulated failure in evaluation"
+      ))
     }
   )
 )

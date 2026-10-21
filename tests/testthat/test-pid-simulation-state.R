@@ -165,7 +165,7 @@ test_that("the simulations are restored after an error", {
   before <- simulationState(simulation)
   task <- stateTask(simulation)
   suppressMessages(suppressWarnings(
-    expect_error(task$run(), messages$initialSimulationError(), fixed = TRUE)
+    expect_error(task$run(), class = "initialSimulationError")
   ))
   expect_identical(simulationState(simulation), before)
   startValues <- vapply(task$parameters, function(p) p$startValue, numeric(1))
@@ -453,7 +453,9 @@ test_that("a failing restore of one simulation still restores the others", {
   testthat::local_mocked_bindings(
     addOutputs = function(quantitiesOrPaths, simulation) {
       calls <<- calls + 1
-      if (calls == 1) stop("Injected restore failure")
+      if (calls == 1) {
+        stop("Injected restore failure")
+      }
       originalAddOutputs(quantitiesOrPaths, simulation)
     },
     .package = "ospsuite"

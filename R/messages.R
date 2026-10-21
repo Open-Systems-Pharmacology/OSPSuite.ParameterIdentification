@@ -42,12 +42,27 @@ messages$logSimulationError <- function(values, errorCondition) {
   message("Error: ", errorCondition$message)
 }
 
+messages$warningMostEvaluationsFailed <- function(failed, total) {
+  ospsuite.utils::cliFormat(
+    "The simulations failed in {.val {failed}} of {.val {total}} evaluations. Check the parameter bounds and the solver settings."
+  )
+}
+
 messages$simulationError <- function(values) {
   paste0("Returning infinite cost structure due to simulation failure.")
 }
 
-messages$initialSimulationError <- function() {
-  "Stopping optimization: Initial simulation failed."
+messages$initialSimulationError <- function(reason) {
+  paste(
+    ospsuite.utils::cliFormat(
+      "Stopping optimization: the simulation failed at the start values."
+    ),
+    reason,
+    ospsuite.utils::cliFormat(
+      "Try other start values, check the solver tolerances, or set {.field simulationRunOptions$checkForNegativeValues} of the configuration to {.val {FALSE}}."
+    ),
+    sep = "\n"
+  )
 }
 
 # `simulationNames` are the names of all simulations of the task and `failed`

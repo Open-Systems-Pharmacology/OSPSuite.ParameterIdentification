@@ -251,17 +251,19 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
   # engine
   failedPattern <- messages$errorSimulationsFailed(sim$name, reasons = ".+")
 
-  # The first evaluation stops with the failed simulation, without the
+  # The start values stop the run with the failed simulation, without the
   # warning of the simulation engine (#299)
   expect_no_warning(
     expect_error(
       suppressMessages(task$run()),
       failedPattern,
-      class = "simulationsFailedError"
+      class = "initialSimulationError"
     )
   )
 
-  # Later evaluations log it and return the largest cost
+  # Evaluations by the optimizer log it and return the largest cost, also the
+  # first
+  priv$.fnEvaluations <- 0
   logged <- character()
   expect_no_warning(
     cost <- withCallingHandlers(
@@ -274,6 +276,21 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
   )
   expect_identical(cost, .Machine$double.xmax)
   expect_true(any(grepl(failedPattern, logged)))
+})
+
+test_that("an error that is not a failed simulation stops a PK evaluation", {
+  task <- testPKTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  priv$.fnEvaluations <- 5
+  local_mocked_bindings(
+    calculatePKAnalyses = function(...) stop("PK analysis not available"),
+    .package = "ospsuite"
+  )
+  expect_snapshot(
+    priv$.pkObjectiveFunction(task$parameters[[1]]$startValue),
+    error = TRUE
+  )
 })
 
 test_that("a failed simulation without a PK mapping only warns", {
