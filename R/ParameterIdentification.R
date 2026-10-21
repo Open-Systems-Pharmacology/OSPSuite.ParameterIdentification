@@ -87,8 +87,6 @@ ParameterIdentification <- R6::R6Class(
     .configuration = NULL,
     # Indicates if simulation batches need initialization. Used for plotting.
     .needBatchInitialization = TRUE,
-    # Stores simulation state if saved during batch creation
-    .savedSimulationState = NULL,
     # Observed data of each output mapping in base units, read once per
     # public call and bootstrap sample by `.getObservedData()`
     .observedData = NULL,
@@ -193,14 +191,20 @@ ParameterIdentification <- R6::R6Class(
       private$.observedTimesChecked <- private$.needBatchInitialization
       # The reasons of failed simulations are logged in full again
       private$.loggedFailureKinds <- character()
+      # `ospsuite::calculatePKAnalyses()` calculates the PK parameters of the
+      # outputs that are selected in the simulation when the PK objective
+      # function runs, not of the outputs of the batch. So the PK outputs are
+      # selected at every call. At the first call, the batches are built from
+      # them below.
+      if (!is.null(private$.pkMappings)) {
+        private$.selectPKOutputs()
+      }
 
       # If the flag is already set to FALSE, short-cuts the execution of the
       # function. This way, the function call be called repeatedly with minimal
       # overhead
       if (private$.needBatchInitialization) {
-        .savedSimulationState <- .storeSimulationState(private$.simulations)
-
-        # Prepare simulations
+        # Prepare simulations; the calling public method restores them on exit
 
         # 2DO: Enable steady-state
         # If steady-state should be simulated, get the set of all state variables for each simulation
@@ -235,20 +239,11 @@ ParameterIdentification <- R6::R6Class(
         #   }
         # }
 
-        # Clear output quantities of all simulations
-        for (simulation in private$.simulations) {
-          ospsuite::clearOutputs(simulation)
-        }
-
-        if (!is.null(private$.pkMappings)) {
-          for (mapping in private$.pkMappings) {
-            simulation <- private$.simulations[[mapping$simId]]
-            ospsuite::addOutputs(
-              quantitiesOrPaths = mapping$quantity,
-              simulation = simulation
-            )
+        if (is.null(private$.pkMappings)) {
+          # Clear output quantities of all simulations
+          for (simulation in private$.simulations) {
+            ospsuite::clearOutputs(simulation)
           }
-        } else {
           private$.outputTimePoints <- list()
           for (outputMapping in private$.outputMappings) {
             simId <- outputMapping$simId
@@ -329,6 +324,20 @@ ParameterIdentification <- R6::R6Class(
         #   }
         # }
         private$.needBatchInitialization <- FALSE
+      }
+    },
+
+    # Selects the quantities of the PK mappings as the only outputs of the
+    # simulations.
+    .selectPKOutputs = function() {
+      for (simulation in private$.simulations) {
+        ospsuite::clearOutputs(simulation)
+      }
+      for (mapping in private$.pkMappings) {
+        ospsuite::addOutputs(
+          quantitiesOrPaths = mapping$quantity,
+          simulation = private$.simulations[[mapping$simId]]
+        )
       }
     },
 
@@ -970,7 +979,8 @@ ParameterIdentification <- R6::R6Class(
     # Estimate Confidence Intervals
     #
     # The steps of `estimateCI()` after its checks. `run()` calls this method,
-    # not `estimateCI()`.
+    # not `estimateCI()`. The caller stores the output selections and the
+    # output schema of the simulations and restores them.
     #
     # @param fromRun `TRUE` when `run()` estimates the confidence intervals
     #   after its optimization. The batches are initialized already then, and
@@ -980,16 +990,6 @@ ParameterIdentification <- R6::R6Class(
     #   `.batchInitialization()`).
     # @return A `PIResult` object with the confidence intervals.
     .estimateCI = function(fromRun = FALSE) {
-      # Store simulation outputs and time intervals to reset them at the end
-      # of the run.
-      private$.savedSimulationState <- .storeSimulationState(
-        private$.simulations
-      )
-      savedState <- private$.savedSimulationState
-      on.exit(
-        .restoreSimulationState(private$.simulations, savedState),
-        add = TRUE
-      )
       # Initialize batches
       if (!fromRun) {
         private$.batchInitialization()
@@ -1150,12 +1150,9 @@ ParameterIdentification <- R6::R6Class(
     #' @return A [`PIResult`] object in standard mode, or a `PKResult` object
     #'   (internal) when `pkOutputMappings` was provided.
     run = function() {
-      # Store simulation outputs and time intervals to reset them at the end
-      # of the run.
-      private$.savedSimulationState <- .storeSimulationState(
-        private$.simulations
-      )
-      savedState <- private$.savedSimulationState
+      # Store the output selections and the output schema of the simulations,
+      # and restore them when this method exits, also on an error.
+      savedState <- .storeSimulationState(private$.simulations)
       on.exit(
         .restoreSimulationState(private$.simulations, savedState),
         add = TRUE
@@ -1241,6 +1238,8 @@ ParameterIdentification <- R6::R6Class(
 
       private$.assertNotPKMode("estimateCI")
 
+      # The batches are built by `run()` already, so this method does not
+      # change the simulations
       private$.estimateCI()
     },
 
@@ -1260,7 +1259,13 @@ ParameterIdentification <- R6::R6Class(
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
       private$.assertNotPKMode("plotResults")
-      simulationState <- NULL
+      # Store the output selections and the output schema of the simulations,
+      # and restore them when this method exits, also on an error.
+      savedState <- .storeSimulationState(private$.simulations)
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
       # If the batches have not been initialized yet (i.e., no run has been
       # performed), this must be done prior to plotting
       private$.batchInitialization()
@@ -1352,13 +1357,6 @@ ParameterIdentification <- R6::R6Class(
           )
       })
 
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(
-          private$.simulations,
-          private$.savedSimulationState
-        )
-      }
-
       return(multiPlot)
     },
 
@@ -1398,6 +1396,13 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsLogical(setStartValue)
 
       private$.assertNotPKMode("gridSearch")
+      # Store the output selections and the output schema of the simulations,
+      # and restore them when this method exits, also on an error.
+      savedState <- .storeSimulationState(private$.simulations)
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)
@@ -1458,14 +1463,6 @@ ParameterIdentification <- R6::R6Class(
         },
         numeric(1)
       )
-
-      # Restore simulation state if applicable
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(
-          private$.simulations,
-          private$.savedSimulationState
-        )
-      }
 
       # Set starting point for next round of optimization
       if (setStartValue) {
@@ -1542,9 +1539,12 @@ ParameterIdentification <- R6::R6Class(
 
       private$.assertNotPKMode("calculateOFVProfiles")
 
-      # Store simulation outputs and time intervals to reset them at the end.
-      private$.savedSimulationState <- .storeSimulationState(
-        private$.simulations
+      # Store the output selections and the output schema of the simulations,
+      # and restore them when this method exits, also on an error.
+      savedState <- .storeSimulationState(private$.simulations)
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
       )
 
       private$.batchInitialization()
@@ -1596,14 +1596,6 @@ ParameterIdentification <- R6::R6Class(
       }
 
       names(profileList) <- parameterNames
-
-      # Restore simulation state if applicable
-      if (!is.null(private$.savedSimulationState)) {
-        .restoreSimulationState(
-          private$.simulations,
-          private$.savedSimulationState
-        )
-      }
 
       return(profileList)
     },
