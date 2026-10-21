@@ -6,7 +6,7 @@
     Output
       Stopping optimization: the simulation failed at the start values.
       The following variables became negative: Aciclovir
-      Try other start values, check the solver tolerances, or set checkForNegativeValues to FALSE.
+      Try other start values, check the solver tolerances, or set simulationRunOptions$checkForNegativeValues of the configuration to FALSE.
 
 # an error that is not a failed simulation stops every evaluation
 

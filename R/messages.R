@@ -59,10 +59,9 @@ messages$initialSimulationError <- function(reason) {
     ),
     reason,
     ospsuite.utils::cliFormat(
-      "Try other start values, check the solver tolerances, or set {.field checkForNegativeValues} to {.val {FALSE}}."
+      "Try other start values, check the solver tolerances, or set {.field simulationRunOptions$checkForNegativeValues} of the configuration to {.val {FALSE}}."
     ),
-    sep = "
-"
+    sep = "\n"
   )
 }
 

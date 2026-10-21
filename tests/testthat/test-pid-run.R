@@ -12,6 +12,15 @@ test_that("run() stops when the start values fail to simulate", {
 })
 
 test_that("the error of failed start values gives the reason and the remedies", {
+  expect_length(
+    strsplit(
+      messages$initialSimulationError("reason"),
+      "
+",
+      fixed = TRUE
+    )[[1]],
+    3
+  )
   expect_snapshot(
     cat(messages$initialSimulationError(
       "The following variables became negative: Aciclovir"

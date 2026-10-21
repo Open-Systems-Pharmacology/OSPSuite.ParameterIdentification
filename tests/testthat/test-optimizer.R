@@ -190,6 +190,11 @@ test_that(".deoptimInitialPopulation() puts the start values in the first row", 
     nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, NULL)),
     30L
   )
+  # DEoptim replaces a population size below 4 with its default
+  expect_identical(
+    nrow(.deoptimInitialPopulation(parTest, lowerTest, upperTest, 3)),
+    30L
+  )
 })
 
 test_that("DEoptim starts from the start values unless initialpop is given", {

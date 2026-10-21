@@ -727,14 +727,14 @@ Optimizer <- R6::R6Class(
 #'
 #' @param par Numeric vector of start values.
 #' @param lower,upper Numeric vectors of the parameter bounds.
-#' @param NP Population size. `NULL` or `NA` gives the default of DEoptim, ten
-#'   times the number of parameters.
+#' @param NP Population size. `NULL`, `NA` or a value below 4 gives the
+#'   default of DEoptim, ten times the number of parameters.
 #'
 #' @return A matrix with `NP` rows and one column per parameter.
 #' @keywords internal
 #' @noRd
 .deoptimInitialPopulation <- function(par, lower, upper, NP) {
-  if (is.null(NP) || is.na(NP)) {
+  if (is.null(NP) || is.na(NP) || NP < 4) {
     NP <- 10L * length(lower)
   }
   population <- matrix(
