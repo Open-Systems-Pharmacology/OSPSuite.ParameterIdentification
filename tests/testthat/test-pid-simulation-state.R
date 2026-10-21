@@ -342,6 +342,129 @@ test_that("results do not depend on the state of the simulations", {
   expect_identical(laterResult$toDataFrame(), autoResult$toDataFrame())
 })
 
+# Observed concentrations in min, after the last output time point of
+# Aciclovir.pkml at 1440 min
+lateData <- function() {
+  dataSet <- DataSet$new(name = "late")
+  dataSet$xUnit <- "min"
+  dataSet$yDimension <- ospDimensions$`Concentration (mass)`
+  dataSet$yUnit <- "mg/l"
+  dataSet$setValues(xValues = c(97, 1800), yValues = c(3, 0.01))
+  dataSet
+}
+
+# Changes of a simulation or of the observed times of a task
+simulationChanges <- list(
+  none = function(task, simulation) NULL,
+  dose = function(task, simulation) {
+    dose <- getParameter(testDosePath, simulation)
+    setParameterValues(dose, 2 * dose$value)
+  },
+  solver = function(task, simulation) simulation$solver$relTol <- 1e-2,
+  dataSet = function(task, simulation) {
+    task$outputMappings[[1]]$addObservedDataSets(lateData())
+  },
+  xOffset = function(task, simulation) {
+    task$outputMappings[[1]]$setDataTransformations(xOffsets = 0.25)
+  },
+  xFactor = function(task, simulation) {
+    task$outputMappings[[1]]$setDataTransformations(xFactors = 1.25)
+  }
+)
+
+allSimulationChanges <- function(task, simulation) {
+  for (change in simulationChanges[c("dose", "solver", "dataSet")]) {
+    change(task, simulation)
+  }
+  task$outputMappings[[1]]$setDataTransformations(
+    xOffsets = 0.25,
+    xFactors = 1.25
+  )
+}
+
+quietly <- function(x) suppressMessages(suppressWarnings(x))
+
+# A `PIResult` as a list, without its run times
+timelessResult <- function(result) {
+  result <- result$toList()
+  result[setdiff(names(result), c("elapsed", "ciElapsed"))]
+}
+
+# The result of `call` on a task whose first call was before `change`
+resultAfterFirstCall <- function(change, call, firstCall = NULL) {
+  simulation <- userStateSimulation()
+  task <- stateTask(simulation)
+  firstCall <- firstCall %||%
+    function(task) task$gridSearch(totalEvaluations = 1)
+  quietly(firstCall(task))
+  change(task, simulation)
+  call(task)
+}
+
+# The result of `call` on a new task with `change`
+resultOfNewTask <- function(change, call) {
+  simulation <- userStateSimulation()
+  task <- stateTask(simulation)
+  change(task, simulation)
+  call(task)
+}
+
+test_that("a change after the first call gives the results of a new task", {
+  gridSearch <- function(task) quietly(task$gridSearch(totalEvaluations = 2))
+  results <- list()
+  for (name in names(simulationChanges)) {
+    results[[name]] <- resultOfNewTask(simulationChanges[[name]], gridSearch)
+    expect_true(all(is.finite(results[[name]]$ofv)), info = name)
+    expect_identical(
+      resultAfterFirstCall(simulationChanges[[name]], gridSearch),
+      results[[name]],
+      info = name
+    )
+  }
+  for (name in setdiff(names(simulationChanges), "none")) {
+    expect_false(identical(results[[name]], results$none), info = name)
+  }
+})
+
+test_that("every public method uses the changes after the first call", {
+  calls <- list(
+    calculateOFVProfiles = function(task) {
+      quietly(task$calculateOFVProfiles(totalEvaluations = 2L))
+    },
+    plotResults = function(task) {
+      plots <- quietly(task$plotResults())
+      c(
+        list(plots[[1]]$data),
+        lapply(plots[[1]]$patches$plots, function(p) p$data)
+      )
+    },
+    run = function(task) timelessResult(quietly(task$run()))
+  )
+  results <- list()
+  for (name in names(calls)) {
+    results[[name]] <- resultOfNewTask(allSimulationChanges, calls[[name]])
+    expect_identical(
+      resultAfterFirstCall(allSimulationChanges, calls[[name]]),
+      results[[name]],
+      info = name
+    )
+  }
+  expect_true(is.finite(results$run$objectiveValue))
+
+  # The confidence intervals of `estimateCI()` after `run()` and a change of
+  # the model. The observed data are read again by every call already.
+  run <- function(task) quietly(task$run())
+  estimateCI <- function(task) timelessResult(quietly(task$estimateCI()))
+  modelChanges <- function(task, simulation) {
+    simulationChanges$dose(task, simulation)
+    simulationChanges$solver(task, simulation)
+  }
+  expect_false(identical(
+    resultAfterFirstCall(modelChanges, estimateCI, firstCall = run),
+    resultAfterFirstCall(simulationChanges$none, estimateCI, firstCall = run)
+  ))
+})
+
 test_that("the first call keeps the interval objects of the user", {
   simulation <- userStateSimulation()
   interval <- simulation$outputSchema$intervals[[1]]
