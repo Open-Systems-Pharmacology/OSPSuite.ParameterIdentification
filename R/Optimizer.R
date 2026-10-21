@@ -518,10 +518,12 @@ Optimizer <- R6::R6Class(
       if (private$.configuration$algorithm == "HJKB") {
         baseResult$par <- optimResult$par
         baseResult$value <- optimResult$value
-        # hjkb flags a stop exactly at maxfeval as converged, so derive the
-        # reason from the loop state it stopped in
+        # hjkb flags a stop exactly at maxfeval as converged, and its last step
+        # can overshoot maxfeval, so both its flag and the loop state must agree
         nSteps <- floor(log2(1 / (controlOptim$tol %||% 1e-6)))
-        stopReason <- if (optimResult$niter >= nSteps) {
+        stopReason <- if (
+          optimResult$niter >= nSteps && optimResult$convergence == 0
+        ) {
           "tol"
         } else if (optimResult$feval >= (controlOptim$maxfeval %||% Inf)) {
           "maxfeval"
@@ -545,18 +547,27 @@ Optimizer <- R6::R6Class(
         lastN <- min(5, length(bestvalit))
         values <- tail(bestvalit, lastN)
         # multiplied out instead of divided, so a best value of 0 gives no NaN
-        baseResult$convergence <- all(
-          abs(diff(values)) <= 1e-5 * abs(tail(values, lastN - 1))
-        )
+        baseResult$convergence <- lastN > 1 &&
+          all(is.finite(values)) &&
+          all(abs(diff(values)) <= 1e-5 * abs(tail(values, lastN - 1)))
         baseResult$convergenceMessage <- messages$convergenceDEoptim(
           optimResult$optim$iter,
           controlOptim$itermax %||% DEoptim::DEoptim.control()$itermax,
+          lastN,
           baseResult$convergence
         )
         baseResult$par <- unname(optimResult$optim$bestmem)
         baseResult$value <- optimResult$optim$bestval
         baseResult$iterations <- optimResult$optim$iter
         baseResult$fnEvaluations <- optimResult$optim$nfeval
+      }
+
+      if (!is.finite(baseResult$value)) {
+        baseResult$convergence <- FALSE
+        baseResult$convergenceMessage <- paste(
+          baseResult$convergenceMessage,
+          messages$objectiveValueNotFinite()
+        )
       }
 
       return(baseResult)

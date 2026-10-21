@@ -171,7 +171,7 @@ test_that("BOBYQA convergence is a single logical when nloptr fails", {
   expect_identical(optResult$convergence, FALSE)
   expect_identical(
     optResult$convergenceMessage,
-    "NLOPT_FAILURE: Generic failure code."
+    "NLOPT_FAILURE: Generic failure code. The objective value is not finite."
   )
 })
 
@@ -192,7 +192,7 @@ test_that("HJKB stopped at maxfeval reports why it stopped", {
   expect_snapshot(cat(optResult$convergenceMessage))
 })
 
-test_that("HJKB reports the stop reason when no step ran", {
+test_that("HJKB reports the stop reason at its limits", {
   runHJKB <- function(options) {
     piConfig <- PIConfiguration$new()
     piConfig$algorithm <- "HJKB"
@@ -208,12 +208,48 @@ test_that("HJKB reports the stop reason when no step ran", {
   }
   atMaxfeval <- runHJKB(list(maxfeval = 1))
   pastTarget <- runHJKB(list(target = 0))
+  # with tol = 0.1 an unlimited run needs 37 evaluations, so its last step
+  # overshoots maxfeval = 36
+  overshotLastStep <- runHJKB(list(tol = 0.1, maxfeval = 36))
   expect_identical(atMaxfeval$convergence, FALSE)
   expect_identical(pastTarget$convergence, FALSE)
+  expect_identical(overshotLastStep$convergence, FALSE)
   expect_snapshot({
     cat(atMaxfeval$convergenceMessage)
     cat(pastTarget$convergenceMessage)
+    cat(overshotLastStep$convergenceMessage)
   })
+})
+
+test_that("DEoptim with a single generation is not converged", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 1, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+})
+
+test_that("A non-finite objective value is not converged and says why", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "DEoptim"
+  piConfig$algorithmOptions <- list(itermax = 2, trace = FALSE)
+  optResult <- suppressMessages(
+    Optimizer$new(piConfig)$run(
+      par = parTest,
+      fn = function(p) Inf,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_identical(optResult$convergence, FALSE)
+  expect_snapshot(cat(optResult$convergenceMessage))
 })
 
 test_that("DEoptim with a constant zero objective counts as converged", {

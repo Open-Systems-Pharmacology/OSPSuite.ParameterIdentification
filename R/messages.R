@@ -518,9 +518,18 @@ messages$convergenceHJKB <- function(stopReason) {
   )
 }
 
-messages$convergenceDEoptim <- function(iterations, itermax, converged) {
+messages$convergenceDEoptim <- function(
+  iterations,
+  itermax,
+  lastN,
+  converged
+) {
   rule <- if (converged) "is" else "is not"
   ospsuite.utils::cliFormat(
-    "Used {iterations} of {.arg itermax} = {itermax} generations. Relative change of the best value over the last 5 generations {rule} below 1e-5."
+    "Used {iterations} of {.arg itermax} = {itermax} generation{?s}. Relative change of the best value over the last {lastN} generation{?s} {rule} below 1e-5."
   )
+}
+
+messages$objectiveValueNotFinite <- function() {
+  ospsuite.utils::cliFormat("The objective value is not finite.")
 }

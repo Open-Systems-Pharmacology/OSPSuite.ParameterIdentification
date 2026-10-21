@@ -40,7 +40,7 @@
     Output
       Stopped because `maxfeval` was reached before step size fell below `tol`.
 
-# HJKB reports the stop reason when no step ran
+# HJKB reports the stop reason at its limits
 
     Code
       cat(atMaxfeval$convergenceMessage)
@@ -50,13 +50,24 @@
       cat(pastTarget$convergenceMessage)
     Output
       Stopped because the absolute objective value exceeded `target`.
+    Code
+      cat(overshotLastStep$convergenceMessage)
+    Output
+      Stopped because `maxfeval` was reached before step size fell below `tol`.
+
+# A non-finite objective value is not converged and says why
+
+    Code
+      cat(optResult$convergenceMessage)
+    Output
+      Used 2 of `itermax` = 2 generations. Relative change of the best value over the last 2 generations is not below 1e-5. The objective value is not finite.
 
 # DEoptim reports generations used against itermax
 
     Code
       cat(optResult$convergenceMessage)
     Output
-      Used 3 of `itermax` = 3 generations. Relative change of the best value over the last 5 generations is not below 1e-5.
+      Used 3 of `itermax` = 3 generations. Relative change of the best value over the last 3 generations is not below 1e-5.
 
 # Optimizer output has correct structure and values for HJKB
 
