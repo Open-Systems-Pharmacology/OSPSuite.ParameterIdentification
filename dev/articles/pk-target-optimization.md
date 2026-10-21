@@ -126,10 +126,12 @@ print(piResult)
 #> Optimization Summary:
 #>   • Algorithm: BOBYQA
 #>   • Convergence: TRUE
+#>   • Convergence message: NLOPT_XTOL_REACHED: Optimization stopped because
+#>   xtol_rel or xtol_abs (above) was reached.
 #>   • Objective value: 0.00e+00
 #>   • Iterations: 13
-#>   • Function evaluations: 13
-#>   • Elapsed: 2.159 s
+#>   • Function evaluations: 15
+#>   • Elapsed: 2.125 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 30.00 µmol/l
 ```
@@ -191,10 +193,12 @@ print(piResultMulti)
 #> Optimization Summary:
 #>   • Algorithm: BOBYQA
 #>   • Convergence: TRUE
+#>   • Convergence message: NLOPT_XTOL_REACHED: Optimization stopped because
+#>   xtol_rel or xtol_abs (above) was reached.
 #>   • Objective value: 5.90e-05
 #>   • Iterations: 13
-#>   • Function evaluations: 13
-#>   • Elapsed: 2.169 s
+#>   • Function evaluations: 15
+#>   • Elapsed: 2.119 s
 #> PK Parameters:
 #>   • C_max: Target = 30.00 µmol/l, Achieved = 29.84 µmol/l
 #>   • AUC_tEnd: Target = 2400. µmol*min/l, Achieved = 2413. µmol*min/l

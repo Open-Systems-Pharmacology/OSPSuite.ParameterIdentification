@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9019</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.2.0.9020</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -499,11 +499,12 @@ parameters, not the start values!</p>
 <span><span class="co">#&gt;   • Algorithm: BOBYQA</span></span>
 <span><span class="co">#&gt;   • CI Method: hessian</span></span>
 <span><span class="co">#&gt;   • Convergence: TRUE</span></span>
+<span><span class="co">#&gt;   • Convergence message: NLOPT_SUCCESS: Generic success return value.</span></span>
 <span><span class="co">#&gt;   • Objective value: 6.536</span></span>
 <span><span class="co">#&gt;   • Iterations: 112</span></span>
-<span><span class="co">#&gt;   • Function evaluations: 112</span></span>
-<span><span class="co">#&gt;   • Elapsed (optimization): 17.31 s</span></span>
-<span><span class="co">#&gt;   • Elapsed (CI): 7.579 s</span></span>
+<span><span class="co">#&gt;   • Function evaluations: 114</span></span>
+<span><span class="co">#&gt;   • Elapsed (optimization): 16.22 s</span></span>
+<span><span class="co">#&gt;   • Elapsed (CI): 7.140 s</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">Parameter Estimates</span>:</span></span>
 <span><span class="co">#&gt;   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,</span></span>
 <span><span class="co">#&gt;   -1.068]</span></span>
@@ -553,13 +554,13 @@ diagnostics, cost metrics, and residuals.<br><code>costDetails</code> includes i
 </ul>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">piResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  [1] "finalParameters"   "objectiveValue"    "initialParameters"</span></span>
-<span><span class="co">#&gt;  [4] "convergence"       "algorithm"         "elapsed"          </span></span>
-<span><span class="co">#&gt;  [7] "iterations"        "fnEvaluations"     "ciMethod"         </span></span>
-<span><span class="co">#&gt; [10] "ciElapsed"         "ciError"           "ciDetails"        </span></span>
-<span><span class="co">#&gt; [13] "sd"                "cv"                "lowerCI"          </span></span>
-<span><span class="co">#&gt; [16] "upperCI"           "ciType"            "paramNames"       </span></span>
-<span><span class="co">#&gt; [19] "costDetails"</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] "finalParameters"    "objectiveValue"     "initialParameters" </span></span>
+<span><span class="co">#&gt;  [4] "convergence"        "convergenceMessage" "algorithm"         </span></span>
+<span><span class="co">#&gt;  [7] "elapsed"            "iterations"         "fnEvaluations"     </span></span>
+<span><span class="co">#&gt; [10] "ciMethod"           "ciElapsed"          "ciError"           </span></span>
+<span><span class="co">#&gt; [13] "ciDetails"          "sd"                 "cv"                </span></span>
+<span><span class="co">#&gt; [16] "lowerCI"            "upperCI"            "ciType"            </span></span>
+<span><span class="co">#&gt; [19] "paramNames"         "costDetails"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a>

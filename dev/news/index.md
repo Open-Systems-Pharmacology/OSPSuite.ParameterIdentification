@@ -51,6 +51,13 @@
 
 ### Minor improvements and bug fixes
 
+- `PIResult` and `PKResult` now report `convergence = FALSE` for a
+  BOBYQA run that stopped because it reached `maxeval` or `maxtime`,
+  which was previously reported as converged. A new field
+  `convergenceMessage` says why the optimizer stopped, for all
+  algorithms, and `fnEvaluations` for BOBYQA now counts every evaluation
+  of the objective function
+  ([\#304](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/304)).
 - `run()` now simulates the start values once before the optimization
   and stops only if that simulation fails, with the reason and possible
   remedies. A simulation that fails during the optimization, also at its
@@ -94,18 +101,20 @@
   `plotResults()`) reads the observed data again at its start, so
   changes of the observed data sets or of their data transformations
   between two calls take effect. `run()` with `autoEstimateCI = TRUE`
-  reads them once, for the optimization and the confidence intervals.
-  The output time points of the simulations are set at the first call,
-  however: after a change of the x values of the observed data (for
-  example with `xOffsets` or `xFactors` of `setDataTransformations()`)
-  or with a new data set, the simulated values at new observed times are
-  interpolated between the output time points of the first call. With a
-  new observed time outside the simulated times, or with
-  `objectiveFunctionType = "m3"` and a censored value at a new time that
-  was not simulated, the cost of the output mapping is infinite, because
-  there is no simulated value; a warning says so once per call. Create a
-  new `ParameterIdentification` object to simulate at the new times
+  reads them once, for the optimization and the confidence intervals
   ([\#310](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/310)).
+- Every method of `ParameterIdentification` that runs the simulations
+  now builds the simulation batches again at its start, so changes of
+  the simulations (for example of a dose or a solver setting) and of the
+  observed times (a new data set, or `xOffsets` and `xFactors` of
+  `setDataTransformations()`) after the first call take effect, with the
+  results of a new `ParameterIdentification` object. Previously the
+  batches of the first call were reused: such changes were ignored, the
+  simulated values at new observed times were interpolated, and new
+  times outside the simulated times gave an infinite cost. The warning
+  about observed times without simulated values is removed
+  ([\#319](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/319),
+  [\#329](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/329)).
 - A failed simulation is now reported by its name and the reason given
   by the simulation engine (“Simulation ‘…’ failed: …”), instead of as
   an error about a `NULL` argument, also with `pkOutputMappings`. If

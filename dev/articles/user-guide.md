@@ -498,11 +498,12 @@ print(piResult)
 #>   • Algorithm: BOBYQA
 #>   • CI Method: hessian
 #>   • Convergence: TRUE
+#>   • Convergence message: NLOPT_SUCCESS: Generic success return value.
 #>   • Objective value: 6.536
 #>   • Iterations: 112
-#>   • Function evaluations: 112
-#>   • Elapsed (optimization): 17.31 s
-#>   • Elapsed (CI): 7.579 s
+#>   • Function evaluations: 114
+#>   • Elapsed (optimization): 16.22 s
+#>   • Elapsed (CI): 7.140 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -553,13 +554,13 @@ piResult$toDataFrame()
 ``` r
 
 names(piResult$toList())
-#>  [1] "finalParameters"   "objectiveValue"    "initialParameters"
-#>  [4] "convergence"       "algorithm"         "elapsed"          
-#>  [7] "iterations"        "fnEvaluations"     "ciMethod"         
-#> [10] "ciElapsed"         "ciError"           "ciDetails"        
-#> [13] "sd"                "cv"                "lowerCI"          
-#> [16] "upperCI"           "ciType"            "paramNames"       
-#> [19] "costDetails"
+#>  [1] "finalParameters"    "objectiveValue"     "initialParameters" 
+#>  [4] "convergence"        "convergenceMessage" "algorithm"         
+#>  [7] "elapsed"            "iterations"         "fnEvaluations"     
+#> [10] "ciMethod"           "ciElapsed"          "ciError"           
+#> [13] "ciDetails"          "sd"                 "cv"                
+#> [16] "lowerCI"            "upperCI"            "ciType"            
+#> [19] "paramNames"         "costDetails"
 ```
 
 #### Diagnostics
