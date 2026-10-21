@@ -107,6 +107,15 @@ Optimizer <- R6::R6Class(
       controlOptim,
       fixedParams = NULL
     ) {
+      if (is.null(controlOptim$initialpop)) {
+        controlOptim$initialpop <- .deoptimInitialPopulation(
+          par,
+          lower,
+          upper,
+          controlOptim$NP
+        )
+        controlOptim$NP <- nrow(controlOptim$initialpop)
+      }
       DEoptim::DEoptim(
         fn = if (!is.null(fixedParams)) {
           function(p) fn(private$.updateFixedParams(p, fixedParams))
@@ -740,3 +749,34 @@ Optimizer <- R6::R6Class(
     }
   )
 )
+
+#' Initial population of DEoptim with the start values
+#'
+#' @description DEoptim samples its initial population uniformly within the
+#'   bounds and never evaluates the start values. This population is sampled
+#'   the same way, with the start values as its first member.
+#'
+#' @param par Numeric vector of start values.
+#' @param lower,upper Numeric vectors of the parameter bounds.
+#' @param NP Population size. `NULL`, `NA` or a value below 4 gives the
+#'   default of DEoptim, ten times the number of parameters.
+#'
+#' @return A matrix with `NP` rows and one column per parameter.
+#' @keywords internal
+#' @noRd
+.deoptimInitialPopulation <- function(par, lower, upper, NP) {
+  if (is.null(NP) || is.na(NP) || NP < 4) {
+    NP <- 10L * length(lower)
+  }
+  NP <- as.integer(NP)
+  population <- matrix(
+    stats::runif(
+      NP * length(lower),
+      min = rep(lower, each = NP),
+      max = rep(upper, each = NP)
+    ),
+    nrow = NP
+  )
+  population[1, ] <- par
+  population
+}
