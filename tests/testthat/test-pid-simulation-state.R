@@ -56,12 +56,16 @@ simulationState <- function(simulation) {
   )
 }
 
-stateTask <- function(simulation, autoEstimateCI = FALSE) {
+stateTask <- function(
+  simulation,
+  autoEstimateCI = FALSE,
+  parameters = testParameters(simulation)
+) {
   configuration <- lowIterPiConfiguration()
   configuration$autoEstimateCI <- autoEstimateCI
   ParameterIdentification$new(
     simulations = simulation,
-    parameters = testParameters(simulation),
+    parameters = parameters,
     outputMappings = testOutputMapping(simulation),
     configuration = configuration
   )
@@ -75,27 +79,158 @@ localFailingCost <- function(env = parent.frame()) {
   )
 }
 
-test_that("every public method restores the simulations as the first call", {
-  calls <- list(
-    run = function(task) task$run(),
-    plotResults = function(task) task$plotResults(),
-    gridSearch = function(task) task$gridSearch(totalEvaluations = 3),
-    calculateOFVProfiles = function(task) {
-      task$calculateOFVProfiles(totalEvaluations = 3L)
-    }
+quietly <- function(x) suppressMessages(suppressWarnings(x))
+
+# A call of every public method of `ParameterIdentification` apart from
+# `initialize()` and `print()`. The tests below check every one of them, and a
+# test checks that no public method is missing here.
+publicMethodCalls <- list(
+  run = function(task) task$run(),
+  estimateCI = function(task) task$estimateCI(),
+  plotResults = function(task) task$plotResults(),
+  gridSearch = function(task) task$gridSearch(totalEvaluations = 3),
+  calculateOFVProfiles = function(task) {
+    task$calculateOFVProfiles(totalEvaluations = 3L)
+  }
+)
+
+# `estimateCI()` needs the result of `run()`, so `run()` is called first
+taskReadyFor <- function(task, name) {
+  if (name == "estimateCI") {
+    quietly(task$run())
+  }
+  task
+}
+
+test_that("the tests call every public method", {
+  # A new public method must be added to `publicMethodCalls`, so that the
+  # tests check that it restores the simulations. A public method that does
+  # not run the simulations can be added to the methods excluded here instead.
+  expect_setequal(
+    names(publicMethodCalls),
+    setdiff(
+      names(ParameterIdentification$public_methods),
+      c("initialize", "print")
+    )
   )
+})
+
+test_that(".batchInitialization() leaves the simulations unchanged", {
+  # Every public method builds the batches with `.batchInitialization()`, so a
+  # public method does not need to restore the simulations itself
+  for (newSimulation in list(userStateSimulation, mappedOutputSimulation)) {
+    simulation <- newSimulation()
+    before <- simulationState(simulation)
+    task <- stateTask(simulation)
+    task$.__enclos_env__$private$.batchInitialization()
+    expect_identical(simulationState(simulation), before)
+  }
+})
+
+test_that("the simulations are in the state of the user when they run", {
+  originalRunSimulationBatches <- ospsuite::runSimulationBatches
+  bootstrapConfiguration <- bootstrapPiConfiguration()
+  profileConfiguration <- lowIterPiConfiguration()
+  profileConfiguration$ciMethod <- "PL"
+  profileConfiguration$ciOptions <- list(maxIter = 2)
+  configurations <- list(
+    hessian = lowIterPiConfiguration(),
+    bootstrap = bootstrapConfiguration,
+    PL = profileConfiguration
+  )
+  # The profile likelihood fixes one parameter and optimizes the others, so
+  # its task has a second parameter
+  taskParameters <- function(simulation, ciMethod) {
+    parameters <- testParameters(simulation)
+    if (ciMethod == "PL") {
+      fractionUnbound <- PIParameters$new(
+        parameters = getParameter(
+          "Aciclovir|Fraction unbound (plasma, reference value)",
+          simulation
+        )
+      )
+      fractionUnbound$minValue <- 0.5
+      fractionUnbound$maxValue <- 1
+      parameters <- c(parameters, fractionUnbound)
+    }
+    parameters
+  }
+  for (name in names(publicMethodCalls)) {
+    for (ciMethod in names(configurations)) {
+      # The confidence intervals are estimated only by `run()` with
+      # `autoEstimateCI` and by `estimateCI()`
+      if (ciMethod != "hessian" && !name %in% c("run", "estimateCI")) {
+        next
+      }
+      simulation <- userStateSimulation()
+      before <- simulationState(simulation)
+      task <- stateTask(
+        simulation,
+        parameters = taskParameters(simulation, ciMethod)
+      )
+      task$configuration <- configurations[[ciMethod]]
+      task$configuration$autoEstimateCI <- name == "run"
+      task <- taskReadyFor(task, name)
+      # The state of the simulation at every run of the batches
+      states <- list()
+      testthat::with_mocked_bindings(
+        quietly(publicMethodCalls[[name]](task)),
+        runSimulationBatches = function(...) {
+          states[[length(states) + 1]] <<- simulationState(simulation)
+          originalRunSimulationBatches(...)
+        },
+        .package = "ospsuite"
+      )
+      label <- paste(name, ciMethod)
+      expect_identical(unique(states), list(before), label = label)
+      expect_identical(simulationState(simulation), before, label = label)
+    }
+  }
+})
+
+test_that("an error while the batches are built restores every simulation", {
+  originalCreateSimulationBatch <- ospsuite::createSimulationBatch
+  for (name in names(publicMethodCalls)) {
+    task <- testTwoSimulationsTask()
+    task$configuration <- lowIterPiConfiguration()
+    task$configuration$autoEstimateCI <- FALSE
+    task <- taskReadyFor(task, name)
+    before <- lapply(task$simulations, simulationState)
+    # The batch of the first simulation is built, that of the second fails
+    batches <- 0
+    testthat::with_mocked_bindings(
+      quietly(expect_error(
+        publicMethodCalls[[name]](task),
+        "Injected batch failure"
+      )),
+      createSimulationBatch = function(...) {
+        batches <<- batches + 1
+        if (batches == 2) {
+          stop("Injected batch failure")
+        }
+        originalCreateSimulationBatch(...)
+      },
+      .package = "ospsuite"
+    )
+    expect_identical(lapply(task$simulations, simulationState), before)
+  }
+})
+
+test_that("every public method restores the simulations as the first call", {
   # With the second simulation, only the output schema of the simulation
   # changes when it is prepared
   newSimulations <- list(
     userState = userStateSimulation,
     mappedOutput = mappedOutputSimulation
   )
-  for (name in names(calls)) {
+  for (name in names(publicMethodCalls)) {
     for (simulationName in names(newSimulations)) {
       simulation <- newSimulations[[simulationName]]()
       before <- simulationState(simulation)
-      task <- stateTask(simulation, autoEstimateCI = TRUE)
-      suppressMessages(suppressWarnings(calls[[name]](task)))
+      task <- stateTask(simulation, autoEstimateCI = name == "run")
+      # The first call of `estimateCI()` comes after that of `run()`
+      task <- taskReadyFor(task, name)
+      quietly(publicMethodCalls[[name]](task))
       expect_identical(
         simulationState(simulation),
         before,
@@ -151,15 +286,14 @@ test_that("run() with autoEstimateCI restores the simulations", {
 })
 
 test_that("the simulations are restored after an error", {
-  # An error after the simulations are prepared, before they are run
+  # An error after the batches are built, before the simulations run
   simulation <- userStateSimulation()
   before <- simulationState(simulation)
   task <- stateTask(simulation)
   expect_error(task$plotResults(par = c(1, 2)), "must supply one entry")
   expect_identical(simulationState(simulation), before)
 
-  # A failed simulation stops run(), and then plotResults(), whose batches
-  # exist already
+  # A failed simulation stops run(), and then plotResults()
   simulation <- userStateSimulation()
   simulation$solver$mxStep <- 1
   before <- simulationState(simulation)
@@ -202,13 +336,7 @@ test_that("the simulations are restored after an error", {
   # An error in the cost calculation of the first call on a task. The mock
   # of `localFailingCost()` is active until the end of this test.
   localFailingCost()
-  calls <- list(
-    run = function(task) task$run(),
-    gridSearch = function(task) task$gridSearch(totalEvaluations = 3),
-    calculateOFVProfiles = function(task) {
-      task$calculateOFVProfiles(totalEvaluations = 3L)
-    }
-  )
+  calls <- publicMethodCalls[c("run", "gridSearch", "calculateOFVProfiles")]
   for (name in names(calls)) {
     simulation <- userStateSimulation()
     before <- simulationState(simulation)
@@ -255,18 +383,37 @@ test_that("the simulations are restored with pkOutputMappings", {
   )
 
   # The other public methods stop before they change the simulations
-  calls <- list(
-    estimateCI = function() task$estimateCI(),
-    plotResults = function() task$plotResults(),
-    gridSearch = function() task$gridSearch(totalEvaluations = 3),
-    calculateOFVProfiles = function() {
-      task$calculateOFVProfiles(totalEvaluations = 3L)
-    }
-  )
-  for (name in names(calls)) {
-    expect_error(calls[[name]](), "not applicable for PK metric optimization")
+  for (name in setdiff(names(publicMethodCalls), "run")) {
+    expect_error(
+      publicMethodCalls[[name]](task),
+      "not applicable for PK metric optimization"
+    )
     expect_identical(simulationState(simulation), before, label = name)
   }
+
+  # `calculatePKAnalyses()` sees the quantity of the PK mapping as the only
+  # output at every evaluation
+  pkOutputs <- list()
+  originalCalculatePKAnalyses <- ospsuite::calculatePKAnalyses
+  testthat::with_mocked_bindings(
+    quietRun(task),
+    calculatePKAnalyses = function(results) {
+      pkOutputs[[length(pkOutputs) + 1]] <<- simulationState(simulation)$outputs
+      originalCalculatePKAnalyses(results)
+    },
+    .package = "ospsuite"
+  )
+  expect_gt(length(pkOutputs), 0)
+  expect_identical(unique(pkOutputs), list(testQuantity(simulation)$path))
+  expect_identical(simulationState(simulation), before)
+
+  # An error after the batches are built
+  testthat::with_mocked_bindings(
+    expect_error(quietRun(task), "Injected PK failure"),
+    calculatePKAnalyses = function(results) stop("Injected PK failure"),
+    .package = "ospsuite"
+  )
+  expect_identical(simulationState(simulation), before)
 
   # A PK task on a simulation that another task used before gives the result
   # of a PK task on a new simulation
@@ -293,8 +440,8 @@ test_that("two tasks with one simulation both restore it", {
 })
 
 test_that("results do not depend on the state of the simulations", {
-  # Later calls run the batches of the first call while the simulation is in
-  # the state of the user again. They give the results of a new task.
+  # Later calls start from the simulation in the state of the user again. They
+  # give the results of a new task.
   simulation <- userStateSimulation()
   task <- stateTask(simulation)
   suppressMessages(task$run())
@@ -310,8 +457,7 @@ test_that("results do not depend on the state of the simulations", {
     suppressMessages(newTask()$gridSearch(totalEvaluations = 3)),
     grid
   )
-  # Batches that a call built but did not run, because it stopped with an
-  # error, run first in the next call
+  # A call that stopped with an error after it built the batches
   stoppedTask <- newTask()
   expect_error(stoppedTask$plotResults(par = c(1, 2)), "must supply one entry")
   expect_identical(
@@ -331,9 +477,8 @@ test_that("results do not depend on the state of the simulations", {
     lapply(plots[[1]]$patches$plots, function(p) p$data)
   )
 
-  # run() with autoEstimateCI estimates the confidence intervals while the
-  # simulation is prepared, a later estimateCI() while it is in the state of
-  # the user
+  # run() with autoEstimateCI estimates the confidence intervals with the
+  # batches of the optimization, a later estimateCI() with new batches
   autoTask <- stateTask(userStateSimulation(), autoEstimateCI = TRUE)
   autoResult <- suppressMessages(suppressWarnings(autoTask$run()))
   laterTask <- stateTask(userStateSimulation())
@@ -381,8 +526,6 @@ allSimulationChanges <- function(task, simulation) {
     xFactors = 1.25
   )
 }
-
-quietly <- function(x) suppressMessages(suppressWarnings(x))
 
 # A `PIResult` as a list, without its run times
 timelessResult <- function(result) {
