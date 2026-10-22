@@ -113,9 +113,6 @@ ParameterIdentification <- R6::R6Class(
     .activeBootstrapSeed = NULL,
     # Cached original weights and values of all datasets before bootstrap
     .initialOutputMappingState = NULL,
-    # Fitted GPR models for aggregated datasets, used during bootstrap
-    # resampling
-    .gprModels = NULL,
 
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
@@ -752,34 +749,25 @@ ParameterIdentification <- R6::R6Class(
 
     # Retrieve Output Mappings with Optional Bootstrap Resampling
     #
-    # Returns the list of output mappings used during objective function evaluation.
-    # If no bootstrap seed is provided, the original mappings are returned.
-    # If a `bootstrapSeed` is provided and differs from the previously active
-    # seed, dataset weights and values are resampled accordingly.
-    #
-    # Strategy rationale:
-    # Bootstrap behavior is implemented by modifying dataset weights and, for
-    # aggregated data, replacing y-values with synthetic samples generated from
-    # GPR models.
-    #
-    # This method uses lazy initialization and avoids redundant recomputation:
-    # - The initial mapping state (weights and values) is extracted only once via
-    #   `.extractOutputMappingState()`.
-    # - GPR models are prepared for aggregated datasets only once via
-    #   `.prepareGPRModels()`.
-    # - On each new bootstrap seed, mappings are resampled using
-    #   `.resampleAndApplyMappingState()`, updating the internal `.outputMappings`.
+    # Returns the list of output mappings used during objective function
+    # evaluation. If no bootstrap seed is provided, the original mappings are
+    # returned. If a `bootstrapSeed` is provided and differs from the
+    # previously active seed, the data set weights are resampled for it (see
+    # `.resampleDataSetWeights()`); the values of the data sets are not
+    # changed. The initial mapping state is extracted only once via
+    # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
+    # restores it.
     #
     # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
     #   returns the unmodified output mappings.
     # @return A list of `PIOutputMapping` objects, possibly modified with resampled
-    #   weights and values.
+    #   weights.
     .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
       }
 
-      # First-time bootstrap setup: cache initial state and fit GPR models
+      # First-time bootstrap setup: cache the initial state
       if (is.null(private$.initialOutputMappingState)) {
         private$.initialOutputMappingState <- .extractOutputMappingState(
           private$.outputMappings
@@ -795,7 +783,6 @@ ParameterIdentification <- R6::R6Class(
         private$.outputMappings <- .resampleAndApplyMappingState(
           private$.outputMappings,
           private$.initialOutputMappingState,
-          private$.gprModels,
           bootstrapSeed
         )
         # Observed data changed, so they must be read again
@@ -819,7 +806,6 @@ ParameterIdentification <- R6::R6Class(
       }
       private$.initialOutputMappingState <- NULL
       private$.activeBootstrapSeed <- NULL
-      private$.gprModels <- NULL
       # Observed data restored to its original state, so read it again
       private$.observedData <- NULL
     },
@@ -941,7 +927,6 @@ ParameterIdentification <- R6::R6Class(
           is.null(private$.activeBootstrapSeed)
       ) {
         .classifyObservedData(private$.outputMappings)
-        private$.gprModels <- .prepareGPRModels(private$.outputMappings)
       }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
