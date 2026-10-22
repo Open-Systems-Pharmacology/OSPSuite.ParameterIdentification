@@ -48,11 +48,11 @@ explains how to configure and run them, and shows how to inspect the results.
 
     Data sets are drawn with replacement, and the data weights of the drawn
     data sets enter the cost. The values of a data set are never changed, so
-    a mapping with a single aggregated data set (a `DataSet` with
-    `yErrorType`) gives identical replicates. A resampling of aggregated
-    data is planned, and profile likelihood is the recommended method for
-    aggregated data. User-defined data set weights are respected during
-    resampling.
+    a task whose only data set is aggregated (a `DataSet` with `yErrorType`)
+    gives identical replicates and an interval of zero width. A resampling
+    of aggregated data is planned, and profile likelihood is the recommended
+    method for aggregated data. User-defined data set weights are respected
+    during resampling.
 
     **Note**: When using the bootstrap method, if the parameter estimate falls outside 
     the computed confidence interval, which can occur with highly skewed distributions, 
