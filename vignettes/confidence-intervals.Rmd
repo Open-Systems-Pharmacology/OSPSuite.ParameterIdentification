@@ -46,13 +46,13 @@ explains how to configure and run them, and shows how to inspect the results.
     only minimal assumptions about the likelihood, but it is computationally
     more intensive than the other methods.
 
-    Resampling depends on the type of observed data: 
-
-    -   For individual datasets, new samples of individuals are drawn.
-    -   For aggregated datasets, resampling is based on Gaussian Process
-        Regression (GPR).
-    -   With both types of data, a mixed strategy is applied.
-    -   User-defined dataset weights are respected during resampling.
+    Data sets are drawn with replacement, and the data weights of the drawn
+    data sets enter the cost. The values of a data set are never changed, so
+    a mapping with a single aggregated data set (a `DataSet` with
+    `yErrorType`) gives identical replicates. A resampling of aggregated
+    data is planned, and profile likelihood is the recommended method for
+    aggregated data. User-defined data set weights are respected during
+    resampling.
 
     **Note**: When using the bootstrap method, if the parameter estimate falls outside 
     the computed confidence interval, which can occur with highly skewed distributions, 

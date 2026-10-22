@@ -1,5 +1,7 @@
 # ospsuite.parameteridentification (development version)
 
+- Bootstrap confidence intervals no longer fit Gaussian process models to aggregated data sets and no longer depend on `DiceKriging`. Aggregated data sets are drawn as whole data sets like individual ones (#312, #318).
+
 # ospsuite.parameteridentification 2.3.0
 
 ## Breaking changes
