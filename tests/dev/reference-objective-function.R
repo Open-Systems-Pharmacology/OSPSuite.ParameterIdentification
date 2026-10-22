@@ -489,17 +489,13 @@ cases$stateVariable <- function() {
   )
 }
 
-# Bootstrap: aggregated data (values resampled from a GPR model) and
-# individual data (weights resampled), then the restored mappings
+# Bootstrap: aggregated and individual data (weights resampled, values never
+# changed), then the restored mappings
 bootstrapCase <- function(dataSets) {
   task <- aciclovirTask(dataSets = dataSets)
   private <- privateOf(task)
   private$.batchInitialization()
   piNamespace$.classifyObservedData(private$.outputMappings)
-  # Fitting the GPR models draws random numbers that the bootstrap seed does
-  # not control
-  set.seed(2203)
-  private$.gprModels <- piNamespace$.prepareGPRModels(private$.outputMappings)
   results <- list()
   for (seed in c(11L, 12L, 11L)) {
     results[[length(results) + 1]] <- private$.objectiveFunction(
@@ -512,6 +508,8 @@ bootstrapCase <- function(dataSets) {
   results
 }
 cases$bootstrapAggregated <- function() bootstrapCase(laskinData())
+# GPR resampling of aggregated values was removed: the values stay the originals
+attr(cases$bootstrapAggregated, "expectChange") <- TRUE
 cases$bootstrapIndividual <- function() bootstrapCase(individualData())
 
 # Other models: Midazolam (molar data) and two Clarithromycin simulations

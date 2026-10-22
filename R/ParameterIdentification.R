@@ -753,7 +753,7 @@ ParameterIdentification <- R6::R6Class(
     # evaluation. If no bootstrap seed is provided, the original mappings are
     # returned. If a `bootstrapSeed` is provided and differs from the
     # previously active seed, the data set weights are resampled for it (see
-    # `.resampleDataSetWeights()`); the values of the data sets are not
+    # `.resampleDataSetWeights()`). The values of the data sets are not
     # changed. The initial mapping state is extracted only once via
     # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
     # restores it.
