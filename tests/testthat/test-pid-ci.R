@@ -146,6 +146,23 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
   )
 })
 
+test_that("estimateCI() with bootstrap gives identical intervals for the same seed on aggregated data", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration(iter = 50, nBootstrap = 2)
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+
+  suppressMessages(first <- piTask$estimateCI()$toDataFrame())
+  suppressMessages(second <- piTask$estimateCI()$toDataFrame())
+  expect_identical(first, second)
+})
+
 test_that("estimateCI() restarts evaluation counter from 1 for each bootstrap iteration", {
   nBootstrap <- 3L
 
