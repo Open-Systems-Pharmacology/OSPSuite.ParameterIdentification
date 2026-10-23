@@ -763,3 +763,17 @@ test_that("Hessian CI reports a singular Hessian", {
   expect_snapshot(ciResult$error)
   expect_true(all(is.na(ciResult$sd)))
 })
+
+test_that("Hessian CI stops when the objective function value has no cost variables", {
+  optimizer <- Optimizer$new(PIConfiguration$new())
+  fnScalar <- function(p) fnObjective(p)$modelCost
+  expect_snapshot(
+    optimizer$estimateCI(
+      par = parTest,
+      fn = fnScalar,
+      lower = lowerTest,
+      upper = upperTest
+    ),
+    error = TRUE
+  )
+})
