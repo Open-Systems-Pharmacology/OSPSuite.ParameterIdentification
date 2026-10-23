@@ -302,6 +302,12 @@ messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
 }
 
+messages$errorModelCostStructure <- function(problem) {
+  ospsuite.utils::cliFormat(
+    "The cost details are not a valid {.cls modelCost} object as built by the objective function: {problem}."
+  )
+}
+
 messages$ciEstimationError <- function(step, errorMessage) {
   paste0("Error during CI estimation step '", step, "': ", errorMessage)
 }

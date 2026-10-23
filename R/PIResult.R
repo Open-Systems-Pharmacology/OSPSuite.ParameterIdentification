@@ -77,6 +77,9 @@ PIResult <- R6::R6Class(
       piParameters = NULL
     ) {
       private$.configuration <- configuration
+      if (!is.null(costDetails)) {
+        .validateModelCost(costDetails)
+      }
       private$.costDetails <- costDetails
 
       # Validate and extract parameter metadata (optional)
