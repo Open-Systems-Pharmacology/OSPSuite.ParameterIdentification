@@ -2,7 +2,7 @@
 
 ## Breaking changes
 
-- Bootstrap confidence intervals no longer fit Gaussian process models to aggregated data sets and no longer depend on `DiceKriging`. Aggregated data sets are drawn as whole data sets like individual ones, so bootstrap results with aggregated data change, and a task whose only data set is aggregated gets an interval of zero width until the resampling of aggregated data lands. Use `ciMethod = "PL"` for such data (#312, #318).
+- `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, and `DiceKriging` is no longer a dependency (#355, #312, #318).
 
 ## Major changes
 
