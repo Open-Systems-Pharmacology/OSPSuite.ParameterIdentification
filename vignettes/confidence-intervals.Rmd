@@ -46,13 +46,16 @@ explains how to configure and run them, and shows how to inspect the results.
     only minimal assumptions about the likelihood, but it is computationally
     more intensive than the other methods.
 
-    Data sets are drawn with replacement, and the data weights of the drawn
-    data sets enter the cost. The values of a data set are never changed, so
-    a task whose only data set is aggregated (a `DataSet` with `yErrorType`)
-    gives identical replicates and an interval of zero width. A resampling
-    of aggregated data is planned, and profile likelihood is the recommended
-    method for aggregated data. User-defined data set weights are respected
-    during resampling.
+    **Individual data.** Each replicate draws the data sets of an output mapping with replacement, independently of the other output mappings. The level weight `w` of a data set is its smallest point weight of at least 1, rounded down, or 1 when no point weight reaches 1. The data set enters the draw `w` times, and when it is drawn `k` times its weights are multiplied by `sqrt(k / w)`, so that it counts `k / w` times its usual share in the cost and a replicate that draws it as often as expected keeps the user's weights. With `objectiveFunctionType = "m3"`, values below the LLOQ do not use data weights yet (#356), so they count once in every replicate.
+
+    **Aggregated data.** A data set with `yErrorType` and error values reports a mean and an SD per time point, not individual subjects. Each replicate redraws its means from the reported mean and the standard error of the mean `SD / sqrt(n)`, where `n` is the number of subjects behind the data set. The draws are independent across time points and made on the log scale, which keeps every mean positive. With `e_j` a standard normal draw at time point `j`:
+
+    - geometric mean `G_j` and `GSD_j`: `log(y_j*) = log(G_j) + log(GSD_j) / sqrt(n) * e_j`,
+    - arithmetic mean `mu_j` and `SD_j`: `log(y_j*) = m_j + s_j * e_j` with `s_j^2 = log(1 + (SD_j / mu_j)^2 / n)` and `m_j = log(mu_j) - s_j^2 / 2`, the lognormal with exactly the mean `mu_j` and the SD `SD_j / sqrt(n)`.
+
+    Set `n` with `PIOutputMapping$setSubjectCount()` for every output mapping with aggregated data. The bootstrap stops before its first replicate when it is missing, and the counts used are reported in `ciDetails$subjectCounts` of the result. The draws are centred on the observed means, not on the fitted curve, so resampling only needs the data.
+
+    **What this assumes.** The mean at each time point is treated as normal on the log scale, and the time points are drawn independently. The reported mean and SD do not contain the correlation across time points of one study, where the same subjects contribute to every time point, so the resampling cannot reproduce it. Two consequences follow. The width of the interval scales with `1 / sqrt(n)`, so a wrong `n` moves the interval by that factor, and a run over a few plausible values of `n` shows whether a conclusion depends on it. With independent time points, the uncertainty of parameters set by the level of the curve (clearance, volume, bioavailability) tends to be understated, because a shift of the whole curve cannot occur in the draws, while the uncertainty of parameters set by the shape of the curve (absorption rate, half-life ratios) tends to be overstated. Profile likelihood remains the recommended interval for aggregated data. Note that the cost itself does not use `n` yet: its error weights come from the reported SD, not from `SD / sqrt(n)`, so until that changes a profile likelihood interval on aggregated data is wider than the bootstrap interval by about `sqrt(n)`.
 
     **Note**: When using the bootstrap method, if the parameter estimate falls outside 
     the computed confidence interval, which can occur with highly skewed distributions, 

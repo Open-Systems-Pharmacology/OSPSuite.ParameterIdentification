@@ -13,12 +13,72 @@
   !is.null(data$yErrorType)
 }
 
+#' Check if an aggregated data set has error values to resample from
+#'
+#' @param dataSet A `DataSet` object.
+#' @return `TRUE` when `yErrorType` is set and at least one point can be
+#'   redrawn (see `.redrawablePoints()`).
+#' @keywords internal
+#' @noRd
+.isAggregatedWithErrors <- function(dataSet) {
+  .isAggregated(dataSet) &&
+    any(.redrawablePoints(
+      dataSet$yValues,
+      dataSet$yErrorValues,
+      dataSet$yErrorType
+    ))
+}
+
+#' Points of an aggregated data set whose means can be redrawn
+#'
+#' A point can be redrawn when its mean is positive and its error is an SD
+#' above 0 or, for `GeometricStdDev`, a GSD above 1. The sign of the error
+#' does not depend on its unit.
+#'
+#' @param yValues,yErrorValues The means and errors of the data set.
+#' @param yErrorType The `yErrorType` of the data set.
+#' @return A logical vector, one entry per point.
+#' @keywords internal
+#' @noRd
+.redrawablePoints <- function(yValues, yErrorValues, yErrorType) {
+  minError <- if (identical(yErrorType, "GeometricStdDev")) 1 else 0
+  is.finite(yErrorValues) &
+    yErrorValues > minError &
+    is.finite(yValues) &
+    yValues > 0
+}
+
+#' Validate the subject counts of the output mappings
+#'
+#' Stops when an output mapping holds an aggregated data set with error values
+#' but has no subject count (see `PIOutputMapping$setSubjectCount()`).
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @return The output mappings, invisibly.
+#' @keywords internal
+#' @noRd
+.validateSubjectCounts <- function(outputMappings) {
+  missingNames <- character()
+  for (mapping in outputMappings) {
+    if (is.null(mapping$subjectCount)) {
+      aggregated <- Filter(.isAggregatedWithErrors, mapping$observedDataSets)
+      missingNames <- c(missingNames, names(aggregated))
+    }
+  }
+  if (length(missingNames) > 0) {
+    stop(messages$errorMissingSubjectCount(missingNames))
+  }
+  invisible(outputMappings)
+}
+
 #' Classify Observed Datasets for Bootstrap
 #'
 #' Evaluates all observed datasets in the output mappings and classifies them as
-#' either individual or aggregated based on the presence of `yErrorType`. Prints
-#' a status message with the number of individual and aggregated datasets, and
-#' warns if too few individual datasets are available for stable bootstrap CI.
+#' either individual or aggregated (a `yErrorType` with error values, see
+#' `.isAggregatedWithErrors()`). A data set with a `yErrorType` but no error
+#' values counts as individual and gets a message. Prints a status message with
+#' the number of individual and aggregated datasets, and warns if too few
+#' individual datasets are available for stable bootstrap CI.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to classify.
 #' @keywords internal
@@ -29,7 +89,12 @@
     recursive = FALSE
   )
 
-  isAggregated <- vapply(observedDataSets, .isAggregated, logical(1))
+  isAggregated <- vapply(observedDataSets, .isAggregatedWithErrors, logical(1))
+  withoutErrors <- vapply(observedDataSets, .isAggregated, logical(1)) &
+    !isAggregated
+  for (dataSet in observedDataSets[withoutErrors]) {
+    message(messages$statusAggregatedWithoutErrors(dataSet$name))
+  }
   nAggregated <- sum(isAggregated)
   nIndividual <- length(observedDataSets) - nAggregated
 
@@ -43,10 +108,34 @@
 
 # RESAMPLING: APPLY STATE
 
-#' Apply resampled data set weights
+#' Evaluate an expression under a seed without touching the global stream
+#'
+#' @param seed Integer seed for `set.seed()`.
+#' @param expr Expression to evaluate.
+#' @return The value of `expr`.
+#' @keywords internal
+#' @noRd
+.withSeed <- function(seed, expr) {
+  hadSeed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  savedSeed <- if (hadSeed) get(".Random.seed", envir = globalenv())
+  on.exit(
+    if (hadSeed) {
+      assign(".Random.seed", savedSeed, envir = globalenv())
+    } else {
+      rm(".Random.seed", envir = globalenv())
+    },
+    add = TRUE
+  )
+  set.seed(seed)
+  expr
+}
+
+#' Apply resampled data set weights and values
 #'
 #' Resamples the data set weights of every output mapping for a bootstrap
-#' sample and applies them. The values of the data sets are not changed.
+#' sample and, for the mappings with a subject count, the means of their
+#' aggregated data sets (see `.resampleDataSetValues()`), and applies both.
+#' All draws are made under `seed`. The global random state is left as it was.
 #'
 #' @param outputMappings List of `PIOutputMapping` objects.
 #' @param mappingState A named list with `dataSetWeights` and `dataSetValues`.
@@ -59,11 +148,45 @@
     outputMappings,
     mappingState$dataSetWeights
   )
-  .resampleAndApplyMappingWeights(
-    outputMappings = outputMappings,
-    mappingWeights = mappingState$dataSetWeights,
-    seed = seed
+  ospsuite.utils::validateIsSameLength(
+    outputMappings,
+    mappingState$dataSetValues
   )
+  .withSeed(seed, {
+    outputMappings <- .resampleAndApplyMappingWeights(
+      outputMappings = outputMappings,
+      mappingWeights = mappingState$dataSetWeights
+    )
+    mappingValues <- mappingState$dataSetValues
+    for (idx in seq_along(outputMappings)) {
+      subjectCount <- outputMappings[[idx]]$subjectCount
+      if (is.null(subjectCount)) {
+        next
+      }
+      dataSets <- outputMappings[[idx]]$observedDataSets
+      for (name in names(mappingValues[[idx]])) {
+        values <- mappingValues[[idx]][[name]]
+        dataSet <- dataSets[[name]]
+        # An arithmetic SD may be in another unit than the means
+        yErrorValues <- if (identical(values$yErrorType, "ArithmeticStdDev")) {
+          ospsuite::toUnit(
+            dataSet$yDimension,
+            values$yErrorValues,
+            targetUnit = dataSet$yUnit,
+            sourceUnit = dataSet$yErrorUnit
+          )
+        } else {
+          values$yErrorValues
+        }
+        mappingValues[[idx]][[name]] <- .resampleDataSetValues(
+          values,
+          subjectCount = subjectCount,
+          yErrorValues = yErrorValues
+        )
+      }
+    }
+    .applyMappingValues(outputMappings, mappingValues)
+  })
 }
 
 #' Resample and apply dataset weights
@@ -74,19 +197,13 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of initial dataset weight lists, one per output
 #'   mapping.
-#' @param seed An integer seed used for bootstrap resampling.
 #' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
-.resampleAndApplyMappingWeights <- function(
-  outputMappings,
-  mappingWeights,
-  seed
-) {
+.resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights) {
   resampledMappingWeights <- .resampleMappingWeights(
     outputMappings,
-    mappingWeights,
-    seed
+    mappingWeights
   )
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
@@ -103,11 +220,10 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of named dataset weight lists, one per output
 #'   mapping.
-#' @param seed Integer used for bootstrap resampling.
 #' @return A list of resampled dataset weight lists, one per output mapping.
 #' @keywords internal
 #' @noRd
-.resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
+.resampleMappingWeights <- function(outputMappings, mappingWeights) {
   ospsuite.utils::validateIsSameLength(mappingWeights, outputMappings)
 
   resampledMappingWeights <- vector("list", length(outputMappings))
@@ -127,10 +243,7 @@
     }
 
     # All datasets are resampled equally using a single strategy
-    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(
-      dataSetWeights,
-      seed
-    )
+    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(dataSetWeights)
   }
 
   return(resampledMappingWeights)
@@ -140,16 +253,21 @@
 #'
 #' Performs bootstrap resampling by adjusting dataset-level weights. Each
 #' dataset’s total weight is split into a dataset-level weight and normalized
-#' point-level weights. Sampling is performed with replacement, and point
-#' weights are scaled accordingly.
+#' point-level weights. Data sets are drawn with replacement, a data set with
+#' the level weight `w`, the smallest point weight of at least 1 rounded down,
+#' entering the pool `w` times. The weights of a data set drawn `k` times
+#' become its original weights times `sqrt(k / w)`: the cost squares the
+#' weighted residuals, so the data set then counts `k / w` times its usual
+#' share, and at the expected pick count `k = w` a replicate keeps the user's
+#' weights. Draws come from the current random stream, which the
+#' caller seeds (see `.withSeed()`).
 #'
 #' @param dataSetWeights A named list of numeric weight vectors (one per
 #'   dataset).
-#' @param seed Integer used to control the resampling.
 #' @return A named list of resampled weight vectors.
 #' @keywords internal
 #' @noRd
-.resampleDataSetWeights <- function(dataSetWeights, seed) {
+.resampleDataSetWeights <- function(dataSetWeights) {
   ospsuite.utils::validateIsNotEmpty(dataSetWeights)
 
   weightsSummary <- vector("list", length(dataSetWeights))
@@ -160,10 +278,12 @@
     weightsVector <- dataSetWeights[[dataSetName]]
     weightsVector[is.na(weightsVector)] <- 0
 
-    datasetWeight <- min(weightsVector[weightsVector >= 1], na.rm = TRUE)
-
-    if (!is.finite(datasetWeight) || datasetWeight <= 0) {
-      datasetWeight <- 1
+    wholeWeights <- weightsVector[is.finite(weightsVector) & weightsVector >= 1]
+    # Whole number, so the pool multiplicity and the scaling below agree
+    datasetWeight <- if (length(wholeWeights) > 0) {
+      floor(min(wholeWeights))
+    } else {
+      1
     }
 
     pointWeights <- weightsVector / datasetWeight
@@ -185,7 +305,6 @@
     use.names = FALSE
   )
 
-  set.seed(seed)
   resampledNames <- sample(
     weightsPool,
     size = length(weightsPool),
@@ -201,11 +320,65 @@
     if (is.na(nSelected)) {
       nSelected <- 0
     }
+    summary <- weightsSummary[[dataSetName]]
     resampledDataSetWeights[[dataSetName]] <-
-      weightsSummary[[dataSetName]]$pointWeights * nSelected
+      summary$pointWeights * sqrt(nSelected * summary$datasetWeight)
   }
 
   return(resampledDataSetWeights)
+}
+
+# RESAMPLING: VALUES
+
+#' Redraw the means of an aggregated data set
+#'
+#' A parametric bootstrap of the reported means of a data set with
+#' `yErrorType`, for `n` subjects. With independent standard normal draws
+#' `e_j` per time point from the current random stream (see `.withSeed()`):
+#'
+#' - `GeometricStdDev`, geometric mean `G_j` and `GSD_j`:
+#'   `log(y_j*) = log(G_j) + log(GSD_j) / sqrt(n) * e_j`, the sampling
+#'   distribution of the mean of the logs.
+#' - `ArithmeticStdDev`, arithmetic mean `mu_j` and SD `sigma_j`:
+#'   `log(y_j*) = m_j + s_j * e_j` with `s_j^2 = log(1 + (sigma_j / mu_j)^2 / n)`
+#'   and `m_j = log(mu_j) - s_j^2 / 2`, the lognormal with exactly the mean
+#'   `mu_j` and the SD `sigma_j / sqrt(n)` of the mean of `n` subjects. The
+#'   `- s_j^2 / 2` keeps the mean of the draws at `mu_j`. Without it the draws
+#'   would be centred on the median, below `mu_j`.
+#'
+#' A point with a non-finite error, a non-positive mean or a `GSD` not above 1
+#' keeps its value. A data set without `yErrorType` or without any finite
+#' error value is returned unchanged.
+#'
+#' @param dataSetValues A list with `xValues`, `yValues`, `yErrorValues` and
+#'   `yErrorType` of one data set (see `.extractDataSetValues()`).
+#' @param subjectCount The number of subjects `n` behind the data set.
+#' @param yErrorValues The error values in the unit of `yValues`.
+#' @return `dataSetValues` with new `yValues`.
+#' @keywords internal
+#' @noRd
+.resampleDataSetValues <- function(
+  dataSetValues,
+  subjectCount,
+  yErrorValues = dataSetValues$yErrorValues
+) {
+  errorType <- dataSetValues$yErrorType
+  y <- dataSetValues$yValues
+  err <- yErrorValues
+  if (is.null(errorType) || !any(is.finite(err))) {
+    return(dataSetValues)
+  }
+  e <- stats::rnorm(length(y))
+  redraw <- .redrawablePoints(y, err, errorType)
+  if (errorType == "GeometricStdDev") {
+    logSd <- log(err[redraw]) / sqrt(subjectCount)
+    y[redraw] <- exp(log(y[redraw]) + logSd * e[redraw])
+  } else {
+    s2 <- log(1 + (err[redraw] / y[redraw])^2 / subjectCount)
+    y[redraw] <- exp(log(y[redraw]) - s2 / 2 + sqrt(s2) * e[redraw])
+  }
+  dataSetValues$yValues <- y
+  dataSetValues
 }
 
 #' Stabilize bootstrap coefficient of variation by minimal symmetric trimming

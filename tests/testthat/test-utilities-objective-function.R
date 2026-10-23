@@ -1577,7 +1577,9 @@ test_that("observed data are read again per bootstrap sample and after it", {
       samples[[seed]],
       lapply(priv$.outputMappings, .prepareObservedData)
     )
+    expect_false(identical(samples[[seed]][[1]]$yValues, original[[1]]$yValues))
   }
+  expect_false(identical(samples[[1]][[1]]$yValues, samples[[2]][[1]]$yValues))
 
   # The restored data are read again
   priv$.restoreOutputMappingsState()

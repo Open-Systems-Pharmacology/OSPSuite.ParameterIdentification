@@ -106,6 +106,8 @@ getTestOutputMapping <- function(includeObservedData = TRUE) {
         mapping$addObservedDataSets(
           testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
         )
+        # Laskin 1982, group A: 13 subjects
+        mapping$setSubjectCount(13)
       }
       return(list(mapping))
     }
@@ -274,6 +276,7 @@ testModifiedTask <- function() {
     )
   )
   mapping$addObservedDataSets(testObservedData())
+  mapping$setSubjectCount(13)
 
   params <- PIParameters$new(
     parameters = list(
@@ -335,6 +338,7 @@ testTwoSimulationsTask <- function(failing = integer()) {
     outputMappings = lapply(simulations, function(simulation) {
       mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
       mapping$addObservedDataSets(testObservedData())
+      mapping$setSubjectCount(13)
       mapping
     })
   )
@@ -513,9 +517,11 @@ outputMapping_500mg <- PIOutputMapping$new(
 outputMapping_250mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
+outputMapping_250mg$setSubjectCount(13)
 outputMapping_500mg$addObservedDataSets(
   testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
 )
+outputMapping_500mg$setSubjectCount(13)
 
 # State-variable parameter fixtures
 
@@ -558,6 +564,7 @@ testStateVariableMixedTask <- function() {
   mapping$addObservedDataSets(
     testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
   )
+  mapping$setSubjectCount(13)
 
   ParameterIdentification$new(
     simulations = sim,
@@ -585,6 +592,7 @@ testStateVariableOnlyTask <- function() {
   mapping$addObservedDataSets(
     testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
   )
+  mapping$setSubjectCount(13)
 
   ParameterIdentification$new(
     simulations = sim,
