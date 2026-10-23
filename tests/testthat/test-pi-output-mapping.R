@@ -330,5 +330,6 @@ test_that("setSubjectCount() rejects invalid counts and the binding is read-only
   expect_snapshot(mapping$setSubjectCount(0), error = TRUE)
   expect_snapshot(mapping$setSubjectCount(2.5), error = TRUE)
   expect_snapshot(mapping$setSubjectCount(c(3, 4)), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(1e10), error = TRUE)
   expect_snapshot(mapping$subjectCount <- 5, error = TRUE)
 })

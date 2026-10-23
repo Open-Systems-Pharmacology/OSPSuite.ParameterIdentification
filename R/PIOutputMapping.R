@@ -323,7 +323,13 @@ PIOutputMapping <- R6::R6Class(
     #' @param n One positive whole number, the number of subjects.
     setSubjectCount = function(n) {
       ospsuite.utils::validateIsNumeric(n)
-      if (length(n) != 1 || !is.finite(n) || n < 1 || n != round(n)) {
+      if (
+        length(n) != 1 ||
+          !is.finite(n) ||
+          n < 1 ||
+          n != round(n) ||
+          n > .Machine$integer.max
+      ) {
         stop(messages$errorSubjectCount(n))
       }
       private$.subjectCount <- as.integer(n)
