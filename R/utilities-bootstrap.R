@@ -77,10 +77,34 @@
 
 # RESAMPLING: APPLY STATE
 
-#' Apply resampled data set weights
+#' Evaluate an expression under a seed without touching the global stream
+#'
+#' @param seed Integer seed for `set.seed()`.
+#' @param expr Expression to evaluate.
+#' @return The value of `expr`.
+#' @keywords internal
+#' @noRd
+.withSeed <- function(seed, expr) {
+  hadSeed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  savedSeed <- if (hadSeed) get(".Random.seed", envir = globalenv())
+  on.exit(
+    if (hadSeed) {
+      assign(".Random.seed", savedSeed, envir = globalenv())
+    } else {
+      rm(".Random.seed", envir = globalenv())
+    },
+    add = TRUE
+  )
+  set.seed(seed)
+  expr
+}
+
+#' Apply resampled data set weights and values
 #'
 #' Resamples the data set weights of every output mapping for a bootstrap
-#' sample and applies them. The values of the data sets are not changed.
+#' sample and, for the mappings with a subject count, the means of their
+#' aggregated data sets (see `.resampleDataSetValues()`), and applies both.
+#' All draws are made under `seed`. The global random state is left as it was.
 #'
 #' @param outputMappings List of `PIOutputMapping` objects.
 #' @param mappingState A named list with `dataSetWeights` and `dataSetValues`.
@@ -93,11 +117,29 @@
     outputMappings,
     mappingState$dataSetWeights
   )
-  .resampleAndApplyMappingWeights(
-    outputMappings = outputMappings,
-    mappingWeights = mappingState$dataSetWeights,
-    seed = seed
+  ospsuite.utils::validateIsSameLength(
+    outputMappings,
+    mappingState$dataSetValues
   )
+  .withSeed(seed, {
+    outputMappings <- .resampleAndApplyMappingWeights(
+      outputMappings = outputMappings,
+      mappingWeights = mappingState$dataSetWeights,
+      seed = seed
+    )
+    mappingValues <- mappingState$dataSetValues
+    for (idx in seq_along(outputMappings)) {
+      subjectCount <- outputMappings[[idx]]$subjectCount
+      if (!is.null(subjectCount)) {
+        mappingValues[[idx]] <- lapply(
+          mappingValues[[idx]],
+          .resampleDataSetValues,
+          subjectCount = subjectCount
+        )
+      }
+    }
+    .applyMappingValues(outputMappings, mappingValues)
+  })
 }
 
 #' Resample and apply dataset weights
@@ -161,10 +203,7 @@
     }
 
     # All datasets are resampled equally using a single strategy
-    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(
-      dataSetWeights,
-      seed
-    )
+    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(dataSetWeights)
   }
 
   return(resampledMappingWeights)
@@ -174,16 +213,17 @@
 #'
 #' Performs bootstrap resampling by adjusting dataset-level weights. Each
 #' dataset’s total weight is split into a dataset-level weight and normalized
-#' point-level weights. Sampling is performed with replacement, and point
-#' weights are scaled accordingly.
+#' point-level weights. Data sets are drawn with replacement, and the point
+#' weights of a data set drawn `k` times are multiplied by `sqrt(k)`, because
+#' the cost squares the weighted residuals. Draws come from the current random
+#' stream, which the caller seeds (see `.withSeed()`).
 #'
 #' @param dataSetWeights A named list of numeric weight vectors (one per
 #'   dataset).
-#' @param seed Integer used to control the resampling.
 #' @return A named list of resampled weight vectors.
 #' @keywords internal
 #' @noRd
-.resampleDataSetWeights <- function(dataSetWeights, seed) {
+.resampleDataSetWeights <- function(dataSetWeights) {
   ospsuite.utils::validateIsNotEmpty(dataSetWeights)
 
   weightsSummary <- vector("list", length(dataSetWeights))
@@ -194,11 +234,8 @@
     weightsVector <- dataSetWeights[[dataSetName]]
     weightsVector[is.na(weightsVector)] <- 0
 
-    datasetWeight <- min(weightsVector[weightsVector >= 1], na.rm = TRUE)
-
-    if (!is.finite(datasetWeight) || datasetWeight <= 0) {
-      datasetWeight <- 1
-    }
+    wholeWeights <- weightsVector[weightsVector >= 1]
+    datasetWeight <- if (length(wholeWeights) > 0) min(wholeWeights) else 1
 
     pointWeights <- weightsVector / datasetWeight
     pointWeights[!is.finite(pointWeights)] <- 0
@@ -219,7 +256,6 @@
     use.names = FALSE
   )
 
-  set.seed(seed)
   resampledNames <- sample(
     weightsPool,
     size = length(weightsPool),
@@ -236,10 +272,59 @@
       nSelected <- 0
     }
     resampledDataSetWeights[[dataSetName]] <-
-      weightsSummary[[dataSetName]]$pointWeights * nSelected
+      weightsSummary[[dataSetName]]$pointWeights * sqrt(nSelected)
   }
 
   return(resampledDataSetWeights)
+}
+
+# RESAMPLING: VALUES
+
+#' Redraw the means of an aggregated data set
+#'
+#' A parametric bootstrap of the reported means of a data set with
+#' `yErrorType`, for `n` subjects. With independent standard normal draws
+#' `e_j` per time point from the current random stream (see `.withSeed()`):
+#'
+#' - `GeometricStdDev`, geometric mean `G_j` and `GSD_j`:
+#'   `log(y_j*) = log(G_j) + log(GSD_j) / sqrt(n) * e_j`, the sampling
+#'   distribution of the mean of the logs.
+#' - `ArithmeticStdDev`, arithmetic mean `mu_j` and SD `sigma_j`:
+#'   `log(y_j*) = m_j + s_j * e_j` with `s_j^2 = log(1 + (sigma_j / mu_j)^2 / n)`
+#'   and `m_j = log(mu_j) - s_j^2 / 2`, the lognormal with exactly the mean
+#'   `mu_j` and the SD `sigma_j / sqrt(n)` of the mean of `n` subjects. The
+#'   `- s_j^2 / 2` keeps the mean of the draws at `mu_j`. Without it the draws
+#'   would be centred on the median, below `mu_j`.
+#'
+#' A point with a non-finite error, a non-positive mean or a `GSD` not above 1
+#' keeps its value. A data set without `yErrorType` or without any finite
+#' error value is returned unchanged.
+#'
+#' @param dataSetValues A list with `xValues`, `yValues`, `yErrorValues` and
+#'   `yErrorType` of one data set (see `.extractDataSetValues()`).
+#' @param subjectCount The number of subjects `n` behind the data set.
+#' @return `dataSetValues` with new `yValues`.
+#' @keywords internal
+#' @noRd
+.resampleDataSetValues <- function(dataSetValues, subjectCount) {
+  errorType <- dataSetValues$yErrorType
+  y <- dataSetValues$yValues
+  err <- dataSetValues$yErrorValues
+  if (is.null(errorType) || !any(is.finite(err))) {
+    return(dataSetValues)
+  }
+  e <- stats::rnorm(length(y))
+  if (errorType == "GeometricStdDev") {
+    redraw <- is.finite(err) & err > 1 & is.finite(y) & y > 0
+    logSd <- log(err[redraw]) / sqrt(subjectCount)
+    y[redraw] <- exp(log(y[redraw]) + logSd * e[redraw])
+  } else {
+    redraw <- is.finite(err) & err > 0 & is.finite(y) & y > 0
+    s2 <- log(1 + (err[redraw] / y[redraw])^2 / subjectCount)
+    y[redraw] <- exp(log(y[redraw]) - s2 / 2 + sqrt(s2) * e[redraw])
+  }
+  dataSetValues$yValues <- y
+  dataSetValues
 }
 
 #' Stabilize bootstrap coefficient of variation by minimal symmetric trimming
