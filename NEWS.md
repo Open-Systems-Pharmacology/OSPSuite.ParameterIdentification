@@ -2,9 +2,11 @@
 
 ## Breaking changes
 
-- Bootstrap confidence intervals no longer fit Gaussian process models to aggregated data sets and no longer depend on `DiceKriging`. Aggregated data sets are drawn as whole data sets like individual ones, so bootstrap results with aggregated data change, and a task whose only data set is aggregated gets an interval of zero width until the resampling of aggregated data lands. Use `ciMethod = "PL"` for such data (#312, #318).
+- Bootstrap confidence intervals no longer fit Gaussian process models to aggregated data sets and no longer depend on `DiceKriging`. Bootstrap results with aggregated data change (#312, #318).
 
 ## Major changes
+
+- Bootstrap confidence intervals resample the means of aggregated data sets from the reported mean and `SD / sqrt(n)`, and `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind them, which the bootstrap now requires for aggregated data. A data set with weight `w` drawn `k` times by the bootstrap is weighted by `sqrt(k / w)` relative to its weight, so a replicate at the expected pick count keeps the user's weights. `vignette("confidence-intervals")` describes the resampling and what it assumes.
 
 ## Minor improvements and bug fixes
 

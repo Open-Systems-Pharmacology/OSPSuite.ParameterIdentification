@@ -1156,7 +1156,10 @@ ParameterIdentification <- R6::R6Class(
     #' @description Computes confidence intervals for the optimized parameters
     #'   using the method defined in the associated `PIConfiguration`. Intended
     #'   for advanced use when `autoEstimateCI` was set to `FALSE` during the
-    #'   initial run.
+    #'   initial run. The bootstrap method redraws the means of aggregated data
+    #'   sets and needs the number of subjects behind them, set with
+    #'   `PIOutputMapping$setSubjectCount()`. `vignette("confidence-intervals")`
+    #'   explains the resampling.
     #'
     #' @return The same [`PIResult`] object returned by the `run()` method,
     #'   updated to include confidence interval estimates.

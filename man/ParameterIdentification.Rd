@@ -136,7 +136,10 @@ Estimate Confidence Intervals
   Computes confidence intervals for the optimized parameters
 using the method defined in the associated \code{PIConfiguration}. Intended
 for advanced use when \code{autoEstimateCI} was set to \code{FALSE} during the
-initial run.
+initial run. The bootstrap method redraws the means of aggregated data
+sets and needs the number of subjects behind them, set with
+\code{PIOutputMapping$setSubjectCount()}. \code{vignette("confidence-intervals")}
+explains the resampling.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{ParameterIdentification$estimateCI()}
