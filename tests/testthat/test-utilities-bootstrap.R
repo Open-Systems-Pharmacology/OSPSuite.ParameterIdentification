@@ -97,3 +97,12 @@ test_that(".resampleDataSetWeights() warns nowhere when no weight reaches 1 and 
   expect_no_warning(resampled <- .withSeed(3, .resampleDataSetWeights(weights)))
   expect_identical(resampled$b, c(0, 0))
 })
+
+test_that(".resampleDataSetWeights() keeps a user weight w at its expected pick count", {
+  # Pool multiplicity w, so sum(k) is the pool size and w_res = w * sqrt(k / w)
+  weights <- list(a = c(20, 20), b = c(1, 1))
+  resampled <- .withSeed(5, .resampleDataSetWeights(weights))
+  pickCounts <- c(resampled$a[[1]]^2 / 20, resampled$b[[1]]^2 / 1)
+  expect_equal(sum(pickCounts), 21)
+  expect_true(all(abs(pickCounts - round(pickCounts)) < 1e-9))
+})

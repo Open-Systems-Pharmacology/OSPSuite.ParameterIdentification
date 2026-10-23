@@ -493,6 +493,8 @@ cases$stateVariable <- function() {
 # changed), then the restored mappings
 bootstrapCase <- function(dataSets) {
   task <- aciclovirTask(dataSets = dataSets)
+  # Laskin 1982, group A: 13 subjects (needed for aggregated data only)
+  for (mapping in task$outputMappings) mapping$setSubjectCount(13)
   private <- privateOf(task)
   private$.batchInitialization()
   piNamespace$.classifyObservedData(private$.outputMappings)

@@ -926,6 +926,7 @@ ParameterIdentification <- R6::R6Class(
         private$.configuration$ciMethod == "bootstrap" &&
           is.null(private$.activeBootstrapSeed)
       ) {
+        .validateSubjectCounts(private$.outputMappings)
         .classifyObservedData(private$.outputMappings)
       }
 
@@ -940,6 +941,13 @@ ParameterIdentification <- R6::R6Class(
         upper = upper,
         resetFn = function() private$.fnEvaluations <- 0
       )
+      if (private$.configuration$ciMethod == "bootstrap") {
+        ciResult$details$subjectCounts <- vapply(
+          private$.outputMappings,
+          function(mapping) mapping$subjectCount %||% NA_integer_,
+          integer(1)
+        )
+      }
 
       PIResult$new(
         optimResult = private$.lastOptimResult,
@@ -1081,6 +1089,16 @@ ParameterIdentification <- R6::R6Class(
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       private$.failedEvaluations <- 0
+
+      # A bootstrap after the run needs the subject counts of the aggregated
+      # data: check them before the optimization, not after it
+      if (
+        is.null(private$.pkMappings) &&
+          private$.configuration$autoEstimateCI &&
+          private$.configuration$ciMethod == "bootstrap"
+      ) {
+        .validateSubjectCounts(private$.outputMappings)
+      }
 
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()

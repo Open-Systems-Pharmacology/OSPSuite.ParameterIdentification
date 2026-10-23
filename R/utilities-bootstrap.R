@@ -213,10 +213,13 @@
 #'
 #' Performs bootstrap resampling by adjusting dataset-level weights. Each
 #' dataset’s total weight is split into a dataset-level weight and normalized
-#' point-level weights. Data sets are drawn with replacement, and the point
-#' weights of a data set drawn `k` times are multiplied by `sqrt(k)`, because
-#' the cost squares the weighted residuals. Draws come from the current random
-#' stream, which the caller seeds (see `.withSeed()`).
+#' point-level weights. Data sets are drawn with replacement, a data set with
+#' the level weight `w` entering the pool `w` times. The weights of a data set
+#' drawn `k` times become its original weights times `sqrt(k / w)`: the cost
+#' squares the weighted residuals, so the data set then counts `k / w` times
+#' its usual share, and at the expected pick count `k = w` a replicate keeps
+#' the user's weights. Draws come from the current random stream, which the
+#' caller seeds (see `.withSeed()`).
 #'
 #' @param dataSetWeights A named list of numeric weight vectors (one per
 #'   dataset).
@@ -271,8 +274,9 @@
     if (is.na(nSelected)) {
       nSelected <- 0
     }
+    summary <- weightsSummary[[dataSetName]]
     resampledDataSetWeights[[dataSetName]] <-
-      weightsSummary[[dataSetName]]$pointWeights * sqrt(nSelected)
+      summary$pointWeights * sqrt(nSelected * summary$datasetWeight)
   }
 
   return(resampledDataSetWeights)
