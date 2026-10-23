@@ -489,12 +489,15 @@ cases$stateVariable <- function() {
   )
 }
 
-# Bootstrap: aggregated and individual data (weights resampled, values never
-# changed), then the restored mappings
+# Bootstrap: weights resampled for every data set, means redrawn for
+# aggregated data sets, then the restored mappings
 bootstrapCase <- function(dataSets) {
   task <- aciclovirTask(dataSets = dataSets)
-  # Laskin 1982, group A: 13 subjects (needed for aggregated data only)
-  for (mapping in task$outputMappings) mapping$setSubjectCount(13)
+  # Laskin 1982, group A: 13 subjects (needed for aggregated data only). A
+  # base build without the setter must still run the cases.
+  for (mapping in task$outputMappings) {
+    if (is.function(mapping$setSubjectCount)) mapping$setSubjectCount(13)
+  }
   private <- privateOf(task)
   private$.batchInitialization()
   piNamespace$.classifyObservedData(private$.outputMappings)
@@ -510,7 +513,7 @@ bootstrapCase <- function(dataSets) {
   results
 }
 cases$bootstrapAggregated <- function() bootstrapCase(laskinData())
-# GPR resampling of aggregated values was removed: the values stay the originals
+# The means of aggregated data are redrawn from mean and SD / sqrt(n) now
 attr(cases$bootstrapAggregated, "expectChange") <- TRUE
 cases$bootstrapIndividual <- function() bootstrapCase(individualData())
 
