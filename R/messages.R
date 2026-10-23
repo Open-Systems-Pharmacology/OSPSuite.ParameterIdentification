@@ -318,28 +318,8 @@ messages$warningLowIndividualData <- function(n = 3) {
   )
 }
 
-messages$errorUnsupportedErrorType <- function() {
-  stop(
-    "Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'."
-  )
-}
-
 messages$statusBootstrap <- function(index, nTotal) {
   paste0("Running bootstrap replicate ", index, " of ", nTotal, ".")
-}
-
-messages$errorGPRModelConvergence <- function(dataSetName) {
-  sprintf(
-    "GPR model failed to converge for dataset '%s'.",
-    dataSetName
-  )
-}
-
-messages$statusGPRModelFitted <- function(dataSetName) {
-  sprintf(
-    "GPR model fitted successfully for dataset '%s'.",
-    dataSetName
-  )
 }
 
 messages$warnParameterMetadata <- function(message) {

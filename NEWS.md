@@ -1,5 +1,13 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, and `DiceKriging` is no longer a dependency (#355, #312, #318).
+
+## Major changes
+
+## Minor improvements and bug fixes
+
 # ospsuite.parameteridentification 2.3.0
 
 ## Breaking changes

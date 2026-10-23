@@ -24,8 +24,8 @@
 # estimateCI() works with bootstrap and aggregated data
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
-        unit = "Log Units", estimate = 1.31885961110325, sd = 0.494677293374105, 
-        cv = 0.375079568143193, lowerCI = 0.490225195071332, upperCI = 1.36526952517353, 
+        unit = "Log Units", estimate = 1.31890001595242, sd = 0, 
+        cv = 0, lowerCI = 1.31890001595242, upperCI = 1.31890001595242, 
         ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
@@ -35,7 +35,6 @@
       temp <- piTask$estimateCI()
     Message
       Classified observed data: 5 individual, 1 aggregated dataset(s).
-      GPR model fitted successfully for dataset 'AciclovirLaskinData.Laskin 1982.Group A'.
       Starting confidence interval estimation using 'bootstrap' for parameter value(s):
         1.323
       Running bootstrap replicate 1 of 3.
@@ -72,10 +71,10 @@
 
 ---
 
-    list("AciclovirLaskinData.Laskin 1982.Group A" = c(3.23903168464312, 
-    2.99522935165442, 2.70414534497831, 2.33513537750696, 1.97511189981014, 
-    1.72586203461833, 1.17817864975223, 0.570908696317929, 0.298315228519641, 
-    0.0972073621596792, 0.0152800918584717), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(2.37344988818222, 
+    list("AciclovirLaskinData.Laskin 1982.Group A" = c(2.37029894378793, 
+    2.9463978989952, 3.07743607663724, 3.07743607663724, 2.17274009628454, 
+    1.934701913342, 1.30778198581538, 0.732094122213311, 0.434305491125997, 
+    0.164341798836176, 0.0264269601757405), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(2.37344988818222, 
     3.54193002749525, 3.28755595546681, 2.94819210466812, 2.59158605331322, 
     2.32353204410174, 1.69334396105114, 0.862799026890571, 0.42893879026451, 
     0.106031201596579, 0.0191173707975167), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(2.63292304225615, 
