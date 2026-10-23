@@ -38,3 +38,27 @@
       Error in `.validateModelCost()`:
       ! The cost details are not a valid <modelCost> object as built by the objective function: modelCost and minLogProbability are not single numbers.
 
+# PIObjective validates its inputs
+
+    Code
+      PIObjective$new(list(1), options, function(values) NULL)
+    Condition
+      Error in `ospsuite.utils::validateIsOfType()`:
+      ! `test()`: argument "outputMappings" is of type <list>, but expected <PIOutputMapping>!
+
+---
+
+    Code
+      PIObjective$new(priv$.outputMappings, options, simulate = NULL)
+    Condition
+      Error in `ospsuite.utils::validateIsOfType()`:
+      ! `test()`: argument "simulate" is of type <NULL>, but expected <function>!
+
+---
+
+    Code
+      objective$observedData <- NULL
+    Condition
+      Error:
+      ! Property $observedData is readonly
+
