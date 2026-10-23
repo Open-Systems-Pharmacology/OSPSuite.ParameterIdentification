@@ -32,8 +32,9 @@ PIResult <- R6::R6Class(
     #' @param ciResult (Optional) A named list of confidence interval results,
     #'   returned by `Optimizer$estimateCI()`. Contains fields like `sd`, `cv`,
     #'   `lowerCI`, `upperCI`, `ciType`, `elapsed`, and `details`.
-    #' @param costDetails (Optional) A named list with detailed cost metrics
-    #'   computed during optimization.
+    #' @param costDetails (Optional) The cost details of the best evaluation,
+    #'   a `modelCost` object as returned by the objective function. See
+    #'   `toList()`.
     #' @param configuration (Optional) The `PIConfiguration` object used during
     #'   parameter identification.
     #' @param piParameters (Optional) A list of `PIParameter` objects used in
@@ -182,7 +183,14 @@ PIResult <- R6::R6Class(
       )
     },
     #' @description Returns the full internal result list.
-    #' @return A named list containing all result values.
+    #' @return A named list containing all result values and `costDetails`,
+    #'   a `modelCost` object: `modelCost` (the total cost),
+    #'   `minLogProbability`, `costVariables` (one row with `nObservations`,
+    #'   `M3Contribution`, `rawSSR` and `weightedSSR`) and `residualDetails`
+    #'   (one row per observation with `index`, `x`, `yObserved`,
+    #'   `ySimulated`, `scaleFactor`, `errorWeights`, `robustWeights`,
+    #'   `userWeights`, `totalWeights`, `rawResiduals` and
+    #'   `weightedResiduals`).
     toList = function() {
       c(
         private$.result,
