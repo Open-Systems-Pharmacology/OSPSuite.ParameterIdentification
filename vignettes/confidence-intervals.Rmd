@@ -46,7 +46,7 @@ explains how to configure and run them, and shows how to inspect the results.
     only minimal assumptions about the likelihood, but it is computationally
     more intensive than the other methods.
 
-    **Individual data.** Each replicate draws the data sets of an output mapping with replacement. A data set with the data weight `w` enters the draw `w` times, and when it is drawn `k` times its weights are multiplied by `sqrt(k / w)`, so that it counts `k / w` times its usual share in the cost and a replicate that draws it as often as expected keeps the user's weights.
+    **Individual data.** Each replicate draws the data sets of an output mapping with replacement, independently of the other output mappings. The level weight `w` of a data set is its smallest point weight of at least 1, rounded down, or 1 when no point weight reaches 1. The data set enters the draw `w` times, and when it is drawn `k` times its weights are multiplied by `sqrt(k / w)`, so that it counts `k / w` times its usual share in the cost and a replicate that draws it as often as expected keeps the user's weights. With `objectiveFunctionType = "m3"`, values below the LLOQ do not use data weights yet (#356), so they count once in every replicate.
 
     **Aggregated data.** A data set with `yErrorType` and error values reports a mean and an SD per time point, not individual subjects. Each replicate redraws its means from the reported mean and the standard error of the mean `SD / sqrt(n)`, where `n` is the number of subjects behind the data set. The draws are independent across time points and made on the log scale, which keeps every mean positive. With `e_j` a standard normal draw at time point `j`:
 

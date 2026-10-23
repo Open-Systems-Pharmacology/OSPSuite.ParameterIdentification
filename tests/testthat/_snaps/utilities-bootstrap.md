@@ -11,7 +11,7 @@
     Code
       .classifyObservedData(list(mapping))
     Message
-      Data set "AciclovirLaskinData.Laskin 1982.Group A" has a yErrorType but no error values and is drawn as a whole data set.
+      Data set "AciclovirLaskinData.Laskin 1982.Group A" has a yErrorType but no usable error values (an SD above 0 or a GSD above 1) and is drawn as a whole data set.
       Classified observed data: 1 individual, 0 aggregated dataset(s).
     Condition
       Warning in `.classifyObservedData()`:

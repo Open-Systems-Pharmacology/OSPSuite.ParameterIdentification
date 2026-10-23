@@ -16,12 +16,36 @@
 #' Check if an aggregated data set has error values to resample from
 #'
 #' @param dataSet A `DataSet` object.
-#' @return `TRUE` when `yErrorType` is set and at least one error value is
-#'   finite.
+#' @return `TRUE` when `yErrorType` is set and at least one point can be
+#'   redrawn (see `.redrawablePoints()`).
 #' @keywords internal
 #' @noRd
 .isAggregatedWithErrors <- function(dataSet) {
-  .isAggregated(dataSet) && any(is.finite(dataSet$yErrorValues))
+  .isAggregated(dataSet) &&
+    any(.redrawablePoints(
+      dataSet$yValues,
+      dataSet$yErrorValues,
+      dataSet$yErrorType
+    ))
+}
+
+#' Points of an aggregated data set whose means can be redrawn
+#'
+#' A point can be redrawn when its mean is positive and its error is an SD
+#' above 0 or, for `GeometricStdDev`, a GSD above 1. The sign of the error
+#' does not depend on its unit.
+#'
+#' @param yValues,yErrorValues The means and errors of the data set.
+#' @param yErrorType The `yErrorType` of the data set.
+#' @return A logical vector, one entry per point.
+#' @keywords internal
+#' @noRd
+.redrawablePoints <- function(yValues, yErrorValues, yErrorType) {
+  minError <- if (identical(yErrorType, "GeometricStdDev")) 1 else 0
+  is.finite(yErrorValues) &
+    yErrorValues > minError &
+    is.finite(yValues) &
+    yValues > 0
 }
 
 #' Validate the subject counts of the output mappings
@@ -131,17 +155,33 @@
   .withSeed(seed, {
     outputMappings <- .resampleAndApplyMappingWeights(
       outputMappings = outputMappings,
-      mappingWeights = mappingState$dataSetWeights,
-      seed = seed
+      mappingWeights = mappingState$dataSetWeights
     )
     mappingValues <- mappingState$dataSetValues
     for (idx in seq_along(outputMappings)) {
       subjectCount <- outputMappings[[idx]]$subjectCount
-      if (!is.null(subjectCount)) {
-        mappingValues[[idx]] <- lapply(
-          mappingValues[[idx]],
-          .resampleDataSetValues,
-          subjectCount = subjectCount
+      if (is.null(subjectCount)) {
+        next
+      }
+      dataSets <- outputMappings[[idx]]$observedDataSets
+      for (name in names(mappingValues[[idx]])) {
+        values <- mappingValues[[idx]][[name]]
+        dataSet <- dataSets[[name]]
+        # An arithmetic SD may be in another unit than the means
+        yErrorValues <- if (identical(values$yErrorType, "ArithmeticStdDev")) {
+          ospsuite::toUnit(
+            dataSet$yDimension,
+            values$yErrorValues,
+            targetUnit = dataSet$yUnit,
+            sourceUnit = dataSet$yErrorUnit
+          )
+        } else {
+          values$yErrorValues
+        }
+        mappingValues[[idx]][[name]] <- .resampleDataSetValues(
+          values,
+          subjectCount = subjectCount,
+          yErrorValues = yErrorValues
         )
       }
     }
@@ -157,19 +197,13 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of initial dataset weight lists, one per output
 #'   mapping.
-#' @param seed An integer seed used for bootstrap resampling.
 #' @return Updated list of `PIOutputMapping` objects.
 #' @keywords internal
 #' @noRd
-.resampleAndApplyMappingWeights <- function(
-  outputMappings,
-  mappingWeights,
-  seed
-) {
+.resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights) {
   resampledMappingWeights <- .resampleMappingWeights(
     outputMappings,
-    mappingWeights,
-    seed
+    mappingWeights
   )
   .applyMappingWeights(outputMappings, resampledMappingWeights)
 }
@@ -186,11 +220,10 @@
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of named dataset weight lists, one per output
 #'   mapping.
-#' @param seed Integer used for bootstrap resampling.
 #' @return A list of resampled dataset weight lists, one per output mapping.
 #' @keywords internal
 #' @noRd
-.resampleMappingWeights <- function(outputMappings, mappingWeights, seed) {
+.resampleMappingWeights <- function(outputMappings, mappingWeights) {
   ospsuite.utils::validateIsSameLength(mappingWeights, outputMappings)
 
   resampledMappingWeights <- vector("list", length(outputMappings))
@@ -221,11 +254,12 @@
 #' Performs bootstrap resampling by adjusting dataset-level weights. Each
 #' dataset’s total weight is split into a dataset-level weight and normalized
 #' point-level weights. Data sets are drawn with replacement, a data set with
-#' the level weight `w` entering the pool `w` times. The weights of a data set
-#' drawn `k` times become its original weights times `sqrt(k / w)`: the cost
-#' squares the weighted residuals, so the data set then counts `k / w` times
-#' its usual share, and at the expected pick count `k = w` a replicate keeps
-#' the user's weights. Draws come from the current random stream, which the
+#' the level weight `w`, the smallest point weight of at least 1 rounded down,
+#' entering the pool `w` times. The weights of a data set drawn `k` times
+#' become its original weights times `sqrt(k / w)`: the cost squares the
+#' weighted residuals, so the data set then counts `k / w` times its usual
+#' share, and at the expected pick count `k = w` a replicate keeps the user's
+#' weights. Draws come from the current random stream, which the
 #' caller seeds (see `.withSeed()`).
 #'
 #' @param dataSetWeights A named list of numeric weight vectors (one per
@@ -244,8 +278,13 @@
     weightsVector <- dataSetWeights[[dataSetName]]
     weightsVector[is.na(weightsVector)] <- 0
 
-    wholeWeights <- weightsVector[weightsVector >= 1]
-    datasetWeight <- if (length(wholeWeights) > 0) min(wholeWeights) else 1
+    wholeWeights <- weightsVector[is.finite(weightsVector) & weightsVector >= 1]
+    # Whole number, so the pool multiplicity and the scaling below agree
+    datasetWeight <- if (length(wholeWeights) > 0) {
+      floor(min(wholeWeights))
+    } else {
+      1
+    }
 
     pointWeights <- weightsVector / datasetWeight
     pointWeights[!is.finite(pointWeights)] <- 0
@@ -314,23 +353,27 @@
 #' @param dataSetValues A list with `xValues`, `yValues`, `yErrorValues` and
 #'   `yErrorType` of one data set (see `.extractDataSetValues()`).
 #' @param subjectCount The number of subjects `n` behind the data set.
+#' @param yErrorValues The error values in the unit of `yValues`.
 #' @return `dataSetValues` with new `yValues`.
 #' @keywords internal
 #' @noRd
-.resampleDataSetValues <- function(dataSetValues, subjectCount) {
+.resampleDataSetValues <- function(
+  dataSetValues,
+  subjectCount,
+  yErrorValues = dataSetValues$yErrorValues
+) {
   errorType <- dataSetValues$yErrorType
   y <- dataSetValues$yValues
-  err <- dataSetValues$yErrorValues
+  err <- yErrorValues
   if (is.null(errorType) || !any(is.finite(err))) {
     return(dataSetValues)
   }
   e <- stats::rnorm(length(y))
+  redraw <- .redrawablePoints(y, err, errorType)
   if (errorType == "GeometricStdDev") {
-    redraw <- is.finite(err) & err > 1 & is.finite(y) & y > 0
     logSd <- log(err[redraw]) / sqrt(subjectCount)
     y[redraw] <- exp(log(y[redraw]) + logSd * e[redraw])
   } else {
-    redraw <- is.finite(err) & err > 0 & is.finite(y) & y > 0
     s2 <- log(1 + (err[redraw] / y[redraw])^2 / subjectCount)
     y[redraw] <- exp(log(y[redraw]) - s2 / 2 + sqrt(s2) * e[redraw])
   }

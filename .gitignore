@@ -4,3 +4,4 @@
 .Ruserdata
 docs/*
 wip/*/
+tests/testthat/Rplots.pdf

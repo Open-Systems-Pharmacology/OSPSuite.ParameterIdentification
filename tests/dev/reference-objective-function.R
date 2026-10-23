@@ -516,6 +516,8 @@ cases$bootstrapAggregated <- function() bootstrapCase(laskinData())
 # The means of aggregated data are redrawn from mean and SD / sqrt(n) now
 attr(cases$bootstrapAggregated, "expectChange") <- TRUE
 cases$bootstrapIndividual <- function() bootstrapCase(individualData())
+# A data set drawn k times now gets its weights times sqrt(k), not k
+attr(cases$bootstrapIndividual, "expectChange") <- TRUE
 
 # Other models: Midazolam (molar data) and two Clarithromycin simulations
 # (mass data) with parameters grouped over both

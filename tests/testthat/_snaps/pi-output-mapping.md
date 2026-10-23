@@ -16,7 +16,7 @@
       mapping$setSubjectCount(0)
     Condition
       Error in `mapping$setSubjectCount()`:
-      ! The subject count must be one positive whole number, not 0.
+      ! The subject count must be one positive whole number up to 2147483647, not 0.
 
 ---
 
@@ -24,7 +24,7 @@
       mapping$setSubjectCount(2.5)
     Condition
       Error in `mapping$setSubjectCount()`:
-      ! The subject count must be one positive whole number, not 2.5.
+      ! The subject count must be one positive whole number up to 2147483647, not 2.5.
 
 ---
 
@@ -32,7 +32,15 @@
       mapping$setSubjectCount(c(3, 4))
     Condition
       Error in `mapping$setSubjectCount()`:
-      ! The subject count must be one positive whole number, not 3 and 4.
+      ! The subject count must be one positive whole number up to 2147483647, not 3 and 4.
+
+---
+
+    Code
+      mapping$setSubjectCount(1e+10)
+    Condition
+      Error in `mapping$setSubjectCount()`:
+      ! The subject count must be one positive whole number up to 2147483647, not 1e+10.
 
 ---
 

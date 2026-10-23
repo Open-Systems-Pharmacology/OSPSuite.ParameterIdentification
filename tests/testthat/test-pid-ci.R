@@ -177,6 +177,23 @@ test_that("run() with autoEstimateCI and bootstrap checks the subject counts bef
   )
 })
 
+test_that("run() that stops on a missing subject count keeps the previous fit", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+  piTask$configuration$autoEstimateCI <- TRUE
+  expect_snapshot(suppressMessages(piTask$run()), error = TRUE)
+  suppressMessages(piTask$configuration$ciMethod <- "hessian")
+  expect_no_error(suppressMessages(piTask$estimateCI()))
+})
+
 test_that("bootstrap results report the subject counts used", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData())

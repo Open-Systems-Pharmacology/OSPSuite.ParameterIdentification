@@ -730,8 +730,9 @@ ParameterIdentification <- R6::R6Class(
     # evaluation. If no bootstrap seed is provided, the original mappings are
     # returned. If a `bootstrapSeed` is provided and differs from the
     # previously active seed, the data set weights are resampled for it (see
-    # `.resampleDataSetWeights()`). The values of the data sets are not
-    # changed. The initial mapping state is extracted only once via
+    # `.resampleDataSetWeights()`), and the means of aggregated data sets are
+    # redrawn (see `.resampleDataSetValues()`). The initial mapping state is
+    # extracted only once via
     # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
     # restores it.
     #
@@ -1060,6 +1061,16 @@ ParameterIdentification <- R6::R6Class(
           add = TRUE
         )
       }
+      # A bootstrap after the run needs the subject counts of the aggregated
+      # data: check them before the optimization and before the previous
+      # results are cleared
+      if (
+        is.null(private$.pkMappings) &&
+          private$.configuration$autoEstimateCI &&
+          private$.configuration$ciMethod == "bootstrap"
+      ) {
+        .validateSubjectCounts(private$.outputMappings)
+      }
       private$.batchInitialization()
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
@@ -1068,16 +1079,6 @@ ParameterIdentification <- R6::R6Class(
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
       private$.failedEvaluations <- 0
-
-      # A bootstrap after the run needs the subject counts of the aggregated
-      # data: check them before the optimization, not after it
-      if (
-        is.null(private$.pkMappings) &&
-          private$.configuration$autoEstimateCI &&
-          private$.configuration$ciMethod == "bootstrap"
-      ) {
-        .validateSubjectCounts(private$.outputMappings)
-      }
 
       # Run optimization algorithm
       optimResult <- private$.runAlgorithm()

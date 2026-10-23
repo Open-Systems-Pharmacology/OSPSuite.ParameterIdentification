@@ -30,8 +30,9 @@ messages$errorDataSetWeightsMismatch <- function() {
 }
 
 messages$errorSubjectCount <- function(n) {
+  maxCount <- .Machine$integer.max
   ospsuite.utils::cliFormat(
-    "The subject count must be one positive whole number, not {.val {n}}."
+    "The subject count must be one positive whole number up to {.val {maxCount}}, not {.val {n}}."
   )
 }
 
@@ -43,7 +44,7 @@ messages$errorMissingSubjectCount <- function(dataSetNames) {
 
 messages$statusAggregatedWithoutErrors <- function(dataSetName) {
   ospsuite.utils::cliFormat(
-    "Data set {.val {dataSetName}} has a {.field yErrorType} but no error values and is drawn as a whole data set."
+    "Data set {.val {dataSetName}} has a {.field yErrorType} but no usable error values (an SD above 0 or a GSD above 1) and is drawn as a whole data set."
   )
 }
 
