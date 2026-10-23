@@ -20,6 +20,18 @@ test_that(".validateSubjectCounts() ignores individual data and aggregated data 
   expect_no_error(.validateSubjectCounts(list(individual, noErrors)))
 })
 
+test_that(".classifyObservedData() reports aggregated data without error values as drawn whole", {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  dataSet <- testObservedData()[[1]]
+  dataSet$setValues(
+    dataSet$xValues,
+    dataSet$yValues,
+    rep(NA_real_, length(dataSet$yValues))
+  )
+  mapping$addObservedDataSets(dataSet)
+  expect_snapshot(.classifyObservedData(list(mapping)))
+})
+
 test_that(".withSeed() leaves the global random state as it was", {
   set.seed(1)
   before <- .Random.seed
@@ -58,7 +70,8 @@ test_that(".resampleDataSetValues() redraws arithmetic means with mean mu and SD
     1,
     replicate(4000, .resampleDataSetValues(values, subjectCount = 13)$yValues)
   )
-  expect_equal(rowMeans(draws), values$yValues, tolerance = 0.01)
+  # Without the - s2 / 2 term the means are off by about 1 percent
+  expect_equal(rowMeans(draws), values$yValues, tolerance = 0.003)
   expect_equal(apply(draws, 1, sd), values$yErrorValues / sqrt(13), tolerance = 0.05)
   expect_true(all(draws > 0))
 })
@@ -86,10 +99,17 @@ test_that(".resampleDataSetValues() keeps points without a usable error and indi
 
 test_that(".resampleDataSetWeights() scales point weights by the square root of the pick count", {
   weights <- list(a = c(1, 1), b = c(1, 1), c = c(1, 1))
-  resampled <- .withSeed(3, .resampleDataSetWeights(weights))
-  counts <- vapply(resampled, function(w) (w[[1]])^2, numeric(1))
-  expect_equal(sum(counts), 3)
-  expect_true(all(abs(counts - round(counts)) < 1e-12))
+  pickCounts <- .withSeed(6, table(factor(
+    sample(names(weights), 3, replace = TRUE),
+    levels = names(weights)
+  )))
+  expect_true(any(pickCounts >= 2))
+  resampled <- .withSeed(6, .resampleDataSetWeights(weights))
+  expect_equal(
+    vapply(resampled, `[[`, numeric(1), 1),
+    sqrt(as.numeric(pickCounts)),
+    ignore_attr = TRUE
+  )
 })
 
 test_that(".resampleDataSetWeights() warns nowhere when no weight reaches 1 and keeps zero weights zero", {

@@ -50,9 +50,11 @@
 #' Classify Observed Datasets for Bootstrap
 #'
 #' Evaluates all observed datasets in the output mappings and classifies them as
-#' either individual or aggregated based on the presence of `yErrorType`. Prints
-#' a status message with the number of individual and aggregated datasets, and
-#' warns if too few individual datasets are available for stable bootstrap CI.
+#' either individual or aggregated (a `yErrorType` with error values, see
+#' `.isAggregatedWithErrors()`). A data set with a `yErrorType` but no error
+#' values counts as individual and gets a message. Prints a status message with
+#' the number of individual and aggregated datasets, and warns if too few
+#' individual datasets are available for stable bootstrap CI.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects to classify.
 #' @keywords internal
@@ -63,7 +65,12 @@
     recursive = FALSE
   )
 
-  isAggregated <- vapply(observedDataSets, .isAggregated, logical(1))
+  isAggregated <- vapply(observedDataSets, .isAggregatedWithErrors, logical(1))
+  withoutErrors <- vapply(observedDataSets, .isAggregated, logical(1)) &
+    !isAggregated
+  for (dataSet in observedDataSets[withoutErrors]) {
+    message(messages$statusAggregatedWithoutErrors(dataSet$name))
+  }
   nAggregated <- sum(isAggregated)
   nIndividual <- length(observedDataSets) - nAggregated
 
