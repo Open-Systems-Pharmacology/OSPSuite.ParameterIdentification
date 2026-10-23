@@ -84,13 +84,15 @@ test_that("PIObjective validates its inputs", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
-  expect_snapshot(
+  expect_error(
     PIObjective$new(list(1), options, function(values) NULL),
-    error = TRUE
+    messages$errorWrongType("outputMappings", "list", "PIOutputMapping"),
+    fixed = TRUE
   )
-  expect_snapshot(
+  expect_error(
     PIObjective$new(priv$.outputMappings, options, simulate = NULL),
-    error = TRUE
+    messages$errorWrongType("simulate", "NULL", "function"),
+    fixed = TRUE
   )
   objective <- PIObjective$new(priv$.outputMappings, options, function(values) NULL)
   expect_snapshot(objective$observedData <- NULL, error = TRUE)

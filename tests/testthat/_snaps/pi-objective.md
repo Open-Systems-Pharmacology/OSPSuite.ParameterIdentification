@@ -41,22 +41,6 @@
 # PIObjective validates its inputs
 
     Code
-      PIObjective$new(list(1), options, function(values) NULL)
-    Condition
-      Error in `ospsuite.utils::validateIsOfType()`:
-      ! `test()`: argument "outputMappings" is of type <list>, but expected <PIOutputMapping>!
-
----
-
-    Code
-      PIObjective$new(priv$.outputMappings, options, simulate = NULL)
-    Condition
-      Error in `ospsuite.utils::validateIsOfType()`:
-      ! `test()`: argument "simulate" is of type <NULL>, but expected <function>!
-
----
-
-    Code
       objective$observedData <- NULL
     Condition
       Error:
