@@ -155,8 +155,9 @@ Optimizer <- R6::R6Class(
       if (length(missingFields) > 0) {
         stop(messages$errorHessianCostVariables(missingFields))
       }
-      dof <- max(1, costVariables$nObservations - length(par)) # ensure DoF ≥ 1
-      sigma2 <- costVariables$weightedSSR / dof # for MLE use: sigma2 = 1
+      nObs <- costVariables[["nObservations"]]
+      dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
+      sigma2 <- costVariables[["weightedSSR"]] / dof # for MLE use: sigma2 = 1
 
       # Compute the Hessian matrix numerically
       hess <- tryCatch(

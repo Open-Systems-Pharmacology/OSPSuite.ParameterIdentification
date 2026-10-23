@@ -730,7 +730,11 @@ test_that("Hessian CI uses r from ciOptions to control number of iterations", {
 
 test_that("Hessian CI stops when the objective function value has no cost variables", {
   optimizer <- Optimizer$new(PIConfiguration$new())
-  fnScalar <- function(p) fnObjective(p)$modelCost
+  evalCount <- 0L
+  fnScalar <- function(p) {
+    evalCount <<- evalCount + 1L
+    fnObjective(p)$modelCost
+  }
   expect_snapshot(
     optimizer$estimateCI(
       par = parTest,
@@ -740,4 +744,24 @@ test_that("Hessian CI stops when the objective function value has no cost variab
     ),
     error = TRUE
   )
+  expect_equal(evalCount, 1L)
+})
+
+test_that("Hessian CI accepts cost variables given as a named vector", {
+  optimizer <- Optimizer$new(PIConfiguration$new())
+  fnVector <- function(p) {
+    cost <- fnObjective(p)
+    cost$costVariables <- unlist(cost$costVariables)
+    cost
+  }
+  suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnVector,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_null(ciResult$error)
+  expect_true(all(is.finite(ciResult$sd)))
 })

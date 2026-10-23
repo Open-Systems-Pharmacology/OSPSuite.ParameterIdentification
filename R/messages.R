@@ -310,7 +310,7 @@ messages$errorModelCostStructure <- function(problem) {
 
 messages$errorHessianCostVariables <- function(fields) {
   ospsuite.utils::cliFormat(
-    "The Hessian method needs {.field weightedSSR} and {.field nObservations} in {.field costVariables} of the objective function value, missing: {.val {fields}}. Return a {.cls modelCost} object as {.cls ParameterIdentification} does, or use {.code ciMethod = \"PL\"}."
+    "The Hessian method needs {.field weightedSSR} and {.field nObservations} in {.field costVariables} of the objective function value, missing: {.val {fields}}. Return a value with these fields, for example a {.cls modelCost} object as {.cls ParameterIdentification} does, or use {.code ciMethod = \"PL\"}."
   )
 }
 

@@ -150,5 +150,5 @@
         0.8000, -1.500, 2.500
     Condition
       Error:
-      ! The Hessian method needs weightedSSR and nObservations in costVariables of the objective function value, missing: "weightedSSR" and "nObservations". Return a <modelCost> object as <ParameterIdentification> does, or use `ciMethod = "PL"`.
+      ! The Hessian method needs weightedSSR and nObservations in costVariables of the objective function value, missing: "weightedSSR" and "nObservations". Return a value with these fields, for example a <modelCost> object as <ParameterIdentification> does, or use `ciMethod = "PL"`.
 
