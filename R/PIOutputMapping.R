@@ -43,6 +43,19 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field subjectCount Number of subjects behind the aggregated data sets
+    #'   of this mapping, `NULL` until set with `$setSubjectCount()`.
+    subjectCount = function(value) {
+      if (missing(value)) {
+        private$.subjectCount
+      } else {
+        stop(messages$errorPropertyReadOnly(
+          "subjectCount",
+          optionalMessage = "Use $setSubjectCount() to change the value."
+        ))
+      }
+    },
+
     #' @field quantity Simulation quantities to be aligned with observed data
     #'   values.
     quantity = function(value) {
@@ -97,6 +110,7 @@ PIOutputMapping <- R6::R6Class(
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
     .dataWeights = NULL,
+    .subjectCount = NULL,
     .scaling = NULL
   ),
   public = list(
@@ -296,6 +310,23 @@ PIOutputMapping <- R6::R6Class(
         private$.dataWeights[[label]] <- weightsVec
       }
 
+      invisible(self)
+    },
+
+    #' @description Sets the number of subjects behind the aggregated data
+    #'   sets of this mapping (data sets with `yErrorType` and error values).
+    #'   Bootstrap confidence intervals redraw the means of aggregated data
+    #'   from the reported mean and `SD / sqrt(n)`, so they need this number
+    #'   for every mapping with aggregated data and stop without it. See
+    #'   `vignette("confidence-intervals")`.
+    #'
+    #' @param n One positive whole number, the number of subjects.
+    setSubjectCount = function(n) {
+      ospsuite.utils::validateIsNumeric(n)
+      if (length(n) != 1 || !is.finite(n) || n < 1 || n != round(n)) {
+        stop(messages$errorSubjectCount(n))
+      }
+      private$.subjectCount <- as.integer(n)
       invisible(self)
     },
 

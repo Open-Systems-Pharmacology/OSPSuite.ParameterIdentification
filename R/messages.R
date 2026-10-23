@@ -29,6 +29,24 @@ messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
 
+messages$errorSubjectCount <- function(n) {
+  ospsuite.utils::cliFormat(
+    "The subject count must be one positive whole number, not {.val {n}}."
+  )
+}
+
+messages$errorMissingSubjectCount <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on the output mapping with that number. Profile likelihood ({.code ciMethod = \"PL\"}) is the recommended interval for aggregated data."
+  )
+}
+
+messages$statusAggregatedWithoutErrors <- function(dataSetName) {
+  ospsuite.utils::cliFormat(
+    "Data set {.val {dataSetName}} has a {.field yErrorType} but no error values and is drawn as a whole data set."
+  )
+}
+
 messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
 }

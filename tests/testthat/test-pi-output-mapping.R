@@ -317,3 +317,18 @@ test_that("PIOutputMapping errors when mol weight is missing and can't be retrie
     }
   )
 })
+
+test_that("setSubjectCount() stores one positive whole number", {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  expect_null(mapping$subjectCount)
+  mapping$setSubjectCount(13)
+  expect_identical(mapping$subjectCount, 13L)
+})
+
+test_that("setSubjectCount() rejects invalid counts and the binding is read-only", {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  expect_snapshot(mapping$setSubjectCount(0), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(2.5), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(c(3, 4)), error = TRUE)
+  expect_snapshot(mapping$subjectCount <- 5, error = TRUE)
+})

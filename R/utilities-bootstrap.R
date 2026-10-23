@@ -13,6 +13,40 @@
   !is.null(data$yErrorType)
 }
 
+#' Check if an aggregated data set has error values to resample from
+#'
+#' @param dataSet A `DataSet` object.
+#' @return `TRUE` when `yErrorType` is set and at least one error value is
+#'   finite.
+#' @keywords internal
+#' @noRd
+.isAggregatedWithErrors <- function(dataSet) {
+  .isAggregated(dataSet) && any(is.finite(dataSet$yErrorValues))
+}
+
+#' Validate the subject counts of the output mappings
+#'
+#' Stops when an output mapping holds an aggregated data set with error values
+#' but has no subject count (see `PIOutputMapping$setSubjectCount()`).
+#'
+#' @param outputMappings A list of `PIOutputMapping` objects.
+#' @return The output mappings, invisibly.
+#' @keywords internal
+#' @noRd
+.validateSubjectCounts <- function(outputMappings) {
+  missingNames <- character()
+  for (mapping in outputMappings) {
+    if (is.null(mapping$subjectCount)) {
+      aggregated <- Filter(.isAggregatedWithErrors, mapping$observedDataSets)
+      missingNames <- c(missingNames, names(aggregated))
+    }
+  }
+  if (length(missingNames) > 0) {
+    stop(messages$errorMissingSubjectCount(missingNames))
+  }
+  invisible(outputMappings)
+}
+
 #' Classify Observed Datasets for Bootstrap
 #'
 #' Evaluates all observed datasets in the output mappings and classifies them as
