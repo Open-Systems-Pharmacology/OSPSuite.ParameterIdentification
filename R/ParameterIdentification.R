@@ -134,6 +134,12 @@ ParameterIdentification <- R6::R6Class(
     #
     # @return The `PIObjective` object.
     .objectiveFor = function() {
+      if (is.null(private$.objective) && !is.null(private$.pkMappings)) {
+        private$.objective <- PKObjective$new(
+          model = private$.model,
+          pkMappings = private$.pkMappings
+        )
+      }
       if (is.null(private$.objective)) {
         private$.data <- PIObservations$new(private$.outputMappings)
         private$.objective <- PIObjective$new(
@@ -239,53 +245,7 @@ ParameterIdentification <- R6::R6Class(
     },
 
     .getPKValues = function(paramValues) {
-      # The PK objective function reports a failed simulation itself on every
-      # evaluation, so the warning of the simulation engine is not repeated.
-      # Only the results of the simulations of the PK mappings are used: the
-      # task may have other simulations, whose failure does not fail the
-      # evaluation.
-      simulationResults <- private$.model$simulate(
-        paramValues,
-        usedSimulations = unique(vapply(
-          private$.pkMappings,
-          function(mapping) mapping$simId,
-          character(1)
-        )),
-        silentMode = TRUE
-      )
-
-      lapply(private$.pkMappings, function(mapping) {
-        simResult <- simulationResults[[mapping$simId]][[1]]
-        pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)
-        pkParam <- tryCatch(
-          pkAnalysis$pKParameterFor(
-            quantityPath = mapping$quantity$path,
-            pkParameter = mapping$pkParameter
-          ),
-          error = function(e) {
-            stop(messages$errorPKParameterNotAvailable(
-              mapping$pkParameter,
-              mapping$quantity$path,
-              e$message
-            ))
-          }
-        )
-        vals <- pkParam$values
-        if (length(vals) == 0L) {
-          stop(messages$errorPKParameterNotAvailable(
-            mapping$pkParameter,
-            mapping$quantity$path
-          ))
-        }
-        if (length(vals) > 1L) {
-          stop(messages$errorPKMultiIndividualSimulation(
-            mapping$pkParameter,
-            mapping$quantity$path,
-            length(vals)
-          ))
-        }
-        vals
-      })
+      private$.objectiveFor()$pkValues(paramValues)
     },
 
     # Simulation Evaluation with Parameter Values

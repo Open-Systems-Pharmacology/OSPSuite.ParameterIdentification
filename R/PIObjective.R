@@ -34,6 +34,21 @@ PIObjective <- R6::R6Class(
       } else {
         stop(messages$errorPropertyReadOnly("observedData"))
       }
+    },
+    # Confidence intervals and plots are available for observed data
+    supportsCI = function(value) {
+      if (missing(value)) {
+        TRUE
+      } else {
+        stop(messages$errorPropertyReadOnly("supportsCI"))
+      }
+    },
+    supportsPlots = function(value) {
+      if (missing(value)) {
+        TRUE
+      } else {
+        stop(messages$errorPropertyReadOnly("supportsPlots"))
+      }
     }
   ),
   public = list(
