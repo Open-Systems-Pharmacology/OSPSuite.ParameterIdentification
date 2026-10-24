@@ -114,11 +114,6 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorMethodNotApplicableInPKMode(methodName))
       }
     },
-    # Most recently used bootstrap seed to detect when resampling is needed
-    .activeBootstrapSeed = NULL,
-    # Cached original weights and values of all datasets before bootstrap
-    .initialOutputMappingState = NULL,
-
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
     # `$unit`. `addRunValues()` reads base units, so they are converted here.
@@ -325,20 +320,16 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # The `PIObjective` of the current public call and bootstrap sample
+    # The `PIObjective` of the current public call
     #
-    # Built on the first evaluation after `.batchInitialization()` or a new
-    # bootstrap sample, which reads the observed data once (#271). Its
-    # `simulate` function logs and counts a failed simulation (see
-    # `.logSimulationFailure()`) and signals it again, so that `evaluate()`
-    # returns the error cost structure.
+    # Built on the first evaluation after `.batchInitialization()`, which
+    # reads the observed data once (#271). Its `simulate` function logs and
+    # counts a failed simulation (see `.logSimulationFailure()`) and signals
+    # it again, so that `evaluate()` returns the error cost structure.
     #
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return The `PIObjective` object.
-    .objectiveFor = function(bootstrapSeed = NULL) {
-      # A new sample resets the objective, so the mappings come first
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+    .objectiveFor = function() {
+      outputMappings <- private$.outputMappings
       if (is.null(private$.objective)) {
         private$.data <- PIObservations$new(outputMappings)
         private$.objective <- PIObjective$new(
@@ -414,9 +405,14 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Shim for the tests until they are rewritten against the objective
+    # Shim for the tests until they are rewritten against the objective: the
+    # evaluation closure of the objective, on the data of `bootstrapSeed`
     .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
-      private$.evaluationClosure(private$.objectiveFor(bootstrapSeed))(currVals)
+      objective <- private$.objectiveFor()
+      if (!is.null(bootstrapSeed)) {
+        objective <- objective$withData(private$.data$resample(bootstrapSeed))
+      }
+      private$.evaluationClosure(objective)(currVals)
     },
 
     .pkObjectiveFunction = function(currVals) {
@@ -664,11 +660,9 @@ ParameterIdentification <- R6::R6Class(
     # Used for plotting; the objective function uses `.simulateOutputs()`.
     #
     # @param currVals Vector of parameter values for simulation.
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals, bootstrapSeed = NULL) {
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+    .evaluate = function(currVals) {
+      outputMappings <- private$.outputMappings
       simulationResults <- private$.runSimulations(currVals)
 
       obsVsPredList <- vector("list", length(outputMappings))
@@ -705,8 +699,8 @@ ParameterIdentification <- R6::R6Class(
     # `DataCombined` objects.
     #
     # @param currVals Vector of parameter values for simulation.
-    # @param outputMappings The output mappings of the evaluation (see
-    #   `.getOutputMappings()`), by default those of the task.
+    # @param outputMappings The output mappings of the evaluation, by default
+    #   those of the task.
     # @return A list with one entry per output mapping, each a list with
     #   `xValues`, the time values in min, and `yValues`, the values in the base
     #   unit of the mapped quantity.
@@ -734,72 +728,18 @@ ParameterIdentification <- R6::R6Class(
       simulated
     },
 
-    # Retrieve Output Mappings with Optional Bootstrap Resampling
+    # Shim for the tests until they are rewritten against the objective: the
+    # output mappings the objective of `bootstrapSeed` evaluates, those of the
+    # task without a seed (the frozen oracle reads the observed data from them)
     #
-    # Returns the list of output mappings used during objective function
-    # evaluation. If no bootstrap seed is provided, the original mappings are
-    # returned. If a `bootstrapSeed` is provided and differs from the
-    # previously active seed, the data set weights are resampled for it (see
-    # `.resampleDataSetWeights()`), and the means of aggregated data sets are
-    # redrawn (see `.resampleDataSetValues()`). The initial mapping state is
-    # extracted only once via
-    # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
-    # restores it.
-    #
-    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
-    #   returns the unmodified output mappings.
-    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
-    #   weights.
+    # @param bootstrapSeed Optional bootstrap seed.
+    # @return A list of `PIOutputMapping` objects.
     .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
       }
-
-      # First-time bootstrap setup: cache the initial state
-      if (is.null(private$.initialOutputMappingState)) {
-        private$.initialOutputMappingState <- .extractOutputMappingState(
-          private$.outputMappings
-        )
-      }
-
-      # Trigger resampling only if the seed has changed
-      if (
-        is.null(private$.activeBootstrapSeed) ||
-          private$.activeBootstrapSeed != bootstrapSeed
-      ) {
-        private$.activeBootstrapSeed <- bootstrapSeed
-        private$.outputMappings <- .resampleAndApplyMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState,
-          bootstrapSeed
-        )
-        # Observed data changed, so the objective is built again
-        private$.objective <- NULL
-        private$.data <- NULL
-        private$.observedData <- NULL
-      }
-
-      return(private$.outputMappings)
-    },
-
-    # Restore Output Mapping State
-    #
-    # Restores `outputMappings` to their original state before bootstrap
-    # resampling, including both dataset weights and y-values. Clears
-    # bootstrap-related state.
-    .restoreOutputMappingsState = function() {
-      if (!is.null(private$.initialOutputMappingState)) {
-        private$.outputMappings <- .applyOutputMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState
-        )
-      }
-      private$.initialOutputMappingState <- NULL
-      private$.activeBootstrapSeed <- NULL
-      # Observed data restored to its original state, so read it again
-      private$.objective <- NULL
-      private$.data <- NULL
-      private$.observedData <- NULL
+      private$.objectiveFor()
+      private$.data$resample(bootstrapSeed)$outputMappings
     },
 
     # Apply Identified Parameter Values
@@ -902,8 +842,6 @@ ParameterIdentification <- R6::R6Class(
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
 
-      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
-
       currValues <- sapply(private$.piParameters, `[[`, "currValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
@@ -914,10 +852,7 @@ ParameterIdentification <- R6::R6Class(
         private$.checkStartSimulation(currValues)
       }
 
-      if (
-        private$.configuration$ciMethod == "bootstrap" &&
-          is.null(private$.activeBootstrapSeed)
-      ) {
+      if (private$.configuration$ciMethod == "bootstrap") {
         .validateSubjectCounts(private$.outputMappings)
         .classifyObservedData(private$.outputMappings)
       }
