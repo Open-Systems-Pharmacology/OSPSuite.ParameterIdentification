@@ -690,14 +690,14 @@ Optimizer <- R6::R6Class(
       if (!inherits(fn, "preprocessedFn")) {
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
       }
-
-      private$.verbose <- FALSE
-
-      fn <- private$.preprocessFn(fn)
       ciMethod <- private$.configuration$ciMethod
       if (ciMethod == "bootstrap" && is.null(replicate)) {
         stop(messages$errorBootstrapReplicateMissing())
       }
+
+      private$.verbose <- FALSE
+
+      fn <- private$.preprocessFn(fn)
       ciOptions <- modifyList(
         CIDefaults[[ciMethod]],
         private$.configuration$ciOptions %||% list(),
