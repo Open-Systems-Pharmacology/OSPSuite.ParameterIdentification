@@ -364,54 +364,59 @@ ParameterIdentification <- R6::R6Class(
     #
     # Counts the evaluations and the failed evaluations, keeps the last and
     # the best cost summary and prints the evaluation feedback. The
-    # `Optimizer` receives this method as its objective function.
+    # `Optimizer` receives this closure as its objective function.
     #
-    # @param currVals Vector of parameter values for simulation.
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
-    # @return The cost summary of the evaluation, a `modelCost` object.
-    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
-      # Increment function evaluations counter
-      private$.fnEvaluations <- private$.fnEvaluations + 1
+    # @param objective A `PIObjective` object.
+    # @return `function(currVals)` that returns the cost summary of the
+    #   evaluation of the parameter values, a `modelCost` object.
+    .evaluationClosure = function(objective) {
+      function(currVals) {
+        # Increment function evaluations counter
+        private$.fnEvaluations <- private$.fnEvaluations + 1
 
-      objective <- private$.objectiveFor(bootstrapSeed)
-      failedEvaluations <- private$.failedEvaluations
-      runningCost <- objective$evaluate(currVals)
-      private$.observedData <- objective$observedData
+        failedEvaluations <- private$.failedEvaluations
+        runningCost <- objective$evaluate(currVals)
+        private$.observedData <- objective$observedData
 
-      # The simulate closure of `.objectiveFor()` counts failed simulations
-      if (private$.failedEvaluations > failedEvaluations) {
+        # The simulate closure of `.objectiveFor()` counts failed simulations
+        if (private$.failedEvaluations > failedEvaluations) {
+          return(runningCost)
+        }
+
+        private$.lastCostSummary <- runningCost
+
+        # Evaluate running cost
+        costField <- private$.configuration$modelCostField
+        currCost <- runningCost[[costField]]
+        bestCost <- if (is.null(private$.bestCostSummary)) {
+          Inf
+        } else {
+          private$.bestCostSummary[[costField]]
+        }
+
+        # Only overwrite when strictly better
+        if (is.finite(currCost) && currCost < bestCost) {
+          private$.bestCostSummary <- runningCost
+        }
+
+        #  Optionally print evaluation feedback
+        if (private$.configuration$printEvaluationFeedback) {
+          cat(
+            messages$evaluationFeedback(
+              private$.fnEvaluations,
+              currVals,
+              runningCost[[private$.configuration$modelCostField]]
+            )
+          )
+        }
+
         return(runningCost)
       }
+    },
 
-      private$.lastCostSummary <- runningCost
-
-      # Evaluate running cost
-      costField <- private$.configuration$modelCostField
-      currCost <- runningCost[[costField]]
-      bestCost <- if (is.null(private$.bestCostSummary)) {
-        Inf
-      } else {
-        private$.bestCostSummary[[costField]]
-      }
-
-      # Only overwrite when strictly better
-      if (is.finite(currCost) && currCost < bestCost) {
-        private$.bestCostSummary <- runningCost
-      }
-
-      #  Optionally print evaluation feedback
-      if (private$.configuration$printEvaluationFeedback) {
-        cat(
-          messages$evaluationFeedback(
-            private$.fnEvaluations,
-            currVals,
-            runningCost[[private$.configuration$modelCostField]]
-          )
-        )
-      }
-
-      return(runningCost)
+    # Shim for the tests until they are rewritten against the objective
+    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
+      private$.evaluationClosure(private$.objectiveFor(bootstrapSeed))(currVals)
     },
 
     .pkObjectiveFunction = function(currVals) {
@@ -859,9 +864,9 @@ ParameterIdentification <- R6::R6Class(
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       fn <- if (!is.null(private$.pkMappings)) {
-        function(p, ...) private$.pkObjectiveFunction(p)
+        function(p) private$.pkObjectiveFunction(p)
       } else {
-        function(p, ...) private$.objectiveFunction(p, ...)
+        private$.evaluationClosure(private$.objectiveFor())
       }
 
       optimResult <- optimizer$run(
@@ -918,14 +923,21 @@ ParameterIdentification <- R6::R6Class(
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
-      fn <- function(p, ...) private$.objectiveFunction(p, ...)
+      objective <- private$.objectiveFor()
 
       ciResult <- optimizer$estimateCI(
         par = currValues,
-        fn = fn,
+        fn = private$.evaluationClosure(objective),
         lower = lower,
         upper = upper,
-        resetFn = function() private$.fnEvaluations <- 0
+        # Each replicate evaluates the objective on its resampled data, with
+        # the evaluation counter starting at 0
+        replicate = function(seed) {
+          private$.fnEvaluations <- 0
+          private$.evaluationClosure(
+            objective$withData(private$.data$resample(seed))
+          )
+        }
       )
       if (private$.configuration$ciMethod == "bootstrap") {
         ciResult$details$subjectCounts <- lapply(

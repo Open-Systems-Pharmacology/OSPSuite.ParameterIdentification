@@ -587,20 +587,13 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
 })
 
 
-# Objective function factory for bootstrap
-makeFnObjectiveBootstrap <- function(yObsList) {
+# Replicate factory for bootstrap: each seed picks one observed data set
+makeReplicateBootstrap <- function(yObsList) {
   force(yObsList)
-  function(p, bootstrapSeed = NULL) {
-    if (!is.null(bootstrapSeed)) {
-      set.seed(bootstrapSeed)
-      idx <- sample.int(length(yObsList), 1L)
-      selectedData <- yObsList[[idx]]
-    } else {
-      selectedData <- yObsList[[1]]
-    }
-    ySim <- fnSimulate(p)
-    SSR <- sum((selectedData - ySim)^2)
-    list(modelCost = SSR)
+  function(seed) {
+    set.seed(seed)
+    selectedData <- yObsList[[sample.int(length(yObsList), 1L)]]
+    function(p) list(modelCost = sum((selectedData - fnSimulate(p))^2))
   }
 }
 
@@ -614,7 +607,7 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
     simplify = FALSE
   )
 
-  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+  replicateBootstrap <- makeReplicateBootstrap(yObsList)
 
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "HJKB"
@@ -638,9 +631,10 @@ test_that("Optimizer estimates confidence intervals using bootstrap method", {
       expect_no_error(
         ciResult <- optimizer$estimateCI(
           par = optResult$par,
-          fn = fnObjectiveBootstrap,
+          fn = fnObjective,
           lower = lowerTest,
-          upper = upperTest
+          upper = upperTest,
+          replicate = replicateBootstrap
         )
       ),
       messages$ciMethod(piConfig$ciMethod, optResult$par),
@@ -662,7 +656,7 @@ test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
     simplify = FALSE
   )
 
-  fnObjectiveBootstrap <- makeFnObjectiveBootstrap(yObsList)
+  replicateBootstrap <- makeReplicateBootstrap(yObsList)
 
   piConfig <- PIConfiguration$new()
   piConfig$algorithm <- "HJKB"
@@ -686,9 +680,10 @@ test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
       expect_no_error(
         ciResult <- optimizer$estimateCI(
           par = optResult$par,
-          fn = fnObjectiveBootstrap,
+          fn = fnObjective,
           lower = lowerTest,
-          upper = upperTest
+          upper = upperTest,
+          replicate = replicateBootstrap
         )
       ),
       messages$ciMethod(piConfig$ciMethod, optResult$par),
@@ -697,6 +692,57 @@ test_that("Optimizer estimates bootstrap CI and returns one-sided bound", {
   )
   expect_equal(ciResult$ciType, c("two-sided", "one-sided", "two-sided"))
   expect_equal(ciResult$lowerCI, c(0.971, NA, 2.659), tolerance = 0.01)
+})
+
+test_that("estimateCI() with the bootstrap method evaluates the function of replicate(seed) per replicate", {
+  piConfig <- PIConfiguration$new()
+  piConfig$ciMethod <- "bootstrap"
+  piConfig$ciOptions <- list(seed = 1803L, nBootstrap = 3L)
+  optimizer <- Optimizer$new(piConfig)
+  set.seed(1000)
+  yObsList <- replicate(
+    3,
+    fnSimulate(trueParams) + stats::rnorm(length(xVals), sd = 1),
+    simplify = FALSE
+  )
+  replicateBootstrap <- makeReplicateBootstrap(yObsList)
+  seeds <- integer()
+  replicateFn <- function(seed) {
+    seeds <<- c(seeds, seed)
+    replicateBootstrap(seed)
+  }
+  suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest,
+      replicate = replicateFn
+    )
+  )
+  expect_identical(seeds, .withSeed(1803L, sample(1e6, 3L)))
+  expect_equal(nrow(ciResult$details$bootstrapResults), 3L)
+})
+
+test_that("estimateCI() with the bootstrap method stops without replicate", {
+  piConfig <- PIConfiguration$new()
+  piConfig$ciMethod <- "bootstrap"
+  optimizer <- Optimizer$new(piConfig)
+  expect_snapshot(
+    optimizer$estimateCI(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest),
+    error = TRUE
+  )
+  expect_error(
+    optimizer$estimateCI(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest,
+      replicate = 1
+    ),
+    messages$errorWrongType("replicate", "numeric", "function"),
+    fixed = TRUE
+  )
 })
 
 
