@@ -107,7 +107,7 @@
 }
 
 
-# RESAMPLING: APPLY STATE
+# RESAMPLING: SEED
 
 #' Evaluate an expression under a seed without touching the global stream
 #'
