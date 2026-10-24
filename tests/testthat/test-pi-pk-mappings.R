@@ -262,7 +262,7 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
     )
   )
 
-  # Evaluations by the optimizer log it and return the largest cost, also the
+  # Evaluations by the optimizer log it and return an infinite cost, also the
   # first
   priv$.fnEvaluations <- 0
   logged <- character()
@@ -275,7 +275,7 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
       }
     )
   )
-  expect_identical(cost, .Machine$double.xmax)
+  expect_identical(cost, Inf)
   expect_true(any(grepl(failedPattern, logged)))
 })
 
