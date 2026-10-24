@@ -88,6 +88,8 @@ ParameterIdentification <- R6::R6Class(
     # The `PIObjective` of the current public call and bootstrap sample,
     # built on the first evaluation (see `.objectiveFor()`)
     .objective = NULL,
+    # The `PIObservations` of `.objective`
+    .data = NULL,
     # The prepared observed data of `.objective`, mirrored after every
     # evaluation for the tests that read them until the tests are rewritten
     .observedData = NULL,
@@ -173,6 +175,7 @@ ParameterIdentification <- R6::R6Class(
       # batches are built again from the current simulations and observed
       # times.
       private$.objective <- NULL
+      private$.data <- NULL
       private$.observedData <- NULL
       # The reasons of failed simulations are logged in full again
       private$.loggedFailureKinds <- character()
@@ -337,8 +340,9 @@ ParameterIdentification <- R6::R6Class(
       # A new sample resets the objective, so the mappings come first
       outputMappings <- private$.getOutputMappings(bootstrapSeed)
       if (is.null(private$.objective)) {
+        private$.data <- PIObservations$new(outputMappings)
         private$.objective <- PIObjective$new(
-          outputMappings = outputMappings,
+          data = private$.data,
           objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
           simulate = function(values) {
             tryCatch(
@@ -766,6 +770,7 @@ ParameterIdentification <- R6::R6Class(
         )
         # Observed data changed, so the objective is built again
         private$.objective <- NULL
+        private$.data <- NULL
         private$.observedData <- NULL
       }
 
@@ -788,6 +793,7 @@ ParameterIdentification <- R6::R6Class(
       private$.activeBootstrapSeed <- NULL
       # Observed data restored to its original state, so read it again
       private$.objective <- NULL
+      private$.data <- NULL
       private$.observedData <- NULL
     },
 
