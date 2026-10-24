@@ -732,6 +732,12 @@ test_that("estimateCI() with the bootstrap method stops without replicate", {
     optimizer$estimateCI(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest),
     error = TRUE
   )
+  # The optimizer is left as it was found, so the next run prints its start
+  expect_message(
+    optimizer$run(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest),
+    messages$optimizationAlgorithm(piConfig$algorithm, parTest, FALSE),
+    fixed = TRUE
+  )
   expect_error(
     optimizer$estimateCI(
       par = parTest,
