@@ -4,6 +4,7 @@
 
 - `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, `DiceKriging` is no longer a dependency, and aggregated data now require `PIOutputMapping$setSubjectCount()` (#355, #312, #318).
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
+- `Optimizer$estimateCI()` with `ciMethod = "bootstrap"` takes the objective function of each replicate from the new `replicate` argument, a `function(seed)`, instead of calling `fn(p, bootstrapSeed = )`, and the `resetFn` argument is removed.
 
 ## Major changes
 

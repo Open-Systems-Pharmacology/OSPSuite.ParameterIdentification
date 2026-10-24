@@ -309,6 +309,12 @@ messages$errorHessianCostVariables <- function(fields) {
   )
 }
 
+messages$errorBootstrapReplicateMissing <- function() {
+  ospsuite.utils::cliFormat(
+    "The bootstrap method needs {.arg replicate}, a {.code function(seed)} that returns the objective function of one bootstrap replicate."
+  )
+}
+
 messages$ciEstimationError <- function(step, errorMessage) {
   paste0("Error during CI estimation step '", step, "': ", errorMessage)
 }

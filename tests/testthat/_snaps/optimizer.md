@@ -141,6 +141,14 @@
         1), dim = c(3L, 3L))), ciType = c("two-sided", "two-sided", 
     "two-sided"))
 
+# estimateCI() with the bootstrap method stops without replicate
+
+    Code
+      optimizer$estimateCI(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest)
+    Condition
+      Error in `optimizer$estimateCI()`:
+      ! The bootstrap method needs `replicate`, a `function(seed)` that returns the objective function of one bootstrap replicate.
+
 # Hessian CI stops when the objective function value has no cost variables
 
     Code
