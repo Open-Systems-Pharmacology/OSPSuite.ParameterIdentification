@@ -6,9 +6,9 @@ testObjective <- function(task) {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   PIObjective$new(
+    model = priv$.model,
     data = PIObservations$new(priv$.outputMappings),
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
-    simulate = function(values) priv$.simulateOutputs(values)
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
   )
 }
 
@@ -30,20 +30,32 @@ test_that("evaluate() is the same on every call and leaves the task alone", {
   expect_identical(priv$.fnEvaluations, 0)
 })
 
-test_that("evaluate() returns the error cost structure silently when the simulations fail", {
-  task <- testPiTask()
+test_that("evaluate() logs a failed simulation and returns the error cost structure", {
+  task <- testModifiedTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   objective <- PIObjective$new(
+    model = priv$.model,
     data = PIObservations$new(priv$.outputMappings),
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
-    simulate = function(values) {
-      stop(.simulationsFailedError("Aciclovir", 1L, "solver stopped"))
-    }
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
   )
-  expect_silent(cost <- objective$evaluate(startValues(task)))
+  suppressMessages(
+    expect_message(
+      cost <- objective$evaluate(startValues(task)),
+      messages$simulationError(),
+      fixed = TRUE
+    )
+  )
   expect_identical(cost, .createErrorCostStructure())
+  expect_identical(priv$.model$loggedFailures, 1)
   expect_identical(priv$.failedEvaluations, 0)
+})
+
+test_that("the start check of run() logs nothing", {
+  task <- testModifiedTask()
+  expect_no_message(
+    expect_error(task$run(), class = "initialSimulationError")
+  )
 })
 
 test_that("an infinite cost of successful simulations is not counted as a failed evaluation", {
@@ -65,8 +77,26 @@ test_that("observedData of PIObjective is read-only", {
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
   data <- PIObservations$new(priv$.outputMappings)
-  objective <- PIObjective$new(data, options, function(values) NULL)
+  objective <- PIObjective$new(priv$.model, data, options)
   expect_snapshot(objective$observedData <- NULL, error = TRUE)
+})
+
+test_that("PIObjective validates the model and the data", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  options <- task$configuration$objectiveFunctionOptions
+  data <- PIObservations$new(priv$.outputMappings)
+  expect_error(
+    PIObjective$new(list(1), data, options),
+    messages$errorWrongType("model", "list", "SimulationModel"),
+    fixed = TRUE
+  )
+  expect_error(
+    PIObjective$new(priv$.model, list(1), options),
+    messages$errorWrongType("data", "list", "PIObservations"),
+    fixed = TRUE
+  )
 })
 
 test_that("withData() gives an objective on the new data and leaves the original alone", {

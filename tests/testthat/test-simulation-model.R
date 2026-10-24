@@ -68,18 +68,18 @@ test_that("the constructor leaves the simulations unchanged", {
   expect_identical(outputState(simulation), before)
 })
 
-test_that("applyParameterValues() converts to base units and checks the length", {
+test_that("simulate() applies the values in base units and checks their length", {
   task <- testPiTask()
   model <- taskModel(task)
   simId <- names(task$simulations)[[1]]
   path <- task$parameters[[1]]$parameters[[1]]$path
-  model$applyParameterValues(0.5)
+  model$simulate(0.5)
   expect_identical(
     model$variableParameters[[simId]][[path]],
     .toBaseValue(task$parameters[[1]], 0.5)
   )
   expect_error(
-    model$applyParameterValues(c(0.5, 0.5)),
+    model$simulate(c(0.5, 0.5)),
     messages$errorParameterValuesLengthMismatch(1, 2),
     fixed = TRUE
   )

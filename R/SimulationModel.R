@@ -94,6 +94,43 @@ SimulationModel <- R6::R6Class(
         function(simulation) simulation$name,
         character(1)
       )
+    },
+
+    # Applies a vector of optimizer values, one entry per `PIParameters` group,
+    # to every underlying model parameter. Values arrive in each group's
+    # `$unit`. `addRunValues()` reads base units, so they are converted here.
+    # This is the only place that writes into the variable buckets.
+    # State-variable (RHS-defined) parameters go into the molecule buckets,
+    # all others into the parameter buckets.
+    .applyParameterValues = function(values) {
+      if (length(values) != length(private$.parameters)) {
+        stop(messages$errorParameterValuesLengthMismatch(
+          length(private$.parameters),
+          length(values)
+        ))
+      }
+      baseValues <- vapply(
+        seq_along(values),
+        function(idx) {
+          .toBaseValue(private$.parameters[[idx]], values[[idx]])
+        },
+        numeric(1)
+      )
+      for (simId in names(private$.parameterTargets)) {
+        target <- private$.parameterTargets[[simId]]
+        if (length(target$parameterPaths) > 0) {
+          private$.variableParameters[[simId]] <- stats::setNames(
+            baseValues[target$parameterGroups],
+            target$parameterPaths
+          )
+        }
+        if (length(target$moleculePaths) > 0) {
+          private$.variableMolecules[[simId]] <- stats::setNames(
+            baseValues[target$moleculeGroups],
+            target$moleculePaths
+          )
+        }
+      }
     }
   ),
   active = list(
@@ -242,7 +279,7 @@ SimulationModel <- R6::R6Class(
       # Seed each optimization parameter's start value into its variable
       # bucket, from which the batches below are built
       private$.parameterTargets <- .resolveParameterTargets(parameters)
-      self$applyParameterValues(
+      private$.applyParameterValues(
         vapply(parameters, function(p) p$startValue, numeric(1))
       )
 
@@ -282,46 +319,6 @@ SimulationModel <- R6::R6Class(
       # }
     },
 
-    # Applies a vector of optimizer values, one entry per `PIParameters` group,
-    # to every underlying model parameter. Values arrive in each group's
-    # `$unit`. `addRunValues()` reads base units, so they are converted here.
-    # This is the only place that writes into the variable buckets.
-    # State-variable (RHS-defined) parameters go into the molecule buckets,
-    # all others into the parameter buckets.
-    #
-    # @param values Vector of parameter values.
-    applyParameterValues = function(values) {
-      if (length(values) != length(private$.parameters)) {
-        stop(messages$errorParameterValuesLengthMismatch(
-          length(private$.parameters),
-          length(values)
-        ))
-      }
-      baseValues <- vapply(
-        seq_along(values),
-        function(idx) {
-          .toBaseValue(private$.parameters[[idx]], values[[idx]])
-        },
-        numeric(1)
-      )
-      for (simId in names(private$.parameterTargets)) {
-        target <- private$.parameterTargets[[simId]]
-        if (length(target$parameterPaths) > 0) {
-          private$.variableParameters[[simId]] <- stats::setNames(
-            baseValues[target$parameterGroups],
-            target$parameterPaths
-          )
-        }
-        if (length(target$moleculePaths) > 0) {
-          private$.variableMolecules[[simId]] <- stats::setNames(
-            baseValues[target$moleculeGroups],
-            target$moleculePaths
-          )
-        }
-      }
-      invisible(self)
-    },
-
     # Applies the parameter values to the simulation batches and runs them.
     # If a simulation whose results are used fails, stops with the names of
     # the simulations that failed and the reasons given by the simulation
@@ -341,7 +338,7 @@ SimulationModel <- R6::R6Class(
     #   simulation IDs.
     simulate = function(values, usedSimulations = NULL, silentMode = FALSE) {
       usedSimulations <- usedSimulations %||% names(private$.simulationBatches)
-      self$applyParameterValues(values)
+      private$.applyParameterValues(values)
 
       ##### 2DO - implement Steady-State when issue in Core is fixed
       # # Simulate steady-states if specified
