@@ -727,3 +727,39 @@ test_that("Hessian CI uses r from ciOptions to control number of iterations", {
   expect_equal(evalCount, 27L)
   expect_null(ciResult$error)
 })
+
+test_that("Hessian CI reports a failed Hessian calculation", {
+  local_mocked_bindings(
+    hessian = function(...) stop("function evaluation failed"),
+    .package = "numDeriv"
+  )
+  optimizer <- Optimizer$new(PIConfiguration$new())
+  suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_snapshot(ciResult$error)
+  expect_true(all(is.na(ciResult$sd)))
+})
+
+test_that("Hessian CI reports a singular Hessian", {
+  local_mocked_bindings(
+    hessian = function(...) matrix(0, 3, 3),
+    .package = "numDeriv"
+  )
+  optimizer <- Optimizer$new(PIConfiguration$new())
+  suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest
+    )
+  )
+  expect_snapshot(ciResult$error)
+  expect_true(all(is.na(ciResult$sd)))
+})
