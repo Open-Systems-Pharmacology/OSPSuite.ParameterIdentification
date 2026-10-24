@@ -7,15 +7,15 @@
         Public:
           algorithm: active binding
           ciMethod: active binding
-          estimateCI: function (par, fn, lower, upper, optimizer = NULL, resetFn = NULL) 
+          estimateCI: function (par, fn, lower, upper, optimizer = NULL, replicate = NULL) 
           initialize: function (configuration) 
           modelCostField: active binding
           run: function (par, fn, lower, upper, fixedParams = NULL) 
         Private:
-          .computeProfileCI: function (par, fn, optimizer, p, direction, controlCI, resetFn = NULL) 
+          .computeProfileCI: function (par, fn, optimizer, p, direction, controlCI) 
           .configuration: PIConfiguration, R6
-          .estimateBootstrapCI: function (par, fn, lower, upper, controlCI, optimizer = NULL, 
-          .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer, resetFn = NULL) 
+          .estimateBootstrapCI: function (par, lower, upper, controlCI, replicate) 
+          .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer) 
           .estimateHessianCI: function (par, fn, controlCI) 
           .formatOptimizationOutput: function (optimResult, controlOptim = list()) 
           .initializeCIResult: function () 
