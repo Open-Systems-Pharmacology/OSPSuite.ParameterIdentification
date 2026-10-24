@@ -506,12 +506,6 @@ messages$errorPKMultiIndividualSimulation <- function(
   )
 }
 
-messages$errorPKZeroTarget <- function(pkParameter, quantityPath) {
-  ospsuite.utils::cliFormat(
-    "Target value for {.val {pkParameter}} at {.val {quantityPath}} is zero or negative. Cannot compute relative cost."
-  )
-}
-
 messages$pkValueNotFinite <- function(pkParameter, quantityPath) {
   ospsuite.utils::cliFormat(
     "The PK parameter {.val {pkParameter}} of {.val {quantityPath}} is not finite."

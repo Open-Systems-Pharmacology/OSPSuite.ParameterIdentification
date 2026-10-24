@@ -166,3 +166,57 @@ test_that("PKObjective validates the model and the mappings", {
     fixed = TRUE
   )
 })
+
+test_that("estimateCI() gives the PK mode error before the missing result error", {
+  task <- pkTask()
+  simulation <- task$simulations[[1]]
+  before <- simulationOutputs(simulation)
+  expect_error(
+    task$estimateCI(),
+    messages$errorMethodNotApplicableInPKMode("estimateCI"),
+    fixed = TRUE
+  )
+  expect_identical(simulationOutputs(simulation), before)
+})
+
+test_that("ParameterIdentification stops when a simulation has no parameter of the task in PK mode", {
+  simulations <- list(freshSimulation(), freshSimulation())
+  expect_error(
+    ParameterIdentification$new(
+      simulations = simulations,
+      parameters = testPKParameters(simulations[[1]]),
+      pkOutputMappings = list(pkMapping(simulations[[1]]), pkMapping(simulations[[2]]))
+    ),
+    "Mismatch or missing ID detected",
+    fixed = TRUE
+  )
+})
+
+test_that("run() in PK mode counts a failed evaluation and gives an infinite cost", {
+  simulation <- freshSimulation()
+  simulation$solver$mxStep <- 1
+  task <- pkTask(simulation)
+  priv <- task$.__enclos_env__$private
+  expect_error(suppressMessages(task$run()), class = "initialSimulationError")
+  cost <- suppressMessages(priv$.pkObjectiveFunction(startValues(task)))
+  expect_identical(cost, Inf)
+  expect_identical(priv$.failedEvaluations, 1)
+  expect_identical(priv$.fnEvaluations, 1)
+})
+
+test_that("run() in PK mode reads the achieved PK values through the objective", {
+  task <- pkTask()
+  result <- suppressMessages(task$run())
+  priv <- task$.__enclos_env__$private
+  expect_s3_class(result, "PKResult")
+  expect_s3_class(priv$.objective, "PKObjective")
+  achieved <- priv$.objective$pkValues(priv$.lastOptimResult$par)[[1]]
+  expect_equal(
+    result$toDataFrame()$achievedValue,
+    ospsuite::toUnit(
+      task$pkOutputMappings[[1]]$quantity,
+      achieved,
+      targetUnit = task$pkOutputMappings[[1]]$targetUnit
+    )
+  )
+})
