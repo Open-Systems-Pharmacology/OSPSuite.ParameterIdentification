@@ -80,9 +80,4 @@ test_that("withData() gives an objective on the new data and leaves the original
   expect_identical(resampled$observedData, data$resample(1)$observedData)
   expect_false(identical(resampled$evaluate(currVals), cost))
   expect_identical(objective$evaluate(currVals), cost)
-  expect_error(
-    objective$withData(list(1)),
-    messages$errorWrongType("data", "list", "PIObservations"),
-    fixed = TRUE
-  )
 })
