@@ -439,10 +439,15 @@ SimulationModel <- R6::R6Class(
         resultObject <- simulationResults[[simId]][[1]]
         times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
         simulated[[idx]] <- .simulatedValues(resultObject, path, times[[simId]])
-        # `.prepareObservedData()` drops observations with a negative,
-        # missing or infinite time
-        observedTimes <- .observedTimes(outputMappings[[idx]])
-        usedTimes <- observedTimes[is.finite(observedTimes) & observedTimes >= 0]
+        # Only the observations that enter the cost are checked (see
+        # `.finiteValues()`)
+        mapping <- outputMappings[[idx]]
+        observedTimes <- .observedTimes(mapping)
+        observedValues <- unlist(
+          lapply(mapping$observedDataSets, function(dataset) dataset$yValues),
+          use.names = FALSE
+        )
+        usedTimes <- observedTimes[.finiteValues(observedTimes, observedValues)]
         if (anyNA(.valuesAtTimes(simulated[[idx]], usedTimes))) {
           stop(.simulationsFailedError(
             private$.simulationNames(),

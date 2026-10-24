@@ -145,6 +145,20 @@ test_that("simulatedOutputs() tolerates NA values before the observed times", {
   expect_identical(simulated[[1]]$yValues[[length(simulated[[1]]$yValues)]], 1)
 })
 
+test_that("simulatedOutputs() ignores observed times with a missing value", {
+  task <- testPiTask()
+  dataSet <- task$outputMappings[[1]]$observedDataSets[[1]]
+  firstObservedTime <- min(.observedTimes(task$outputMappings[[1]]))
+  dataSet$setValues(
+    xValues = dataSet$xValues,
+    yValues = replace(dataSet$yValues, which.min(dataSet$xValues), NA_real_)
+  )
+  model <- taskModel(task)
+  local_mocked_bindings(.simulatedValues = mockSimulatedValues(firstObservedTime))
+  simulated <- model$simulatedOutputs(startValues(task), task$outputMappings)
+  expect_true(is.na(simulated[[1]]$yValues[[1]]))
+})
+
 test_that("simulatedOutputs() ignores observed times below zero", {
   task <- testPiTask()
   mapping <- task$outputMappings[[1]]
