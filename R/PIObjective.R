@@ -1,10 +1,12 @@
 #' @title PIObjective
 #' @docType class
 #' @description The cost of a parameter vector for the output mappings and
-#'   the observed data it was built with. `evaluate()` is a pure function of
-#'   the parameter values: it does not count, track or print anything. The
-#'   `ParameterIdentification` facade builds one objective per public call
-#'   and per bootstrap sample and wraps it in its evaluation closure.
+#'   the observed data it was built with. `evaluate()` keeps no state between
+#'   calls. Counting the evaluations and tracking the best cost are left to
+#'   the `ParameterIdentification` facade, which builds one objective per
+#'   public call and per bootstrap sample and wraps it in its evaluation
+#'   closure. The `simulate` function of the facade logs and counts failed
+#'   simulations, and the cost calculation warns about an invalid cost.
 #'
 #' @keywords internal
 #' @noRd
@@ -42,8 +44,6 @@ PIObjective <- R6::R6Class(
     # @param simulate `function(values)` returning the simulated values of
     #   every output mapping, in the order of `outputMappings`.
     initialize = function(outputMappings, objectiveFunctionOptions, simulate) {
-      ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
-      ospsuite.utils::validateIsOfType(simulate, "function")
       private$.outputMappings <- outputMappings
       private$.simulate <- simulate
       private$.observedData <- lapply(outputMappings, .prepareObservedData)

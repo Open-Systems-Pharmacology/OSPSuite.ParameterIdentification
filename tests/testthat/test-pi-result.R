@@ -73,20 +73,3 @@ test_that("toDataFrame() returns one row per grouped parameter", {
   expect_equal(df$estimate, c(1.0, 1.0))
   expect_equal(df$group, c("1", "1"))
 })
-
-test_that("PIResult rejects cost details that are not a modelCost object", {
-  optimResult <- list(
-    par = 1.0,
-    value = 100,
-    startValues = 1.5,
-    convergence = TRUE,
-    iterations = 10,
-    fnEvaluations = 10,
-    algorithm = "BOBYQA",
-    elapsed = 1.0
-  )
-  expect_snapshot(
-    PIResult$new(optimResult, costDetails = list(modelCost = 1)),
-    error = TRUE
-  )
-})

@@ -11,8 +11,6 @@
 
 ## Minor improvements and bug fixes
 
-- `Optimizer$estimateCI()` with the Hessian method now stops when the objective function value has no `costVariables$weightedSSR` and `costVariables$nObservations`, instead of silently assuming defaults, and `PIResult` checks that its cost details are a `modelCost` object. `?PIResult` lists its fields.
-
 # ospsuite.parameteridentification 2.3.0
 
 ## Breaking changes

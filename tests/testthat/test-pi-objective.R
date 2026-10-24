@@ -1,34 +1,3 @@
-test_that(".validateModelCost() accepts the objects of .newModelCost()", {
-  cost <- .newModelCost(
-    modelCost = 2,
-    minLogProbability = 1,
-    nObservations = 3,
-    weightedSSR = 2
-  )
-  expect_identical(.validateModelCost(cost), cost)
-  expect_invisible(.validateModelCost(.createErrorCostStructure()))
-})
-
-test_that(".validateModelCost() names what is wrong", {
-  cost <- .newModelCost(
-    modelCost = 2,
-    minLogProbability = 1,
-    nObservations = 3,
-    weightedSSR = 2
-  )
-  expect_snapshot(.validateModelCost(list(modelCost = 2)), error = TRUE)
-  expect_snapshot(.validateModelCost(unclass(cost)), error = TRUE)
-  noResiduals <- cost
-  noResiduals$residualDetails <- NULL
-  expect_snapshot(.validateModelCost(noResiduals), error = TRUE)
-  fewerColumns <- cost
-  fewerColumns$costVariables$rawSSR <- NULL
-  expect_snapshot(.validateModelCost(fewerColumns), error = TRUE)
-  vectorCost <- cost
-  vectorCost$modelCost <- c(1, 2)
-  expect_snapshot(.validateModelCost(vectorCost), error = TRUE)
-})
-
 startValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
@@ -49,7 +18,6 @@ test_that("evaluate() returns the modelCost of the frozen objective function", {
   currVals <- startValues(task)
   cost <- objective$evaluate(currVals)
   expect_s3_class(cost, "modelCost")
-  expect_invisible(.validateModelCost(cost))
   expect_identical(cost, frozenObjectiveFunction(task, currVals))
 })
 
@@ -92,21 +60,13 @@ test_that("an infinite cost of successful simulations is not counted as a failed
   expect_identical(priv$.lastCostSummary, cost)
 })
 
-test_that("PIObjective validates its inputs", {
+test_that("observedData of PIObjective is read-only", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
-  expect_error(
-    PIObjective$new(list(1), options, function(values) NULL),
-    messages$errorWrongType("outputMappings", "list", "PIOutputMapping"),
-    fixed = TRUE
-  )
-  expect_error(
-    PIObjective$new(priv$.outputMappings, options, simulate = NULL),
-    messages$errorWrongType("simulate", "NULL", "function"),
-    fixed = TRUE
-  )
-  objective <- PIObjective$new(priv$.outputMappings, options, function(values) NULL)
+  objective <- PIObjective$new(priv$.outputMappings, options, function(values) {
+    NULL
+  })
   expect_snapshot(objective$observedData <- NULL, error = TRUE)
 })

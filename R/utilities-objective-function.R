@@ -648,56 +648,6 @@
   )
 }
 
-#' Validate a `modelCost` object
-#'
-#' Defines the `modelCost` structure that `.newModelCost()` builds, the
-#' objective function returns and `PIResult` stores.
-#'
-#' @param x The object to validate.
-#' @return `x`, invisibly. Stops with `messages$errorModelCostStructure()`
-#'   when `x` is not a `modelCost` object with the fields and columns of
-#'   `.newModelCost()`.
-#' @keywords internal
-#' @noRd
-.validateModelCost <- function(x) {
-  fields <- c(
-    "modelCost", "minLogProbability", "costVariables", "residualDetails"
-  )
-  costVariableColumns <- c(
-    "nObservations", "M3Contribution", "rawSSR", "weightedSSR"
-  )
-  residualColumns <- c(
-    "index", "x", "yObserved", "ySimulated", "scaleFactor", "errorWeights",
-    "robustWeights", "userWeights", "totalWeights", "rawResiduals",
-    "weightedResiduals"
-  )
-  isScalar <- function(value) is.numeric(value) && length(value) == 1L
-  hasColumns <- function(value, columns) {
-    is.data.frame(value) && identical(names(value), columns)
-  }
-  problem <- if (!inherits(x, "modelCost")) {
-    "it does not have the class modelCost"
-  } else if (!identical(names(x), fields)) {
-    paste("its fields are not", paste(fields, collapse = ", "))
-  } else if (!isScalar(x$modelCost) || !isScalar(x$minLogProbability)) {
-    "modelCost and minLogProbability are not single numbers"
-  } else if (!hasColumns(x$costVariables, costVariableColumns)) {
-    paste(
-      "costVariables does not have the columns",
-      paste(costVariableColumns, collapse = ", ")
-    )
-  } else if (!hasColumns(x$residualDetails, residualColumns)) {
-    paste(
-      "residualDetails does not have the columns",
-      paste(residualColumns, collapse = ", ")
-    )
-  }
-  if (!is.null(problem)) {
-    stop(messages$errorModelCostStructure(problem))
-  }
-  invisible(x)
-}
-
 #' Compute error-based residual weights
 #'
 #' @param yValues Vector of y-values on the linear scale, required for
