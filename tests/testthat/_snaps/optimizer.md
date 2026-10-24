@@ -141,3 +141,17 @@
         1), dim = c(3L, 3L))), ciType = c("two-sided", "two-sided", 
     "two-sided"))
 
+# Hessian CI reports a failed Hessian calculation
+
+    Code
+      ciResult$error
+    Output
+      [1] "Error during CI estimation step 'Hessian calculation': function evaluation failed"
+
+# Hessian CI reports a singular Hessian
+
+    Code
+      ciResult$error
+    Output
+      [1] "Error during CI estimation step 'Covariance matrix calculation': Lapack routine dgesv: system is exactly singular: U[1,1] = 0"
+
