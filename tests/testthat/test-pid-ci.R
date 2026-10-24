@@ -254,7 +254,7 @@ test_that("estimateCI() outputs expected messages for mixed datasets", {
   outputMapping$setSubjectCount(13)
   outputMapping$addObservedDataSets(syntheticObservedData()) # individual
 
-  piTask <- PIResampleTester$new(
+  piTask <- ParameterIdentification$new(
     simulations = testSimulation(),
     parameters = testParameters(),
     outputMappings = outputMapping,
@@ -267,23 +267,21 @@ test_that("estimateCI() outputs expected messages for mixed datasets", {
   expect_snapshot(temp <- piTask$estimateCI())
 })
 
+# The output mapping of the last replicate of `bootstrapPiConfiguration()`:
+# `Optimizer` seeds the replicates with `set.seed(seed)` and
+# `sample(1e6, nBootstrap)`
+lastReplicate <- function(outputMapping, nBootstrap = 1) {
+  seeds <- .withSeed(2203, sample(1e6, nBootstrap))
+  data <- PIObservations$new(list(outputMapping))
+  data$resample(seeds[[nBootstrap]])$outputMappings[[1]]
+}
+
 test_that("estimateCI() applies bootstrap resampling to individual data", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(syntheticObservedData())
 
-  piTaskResample <- PIResampleTester$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = outputMapping,
-    configuration = bootstrapPiConfiguration(1, 1)
-  )
-  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
-  piTaskResample$configuration$autoEstimateCI <- FALSE
-  suppressMessages(piResult <- piTaskResample$run())
-
-  suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
-    piTaskResample$outputMappings[[1]]$dataWeights,
+    lastReplicate(outputMapping)$dataWeights,
     style = "deparse",
     tolerance = 1e-12
   )
@@ -294,19 +292,8 @@ test_that("estimateCI() applies bootstrap resampling to individual data with ini
   outputMapping$addObservedDataSets(syntheticObservedData())
   outputMapping$setDataWeights(weights)
 
-  piTaskResample <- PIResampleTester$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = outputMapping,
-    configuration = bootstrapPiConfiguration(1, 1)
-  )
-  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
-  piTaskResample$configuration$autoEstimateCI <- FALSE
-  suppressMessages(piResult <- piTaskResample$run())
-
-  suppressMessages(temp <- piTaskResample$estimateCI())
   expect_snapshot_value(
-    piTaskResample$outputMappings[[1]]$dataWeights,
+    lastReplicate(outputMapping)$dataWeights,
     style = "deparse",
     tolerance = 1e-12
   )
@@ -321,28 +308,14 @@ test_that("estimateCI() applies bootstrap resampling to mixed data (individual a
     list("AciclovirLaskinData.Laskin 1982.Group A" = 20)
   )
 
-  piTaskResample <- PIResampleTester$new(
-    simulations = testSimulation(),
-    parameters = testParameters(),
-    outputMappings = outputMapping,
-    configuration = bootstrapPiConfiguration(1, 2)
-  )
-  piTaskResample$configuration$algorithmOptions <- list(maxeval = 200L)
-  piTaskResample$configuration$autoEstimateCI <- FALSE
-  suppressMessages(piResult <- piTaskResample$run())
-
-  suppressMessages(temp <- piTaskResample$estimateCI())
+  replicate <- lastReplicate(outputMapping, nBootstrap = 2)
   expect_snapshot_value(
-    piTaskResample$outputMappings[[1]]$dataWeights,
+    replicate$dataWeights,
     style = "deparse",
     tolerance = 1e-12
   )
   expect_snapshot_value(
-    lapply(
-      piTaskResample$outputMappings[[1]]$observedDataSets,
-      "[[",
-      "yValues"
-    ),
+    lapply(replicate$observedDataSets, "[[", "yValues"),
     style = "deparse",
     tolerance = 1e-6
   )

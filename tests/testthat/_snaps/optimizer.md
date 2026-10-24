@@ -7,15 +7,15 @@
         Public:
           algorithm: active binding
           ciMethod: active binding
-          estimateCI: function (par, fn, lower, upper, optimizer = NULL, resetFn = NULL) 
+          estimateCI: function (par, fn, lower, upper, optimizer = NULL, replicate = NULL) 
           initialize: function (configuration) 
           modelCostField: active binding
           run: function (par, fn, lower, upper, fixedParams = NULL) 
         Private:
-          .computeProfileCI: function (par, fn, optimizer, p, direction, controlCI, resetFn = NULL) 
+          .computeProfileCI: function (par, fn, optimizer, p, direction, controlCI) 
           .configuration: PIConfiguration, R6
-          .estimateBootstrapCI: function (par, fn, lower, upper, controlCI, optimizer = NULL, 
-          .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer, resetFn = NULL) 
+          .estimateBootstrapCI: function (par, lower, upper, controlCI, replicate) 
+          .estimateCIProfileLikelihood: function (par, fn, controlCI, optimizer) 
           .estimateHessianCI: function (par, fn, controlCI) 
           .formatOptimizationOutput: function (optimResult, controlOptim = list()) 
           .initializeCIResult: function () 
@@ -140,6 +140,14 @@
         1, -0.0140386952666812, -0.781584854855845, -0.0140386952666812, 
         1), dim = c(3L, 3L))), ciType = c("two-sided", "two-sided", 
     "two-sided"))
+
+# estimateCI() with the bootstrap method stops without replicate
+
+    Code
+      optimizer$estimateCI(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest)
+    Condition
+      Error in `optimizer$estimateCI()`:
+      ! The bootstrap method needs `replicate`, a `function(seed)` that returns the objective function of one bootstrap replicate.
 
 # Hessian CI stops when the objective function value has no cost variables
 

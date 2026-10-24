@@ -242,17 +242,6 @@ PISimFailureTester <- R6::R6Class(
   )
 )
 
-PIResampleTester <- R6::R6Class(
-  inherit = ParameterIdentification,
-  cloneable = FALSE,
-  private = list(
-    # Override to retain modified outputMappings after bootstrap
-    .restoreOutputMappingsState = function() {
-      return(NULL)
-    }
-  )
-)
-
 
 # PI Helpers
 

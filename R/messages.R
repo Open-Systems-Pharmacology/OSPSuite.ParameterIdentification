@@ -25,10 +25,6 @@ messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
   )
 }
 
-messages$errorDataSetWeightsMismatch <- function() {
-  "Dataset weights do not align with observed datasets in output mapping."
-}
-
 messages$errorSubjectCount <- function(n) {
   maxCount <- .Machine$integer.max
   ospsuite.utils::cliFormat(
@@ -306,6 +302,12 @@ messages$objectiveFnOutputError <- function(field) {
 messages$errorHessianCostVariables <- function(fields) {
   ospsuite.utils::cliFormat(
     "The Hessian method needs {.field weightedSSR} and {.field nObservations} in {.field costVariables} of the objective function value, missing: {.val {fields}}. Return a value with these fields, for example a {.cls modelCost} object as {.cls ParameterIdentification} does, or use {.code ciMethod = \"PL\"}."
+  )
+}
+
+messages$errorBootstrapReplicateMissing <- function() {
+  ospsuite.utils::cliFormat(
+    "The bootstrap method needs {.arg replicate}, a {.code function(seed)} that returns the objective function of one bootstrap replicate."
   )
 }
 
