@@ -122,12 +122,6 @@ messages$errorSimulationsFailed <- function(
 # The first line of each reason of the simulation engine, marked as shortened
 # if the reason has more lines. For a reason of a kind that was logged in full
 # before (see `.failureReasonKinds()`).
-messages$simulatedValuesMissing <- function(path) {
-  ospsuite.utils::cliFormat(
-    "The simulated values of {.val {path}} contain {.val NA}."
-  )
-}
-
 messages$shortenedFailureReason <- function(reasons) {
   vapply(
     reasons,
@@ -140,6 +134,14 @@ messages$shortenedFailureReason <- function(reasons) {
     },
     character(1),
     USE.NAMES = FALSE
+  )
+}
+
+# A reason of a failed simulation (see `.simulationsFailedError()`), not to
+# be confused with `errorSimulatedValuesMissing()` of the cost kernel
+messages$simulatedValuesNA <- function(path) {
+  ospsuite.utils::cliFormat(
+    "The simulated values of {.val {path}} are {.val NA} at an observed time."
   )
 }
 

@@ -12,7 +12,7 @@
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
-- `run()` and `estimateCI()` treat a simulation whose output contains missing values as a failed evaluation with an infinite cost, like a simulation the engine reports as failed.
+- `run()`, `estimateCI()`, `gridSearch()` and `calculateOFVProfiles()` treat a simulated output that is `NA` at an observed time as a failed evaluation with an infinite cost, like a simulation the engine reports as failed. At the start values, this stops `run()` as a failed start simulation does.
 
 # ospsuite.parameteridentification 2.3.0
 

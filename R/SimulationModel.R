@@ -54,22 +54,9 @@ SimulationModel <- R6::R6Class(
           quantitiesOrPaths = outputMapping$quantity,
           simulation = simulation
         )
-        for (dataset in outputMapping$observedDataSets) {
-          label <- dataset$name
-          xFactor <- outputMapping$dataTransformations$xFactors
-          if (length(xFactor) != 1) {
-            xFactor <- xFactor[[label]]
-          }
-          xOffset <- outputMapping$dataTransformations$xOffsets
-          if (length(xOffset) != 1) {
-            xOffset <- xOffset[[label]]
-          }
-          xVals <- ospsuite::toBaseUnit(
-            ospsuite::ospDimensions$Time,
-            values = (dataset$xValues + xOffset) * xFactor,
-            unit = dataset$xUnit
-          )
-          simulation$outputSchema$addTimePoints(xVals)
+        observedTimes <- .observedTimes(outputMapping)
+        if (length(observedTimes) > 0) {
+          simulation$outputSchema$addTimePoints(observedTimes)
         }
       }
     },
@@ -428,8 +415,10 @@ SimulationModel <- R6::R6Class(
 
     # Runs the simulations with the parameter values and reads the simulated
     # values of every output mapping from the results as numeric vectors (see
-    # `.simulatedValues()`). An output with missing values is a failed
-    # simulation, like one the engine reports.
+    # `.simulatedValues()`). An output that is `NA` at an observed time of
+    # its mapping is a failed simulation, like one the engine reports. `NA`
+    # values elsewhere, such as a ratio that is undefined at time zero, are
+    # left to the interpolation of the cost kernel.
     #
     # @param values Vector of parameter values.
     # @param outputMappings The output mappings of the evaluation.
@@ -450,11 +439,15 @@ SimulationModel <- R6::R6Class(
         resultObject <- simulationResults[[simId]][[1]]
         times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
         simulated[[idx]] <- .simulatedValues(resultObject, path, times[[simId]])
-        if (anyNA(simulated[[idx]]$yValues)) {
+        # `.prepareObservedData()` drops observations with a negative,
+        # missing or infinite time
+        observedTimes <- .observedTimes(outputMappings[[idx]])
+        usedTimes <- observedTimes[is.finite(observedTimes) & observedTimes >= 0]
+        if (anyNA(.valuesAtTimes(simulated[[idx]], usedTimes))) {
           stop(.simulationsFailedError(
             private$.simulationNames(),
             failed = match(simId, names(private$.simulations)),
-            reasons = messages$simulatedValuesMissing(path),
+            reasons = messages$simulatedValuesNA(path),
             call = sys.call()
           ))
         }
@@ -496,3 +489,59 @@ SimulationModel <- R6::R6Class(
     }
   )
 )
+
+#' Observed times of an output mapping
+#'
+#' @param outputMapping A `PIOutputMapping` object.
+#'
+#' @return The times of all observed data sets of the mapping in min, with
+#'   the x transformations of the mapping applied.
+#' @keywords internal
+#' @noRd
+.observedTimes <- function(outputMapping) {
+  times <- lapply(outputMapping$observedDataSets, function(dataset) {
+    label <- dataset$name
+    xFactor <- outputMapping$dataTransformations$xFactors
+    if (length(xFactor) != 1) {
+      xFactor <- xFactor[[label]]
+    }
+    xOffset <- outputMapping$dataTransformations$xOffsets
+    if (length(xOffset) != 1) {
+      xOffset <- xOffset[[label]]
+    }
+    ospsuite::toBaseUnit(
+      ospsuite::ospDimensions$Time,
+      values = (dataset$xValues + xOffset) * xFactor,
+      unit = dataset$xUnit
+    )
+  })
+  unlist(times, use.names = FALSE)
+}
+
+#' Simulated values at given times
+#'
+#' @description The values of a simulated output at the given times, as the
+#'   cost kernel reads them, with `NA` wherever an `NA` value takes part in
+#'   the interpolation.
+#'
+#' @param simulated A list with `xValues` and `yValues`.
+#' @param times Times in min.
+#'
+#' @return A numeric vector of the length of `times`.
+#' @keywords internal
+#' @noRd
+.valuesAtTimes <- function(simulated, times) {
+  yValues <- simulated$yValues
+  if (length(times) == 0 || all(is.na(yValues))) {
+    return(rep(NA_real_, length(times)))
+  }
+  if (length(unique(simulated$xValues)) > 1) {
+    return(stats::approx(
+      simulated$xValues,
+      yValues,
+      xout = times,
+      na.rm = FALSE
+    )$y)
+  }
+  yValues[match(times, simulated$xValues)]
+}
