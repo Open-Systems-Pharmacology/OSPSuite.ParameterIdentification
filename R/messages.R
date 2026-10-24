@@ -303,6 +303,12 @@ messages$objectiveFnOutputError <- function(field) {
   paste0("Objective function must return a list containing '", field, "'.")
 }
 
+messages$errorHessianCostVariables <- function(fields) {
+  ospsuite.utils::cliFormat(
+    "The Hessian method needs {.field weightedSSR} and {.field nObservations} in {.field costVariables} of the objective function value, missing: {.val {fields}}. Return a value with these fields, for example a {.cls modelCost} object as {.cls ParameterIdentification} does, or use {.code ciMethod = \"PL\"}."
+  )
+}
+
 messages$ciEstimationError <- function(step, errorMessage) {
   paste0("Error during CI estimation step '", step, "': ", errorMessage)
 }

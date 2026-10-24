@@ -141,3 +141,14 @@
         1), dim = c(3L, 3L))), ciType = c("two-sided", "two-sided", 
     "two-sided"))
 
+# Hessian CI stops when the objective function value has no cost variables
+
+    Code
+      optimizer$estimateCI(par = parTest, fn = fnScalar, lower = lowerTest, upper = upperTest)
+    Message
+      Starting confidence interval estimation using 'hessian' for parameter value(s):
+        0.8000, -1.500, 2.500
+    Condition
+      Error:
+      ! The Hessian method needs weightedSSR and nObservations in costVariables of the objective function value, missing: "weightedSSR" and "nObservations". Return a value with these fields, for example a <modelCost> object as <ParameterIdentification> does, or use `ciMethod = "PL"`.
+
