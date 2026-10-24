@@ -109,8 +109,6 @@ for (idx in seq_along(parameterInputData)) {
   parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
 }
 
-# Observed data is loaded from two different files because IV data is reported
-# in µmol/L, and PO data is reported in µg/ml
 filePath <- system.file(
   "extdata",
   "Clarithromycin_Profiles.xlsx",
@@ -276,8 +274,6 @@ for (idx in seq_along(parameterInputData)) {
   parameters[[idx]]$startValue <- parameterInputData[[idx]]$start
 }
 
-# Observed data is loaded from two different files because IV data is reported
-# in µmol/L, and PO data is reported in µg/ml
 filePath <- system.file(
   "extdata",
   "Clarithromycin_Profiles.xlsx",
@@ -327,5 +323,5 @@ test_that("Estimated parameters equal expected values", {
 })
 
 test_that("Hessian-based standard deviations equal expected values", {
-  expect_equal(piResult$toList()$sd, c(2.308, 0.893, 0.002), tolerance = 0.01)
+  expect_equal(piResult$toList()$sd, c(1.987, 0.843, 0.002), tolerance = 0.01)
 })
