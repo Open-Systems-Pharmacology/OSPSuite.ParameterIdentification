@@ -146,11 +146,3 @@
                sd        cv   lowerCI  upperCI ciType initialValue
       1 0.2073337 0.1578494 0.9071235 1.719857   <NA>       -0.097
 
-# PIResult rejects cost details that are not a modelCost object
-
-    Code
-      PIResult$new(optimResult, costDetails = list(modelCost = 1))
-    Condition
-      Error in `.validateModelCost()`:
-      ! The cost details are not a valid <modelCost> object as built by the objective function: it does not have the class modelCost.
-

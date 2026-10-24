@@ -12,7 +12,6 @@
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
-- `Optimizer$estimateCI()` with the Hessian method now stops when the objective function value has no `costVariables$weightedSSR` and `costVariables$nObservations`, instead of silently assuming defaults, and `PIResult` checks that its cost details are a `modelCost` object. `?PIResult` lists its fields.
 
 # ospsuite.parameteridentification 2.3.0
 
