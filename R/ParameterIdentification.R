@@ -326,7 +326,7 @@ ParameterIdentification <- R6::R6Class(
     #
     # Built on the first evaluation after `.batchInitialization()` or a new
     # bootstrap sample, which reads the observed data once (#271). Its
-    # `simulate` function logs a failed simulation (see
+    # `simulate` function logs and counts a failed simulation (see
     # `.logSimulationFailure()`) and signals it again, so that `evaluate()`
     # returns the error cost structure.
     #
@@ -339,13 +339,14 @@ ParameterIdentification <- R6::R6Class(
       if (is.null(private$.objective)) {
         private$.objective <- PIObjective$new(
           outputMappings = outputMappings,
-          objectiveFunctionOptions =
-            private$.configuration$objectiveFunctionOptions,
+          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
           simulate = function(values) {
             tryCatch(
               private$.simulateOutputs(values, outputMappings = outputMappings),
               simulationsFailedError = function(cond) {
                 private$.logSimulationFailure(values, cond)
+                message(messages$simulationError())
+                private$.failedEvaluations <- private$.failedEvaluations + 1
                 stop(cond)
               }
             )
@@ -370,12 +371,12 @@ ParameterIdentification <- R6::R6Class(
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
       objective <- private$.objectiveFor(bootstrapSeed)
+      failedEvaluations <- private$.failedEvaluations
       runningCost <- objective$evaluate(currVals)
       private$.observedData <- objective$observedData
 
-      if (is.infinite(runningCost$modelCost)) {
-        message(messages$simulationError())
-        private$.failedEvaluations <- private$.failedEvaluations + 1
+      # The simulate closure of `.objectiveFor()` counts failed simulations
+      if (private$.failedEvaluations > failedEvaluations) {
         return(runningCost)
       }
 

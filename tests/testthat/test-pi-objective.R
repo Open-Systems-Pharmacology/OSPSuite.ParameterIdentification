@@ -79,6 +79,19 @@ test_that("evaluate() returns the error cost structure silently when the simulat
   expect_identical(priv$.failedEvaluations, 0)
 })
 
+test_that("an infinite cost of successful simulations is not counted as a failed evaluation", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  priv$.objective <- list(
+    evaluate = function(values) .createErrorCostStructure(),
+    observedData = NULL
+  )
+  cost <- priv$.objectiveFunction(startValues(task))
+  expect_identical(priv$.failedEvaluations, 0)
+  expect_identical(priv$.lastCostSummary, cost)
+})
+
 test_that("PIObjective validates its inputs", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
