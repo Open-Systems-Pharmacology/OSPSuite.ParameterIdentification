@@ -53,3 +53,21 @@ test_that("plotOFVProfiles() x-axis label is the last `|`-segment of the paramet
   expect_equal(plot$labels$x, "paramZ")
   expect_equal(plot$labels$title, longPath)
 })
+
+test_that(".observedVsPredicted() pairs the simulated and observed data of each mapping", {
+  task <- testPiTask()
+  model <- SimulationModel$new(
+    simulations = task$simulations,
+    parameters = task$parameters,
+    outputMappings = task$outputMappings
+  )
+  results <- model$simulate(task$parameters[[1]]$startValue)
+  dataCombined <- .observedVsPredicted(results, task$outputMappings)
+  expect_length(dataCombined, 1)
+  df <- dataCombined[[1]]$toDataFrame()
+  expect_setequal(unique(df$dataType), c("simulated", "observed"))
+  expect_identical(
+    as.character(unique(df$group)),
+    task$outputMappings[[1]]$quantity$path
+  )
+})

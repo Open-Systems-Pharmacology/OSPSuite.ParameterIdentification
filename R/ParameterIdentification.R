@@ -234,47 +234,6 @@ ParameterIdentification <- R6::R6Class(
       function(values) evaluate(values)[[costField]]
     },
 
-    # Simulation Evaluation with Parameter Values
-    #
-    # Evaluates simulations using specified parameter values, updating each
-    # parameter before simulation runs. Generates `DataCombined` objects for
-    # each output mapping, encapsulating both simulated and observed data.
-    # Used for plotting; the objective uses
-    # `SimulationModel$simulatedOutputs()`.
-    #
-    # @param currVals Vector of parameter values for simulation.
-    # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals) {
-      outputMappings <- private$.outputMappings
-      simulationResults <- private$.model$simulate(currVals)
-      private$.mirrorModel()
-
-      obsVsPredList <- vector("list", length(outputMappings))
-      for (idx in seq_along(outputMappings)) {
-        obsVsPred <- ospsuite::DataCombined$new()
-        currOutputMapping <- outputMappings[[idx]]
-        # Construct group names out of output path and simulation id
-        groupName <- currOutputMapping$quantity$path
-        # In each iteration, only one values set per simulation batch is
-        # simulated. Therefore we always need the first results entry of the
-        # simulation that is the parent of the output quantity.
-        resultObject <- simulationResults[[currOutputMapping$simId]][[1]]
-        obsVsPred$addSimulationResults(
-          resultObject,
-          quantitiesOrPaths = currOutputMapping$quantity$path,
-          names = groupName,
-          groups = groupName
-        )
-        # Observed data in the same group, with the data transformations of
-        # the output mapping
-        .addObservedData(obsVsPred, currOutputMapping)
-        obsVsPredList[[idx]] <- obsVsPred
-      }
-      rm(simulationResults)
-
-      return(obsVsPredList)
-    },
-
     # Shims for the tests until they are rewritten against the new classes
     # (step 9). The buckets of the model are mirrored after every simulation
     # because the tests read them from the facade.
@@ -287,6 +246,12 @@ ParameterIdentification <- R6::R6Class(
     .applyParameterValues = function(values) {
       private$.model$.__enclos_env__$private$.applyParameterValues(values)
       private$.mirrorModel()
+    },
+    # The `DataCombined` objects of the plots, one per output mapping
+    .evaluate = function(currVals) {
+      simulationResults <- private$.model$simulate(currVals)
+      private$.mirrorModel()
+      .observedVsPredicted(simulationResults, private$.outputMappings)
     },
     .runSimulations = function(
       currVals,
@@ -701,8 +666,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       private$.objectiveSupporting("supportsPlots", "plotResults")
 
-      # Run evaluate once. If the input argument is missing, run with current
-      # values. Otherwise, use the supplied values
+      # Simulate once, with the current values unless `par` is given
       parValues <- unlist(
         lapply(self$parameters, function(x) {
           x$currValue
@@ -712,83 +676,9 @@ ParameterIdentification <- R6::R6Class(
       if (!is.null(par)) {
         parValues <- par
       }
-      dataCombined <- private$.evaluate(parValues)
-
-      previousTheme <- ggplot2::theme_get()
-      on.exit(ggplot2::theme_set(previousTheme), add = TRUE)
-      ggplot2::theme_update(legend.title = ggplot2::element_blank())
-
-      # ospsuite.plots sets explicit guide titles via guide_legend(title = ...),
-      # which override theme(legend.title). Strip them with labs(NULL) so the
-      # collected legend has no title, and drop redundant aesthetic legends so
-      # the three sub-plots can be merged into a single legend.
-      stripGuides <- ggplot2::labs(
-        colour = NULL,
-        fill = NULL,
-        shape = NULL,
-        linetype = NULL
-      )
-
-      multiPlot <- lapply(seq_along(dataCombined), function(idx) {
-        scaling <- private$.outputMappings[[idx]]$scaling
-        axisScale <- if (scaling == "lin") "linear" else "log"
-
-        # The simulated line (linetype = name) and observed point (shape =
-        # name) each carry their own clean, specifically-labelled legend guide.
-        # Show those and hide the redundant colour/group guide (whose key mixes
-        # line and point). Pin the two guides' order so the collected legend is
-        # deterministic, which ggplot otherwise leaves unstable across runs.
-        indivTimeProfile <- ospsuite::plotTimeProfile(
-          dataCombined[[idx]],
-          yScale = axisScale
-        ) +
-          stripGuides +
-          ggplot2::guides(
-            colour = "none",
-            fill = "none",
-            linetype = ggplot2::guide_legend(order = 1),
-            shape = ggplot2::guide_legend(order = 2)
-          )
-        predVsObs <- ospsuite::plotPredictedVsObserved(
-          dataCombined[[idx]],
-          xyScale = axisScale
-        ) +
-          stripGuides +
-          ggplot2::guides(
-            colour = "none",
-            fill = "none",
-            shape = "none"
-          )
-        resVsTime <- ospsuite::plotResidualsVsCovariate(
-          dataCombined[[idx]],
-          xAxis = "time",
-          residualScale = axisScale
-        ) +
-          stripGuides +
-          ggplot2::guides(
-            colour = "none",
-            fill = "none",
-            shape = "none",
-            linetype = "none"
-          )
-
-        patchwork::wrap_plots(
-          list(indivTimeProfile, predVsObs, resVsTime),
-          ncol = 1
-        ) +
-          patchwork::plot_layout(guides = "collect") &
-          ggplot2::theme(
-            legend.position = "top",
-            legend.title = ggplot2::element_blank(),
-            legend.box = "vertical",
-            legend.direction = "horizontal",
-            legend.spacing.y = ggplot2::unit(0, "pt"),
-            legend.margin = ggplot2::margin(0, 0, 0, 0),
-            aspect.ratio = 0.4
-          )
-      })
-
-      return(multiPlot)
+      simulationResults <- private$.model$simulate(parValues)
+      private$.mirrorModel()
+      .plotObsVsPred(simulationResults, private$.outputMappings)
     },
 
     #' Perform a Parameter Grid Search
