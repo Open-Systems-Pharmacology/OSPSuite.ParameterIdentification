@@ -1,33 +1,14 @@
 #' @title PKResult
 #' @docType class
-#' @description Structured output of a PK-target parameter identification task,
-#' including optimization results, achieved PK values, and mapping metadata.
+#' @description Structured output of a PK-target parameter identification task.
+#' A `PIResult` whose `toDataFrame()` and `print()` show the PK targets and the
+#' achieved PK values.
 #'
 #' @keywords internal
 #' @format NULL
 PKResult <- R6::R6Class(
   "PKResult",
-  cloneable = TRUE,
-  private = list(
-    .result = NULL,
-    .parameters = NULL,
-
-    .toDisplayUnit = function(val, pkParameter, targetUnit) {
-      if (anyNA(val)) {
-        return(NA_real_)
-      }
-      dim <- ospsuite::pkParameterByName(
-        pkParameter,
-        stopIfNotFound = TRUE
-      )$dimension
-      val /
-        ospsuite::toBaseUnit(
-          quantityOrDimension = dim,
-          values = 1,
-          unit = targetUnit
-        )
-    }
-  ),
+  inherit = PIResult,
   public = list(
     #' @description Initializes a `PKResult` instance. For internal use only.
     #'
@@ -37,55 +18,26 @@ PKResult <- R6::R6Class(
     #' @param pkMappings A list of `PKOutputMapping` objects.
     #' @param achievedPKValues A list of numeric scalars with the PK parameter
     #'   values achieved at the optimized parameter estimate.
+    #' @param costDetails (Optional) The cost details of the best evaluation,
+    #'   a `modelCost` object.
+    #' @param configuration (Optional) The `PIConfiguration` object used during
+    #'   parameter identification.
     #'
     #' @keywords internal
     initialize = function(
       optimResult,
       piParameters = NULL,
       pkMappings,
-      achievedPKValues
+      achievedPKValues,
+      costDetails = NULL,
+      configuration = NULL
     ) {
-      private$.parameters <- tryCatch(
-        {
-          if (!is.null(piParameters)) {
-            do.call(
-              rbind,
-              lapply(seq_along(piParameters), function(i) {
-                piParameters[[i]]$toDataFrame(group = as.character(i))
-              })
-            )
-          } else {
-            NULL
-          }
-        },
-        error = function(e) {
-          warning(messages$warnParameterMetadata(e$message))
-          NULL
-        }
-      )
-
-      private$.result <- list(
-        finalParameters = optimResult$par,
-        objectiveValue = optimResult$value,
-        initialParameters = optimResult$startValues,
-        convergence = if (!is.finite(optimResult$value)) {
-          FALSE
-        } else {
-          optimResult$convergence
-        },
-        convergenceMessage = optimResult$convergenceMessage,
-        algorithm = optimResult$algorithm,
-        elapsed = optimResult$elapsed,
-        iterations = optimResult$iterations,
-        fnEvaluations = optimResult$fnEvaluations,
-        pkMappings = lapply(pkMappings, function(m) {
-          list(
-            quantityPath = m$quantity$path,
-            pkParameter = m$pkParameter,
-            targetValue = m$targetValue,
-            targetUnit = m$targetUnit
-          )
-        }),
+      super$initialize(
+        optimResult = optimResult,
+        costDetails = costDetails,
+        configuration = configuration,
+        piParameters = piParameters,
+        pkMappings = pkMappings,
         achievedPKValues = achievedPKValues
       )
     },
@@ -149,11 +101,6 @@ PKResult <- R6::R6Class(
         parameterPath = paramPaths[paramIdx],
         stringsAsFactors = FALSE
       )
-    },
-    #' @description Returns the full internal result list.
-    #' @return A named list containing all result values.
-    toList = function() {
-      private$.result
     },
     #' @description Prints a summary of `PKResult`
     print = function() {
