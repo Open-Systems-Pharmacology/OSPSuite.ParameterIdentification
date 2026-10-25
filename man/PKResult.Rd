@@ -5,20 +5,28 @@
 \alias{PKResult}
 \title{PKResult}
 \description{
-Structured output of a PK-target parameter identification task,
-including optimization results, achieved PK values, and mapping metadata.
+Structured output of a PK-target parameter identification task.
+A \code{PIResult} whose \code{toDataFrame()} and \code{print()} show the PK targets and the
+achieved PK values.
 }
 \keyword{internal}
+\section{Super class}{
+\code{\link[ospsuite.parameteridentification:PIResult]{PIResult}} -> \code{PKResult}
+}
 \section{Methods}{
 \subsection{Public methods}{
   \itemize{
     \item \href{#method-PKResult-initialize}{\code{PKResult$new()}}
     \item \href{#method-PKResult-toDataFrame}{\code{PKResult$toDataFrame()}}
-    \item \href{#method-PKResult-toList}{\code{PKResult$toList()}}
     \item \href{#method-PKResult-print}{\code{PKResult$print()}}
     \item \href{#method-PKResult-clone}{\code{PKResult$clone()}}
   }
 }
+\if{html}{\out{<details open><summary>Inherited methods</summary>
+<ul>
+  <li><span class="pkg-link" data-pkg="ospsuite.parameteridentification" data-topic="PIResult" data-id="toList"><a href='../../ospsuite.parameteridentification/html/PIResult.html#method-PIResult-toList'><code>PIResult$toList()</code></a></span></li>
+</ul>
+</details>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-PKResult-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-PKResult-initialize}{}}}
@@ -26,7 +34,14 @@ including optimization results, achieved PK values, and mapping metadata.
   Initializes a \code{PKResult} instance. For internal use only.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{PKResult$new(optimResult, piParameters = NULL, pkMappings, achievedPKValues)}
+    \preformatted{PKResult$new(
+  optimResult,
+  piParameters = NULL,
+  pkMappings,
+  achievedPKValues,
+  costDetails = NULL,
+  configuration = NULL
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -38,6 +53,10 @@ the optimization.}
       \item{\code{pkMappings}}{A list of \code{PKOutputMapping} objects.}
       \item{\code{achievedPKValues}}{A list of numeric scalars with the PK parameter
 values achieved at the optimized parameter estimate.}
+      \item{\code{costDetails}}{(Optional) The cost details of the best evaluation,
+a \code{modelCost} object.}
+      \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
+parameter identification.}
     }
     \if{html}{\out{</div>}}
   }
@@ -70,21 +89,6 @@ number of PK mappings.
 \item \code{parameterPath}: Path of the optimized parameter in the simulation
 (\code{NA} when \code{piParameters} was not provided)
 }
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-PKResult-toList"></a>}}
-\if{latex}{\out{\hypertarget{method-PKResult-toList}{}}}
-\subsection{\code{PKResult$toList()}}{
-  Returns the full internal result list.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{PKResult$toList()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A named list containing all result values.
   }
 }
 

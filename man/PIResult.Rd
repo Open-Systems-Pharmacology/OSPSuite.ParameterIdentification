@@ -6,8 +6,8 @@
 \title{PIResult}
 \description{
 Structured output of a parameter identification task, including
-optimization results, confidence intervals, parameter metadata, and
-configuration.
+optimization results, confidence intervals, parameter metadata,
+configuration and, for PK targets, the achieved PK values.
 }
 \keyword{internal}
 \section{Methods}{
@@ -36,7 +36,9 @@ confidence interval estimation.
   ciResult = NULL,
   costDetails = NULL,
   configuration = NULL,
-  piParameters = NULL
+  piParameters = NULL,
+  pkMappings = NULL,
+  achievedPKValues = NULL
 )}
     \if{html}{\out{</div>}}
   }
@@ -53,10 +55,15 @@ returned by \code{Optimizer$estimateCI()}. Contains fields like \code{sd}, \code
 a \code{modelCost} object as returned by the objective function. See
 \code{toList()}.}
       \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
-parameter identification.}
+parameter identification. The result keeps a clone of it.}
       \item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
 the optimization. If not provided, default parameter names will be
 generated automatically.}
+      \item{\code{pkMappings}}{(Optional) A list of \code{PKOutputMapping} objects, the
+PK targets of the task.}
+      \item{\code{achievedPKValues}}{(Optional) A list of numeric scalars with the PK
+parameter values achieved at the optimized parameter estimate, one per
+PK mapping.}
     }
     \if{html}{\out{</div>}}
   }
