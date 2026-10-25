@@ -17,6 +17,7 @@
 - `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`. A failed evaluation of PK targets has the cost `Inf`.
 - `PIResult` reports the `sd` and `cv` of profile likelihood intervals, which were `NA`, always one logical `convergence`, and the cost details and configuration of the fit also when `estimateCI()` is called after `run()`.
 - `estimateCI()` called after `run()` starts from the estimates of `run()` instead of the current parameter values of the model, and reports them with the units and bounds of the fit.
+- `gridSearch()` and `calculateOFVProfiles()` count the evaluations they print from 1 in every call instead of continuing the count of the previous call.
 
 # ospsuite.parameteridentification 2.3.0
 
