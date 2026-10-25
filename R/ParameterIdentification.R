@@ -218,12 +218,17 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # The objective function value of an evaluation closure
+    # The objective function value of a fresh evaluation closure
+    #
+    # Every public call that evaluates the objective on a grid counts its
+    # evaluations from 1.
     #
     # @param objective A `PIObjective` object.
     # @return `function(values)` that returns the configured cost field of the
     #   evaluation, one numeric.
     .ofvFunction = function(objective) {
+      private$.fnEvaluations <- 0
+      private$.failedEvaluations <- 0
       evaluate <- private$.evaluationClosure(objective)
       costField <- private$.configuration$modelCostField
       function(values) evaluate(values)[[costField]]
@@ -858,8 +863,10 @@ ParameterIdentification <- R6::R6Class(
 
       # Set starting point for next round of optimization
       if (setStartValue) {
-        bestPoint <- ofvGrid[which.min(ofvGrid[["ofv"]]), ]
-        bestValues <- bestPoint[setdiff(names(bestPoint), "ofv")]
+        bestValues <- unlist(
+          ofvGrid[which.min(ofvGrid[["ofv"]]), seq_along(private$.piParameters)],
+          use.names = FALSE
+        )
         for (idx in seq_along(private$.piParameters)) {
           private$.piParameters[[idx]]$startValue <- bestValues[[idx]]
         }
