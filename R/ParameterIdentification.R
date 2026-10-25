@@ -218,6 +218,17 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
+    # The objective function value of an evaluation closure
+    #
+    # @param objective A `PIObjective` object.
+    # @return `function(values)` that returns the configured cost field of the
+    #   evaluation, one numeric.
+    .ofvFunction = function(objective) {
+      evaluate <- private$.evaluationClosure(objective)
+      costField <- private$.configuration$modelCostField
+      function(values) evaluate(values)[[costField]]
+    },
+
     # Simulation Evaluation with Parameter Values
     #
     # Evaluates simulations using specified parameter values, updating each
@@ -811,7 +822,7 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsLogical(setStartValue)
 
       private$.batchInitialization()
-      private$.objectiveSupporting("supportsPlots", "gridSearch")
+      objective <- private$.objectiveSupporting("supportsPlots", "gridSearch")
 
       nrOfParameters <- length(private$.piParameters)
 
@@ -831,45 +842,18 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsOfLength(lower, nrOfParameters)
       ospsuite.utils::validateIsOfLength(upper, nrOfParameters)
 
-      # Create parameter grid
-      gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
-      parameterGrid <- vector("list", length(private$.piParameters))
-      names(parameterGrid) <- sapply(
+      parameterNames <- vapply(
         private$.piParameters,
-        function(x) x$parameters[[1]]$path
+        function(x) x$parameters[[1]]$path,
+        character(1)
       )
-
-      for (idx in seq_along(private$.piParameters)) {
-        if (logScaleFlag[idx]) {
-          if (lower[idx] <= 0 | upper[idx] <= 0) {
-            stop(messages$logScaleFlagError())
-          }
-          # Logarithmic scaling
-          parameterGrid[[idx]] <- exp(seq(
-            log(lower[idx]),
-            log(upper[idx]),
-            length.out = gridSize
-          ))
-        } else {
-          # Linear scaling
-          parameterGrid[[idx]] <- seq(
-            lower[idx],
-            upper[idx],
-            length.out = gridSize
-          )
-        }
-      }
-
-      ofvGrid <- expand.grid(parameterGrid)
-
-      # Calculate OFV
-      ofvGrid[["ofv"]] <- vapply(
-        1:nrow(ofvGrid),
-        function(i) {
-          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
-          ofv[[private$.configuration$modelCostField]]
-        },
-        numeric(1)
+      ofvGrid <- .ofvGrid(
+        private$.ofvFunction(objective),
+        lower,
+        upper,
+        logScaleFlag,
+        totalEvaluations,
+        parameterNames
       )
 
       # Set starting point for next round of optimization
@@ -882,7 +866,7 @@ ParameterIdentification <- R6::R6Class(
         message(messages$gridSearchParameterValueSet(bestValues))
       }
 
-      return(tibble::as_tibble(ofvGrid))
+      return(ofvGrid)
     },
 
     #' Calculate Objective Function Value (OFV) Profiles
@@ -946,57 +930,29 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
       private$.batchInitialization()
-      private$.objectiveSupporting("supportsPlots", "calculateOFVProfiles")
+      objective <- private$.objectiveSupporting(
+        "supportsPlots",
+        "calculateOFVProfiles"
+      )
 
       nrOfParameters <- length(private$.piParameters)
 
-      # Set parameter values and bounds
       if (is.null(par) || length(par) != nrOfParameters || !is.numeric(par)) {
         par <- sapply(private$.piParameters, function(x) x$currValue)
       }
-      lower <- ifelse(par < 0, (1 + boundFactor) * par, (1 - boundFactor) * par)
-      upper <- ifelse(par < 0, (1 - boundFactor) * par, (1 + boundFactor) * par)
-
-      # Default grid (one row per evaluation, one column per parameter).
-      # Indexed by position throughout to stay safe when parameter paths
-      # collide (e.g. same path in two simulations).
-      parameterNames <- sapply(
+      parameterNames <- vapply(
         private$.piParameters,
-        function(x) x$parameters[[1]]$path
+        function(x) x$parameters[[1]]$path,
+        character(1)
       )
-      defaultGrid <- matrix(
+
+      .ofvProfiles(
+        private$.ofvFunction(objective),
         par,
-        nrow = totalEvaluations,
-        ncol = nrOfParameters,
-        byrow = TRUE
+        boundFactor,
+        totalEvaluations,
+        parameterNames
       )
-
-      # Calculate OFV profile with parameter-specific grid
-      profileList <- vector(mode = "list", length = nrOfParameters)
-      for (idx in seq_along(private$.piParameters)) {
-        parameterName <- parameterNames[idx]
-
-        # Generate and update grid for the current parameter
-        grid <- seq(lower[[idx]], upper[[idx]], length.out = totalEvaluations)
-        currentGrid <- defaultGrid
-        currentGrid[, idx] <- grid
-
-        # Calculate OFV for each grid row
-        ofvValues <- numeric(totalEvaluations)
-        for (gridIdx in seq_len(totalEvaluations)) {
-          ofv <- private$.objectiveFunction(currentGrid[gridIdx, ])
-          ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
-        }
-
-        profileList[[idx]] <- tibble::tibble(
-          !!parameterName := grid,
-          ofv = ofvValues
-        )
-      }
-
-      names(profileList) <- parameterNames
-
-      return(profileList)
     },
 
     #' @description Prints a summary of `ParameterIdentification` instance.
