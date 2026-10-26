@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="ospsuiteparameteridentification-development-version">ospsuite.parameteridentification (development version)<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-development-version"></a></h2>
-</div>
+<ul><li>
+<code>ParameterIdentification$run()</code> and <code>estimateCI()</code> now report in <code>ciError</code> why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned <code>NA</code> standard deviations and confidence intervals without an error message (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/360" class="external-link">#360</a>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.3.0" id="ospsuiteparameteridentification-230">ospsuite.parameteridentification 2.3.0<a class="anchor" aria-label="anchor" href="#ospsuiteparameteridentification-230"></a></h2>
 <div class="section level3">
