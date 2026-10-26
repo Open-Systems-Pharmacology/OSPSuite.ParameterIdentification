@@ -7,7 +7,7 @@
 
 ## Major changes
 
-- `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).
+- `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, as one number for all data sets of a mapping or a vector named by data set, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).
 
 ## Minor improvements and bug fixes
 

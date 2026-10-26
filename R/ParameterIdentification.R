@@ -943,10 +943,15 @@ ParameterIdentification <- R6::R6Class(
         resetFn = function() private$.fnEvaluations <- 0
       )
       if (private$.configuration$ciMethod == "bootstrap") {
-        ciResult$details$subjectCounts <- vapply(
+        ciResult$details$subjectCounts <- lapply(
           private$.outputMappings,
-          function(mapping) mapping$subjectCount %||% NA_integer_,
-          integer(1)
+          function(mapping) {
+            aggregated <- Filter(
+              .isAggregatedWithErrors,
+              mapping$observedDataSets
+            )
+            mapping$subjectCount[names(aggregated)]
+          }
         )
       }
 

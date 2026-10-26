@@ -50,8 +50,8 @@
 
 #' Validate the subject counts of the output mappings
 #'
-#' Stops when an output mapping holds an aggregated data set with error values
-#' but has no subject count (see `PIOutputMapping$setSubjectCount()`).
+#' Stops when an aggregated data set with error values has no subject count
+#' (see `PIOutputMapping$setSubjectCount()`).
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @return The output mappings, invisibly.
@@ -60,10 +60,11 @@
 .validateSubjectCounts <- function(outputMappings) {
   missingNames <- character()
   for (mapping in outputMappings) {
-    if (is.null(mapping$subjectCount)) {
-      aggregated <- Filter(.isAggregatedWithErrors, mapping$observedDataSets)
-      missingNames <- c(missingNames, names(aggregated))
-    }
+    aggregated <- Filter(.isAggregatedWithErrors, mapping$observedDataSets)
+    missingNames <- c(
+      missingNames,
+      setdiff(names(aggregated), names(mapping$subjectCount))
+    )
   }
   if (length(missingNames) > 0) {
     stop(messages$errorMissingSubjectCount(missingNames))
@@ -133,8 +134,8 @@
 #' Apply resampled data set weights and values
 #'
 #' Resamples the data set weights of every output mapping for a bootstrap
-#' sample and, for the mappings with a subject count, the means of their
-#' aggregated data sets (see `.resampleDataSetValues()`), and applies both.
+#' sample and the means of its aggregated data sets with a subject count (see
+#' `.resampleDataSetValues()`), and applies both.
 #' All draws are made under `seed`. The global random state is left as it was.
 #'
 #' @param outputMappings List of `PIOutputMapping` objects.
@@ -159,12 +160,13 @@
     )
     mappingValues <- mappingState$dataSetValues
     for (idx in seq_along(outputMappings)) {
-      subjectCount <- outputMappings[[idx]]$subjectCount
-      if (is.null(subjectCount)) {
-        next
-      }
+      subjectCounts <- outputMappings[[idx]]$subjectCount %||% integer()
       dataSets <- outputMappings[[idx]]$observedDataSets
       for (name in names(mappingValues[[idx]])) {
+        subjectCount <- unname(subjectCounts[name])
+        if (is.na(subjectCount)) {
+          next
+        }
         values <- mappingValues[[idx]][[name]]
         dataSet <- dataSets[[name]]
         # An arithmetic SD may be in another unit than the means

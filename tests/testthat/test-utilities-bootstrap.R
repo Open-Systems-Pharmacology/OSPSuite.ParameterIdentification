@@ -6,6 +6,12 @@ test_that(".validateSubjectCounts() stops for aggregated data without a count", 
   expect_invisible(.validateSubjectCounts(list(mapping)))
 })
 
+test_that(".validateSubjectCounts() stops for an aggregated data set left out of named counts", {
+  mapping <- aggregatedStudiesMapping()
+  mapping$setSubjectCount(c(studyA = 12))
+  expect_snapshot(.validateSubjectCounts(list(mapping)), error = TRUE)
+})
+
 test_that(".validateSubjectCounts() ignores individual data and aggregated data without errors", {
   individual <- PIOutputMapping$new(quantity = testQuantity())
   individual$addObservedDataSets(syntheticObservedData())
@@ -216,6 +222,25 @@ test_that(".resampleAndApplyMappingState() draws output mappings independently a
   expect_false(identical(first[[1]]$weights, first[[2]]$weights))
   expect_false(identical(first[[1]]$means, first[[2]]$means))
   expect_identical(resampled(seed = 4), first)
+})
+
+test_that(".resampleAndApplyMappingState() redraws each data set with its own subject count", {
+  redrawnLogDeviations <- function(subjectCounts) {
+    mapping <- aggregatedStudiesMapping()
+    mapping$setSubjectCount(subjectCounts)
+    mappings <- list(mapping)
+    .resampleAndApplyMappingState(
+      mappings,
+      .extractOutputMappingState(mappings),
+      seed = 3
+    )
+    lapply(mapping$observedDataSets, function(dataSet) log(dataSet$yValues / c(10, 20)))
+  }
+  sameCount <- redrawnLogDeviations(c(studyA = 12, studyB = 12))
+  fourfoldCount <- redrawnLogDeviations(c(studyA = 12, studyB = 48))
+  # DataSet stores values in single precision
+  expect_equal(fourfoldCount$studyA, sameCount$studyA, tolerance = 1e-6)
+  expect_equal(fourfoldCount$studyB, sameCount$studyB / 2, tolerance = 1e-6)
 })
 
 test_that(".resampleAndApplyMappingState() redraws means with errors converted to the unit of the means", {

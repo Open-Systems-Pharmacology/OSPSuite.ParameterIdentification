@@ -207,7 +207,10 @@ test_that("bootstrap results report the subject counts used", {
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piTask$run())
   suppressMessages(result <- piTask$estimateCI())
-  expect_identical(result$toList()$ciDetails$subjectCounts, 13L)
+  expect_identical(
+    result$toList()$ciDetails$subjectCounts,
+    list(c("AciclovirLaskinData.Laskin 1982.Group A" = 13L))
+  )
   expect_gt(result$toDataFrame()$sd[[1]], 0)
 })
 

@@ -32,13 +32,25 @@ messages$errorDataSetWeightsMismatch <- function() {
 messages$errorSubjectCount <- function(n) {
   maxCount <- .Machine$integer.max
   ospsuite.utils::cliFormat(
-    "The subject count must be one positive whole number up to {.val {maxCount}}, not {.val {n}}."
+    "Each subject count must be a positive whole number up to {.val {maxCount}}, not {.val {n}}."
+  )
+}
+
+messages$errorNoObservedDataSetsForSubjectCount <- function() {
+  ospsuite.utils::cliFormat(
+    "Cannot set subject counts: no observed data sets defined. Add the data sets with {.fn PIOutputMapping$addObservedDataSets} first."
+  )
+}
+
+messages$errorSubjectCountNames <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "Subject counts must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}."
   )
 }
 
 messages$errorMissingSubjectCount <- function(dataSetNames) {
   ospsuite.utils::cliFormat(
-    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on the output mapping with that number. Profile likelihood ({.code ciMethod = \"PL\"}) is the recommended interval for aggregated data."
+    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on their output mapping with that number. Profile likelihood ({.code ciMethod = \"PL\"}) is the recommended interval for aggregated data."
   )
 }
 

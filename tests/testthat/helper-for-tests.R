@@ -172,6 +172,20 @@ syntheticObservedData <- function() {
   )
 }
 
+# Two aggregated studies with the same geometric means and GSDs on one mapping
+aggregatedStudiesMapping <- function() {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  for (study in c("studyA", "studyB")) {
+    dataSet <- ospsuite::DataSet$new(name = study)
+    dataSet$setValues(xValues = c(1, 2), yValues = c(10, 20), yErrorValues = c(1.5, 1.5))
+    dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (mass)`
+    dataSet$yUnit <- "mg/l"
+    dataSet$yErrorType <- "GeometricStdDev"
+    mapping$addObservedDataSets(dataSet)
+  }
+  mapping
+}
+
 testObservedDataMultiple <- function() {
   filePath <- testthat::test_path("../data/AciclovirLaskinData.xlsx")
   dataConfig <- createImporterConfigurationForFile(filePath)
