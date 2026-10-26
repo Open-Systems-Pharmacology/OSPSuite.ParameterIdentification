@@ -4,7 +4,7 @@
       .validateSubjectCounts(list(mapping))
     Condition
       Error in `.validateSubjectCounts()`:
-      ! The aggregated data set(s) "AciclovirLaskinData.Laskin 1982.Group A" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number. Profile likelihood (`ciMethod = "PL"`) is the recommended interval for aggregated data.
+      ! The aggregated data set(s) "AciclovirLaskinData.Laskin 1982.Group A" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number.
 
 # .validateSubjectCounts() stops for an aggregated data set left out of named counts
 
@@ -12,7 +12,7 @@
       .validateSubjectCounts(list(mapping))
     Condition
       Error in `.validateSubjectCounts()`:
-      ! The aggregated data set(s) "studyB" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number. Profile likelihood (`ciMethod = "PL"`) is the recommended interval for aggregated data.
+      ! The aggregated data set(s) "studyB" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number.
 
 # .classifyObservedData() reports aggregated data without error values as drawn whole
 

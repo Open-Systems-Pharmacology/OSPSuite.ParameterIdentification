@@ -50,7 +50,7 @@ messages$errorSubjectCountNames <- function(dataSetNames) {
 
 messages$errorMissingSubjectCount <- function(dataSetNames) {
   ospsuite.utils::cliFormat(
-    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on their output mapping with that number. Profile likelihood ({.code ciMethod = \"PL\"}) is the recommended interval for aggregated data."
+    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on their output mapping with that number."
   )
 }
 
