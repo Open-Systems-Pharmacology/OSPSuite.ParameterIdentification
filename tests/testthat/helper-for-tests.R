@@ -177,7 +177,11 @@ aggregatedStudiesMapping <- function() {
   mapping <- PIOutputMapping$new(quantity = testQuantity())
   for (study in c("studyA", "studyB")) {
     dataSet <- ospsuite::DataSet$new(name = study)
-    dataSet$setValues(xValues = c(1, 2), yValues = c(10, 20), yErrorValues = c(1.5, 1.5))
+    dataSet$setValues(
+      xValues = c(1, 2),
+      yValues = c(10, 20),
+      yErrorValues = c(1.5, 1.5)
+    )
     dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (mass)`
     dataSet$yUnit <- "mg/l"
     dataSet$yErrorType <- "GeometricStdDev"

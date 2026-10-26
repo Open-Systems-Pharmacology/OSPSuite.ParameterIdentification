@@ -325,7 +325,10 @@ test_that("setSubjectCount() gives one number to every data set of the mapping",
   mapping$addObservedDataSets(syntheticObservedData())
   mapping$setSubjectCount(13)
   labels <- names(mapping$observedDataSets)
-  expect_identical(mapping$subjectCount, setNames(rep(13L, length(labels)), labels))
+  expect_identical(
+    mapping$subjectCount,
+    setNames(rep(13L, length(labels)), labels)
+  )
 })
 
 test_that("setSubjectCount() sets counts by data set label and keeps the others", {
@@ -336,7 +339,10 @@ test_that("setSubjectCount() sets counts by data set label and keeps the others"
   mapping$addObservedDataSets(syntheticObservedData()[[synthetic]])
   mapping$setSubjectCount(12)
   mapping$setSubjectCount(setNames(48, synthetic))
-  expect_identical(mapping$subjectCount, setNames(c(12L, 48L), c(laskin, synthetic)))
+  expect_identical(
+    mapping$subjectCount,
+    setNames(c(12L, 48L), c(laskin, synthetic))
+  )
 })
 
 test_that("setSubjectCount() rejects invalid counts and the binding is read-only", {

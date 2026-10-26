@@ -234,7 +234,9 @@ test_that(".resampleAndApplyMappingState() redraws each data set with its own su
       .extractOutputMappingState(mappings),
       seed = 3
     )
-    lapply(mapping$observedDataSets, function(dataSet) log(dataSet$yValues / c(10, 20)))
+    lapply(mapping$observedDataSets, function(dataSet) {
+      log(dataSet$yValues / c(10, 20))
+    })
   }
   sameCount <- redrawnLogDeviations(c(studyA = 12, studyB = 12))
   fourfoldCount <- redrawnLogDeviations(c(studyA = 12, studyB = 48))

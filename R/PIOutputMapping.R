@@ -330,7 +330,9 @@ PIOutputMapping <- R6::R6Class(
         stop(messages$errorNoObservedDataSetsForSubjectCount())
       }
       ospsuite.utils::validateIsNumeric(n)
-      if (any(!is.finite(n) | n < 1 | n != round(n) | n > .Machine$integer.max)) {
+      if (
+        any(!is.finite(n) | n < 1 | n != round(n) | n > .Machine$integer.max)
+      ) {
         stop(messages$errorSubjectCount(n))
       }
 
@@ -338,7 +340,9 @@ PIOutputMapping <- R6::R6Class(
       if (is.null(labels) && length(n) == 1) {
         labels <- names(private$.observedDataSets)
       }
-      if (is.null(labels) || any(!labels %in% names(private$.observedDataSets))) {
+      if (
+        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
+      ) {
         stop(messages$errorSubjectCountNames(names(private$.observedDataSets)))
       }
 
