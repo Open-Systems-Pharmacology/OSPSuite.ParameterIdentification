@@ -317,3 +317,56 @@ test_that("PIOutputMapping errors when mol weight is missing and can't be retrie
     }
   )
 })
+
+test_that("setSubjectCount() gives one number to every data set of the mapping", {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  expect_null(mapping$subjectCount)
+  mapping$addObservedDataSets(testObservedData())
+  mapping$addObservedDataSets(syntheticObservedData())
+  mapping$setSubjectCount(13)
+  labels <- names(mapping$observedDataSets)
+  expect_identical(
+    mapping$subjectCount,
+    setNames(rep(13L, length(labels)), labels)
+  )
+})
+
+test_that("setSubjectCount() sets counts by data set label and keeps the others", {
+  laskin <- "AciclovirLaskinData.Laskin 1982.Group A"
+  synthetic <- "AciclovirDataIndividuals.Aciclovir.Synthetic.id1"
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(testObservedData())
+  mapping$addObservedDataSets(syntheticObservedData()[[synthetic]])
+  mapping$setSubjectCount(12)
+  mapping$setSubjectCount(setNames(48, synthetic))
+  expect_identical(
+    mapping$subjectCount,
+    setNames(c(12L, 48L), c(laskin, synthetic))
+  )
+})
+
+test_that("replacing or removing a data set clears its subject count", {
+  synthetic <- "AciclovirDataIndividuals.Aciclovir.Synthetic.id1"
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(testObservedData())
+  mapping$addObservedDataSets(syntheticObservedData()[[synthetic]])
+  mapping$setSubjectCount(12)
+  mapping$addObservedDataSets(testObservedData())
+  expect_identical(mapping$subjectCount, setNames(12L, synthetic))
+  mapping$removeObservedDataSet(synthetic)
+  expect_length(mapping$subjectCount, 0)
+})
+
+test_that("setSubjectCount() rejects invalid counts and the binding is read-only", {
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  expect_snapshot(mapping$setSubjectCount(13), error = TRUE)
+  mapping$addObservedDataSets(testObservedData())
+  expect_snapshot(mapping$setSubjectCount(0), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(2.5), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(NA), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(numeric()), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(c(3, 4)), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(c(unknownStudy = 12)), error = TRUE)
+  expect_snapshot(mapping$setSubjectCount(1e10), error = TRUE)
+  expect_snapshot(mapping$subjectCount <- 5, error = TRUE)
+})

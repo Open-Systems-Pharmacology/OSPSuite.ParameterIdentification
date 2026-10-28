@@ -1,5 +1,16 @@
 # ospsuite.parameteridentification (development version)
 
+## Breaking changes
+
+- `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, `DiceKriging` is no longer a dependency, and aggregated data now require `PIOutputMapping$setSubjectCount()` (#355, #312, #318).
+- `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
+
+## Major changes
+
+- `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, as one number for all data sets of a mapping or a vector named by data set, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).
+
+## Minor improvements and bug fixes
+
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 
 # ospsuite.parameteridentification 2.3.0
@@ -16,6 +27,7 @@
 - The objective function of `ParameterIdentification` is faster, most of all for tasks with many simulations, parameters and output mappings. Apart from the simulations themselves, little work is left in an evaluation: the model parameters are looked up once per task, the observed data are converted to base units once per call, and the simulated values and the cost are calculated on numeric vectors instead of `DataCombined` objects and data frames, apart from the contribution of censored values with `objectiveFunctionType = "m3"`. The results are identical, apart from the correction of the M3 method for several LLOQs in one output mapping below (#317). In the examples of #303, an evaluation is about 2 to 2.5 times faster, and 7 to 9 times faster where the simulations themselves are fast (#302, #303).
 
 ## Minor improvements and bug fixes
+
 
 - `PIResult` and `PKResult` now report `convergence = FALSE` for a BOBYQA run that stopped because it reached `maxeval` or `maxtime`, which was previously reported as converged. A new field `convergenceMessage` says why the optimizer stopped, for all algorithms, and `fnEvaluations` for BOBYQA now counts every evaluation of the objective function (#304).
 - `run()` now simulates the start values once before the optimization and stops only if that simulation fails, with the reason and possible remedies. A simulation that fails during the optimization, also at its first evaluation, returns the infinite cost, so DEoptim no longer stops when its first random candidate fails, and `estimateCI()` no longer stops when a profile likelihood step or bootstrap replicate fails at its first evaluation. Errors that are not failed simulations now stop the run at any evaluation. DEoptim includes the start values in its initial population unless `initialpop` is given, and `run()` warns when the simulations failed in more than half of its evaluations. DEoptim results under a fixed seed differ from earlier versions, because the initial population is now drawn before DEoptim starts (#307).
@@ -50,6 +62,7 @@
 
 ## Minor improvements and bug fixes
 
+
 - `CIOptions_hessian` gains `r` and `d` options to tune the post-hoc Hessian CI step. `r` controls the number of iterations (minimum `2`, default `4`) and `d` the fractional step size (default `0.1`). Reducing `r` lowers the number of objective function evaluations at the cost of accuracy (#215).
 - `residualWeightingMethod = "error"` now computes arithmetic SD from geometric standard deviation without approximation. A warning is issued when any error values are invalid and fall back to unit weights (#255).
 - Re-enabled `plotOFVProfiles()` for visualizing OFV profiles produced by `ParameterIdentification$calculateOFVProfiles()` (#91).
@@ -66,6 +79,7 @@
 - Default CI options lists were renamed to `CIOptions_hessian` and `CIOptions_bootstrap` for consistency (#220).
 
 ## Minor improvements and bug fixes
+
 
 - Automatically report one-sided confidence intervals when parameter estimate falls outside the bootstrap CI in skewed distributions. In the result, the opposite bound is set to `NA` and `ciType` is set to `one-sided` (#217).
 - Allow dataSet with a single observation (#221)
@@ -86,6 +100,7 @@
 - New `PIResult` supports `$print()`, `$toDataFrame()`, and `$toList()` methods for summaries, export, and diagnostics (#196).
 
 ## Minor improvements and bug fixes
+
 
 - Improved print outputs for all classes (#171).
 - All classes do not inherit from `ospsuite.utils::Printable` any more (#171).

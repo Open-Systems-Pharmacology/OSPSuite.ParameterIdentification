@@ -489,17 +489,18 @@ cases$stateVariable <- function() {
   )
 }
 
-# Bootstrap: aggregated data (values resampled from a GPR model) and
-# individual data (weights resampled), then the restored mappings
+# Bootstrap: weights resampled for every data set, means redrawn for
+# aggregated data sets, then the restored mappings
 bootstrapCase <- function(dataSets) {
   task <- aciclovirTask(dataSets = dataSets)
+  # Laskin 1982, group A: 13 subjects (needed for aggregated data only). A
+  # base build without the setter must still run the cases.
+  for (mapping in task$outputMappings) {
+    if (is.function(mapping$setSubjectCount)) mapping$setSubjectCount(13)
+  }
   private <- privateOf(task)
   private$.batchInitialization()
   piNamespace$.classifyObservedData(private$.outputMappings)
-  # Fitting the GPR models draws random numbers that the bootstrap seed does
-  # not control
-  set.seed(2203)
-  private$.gprModels <- piNamespace$.prepareGPRModels(private$.outputMappings)
   results <- list()
   for (seed in c(11L, 12L, 11L)) {
     results[[length(results) + 1]] <- private$.objectiveFunction(
@@ -512,7 +513,11 @@ bootstrapCase <- function(dataSets) {
   results
 }
 cases$bootstrapAggregated <- function() bootstrapCase(laskinData())
+# The means of aggregated data are redrawn from mean and SD / sqrt(n) now
+attr(cases$bootstrapAggregated, "expectChange") <- TRUE
 cases$bootstrapIndividual <- function() bootstrapCase(individualData())
+# A data set drawn k times now gets its weights times sqrt(k), not k
+attr(cases$bootstrapIndividual, "expectChange") <- TRUE
 
 # Other models: Midazolam (molar data) and two Clarithromycin simulations
 # (mass data) with parameters grouped over both

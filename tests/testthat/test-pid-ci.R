@@ -117,6 +117,7 @@ test_that("estimateCI() works with bootstrap and individual data", {
 test_that("estimateCI() works with bootstrap and aggregated data", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData())
+  outputMapping$setSubjectCount(13)
   yValuesInitial <- outputMapping$observedDataSets[[1]]$yValues
 
   piTask <- ParameterIdentification$new(
@@ -146,6 +147,93 @@ test_that("estimateCI() works with bootstrap and aggregated data", {
   )
 })
 
+test_that("bootstrap stops before the first replicate when aggregated data have no subject count", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+  expect_snapshot(piTask$estimateCI(), error = TRUE)
+})
+
+test_that("run() with autoEstimateCI and bootstrap checks the subject counts before the optimization", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+  expect_snapshot(piTask$run(), error = TRUE)
+  expect_equal(
+    piTask$parameters[[1]]$currValue,
+    piTask$parameters[[1]]$startValue
+  )
+})
+
+test_that("run() that stops on a missing subject count keeps the previous fit", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration()
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+  piTask$configuration$autoEstimateCI <- TRUE
+  expect_snapshot(suppressMessages(piTask$run()), error = TRUE)
+  suppressMessages(piTask$configuration$ciMethod <- "hessian")
+  expect_no_error(suppressMessages(piTask$estimateCI()))
+})
+
+test_that("bootstrap results report the subject counts used", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData())
+  outputMapping$setSubjectCount(13)
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration(iter = 10, nBootstrap = 2)
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+  suppressMessages(result <- piTask$estimateCI())
+  expect_identical(
+    result$toList()$ciDetails$subjectCounts,
+    list(c("AciclovirLaskinData.Laskin 1982.Group A" = 13L))
+  )
+  expect_gt(result$toDataFrame()$sd[[1]], 0)
+})
+
+test_that("estimateCI() with bootstrap gives identical intervals for the same seed on mixed data", {
+  outputMapping <- PIOutputMapping$new(quantity = testQuantity())
+  outputMapping$addObservedDataSets(testObservedData()) # aggregated
+  outputMapping$setSubjectCount(13)
+  outputMapping$addObservedDataSets(syntheticObservedData()) # individual
+  piTask <- ParameterIdentification$new(
+    simulations = testSimulation(),
+    parameters = testParameters(),
+    outputMappings = outputMapping,
+    configuration = bootstrapPiConfiguration(iter = 10, nBootstrap = 2)
+  )
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(piTask$run())
+
+  suppressMessages(first <- piTask$estimateCI()$toDataFrame())
+  suppressMessages(second <- piTask$estimateCI()$toDataFrame())
+  expect_gt(first$sd[[1]], 0)
+  expect_identical(first, second)
+})
+
 test_that("estimateCI() restarts evaluation counter from 1 for each bootstrap iteration", {
   nBootstrap <- 3L
 
@@ -166,6 +254,7 @@ test_that("estimateCI() restarts evaluation counter from 1 for each bootstrap it
 test_that("estimateCI() outputs expected messages for mixed datasets", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData()) # aggregated
+  outputMapping$setSubjectCount(13)
   outputMapping$addObservedDataSets(syntheticObservedData()) # individual
 
   piTask <- PIResampleTester$new(
@@ -199,7 +288,7 @@ test_that("estimateCI() applies bootstrap resampling to individual data", {
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
     style = "deparse",
-    tolerance = 0
+    tolerance = 1e-12
   )
 })
 
@@ -222,13 +311,14 @@ test_that("estimateCI() applies bootstrap resampling to individual data with ini
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
     style = "deparse",
-    tolerance = 0
+    tolerance = 1e-12
   )
 })
 
 test_that("estimateCI() applies bootstrap resampling to mixed data (individual and aggregated)", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity())
   outputMapping$addObservedDataSets(testObservedData())
+  outputMapping$setSubjectCount(13)
   outputMapping$addObservedDataSets(syntheticObservedData())
   outputMapping$setDataWeights(
     list("AciclovirLaskinData.Laskin 1982.Group A" = 20)
@@ -248,7 +338,7 @@ test_that("estimateCI() applies bootstrap resampling to mixed data (individual a
   expect_snapshot_value(
     piTaskResample$outputMappings[[1]]$dataWeights,
     style = "deparse",
-    tolerance = 0
+    tolerance = 1e-12
   )
   expect_snapshot_value(
     lapply(

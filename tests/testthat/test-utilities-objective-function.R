@@ -1467,7 +1467,6 @@ test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
   mapping$setDataWeights(stats::setNames(list(2), dataSets[[1]]$name))
   priv <- task$.__enclos_env__$private
   applyCostSetting(task)
-  priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
 
   for (seed in 1:2) {
     expectFrozenObjective(task, lipophilicityValues, bootstrapSeed = seed)
@@ -1569,10 +1568,6 @@ test_that("observed data are read again per bootstrap sample and after it", {
   currVals <- currStartValues(task)
   original <- lapply(priv$.outputMappings, .prepareObservedData)
 
-  # The values of aggregated data are resampled from a GPR model
-  suppressMessages(
-    priv$.gprModels <- .prepareGPRModels(priv$.outputMappings)
-  )
   samples <- list()
   for (seed in 1:2) {
     priv$.objectiveFunction(currVals, bootstrapSeed = seed)

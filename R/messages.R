@@ -29,6 +29,37 @@ messages$errorDataSetWeightsMismatch <- function() {
   "Dataset weights do not align with observed datasets in output mapping."
 }
 
+messages$errorSubjectCount <- function(n) {
+  maxCount <- .Machine$integer.max
+  ospsuite.utils::cliFormat(
+    "Each subject count must be a positive whole number up to {.val {maxCount}}, not {.val {n}}."
+  )
+}
+
+messages$errorNoObservedDataSetsForSubjectCount <- function() {
+  ospsuite.utils::cliFormat(
+    "Cannot set subject counts: no observed data sets defined. Add the data sets with {.fn PIOutputMapping$addObservedDataSets} first."
+  )
+}
+
+messages$errorSubjectCountNames <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "Subject counts must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}."
+  )
+}
+
+messages$errorMissingSubjectCount <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on their output mapping with that number."
+  )
+}
+
+messages$statusAggregatedWithoutErrors <- function(dataSetName) {
+  ospsuite.utils::cliFormat(
+    "Data set {.val {dataSetName}} has a {.field yErrorType} but no usable error values (an SD above 0 or a GSD above 1) and is drawn as a whole data set."
+  )
+}
+
 messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
 }
@@ -318,28 +349,8 @@ messages$warningLowIndividualData <- function(n = 3) {
   )
 }
 
-messages$errorUnsupportedErrorType <- function() {
-  stop(
-    "Unsupported yErrorType: must be 'GeometricStdDev' or 'ArithmeticStdDev'."
-  )
-}
-
 messages$statusBootstrap <- function(index, nTotal) {
   paste0("Running bootstrap replicate ", index, " of ", nTotal, ".")
-}
-
-messages$errorGPRModelConvergence <- function(dataSetName) {
-  sprintf(
-    "GPR model failed to converge for dataset '%s'.",
-    dataSetName
-  )
-}
-
-messages$statusGPRModelFitted <- function(dataSetName) {
-  sprintf(
-    "GPR model fitted successfully for dataset '%s'.",
-    dataSetName
-  )
 }
 
 messages$warnParameterMetadata <- function(message) {
