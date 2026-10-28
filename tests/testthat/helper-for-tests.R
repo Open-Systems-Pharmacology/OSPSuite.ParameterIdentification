@@ -635,3 +635,19 @@ objectiveClosure <- function(task, seed = NULL) {
   }
   priv$.evaluationClosure(objective)
 }
+
+# A PIObjective on the model of the task and the data of its output mappings,
+# resampled for the bootstrap replicate `seed` when one is given
+taskObjective <- function(task, seed = NULL) {
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  data <- PIObservations$new(priv$.outputMappings)
+  if (!is.null(seed)) {
+    data <- data$resample(seed)
+  }
+  PIObjective$new(
+    model = priv$.model,
+    data = data,
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+  )
+}

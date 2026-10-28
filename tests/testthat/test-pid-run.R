@@ -107,7 +107,7 @@ test_that("several failed simulations are reported with their reasons", {
   engineWarnings <- character()
   runError <- expect_error(
     withCallingHandlers(
-      priv$.runSimulations(startValue),
+      priv$.model$simulate(startValue),
       warning = function(w) {
         engineWarnings <<- c(engineWarnings, conditionMessage(w))
         invokeRestart("muffleWarning")
@@ -156,7 +156,7 @@ test_that("a failed simulation with a shared name is named with its position", {
   priv$.batchInitialization()
 
   runError <- expect_error(
-    suppressWarnings(priv$.runSimulations(piTask$parameters[[1]]$startValue))
+    suppressWarnings(priv$.model$simulate(piTask$parameters[[1]]$startValue))
   )
   expect_match(
     conditionMessage(runError),
@@ -203,7 +203,9 @@ test_that("other warnings of a simulation run are shown and are no reasons", {
   priv <- piTask$.__enclos_env__$private
   priv$.batchInitialization()
   startValue <- piTask$parameters[[1]]$startValue
-  run <- runWithWarnings(priv$.simulateOutputs(startValue))
+  run <- runWithWarnings(
+    priv$.model$simulatedOutputs(startValue, piTask$outputMappings)
+  )
   expect_identical(run$warnings, unrelatedWarning)
   expect_null(run$error)
 
@@ -212,7 +214,9 @@ test_that("other warnings of a simulation run are shown and are no reasons", {
   failingTask <- testTwoSimulationsTask(failing = 2)
   failingPriv <- failingTask$.__enclos_env__$private
   failingPriv$.batchInitialization()
-  failingRun <- runWithWarnings(failingPriv$.simulateOutputs(startValue))
+  failingRun <- runWithWarnings(
+    failingPriv$.model$simulatedOutputs(startValue, failingTask$outputMappings)
+  )
   expect_identical(failingRun$warnings, unrelatedWarning)
   failedText <- paste0(
     "Simulation '",

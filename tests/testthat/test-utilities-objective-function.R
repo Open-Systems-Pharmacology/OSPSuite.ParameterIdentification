@@ -671,11 +671,11 @@ test_that("objective function runs with only a state-variable parameter", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
 
-  # .variableParameters is empty for this simulation (empty parametersOrPaths).
+  # The parameters bucket is empty for this simulation
   simId <- names(priv$.simulations)[[1]]
-  expect_length(priv$.variableParameters[[simId]], 0L)
+  expect_length(priv$.model$variableParameters[[simId]], 0L)
 
-  cost <- priv$.objectiveFunction(currStartValues(task))
+  cost <- taskObjective(task)$evaluate(currStartValues(task))
   expect_true(is.finite(cost$modelCost))
 })
 
@@ -951,7 +951,7 @@ clarithromycinTasks <- local({
 test_that("the cost of two simulations is the sum of their costs", {
   tasks <- clarithromycinTasks()
   objective <- function(name, values) {
-    tasks[[name]]$.__enclos_env__$private$.objectiveFunction(values)
+    taskObjective(tasks[[name]])$evaluate(values)
   }
   startValues <- currStartValues(tasks$both)
 
@@ -1103,12 +1103,10 @@ applyCostSetting <- function(task, scaling = "lin", options = list()) {
 # order. The first evaluation reads the observed data, the later ones reuse
 # them.
 expectFrozenObjective <- function(task, values, bootstrapSeed = NULL) {
-  priv <- task$.__enclos_env__$private
+  objective <- taskObjective(task, bootstrapSeed)
   for (value in values) {
     testthat::expect_identical(
-      withWarningMessages(
-        priv$.objectiveFunction(value, bootstrapSeed = bootstrapSeed)
-      ),
+      withWarningMessages(objective$evaluate(value)),
       withWarningMessages(frozenObjectiveFunction(task, value, bootstrapSeed))
     )
   }
@@ -1263,7 +1261,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
       })
     )
     applyCostSetting(task, scaling = scaling, options = options)
-    task$.__enclos_env__$private$.objectiveFunction(
+    taskObjective(task)$evaluate(
       lipophilicityValues[[1]]
     )$costVariables$M3Contribution
   }
@@ -1316,7 +1314,7 @@ test_that("objective function equals 2.2.0.9009 with observed values of zero", {
     lipophilicityValues
   )
   # Both values are replaced by the epsilon, in the base unit of the data
-  logYValues <- task$.__enclos_env__$private$.observedData[[1]]$logYValues
+  logYValues <- taskObjective(task)$observedData[[1]]$logYValues
   expect_equal(
     logYValues[c(3, 5)],
     rep(log(ospsuite::getOSPSuiteSetting("LOG_SAFE_EPSILON")), 2)
@@ -1466,13 +1464,13 @@ test_that("objective function equals 2.2.0.9009 with bootstrap weights", {
   ))
   mapping <- task$outputMappings[[1]]
   mapping$setDataWeights(stats::setNames(list(2), dataSets[[1]]$name))
-  priv <- task$.__enclos_env__$private
   applyCostSetting(task)
 
   for (seed in 1:2) {
     expectFrozenObjective(task, lipophilicityValues, bootstrapSeed = seed)
+    resampled <- PIObservations$new(task$outputMappings)$resample(seed)
     expect_false(identical(
-      priv$.data$resample(seed)$outputMappings[[1]]$dataWeights,
+      resampled$outputMappings[[1]]$dataWeights,
       mapping$dataWeights
     ))
   }
@@ -1869,9 +1867,8 @@ test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
     scaling = "log",
     options = list(residualWeightingMethod = "error")
   )
-  priv <- task$.__enclos_env__$private
 
-  details <- priv$.objectiveFunction(lipophilicityValues[[1]])$residualDetails
+  details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
 
   # 1 / log(GSD), rounded to 2 digits
   expect_equal(details$errorWeights, c(5.48, 3.81, 2.47, 2.97, 1.70, 1.44))
@@ -1899,9 +1896,8 @@ test_that("objective function weights arithmetic SDs by CV on the log scale", {
     scaling = "log",
     options = list(residualWeightingMethod = "error")
   )
-  priv <- task$.__enclos_env__$private
 
-  details <- priv$.objectiveFunction(lipophilicityValues[[1]])$residualDetails
+  details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
 
   # 1 / sqrt(log(1 + CV^2)) for the CVs 0.2 to 0.6, rounded to 2 digits
   expect_equal(details$errorWeights, c(5.05, 3.41, 2.60, 2.12, 1.80))

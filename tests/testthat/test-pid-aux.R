@@ -215,10 +215,11 @@ test_that("gridSearch() logs the full reason once if the failure time varies", {
 
 test_that("reasons of failed simulations are logged in full once per kind", {
   private <- testPiTask()$.__enclos_env__$private
+  private$.batchInitialization()
   simulationNames <- c("A", "B", "C", "D")
   loggedError <- function(reasons) {
     cond <- .simulationsFailedError(simulationNames, 1:4, reasons)
-    capture_messages(private$.logSimulationFailure(1, cond))[[2]]
+    capture_messages(private$.model$logFailure(1, cond))[[2]]
   }
   expectedError <- function(reasons) {
     paste0(

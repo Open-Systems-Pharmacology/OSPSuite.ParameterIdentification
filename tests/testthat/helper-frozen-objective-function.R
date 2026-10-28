@@ -31,8 +31,13 @@
 # @return The cost summary of all output mappings, a `modelCost` object.
 frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
   private <- task$.__enclos_env__$private
-  outputMappings <- private$.getOutputMappings(bootstrapSeed)
-  simulationResults <- private$.runSimulations(currVals)
+  outputMappings <- private$.outputMappings
+  if (!is.null(bootstrapSeed)) {
+    outputMappings <- PIObservations$new(outputMappings)$resample(
+      bootstrapSeed
+    )$outputMappings
+  }
+  simulationResults <- private$.model$simulate(currVals)
 
   # `.evaluate()` after `runSimulationBatches()`
   obsVsPredList <- vector("list", length(outputMappings))

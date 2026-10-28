@@ -29,8 +29,16 @@ test_that("the model builds the batches and buckets of the task", {
   simId <- names(task$simulations)[[1]]
 
   expect_identical(names(model$simulationBatches), names(task$simulations))
-  expect_identical(model$variableParameters, priv$.variableParameters)
-  expect_identical(model$variableMolecules, priv$.variableMolecules)
+  # The state variable goes into the molecules bucket, the parameter into the
+  # parameters bucket, both with their start values in base units
+  expect_identical(
+    model$variableParameters[[simId]],
+    c("Aciclovir|Lipophilicity" = .toBaseValue(task$parameters[[2]], startValues(task)[[2]]))
+  )
+  expect_identical(
+    model$variableMolecules[[simId]],
+    stats::setNames(.toBaseValue(task$parameters[[1]], startValues(task)[[1]]), stateVariableParameterPath)
+  )
   expect_identical(
     model$parameterTargets,
     .resolveParameterTargets(task$parameters)
@@ -51,10 +59,14 @@ test_that("simulatedOutputs() gives the simulated values of the task", {
   priv$.batchInitialization()
   model <- taskModel(task)
   values <- startValues(task)
-  expect_identical(
-    model$simulatedOutputs(values, task$outputMappings),
-    priv$.simulateOutputs(values)
-  )
+  observed <- .prepareObservedData(task$outputMappings[[1]])
+  simulated <- model$simulatedOutputs(values, task$outputMappings)
+  # One output per mapping, a finite time course covering the observed times
+  expect_length(simulated, 1)
+  expect_length(simulated[[1]]$yValues, length(simulated[[1]]$xValues))
+  expect_true(all(is.finite(simulated[[1]]$yValues)))
+  expect_lte(min(simulated[[1]]$xValues), min(observed$xValues))
+  expect_gte(max(simulated[[1]]$xValues), max(observed$xValues))
   results <- model$simulate(values)
   expect_identical(names(results), names(task$simulations))
   expect_s3_class(results[[1]][[1]], "SimulationResults")
@@ -212,4 +224,180 @@ test_that("the constructor validates its inputs and the fields are read-only", {
   model <- taskModel(task)
   expect_snapshot(model$simulationBatches <- NULL, error = TRUE)
   expect_snapshot(model$loggedFailures <- 1, error = TRUE)
+})
+
+test_that("simulate() routes the state-variable value into the molecule bucket", {
+  task <- testStateVariableMixedTask()
+  model <- taskModel(task)
+  simId <- names(task$simulations)[[1]]
+  # The state-variable parameter comes first, the constant one second
+  model$simulate(c(0.06, -0.1))
+  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.06)
+  expect_equal(model$variableParameters[[simId]][["Aciclovir|Lipophilicity"]], -0.1)
+})
+
+test_that("simulate() converts a non-base state-variable unit into the base unit", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+  # The stomach liquid volume is defined by a right-hand side, so it goes into
+  # the molecules bucket. Its base unit is l, so values in ml arrive divided
+  # by 1000.
+  piParameter <- PIParameters$new(
+    parameters = list(getParameter(stateVariableParameterPath, container = sim))
+  )
+  piParameter$unit <- ospUnits$Volume$ml
+  piParameter$startValue <- 45
+  piParameter$maxValue <- 450
+  piParameter$minValue <- 4.5
+  mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+  mapping$addObservedDataSets(testObservedData())
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = piParameter,
+    outputMappings = mapping
+  )
+  model <- taskModel(task)
+  simId <- names(task$simulations)[[1]]
+
+  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.045)
+  model$simulate(50)
+  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.05)
+  expect_false(stateVariableParameterPath %in% names(model$variableParameters[[simId]]))
+})
+
+test_that("simulate() seeds a grouped parameter of two simulations in base units", {
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  simulations <- replicate(
+    2,
+    loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    ),
+    simplify = FALSE
+  )
+  piParameter <- PIParameters$new(
+    parameters = lapply(simulations, function(sim) getParameter(clPath, container = sim))
+  )
+  piParameter$unit <- ospUnits$`Inversed time`$`1/h`
+  piParameter$startValue <- 6
+  piParameter$maxValue <- 60
+  piParameter$minValue <- 0.6
+  task <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = piParameter,
+    outputMappings = lapply(simulations, function(sim) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
+  )
+  model <- taskModel(task)
+  simIds <- names(task$simulations)
+  expect_length(simIds, 2)
+
+  # 6 1/h is 0.1 1/min in both simulations, 30 1/h is 0.5 1/min
+  for (simId in simIds) {
+    expect_equal(model$variableParameters[[simId]][[clPath]], 0.1)
+  }
+  model$simulate(30)
+  for (simId in simIds) {
+    expect_equal(model$variableParameters[[simId]][[clPath]], 0.5)
+  }
+})
+
+test_that("simulate() fills the buckets of grouped parameters by position", {
+  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
+  lipophilicityPath <- "Aciclovir|Lipophilicity"
+  volumePath <- "Organism|Liver|Volume"
+  simulations <- replicate(
+    2,
+    loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    ),
+    simplify = FALSE
+  )
+  group <- function(path, positions) {
+    PIParameters$new(
+      parameters = lapply(simulations[positions], function(sim) {
+        getParameter(path, container = sim)
+      })
+    )
+  }
+  task <- ParameterIdentification$new(
+    simulations = simulations,
+    # Both simulations with the second one first, both simulations, a path of
+    # the second simulation that the second group has too (the last group
+    # wins), a state variable in both, the same path twice in one group
+    parameters = list(
+      group(clPath, 2:1),
+      group(lipophilicityPath, 1:2),
+      group(lipophilicityPath, 2),
+      group(stateVariableParameterPath, 1:2),
+      group(volumePath, c(1, 1))
+    ),
+    outputMappings = lapply(simulations, function(sim) {
+      mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
+      mapping$addObservedDataSets(testObservedData())
+      mapping
+    })
+  )
+  model <- taskModel(task)
+  ids <- vapply(simulations, function(sim) sim$root$id, character(1))
+  values <- c(0.5, -0.2, 0.3, 0.05, 2.5)
+  model$simulate(values)
+  expected <- list(
+    list(
+      parameters = values[c(1, 2, 5)],
+      parameterPaths = c(clPath, lipophilicityPath, volumePath)
+    ),
+    list(
+      parameters = values[c(1, 3)],
+      parameterPaths = c(clPath, lipophilicityPath)
+    )
+  )
+  for (idx in 1:2) {
+    simId <- ids[[idx]]
+    batch <- model$simulationBatches[[simId]]
+    expect_equal(
+      model$variableParameters[[simId]],
+      stats::setNames(expected[[idx]]$parameters, expected[[idx]]$parameterPaths)
+    )
+    expect_equal(
+      model$variableMolecules[[simId]],
+      stats::setNames(values[[4]], stateVariableParameterPath)
+    )
+    expect_identical(batch$getVariableParameters(), names(model$variableParameters[[simId]]))
+    expect_identical(batch$getVariableMolecules(), names(model$variableMolecules[[simId]]))
+  }
+})
+
+test_that("simulatedOutputs() delivers the state-variable initial value to the solver", {
+  sim <- loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
+  )
+  svQuantity <- getQuantity(stateVariableParameterPath, container = sim)
+  # The output is the state variable itself, so its initial value is observable
+  obs <- DataSet$new(name = "obs")
+  obs$yDimension <- svQuantity$dimension
+  obs$setValues(xValues = c(0, 1, 2), yValues = c(0.05, 0.05, 0.05))
+  mapping <- PIOutputMapping$new(quantity = svQuantity)
+  mapping$addObservedDataSets(obs)
+  task <- ParameterIdentification$new(
+    simulations = sim,
+    parameters = stateVarPIParameter(sim),
+    outputMappings = mapping
+  )
+  model <- taskModel(task)
+  simulatedInitialValue <- function(startValue) {
+    simulated <- model$simulatedOutputs(startValue, task$outputMappings)[[1]]
+    simulated$yValues[which.min(simulated$xValues)]
+  }
+  expect_equal(simulatedInitialValue(0.02), 0.02, tolerance = 1e-4)
+  expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
 })

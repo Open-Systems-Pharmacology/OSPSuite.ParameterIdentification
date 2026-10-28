@@ -2,19 +2,9 @@ startValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
-testObjective <- function(task) {
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  PIObjective$new(
-    model = priv$.model,
-    data = PIObservations$new(priv$.outputMappings),
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
-  )
-}
-
 test_that("evaluate() returns the modelCost of the frozen objective function", {
   task <- testPiTask()
-  objective <- testObjective(task)
+  objective <- taskObjective(task)
   currVals <- startValues(task)
   cost <- objective$evaluate(currVals)
   expect_s3_class(cost, "modelCost")
@@ -23,7 +13,7 @@ test_that("evaluate() returns the modelCost of the frozen objective function", {
 
 test_that("evaluate() is the same on every call and leaves the task alone", {
   task <- testPiTask()
-  objective <- testObjective(task)
+  objective <- taskObjective(task)
   priv <- task$.__enclos_env__$private
   currVals <- startValues(task)
   expect_identical(objective$evaluate(currVals), objective$evaluate(currVals))
@@ -101,7 +91,7 @@ test_that("PIObjective validates the model and the data", {
 
 test_that("withData() gives an objective on the new data and leaves the original alone", {
   task <- testPiTask()
-  objective <- testObjective(task)
+  objective <- taskObjective(task)
   data <- PIObservations$new(task$outputMappings)
   currVals <- startValues(task)
   cost <- objective$evaluate(currVals)
