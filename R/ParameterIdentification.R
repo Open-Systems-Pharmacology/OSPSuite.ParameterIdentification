@@ -752,11 +752,11 @@ ParameterIdentification <- R6::R6Class(
     # Returns the list of output mappings used during objective function
     # evaluation. If no bootstrap seed is provided, the original mappings are
     # returned. If a `bootstrapSeed` is provided and differs from the
-    # previously active seed, the data set weights are resampled for it (see
-    # `.resampleDataSetWeights()`). The values of the data sets are not
-    # changed. The initial mapping state is extracted only once via
-    # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
-    # restores it.
+    # previously active seed, the weights of individual data sets are resampled
+    # for it (see `.resampleMappingWeights()`), and the means of aggregated
+    # data sets are redrawn (see `.resampleDataSetValues()`). The initial
+    # mapping state is extracted only once via `.extractOutputMappingState()`,
+    # and `.restoreOutputMappingsState()` restores it.
     #
     # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
     #   returns the unmodified output mappings.
@@ -926,6 +926,7 @@ ParameterIdentification <- R6::R6Class(
         private$.configuration$ciMethod == "bootstrap" &&
           is.null(private$.activeBootstrapSeed)
       ) {
+        .validateSubjectCounts(private$.outputMappings)
         .classifyObservedData(private$.outputMappings)
       }
 
@@ -940,6 +941,18 @@ ParameterIdentification <- R6::R6Class(
         upper = upper,
         resetFn = function() private$.fnEvaluations <- 0
       )
+      if (private$.configuration$ciMethod == "bootstrap") {
+        ciResult$details$subjectCounts <- lapply(
+          private$.outputMappings,
+          function(mapping) {
+            aggregated <- Filter(
+              .isAggregatedWithErrors,
+              mapping$observedDataSets
+            )
+            mapping$subjectCount[names(aggregated)]
+          }
+        )
+      }
 
       PIResult$new(
         optimResult = private$.lastOptimResult,
@@ -1073,6 +1086,16 @@ ParameterIdentification <- R6::R6Class(
           add = TRUE
         )
       }
+      # A bootstrap after the run needs the subject counts of the aggregated
+      # data: check them before the optimization and before the previous
+      # results are cleared
+      if (
+        is.null(private$.pkMappings) &&
+          private$.configuration$autoEstimateCI &&
+          private$.configuration$ciMethod == "bootstrap"
+      ) {
+        .validateSubjectCounts(private$.outputMappings)
+      }
       private$.batchInitialization()
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
@@ -1138,7 +1161,10 @@ ParameterIdentification <- R6::R6Class(
     #' @description Computes confidence intervals for the optimized parameters
     #'   using the method defined in the associated `PIConfiguration`. Intended
     #'   for advanced use when `autoEstimateCI` was set to `FALSE` during the
-    #'   initial run.
+    #'   initial run. The bootstrap method redraws the means of aggregated data
+    #'   sets and needs the number of subjects behind them, set with
+    #'   `PIOutputMapping$setSubjectCount()`. `vignette("confidence-intervals")`
+    #'   explains the resampling.
     #'
     #' @return The same [`PIResult`] object returned by the `run()` method,
     #'   updated to include confidence interval estimates.

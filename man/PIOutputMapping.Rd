@@ -19,6 +19,10 @@ comparison with simulation outcomes.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
+    \item{\code{subjectCount}}{Named integer vector with the number of subjects
+behind each observed data set, \code{NULL} until set with
+\verb{$setSubjectCount()}.}
+
     \item{\code{quantity}}{Simulation quantities to be aligned with observed data
 values.}
 
@@ -43,6 +47,7 @@ with keys \code{xVals} and \code{yVals}.}
     \item \href{#method-PIOutputMapping-removeObservedDataSet}{\code{PIOutputMapping$removeObservedDataSet()}}
     \item \href{#method-PIOutputMapping-setDataTransformations}{\code{PIOutputMapping$setDataTransformations()}}
     \item \href{#method-PIOutputMapping-setDataWeights}{\code{PIOutputMapping$setDataWeights()}}
+    \item \href{#method-PIOutputMapping-setSubjectCount}{\code{PIOutputMapping$setSubjectCount()}}
     \item \href{#method-PIOutputMapping-print}{\code{PIOutputMapping$print()}}
     \item \href{#method-PIOutputMapping-clone}{\code{PIOutputMapping$clone()}}
   }
@@ -170,6 +175,33 @@ corresponding dataset,
 To apply both dataset-level and point-level weights, multiply them
 beforehand and provide the combined result as a single numeric vector
 per dataset.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-PIOutputMapping-setSubjectCount"></a>}}
+\if{latex}{\out{\hypertarget{method-PIOutputMapping-setSubjectCount}{}}}
+\subsection{\code{PIOutputMapping$setSubjectCount()}}{
+  Sets the number of subjects behind the aggregated data
+sets of this mapping (data sets with \code{yErrorType} and error values).
+Bootstrap confidence intervals redraw the means of aggregated data
+from the reported mean and \code{SD / sqrt(n)}, so they need this number
+for every aggregated data set and stop without it. See
+\code{vignette("confidence-intervals")}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{PIOutputMapping$setSubjectCount(n)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{n}}{A positive whole number, or a named vector of them. One unnamed
+number applies to every observed data set of the mapping. Names must
+match the names of the observed data sets, and set the number of each
+named data set while keeping the others.}
     }
     \if{html}{\out{</div>}}
   }

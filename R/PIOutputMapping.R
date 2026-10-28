@@ -43,6 +43,20 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
+    #' @field subjectCount Named integer vector with the number of subjects
+    #'   behind each observed data set, `NULL` until set with
+    #'   `$setSubjectCount()`.
+    subjectCount = function(value) {
+      if (missing(value)) {
+        private$.subjectCount
+      } else {
+        stop(messages$errorPropertyReadOnly(
+          "subjectCount",
+          optionalMessage = "Use $setSubjectCount() to change the value."
+        ))
+      }
+    },
+
     #' @field quantity Simulation quantities to be aligned with observed data
     #'   values.
     quantity = function(value) {
@@ -97,6 +111,7 @@ PIOutputMapping <- R6::R6Class(
     .transformResultsFunction = NULL,
     .dataTransformations = NULL,
     .dataWeights = NULL,
+    .subjectCount = NULL,
     .scaling = NULL
   ),
   public = list(
@@ -296,6 +311,42 @@ PIOutputMapping <- R6::R6Class(
         private$.dataWeights[[label]] <- weightsVec
       }
 
+      invisible(self)
+    },
+
+    #' @description Sets the number of subjects behind the aggregated data
+    #'   sets of this mapping (data sets with `yErrorType` and error values).
+    #'   Bootstrap confidence intervals redraw the means of aggregated data
+    #'   from the reported mean and `SD / sqrt(n)`, so they need this number
+    #'   for every aggregated data set and stop without it. See
+    #'   `vignette("confidence-intervals")`.
+    #'
+    #' @param n A positive whole number, or a named vector of them. One unnamed
+    #'   number applies to every observed data set of the mapping. Names must
+    #'   match the names of the observed data sets, and set the number of each
+    #'   named data set while keeping the others.
+    setSubjectCount = function(n) {
+      if (length(private$.observedDataSets) == 0) {
+        stop(messages$errorNoObservedDataSetsForSubjectCount())
+      }
+      ospsuite.utils::validateIsNumeric(n)
+      if (
+        any(!is.finite(n) | n < 1 | n != round(n) | n > .Machine$integer.max)
+      ) {
+        stop(messages$errorSubjectCount(n))
+      }
+
+      labels <- names(n)
+      if (is.null(labels) && length(n) == 1) {
+        labels <- names(private$.observedDataSets)
+      }
+      if (
+        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
+      ) {
+        stop(messages$errorSubjectCountNames(names(private$.observedDataSets)))
+      }
+
+      private$.subjectCount[labels] <- as.integer(n)
       invisible(self)
     },
 

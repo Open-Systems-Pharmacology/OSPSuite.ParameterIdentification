@@ -16,18 +16,42 @@
 # estimateCI() works with bootstrap and individual data
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
-        unit = "Log Units", estimate = 1.32972212182594, sd = 0.0231671007533465, 
-        cv = 0.0174225128491763, lowerCI = 1.32079980321311, upperCI = 1.36227120490337, 
-        ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
+        unit = "Log Units", estimate = 1.32962909906082, sd = 0.00854818044649831, 
+        cv = 0.00642899621596451, lowerCI = NA_real_, upperCI = 1.35158826184487, 
+        ciType = "one-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
 # estimateCI() works with bootstrap and aggregated data
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
-        unit = "Log Units", estimate = 1.31890001595242, sd = 0, 
-        cv = 0, lowerCI = 1.31890001595242, upperCI = 1.31890001595242, 
+        unit = "Log Units", estimate = 1.31890001595242, sd = 0.00631045408522872, 
+        cv = 0.00478463417158407, lowerCI = 1.31280533029821, upperCI = 1.32509245284263, 
         ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
+
+# bootstrap stops before the first replicate when aggregated data have no subject count
+
+    Code
+      piTask$estimateCI()
+    Condition
+      Error in `.validateSubjectCounts()`:
+      ! The aggregated data set(s) "AciclovirLaskinData.Laskin 1982.Group A" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number.
+
+# run() with autoEstimateCI and bootstrap checks the subject counts before the optimization
+
+    Code
+      piTask$run()
+    Condition
+      Error in `.validateSubjectCounts()`:
+      ! The aggregated data set(s) "AciclovirLaskinData.Laskin 1982.Group A" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number.
+
+# run() that stops on a missing subject count keeps the previous fit
+
+    Code
+      suppressMessages(piTask$run())
+    Condition
+      Error in `.validateSubjectCounts()`:
+      ! The aggregated data set(s) "AciclovirLaskinData.Laskin 1982.Group A" have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call `PIOutputMapping$setSubjectCount()` on their output mapping with that number.
 
 # estimateCI() outputs expected messages for mixed datasets
 
@@ -46,33 +70,47 @@
     list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(3, 
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1.73205080756888, 
+    1.73205080756888, 1.73205080756888, 1.73205080756888, 1.73205080756888, 
+    1.73205080756888, 1.73205080756888, 1.73205080756888, 1.73205080756888, 
+    1.73205080756888, 1.73205080756888), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(1, 
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
 
 # estimateCI() applies bootstrap resampling to individual data with initial weights
 
-    list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(5, 
-    5, 5, 5, 5, 5, 5, 5, 5, 5, 5), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
+    list(AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(3.16227766016838, 
+    3.16227766016838, 3.16227766016838, 3.16227766016838, 3.16227766016838, 
+    3.16227766016838, 3.16227766016838, 3.16227766016838, 3.16227766016838, 
+    3.16227766016838, 3.16227766016838), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
     1, 1, 2, 2, 1, 1, 1, 1, 1, 0.5))
 
 # estimateCI() applies bootstrap resampling to mixed data (individual and aggregated)
 
-    list("AciclovirLaskinData.Laskin 1982.Group A" = c(22, 22, 22, 
-    22, 22, 22, 22, 22, 22, 22, 22), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
+    list("AciclovirLaskinData.Laskin 1982.Group A" = c(20, 20, 20, 
+    20, 20, 20, 20, 20, 20, 20, 20), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 ---
 
     list("AciclovirLaskinData.Laskin 1982.Group A" = c(2.37029894378793, 
-    2.9463978989952, 3.07743607663724, 3.07743607663724, 2.17274009628454, 
+    2.2591937067773, 3.0031228561711, 3.04406262330303, 2.17274009628454, 
     1.934701913342, 1.30778198581538, 0.732094122213311, 0.434305491125997, 
     0.164341798836176, 0.0264269601757405), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(2.37344988818222, 
     3.54193002749525, 3.28755595546681, 2.94819210466812, 2.59158605331322, 
