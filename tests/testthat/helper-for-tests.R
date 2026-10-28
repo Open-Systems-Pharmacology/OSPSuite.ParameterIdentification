@@ -607,3 +607,14 @@ testStateVariableOnlyTask <- function() {
     outputMappings = mapping
   )
 }
+
+# The evaluation closure of the facade on the objective of the current call,
+# with the data of the bootstrap replicate `seed` when one is given
+objectiveClosure <- function(task, seed = NULL) {
+  priv <- task$.__enclos_env__$private
+  objective <- priv$.objectiveFor()
+  if (!is.null(seed)) {
+    objective <- objective$withData(priv$.data$resample(seed))
+  }
+  priv$.evaluationClosure(objective)
+}

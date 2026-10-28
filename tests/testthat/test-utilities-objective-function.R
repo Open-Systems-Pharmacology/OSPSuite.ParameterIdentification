@@ -1014,17 +1014,18 @@ test_that("objective function reads the observed data once and reuses them", {
   currVals <- currStartValues(task)
   observedDataReads <- localObservedDataReads()
 
-  expect_null(priv$.observedData)
+  expect_null(priv$.data)
 
-  cost1 <- priv$.objectiveFunction(currVals)
-  observedData <- priv$.observedData
+  objective <- objectiveClosure(task)
+  cost1 <- objective(currVals)
+  observedData <- priv$.data$observedData
   expect_false(is.null(observedData))
   expect_equal(observedDataReads$reads, 1)
 
-  cost2 <- priv$.objectiveFunction(currVals)
-  priv$.objectiveFunction(currVals * 2)
+  cost2 <- objective(currVals)
+  objectiveClosure(task)(currVals * 2)
   expect_equal(observedDataReads$reads, 1)
-  expect_identical(priv$.observedData, observedData)
+  expect_identical(priv$.data$observedData, observedData)
   expect_identical(cost2, cost1)
 })
 
@@ -1595,14 +1596,14 @@ test_that("observed data are read again at the start of every public call", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
-  costBefore <- priv$.objectiveFunction(currVals)$modelCost
+  costBefore <- objectiveClosure(task)(currVals)$modelCost
 
   # Public methods start with the batch initialization, so a change of the
   # data transformations between two calls takes effect
   task$outputMappings[[1]]$setDataTransformations(yFactors = 0.5)
   priv$.batchInitialization()
-  expect_null(priv$.observedData)
-  costAfter <- priv$.objectiveFunction(currVals)$modelCost
+  expect_null(priv$.objective)
+  costAfter <- objectiveClosure(task)(currVals)$modelCost
 
   freshTask <- testPiTask()
   freshTask$outputMappings[[1]]$setDataTransformations(yFactors = 0.5)
@@ -1612,7 +1613,7 @@ test_that("observed data are read again at the start of every public call", {
   expect_false(costAfter == costBefore)
   expect_identical(
     costAfter,
-    freshPriv$.objectiveFunction(currStartValues(freshTask))$modelCost
+    objectiveClosure(freshTask)(currStartValues(freshTask))$modelCost
   )
 })
 

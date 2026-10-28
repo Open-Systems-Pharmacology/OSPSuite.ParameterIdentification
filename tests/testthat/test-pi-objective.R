@@ -54,7 +54,7 @@ test_that("an infinite cost of successful simulations is not counted as a failed
     evaluate = function(values) .createErrorCostStructure(),
     observedData = NULL
   )
-  cost <- priv$.objectiveFunction(startValues(task))
+  cost <- priv$.evaluationClosure(priv$.objective)(startValues(task))
   expect_identical(priv$.failedEvaluations, 0)
   expect_identical(priv$.lastCostSummary, cost)
 })
