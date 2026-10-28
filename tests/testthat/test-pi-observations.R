@@ -110,6 +110,59 @@ test_that("resample() draws only the weights of a mapping without a subject coun
   expect_false(identical(resampled$outputMappings[[1]]$dataWeights, .completeDataWeights(mapping)))
 })
 
+test_that("resample() redraws each data set with its own subject count", {
+  redrawnLogDeviations <- function(subjectCounts) {
+    mapping <- aggregatedStudiesMapping()
+    mapping$setSubjectCount(subjectCounts)
+    resampled <- PIObservations$new(list(mapping))$resample(3)
+    lapply(resampled$outputMappings[[1]]$observedDataSets, function(dataSet) {
+      log(dataSet$yValues / c(10, 20))
+    })
+  }
+  sameCount <- redrawnLogDeviations(c(studyA = 12, studyB = 12))
+  fourfoldCount <- redrawnLogDeviations(c(studyA = 12, studyB = 48))
+  # DataSet stores values in single precision
+  expect_equal(fourfoldCount$studyA, sameCount$studyA, tolerance = 1e-6)
+  expect_equal(fourfoldCount$studyB, sameCount$studyB / 2, tolerance = 1e-6)
+})
+
+test_that("resample() redraws only the data sets with a subject count and keeps the counts", {
+  mapping <- aggregatedStudiesMapping()
+  mapping$setSubjectCount(c(studyA = 12))
+  resampled <- PIObservations$new(list(mapping))$resample(3)$outputMappings[[1]]
+  original <- mapping$observedDataSets
+  expect_false(identical(resampled$observedDataSets$studyA$yValues, original$studyA$yValues))
+  expect_identical(resampled$observedDataSets$studyB$yValues, original$studyB$yValues)
+  expect_identical(resampled$subjectCount, c(studyA = 12L))
+})
+
+test_that("resample() keeps the weights of aggregated data sets in every replicate", {
+  mapping <- aggregatedStudiesMapping()
+  mapping$setSubjectCount(c(studyA = 8, studyB = 20))
+  data <- PIObservations$new(list(mapping))
+  for (seed in 1:20) {
+    resampled <- data$resample(seed)
+    expect_identical(resampled$outputMappings[[1]]$dataWeights, .completeDataWeights(mapping))
+  }
+})
+
+test_that("resample() draws only the weights of individual data sets when data are mixed", {
+  mapping <- mixedMappings()[[1]]
+  data <- PIObservations$new(list(mapping))
+  individualWeights <- list()
+  for (seed in 1:20) {
+    resampled <- data$resample(seed)$outputMappings[[1]]
+    expect_identical(
+      resampled$dataWeights[[laskinName]],
+      .completeDataWeights(mapping)[[laskinName]]
+    )
+    individualWeights[[seed]] <- resampled$dataWeights[
+      setdiff(names(resampled$dataWeights), laskinName)
+    ]
+  }
+  expect_gt(length(unique(individualWeights)), 1)
+})
+
 test_that(".copyDataSet() prepares like the original and takes new y values", {
   aggregated <- ospsuite::DataSet$new(name = "aggregated")
   aggregated$setValues(xValues = c(1, 2), yValues = c(10, 20), yErrorValues = c(2000, 4000))

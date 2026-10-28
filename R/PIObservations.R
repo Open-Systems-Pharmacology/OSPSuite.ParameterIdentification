@@ -69,10 +69,11 @@ PIObservations <- R6::R6Class(
       private$.observedData <- lapply(outputMappings, .prepareObservedData)
     },
 
-    # The data of one bootstrap replicate: the data set weights of every
-    # output mapping resampled (see `.resampleDataSetWeights()`) and, for the
-    # mappings with a subject count, the means of their aggregated data sets
-    # redrawn, all under `seed`. The global random state is left as it was.
+    # The data of one bootstrap replicate: the weights of the individual data
+    # sets of every output mapping resampled (see `.resampleDataSetWeights()`)
+    # and the means of the aggregated data sets with a subject count redrawn,
+    # all under `seed`. Aggregated data sets with error values keep their
+    # weights. The global random state is left as it was.
     # @param seed Integer seed of the replicate.
     # @return A new `PIObservations` object.
     resample = function(seed) {
@@ -82,22 +83,38 @@ PIObservations <- R6::R6Class(
       })
       .withSeed(seed, {
         weights <- lapply(mappings, function(mapping) {
-          .resampleDataSetWeights(.completeDataWeights(mapping))
+          weights <- .completeDataWeights(mapping)
+          isIndividual <- !vapply(
+            mapping$observedDataSets,
+            .isAggregatedWithErrors,
+            logical(1)
+          )
+          if (any(isIndividual)) {
+            weights[isIndividual] <- .resampleDataSetWeights(
+              weights[isIndividual]
+            )
+          }
+          weights
         })
         for (idx in seq_along(mappings)) {
           mapping <- mappings[[idx]]
           # Weights for every data set first, so that replacing a data set
           # below does not warn about weights of other data sets
           mapping$setDataWeights(weights[[idx]])
-          subjectCount <- mapping$subjectCount
-          if (is.null(subjectCount)) {
-            next
-          }
+          subjectCounts <- mapping$subjectCount %||% integer()
           for (dataSet in mapping$observedDataSets) {
+            subjectCount <- unname(subjectCounts[dataSet$name])
+            if (is.na(subjectCount)) {
+              next
+            }
+            # Replacing the data set drops its count, restored below
             mapping$addObservedDataSets(.copyDataSet(
               dataSet,
               yValues = private$.redrawMeans(dataSet, subjectCount)
             ))
+          }
+          if (length(subjectCounts) > 0) {
+            mapping$setSubjectCount(subjectCounts)
           }
         }
       })
