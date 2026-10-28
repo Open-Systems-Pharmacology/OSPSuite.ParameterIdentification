@@ -11,7 +11,7 @@ instances to align and compare simulation outputs with empirical data."><meta na
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9004</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,12 @@ comparison with simulation outcomes.</p></dd>
 <dd><p>A named list of y-value weights.</p></dd>
 
 
+    <dt><code>subjectCount</code></dt>
+<dd><p>Named integer vector with the number of subjects
+behind each observed data set, <code>NULL</code> until set with
+<code>$setSubjectCount()</code>.</p></dd>
+
+
     <dt><code>quantity</code></dt>
 <dd><p>Simulation quantities to be aligned with observed data
 values.</p></dd>
@@ -106,6 +112,7 @@ with keys <code>xVals</code> and <code>yVals</code>.</p></dd>
 <li><p><a href="#method-PIOutputMapping-removeObservedDataSet"><code>PIOutputMapping$removeObservedDataSet()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataTransformations"><code>PIOutputMapping$setDataTransformations()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-setDataWeights"><code>PIOutputMapping$setDataWeights()</code></a></p></li>
+<li><p><a href="#method-PIOutputMapping-setSubjectCount"><code>PIOutputMapping$setSubjectCount()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-print"><code>PIOutputMapping$print()</code></a></p></li>
 <li><p><a href="#method-PIOutputMapping-clone"><code>PIOutputMapping$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-PIOutputMapping-initialize"></a><div class="section">
@@ -226,10 +233,34 @@ per dataset.</p></dd>
 
 </div>
 
+<p></p><hr><a id="method-PIOutputMapping-setSubjectCount"></a><div class="section">
+<h3 id="pioutputmapping-setsubjectcount-"><code>PIOutputMapping$setSubjectCount()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-setsubjectcount-"></a></h3>
+<p>Sets the number of subjects behind the aggregated data
+sets of this mapping (data sets with <code>yErrorType</code> and error values).
+Bootstrap confidence intervals redraw the means of aggregated data
+from the reported mean and <code>SD / sqrt(n)</code>, so they need this number
+for every aggregated data set and stop without it. See
+<code><a href="../articles/confidence-intervals.html">vignette("confidence-intervals")</a></code>.</p><div class="section">
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">setSubjectCount</span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>n</code></dt>
+<dd><p>A positive whole number, or a named vector of them. One unnamed
+number applies to every observed data set of the mapping. Names must
+match the names of the observed data sets, and set the number of each
+named data set while keeping the others.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div>
+
 <p></p><hr><a id="method-PIOutputMapping-print"></a><div class="section">
 <h3 id="pioutputmapping-print-"><code>PIOutputMapping$print()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-print-"></a></h3>
 <p>Prints a summary of the PIOutputMapping.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -238,10 +269,10 @@ per dataset.</p></dd>
 <p></p><hr><a id="method-PIOutputMapping-clone"></a><div class="section">
 <h3 id="pioutputmapping-clone-"><code>PIOutputMapping$clone()</code><a class="anchor" aria-label="anchor" href="#pioutputmapping-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">PIOutputMapping</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

@@ -11,7 +11,7 @@ methods."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9004</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -175,7 +175,10 @@ Estimate Confidence Intervals</p>
 <p>Computes confidence intervals for the optimized parameters
 using the method defined in the associated <code>PIConfiguration</code>. Intended
 for advanced use when <code>autoEstimateCI</code> was set to <code>FALSE</code> during the
-initial run.</p><div class="section">
+initial run. The bootstrap method redraws the means of aggregated data
+sets and needs the number of subjects behind them, set with
+<code>PIOutputMapping$setSubjectCount()</code>. <code><a href="../articles/confidence-intervals.html">vignette("confidence-intervals")</a></code>
+explains the resampling.</p><div class="section">
 <h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">ParameterIdentification</span><span class="op">$</span><span class="fu">estimateCI</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">

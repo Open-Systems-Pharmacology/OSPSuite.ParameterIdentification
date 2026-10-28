@@ -134,7 +134,11 @@ object in standard mode, or a `PKResult` object (internal) when
 Computes confidence intervals for the optimized parameters using the
 method defined in the associated `PIConfiguration`. Intended for
 advanced use when `autoEstimateCI` was set to `FALSE` during the initial
-run.
+run. The bootstrap method redraws the means of aggregated data sets and
+needs the number of subjects behind them, set with
+`PIOutputMapping$setSubjectCount()`.
+[`vignette("confidence-intervals")`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.md)
+explains the resampling.
 
 #### Usage
 

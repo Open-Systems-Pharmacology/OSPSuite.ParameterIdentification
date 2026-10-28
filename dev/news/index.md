@@ -2,6 +2,32 @@
 
 ## ospsuite.parameteridentification (development version)
 
+### Breaking changes
+
+- `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian
+  process models to aggregated data sets, so results with aggregated
+  data change, `DiceKriging` is no longer a dependency, and aggregated
+  data now require `PIOutputMapping$setSubjectCount()`
+  ([\#355](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/355),
+  [\#312](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/312),
+  [\#318](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/318)).
+- `estimateCI()` with `ciMethod = "bootstrap"` gives different results
+  also for individual data, because a data set drawn `k` times now
+  counts `k` times instead of `k²` and the output mappings of a task are
+  drawn independently of each other
+  ([\#203](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/203)).
+
+### Major changes
+
+- `PIOutputMapping$setSubjectCount()` sets the number of subjects `n`
+  behind aggregated data, as one number for all data sets of a mapping
+  or a vector named by data set, and bootstrap confidence intervals
+  redraw their means from the reported mean and `SD / sqrt(n)`. See
+  [`vignette("confidence-intervals")`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/articles/confidence-intervals.md)
+  ([\#203](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/203)).
+
+### Minor improvements and bug fixes
+
 - `ParameterIdentification$run()` and `estimateCI()` now report in
   `ciError` why the Hessian confidence interval estimation failed when
   the Hessian calculation or its inversion fails, for example for a
