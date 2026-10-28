@@ -25,13 +25,15 @@ The `ospsuite.parameteridentification` package provides tools to estimate model 
 
 This vignette describes the available methods for confidence interval estimation, explains how to configure and run them, and shows how to inspect the results.
 
+The examples use `piTask`, a `ParameterIdentification` object, and `outputMapping`, one of its `PIOutputMapping` objects, created as shown in the [user guide](user-guide.html).
+
 ## Choosing a CI Method
 
 -   **`hessian`** is the default method. It estimates confidence intervals from the curvature of the objective function at the optimum. This approach is fast and works well when the problem is well-behaved and the objective function is approximately quadratic.
 
 -   **`PL`** (profile likelihood) computes confidence intervals by scanning the likelihood along each parameter. It is more robust for parameters near bounds or in situations where the likelihood is not well approximated by a quadratic shape, but it is slower.
 
--   **`bootstrap`** generates confidence intervals by repeatedly resampling the observed data and re-fitting the model. This method is robust and makes only minimal assumptions about the likelihood, but it is computationally more intensive than the other methods. The section [Bootstrap Resampling](#bootstrap-resampling) describes how the data are resampled.
+-   **`bootstrap`** generates confidence intervals by repeatedly refitting the model to new versions of the observed data. It makes no assumption about the shape of the likelihood, but it assumes that the individual data sets are exchangeable and, for aggregated data, that the means follow a lognormal distribution with the spread given by the reported SD and the number of subjects. It is computationally more intensive than the other methods. The section [Bootstrap Resampling](#bootstrap-resampling) describes how the data are resampled.
 
 ## Configuring CI Estimation
 
@@ -41,11 +43,16 @@ Each confidence interval method provides a predefined set of default options. Th
 
 Common options:
 
-- `epsilon`: numerical step size used in approximations
 - `confLevel`: confidence level (e.g. `0.95` for 95% confidence intervals)
+
+Additional options for the Hessian method:
+
+- `epsilon`: step size of the numerical derivatives
+- `r`, `d`: settings of the Richardson extrapolation in `numDeriv::hessian()`
 
 Additional options for profile likelihood (PL):
 
+- `epsilon`: step size of the profile
 - `maxIter`: maximum number of iterations
 
 Additional options for bootstrap:
@@ -95,7 +102,9 @@ Data sets with individual values, for example one data set per subject, are draw
 
 ### Aggregated Data
 
-A data set with a `yErrorType` and error values reports a mean and an SD per time point, or a geometric mean and a geometric SD, instead of individual subjects. Such a data set cannot be resampled by drawing subjects. Instead, each replicate draws a new mean at every time point around the reported one, with the spread that a mean of `n` subjects has, the standard error SD / √n. The new means follow a lognormal distribution, so they stay positive.
+A data set with a `yErrorType` and error values reports a mean and an SD per time point, or a geometric mean and a geometric SD, instead of individual subjects. Such a data set cannot be resampled by drawing subjects. Instead, each replicate draws a new mean at every time point around the reported one. The new means follow a lognormal distribution, so they stay positive.
+
+The spread of the new means is the one that a mean of `n` subjects has. For an arithmetic mean, this is the standard error $\mathrm{SD}/\sqrt{n}$. For a geometric mean, the spread applies on the log scale and is $\log(\mathrm{GSD})/\sqrt{n}$.
 
 The number of subjects `n` is not stored in the data set, so it has to be set on the output mapping before the bootstrap runs. One number applies to all data sets of the mapping. When the data sets come from studies of different size, give one number per data set, named by the data set:
 
@@ -108,15 +117,15 @@ Without a subject count for every aggregated data set, the bootstrap stops with 
 
 ### Limits for Aggregated Data
 
-In a study, the means at different time points are correlated, because the same subjects contribute to all of them. A mean and an SD do not carry this information, so the bootstrap draws each time point independently. As a result, the intervals tend to be too narrow for parameters that set the level of the curve, such as clearance, volume or bioavailability, and too wide for parameters that set its shape, such as the absorption rate.
+In a study, the means at different time points are correlated, because the same subjects contribute to all of them. A mean and an SD do not carry this information, so the bootstrap draws each time point independently. When the differences between subjects mostly raise or lower the whole curve, the intervals tend to be too narrow for parameters that set the level of the curve, such as clearance or bioavailability, and too wide for parameters that set its shape, such as the absorption rate.
 
-The width of the intervals scales with 1 / √n. When the number of subjects is uncertain, repeat the estimation with a few plausible values and check whether the conclusions change.
+The part of the interval width that comes from the redrawn means scales roughly with $1/\sqrt{n}$. When the number of subjects is uncertain, repeat the estimation with a few plausible values and check whether the conclusions change.
 
 ## Reading CI Results
 
 The printout of a `PIResult` object shows the main outcomes of a parameter identification run, including parameter estimates, standard deviations, coefficients of variation, and confidence intervals (if available).
 
-For programmatic access, the results can be exported as a data frame or as a list. The data frame has one row per parameter, with the estimate, its standard deviation and coefficient of variation, the confidence bounds and `ciType`. The list holds all details of the run, including the cost.
+For programmatic access, the results can be exported as a data frame or as a list. The data frame has one row per parameter, with the estimate, its standard deviation and coefficient of variation, the confidence bounds and `ciType`, which only `bootstrap` sets. The list holds all details of the run, including the cost.
 
 ```{r}
 resultTable <- piResult$toDataFrame()
@@ -126,14 +135,14 @@ resultList <- piResult$toList()
 The list also contains a `ciDetails` entry with method-specific information:
 
 - `hessian`: Hessian matrix, covariance matrix, eigenvalues, and correlation matrix
-- `PL`: parameter history and likelihood thresholds
-- `bootstrap`: bootstrap replicates, empirical confidence bounds, the seed used for resampling, and the subject counts used for aggregated data
+- `PL`: the profile of each parameter, with the parameter value and the cost at each step
+- `bootstrap`: the parameter estimates of all replicates, their correlation matrix, and the subject counts used for aggregated data
 
-With `bootstrap`, the parameter estimate can fall outside the interval of the replicates, which happens with highly skewed distributions. The package then reports a one-sided interval: the conflicting bound is set to `NA` and `ciType` is `"one-sided"`. If both bounds conflict, `ciType` is `"failed"`. A regular interval has the `ciType` `"two-sided"`.
+With `bootstrap`, the parameter estimate can fall outside the interval of the replicates. This happens with strongly skewed distributions, but also when replicates reach a different optimum than the fit or stop at a parameter bound, so inspect the replicates in `ciDetails`. The package then sets the conflicting bound to `NA` and `ciType` to `"one-sided"`. The remaining bound is the same quantile as in the two-sided interval, so it is not a one-sided interval at the chosen confidence level. A regular interval has the `ciType` `"two-sided"`.
 
 ## Practical Tips
 
-- Start with the `hessian` method as it is the default and runs quickly. If confidence intervals appear implausible (too wide, asymmetric, or `NA`), repeat the analysis with `bootstrap`.
+- Start with the `hessian` method as it is the default and runs quickly. If confidence intervals appear implausible (very wide, a bound below zero or outside the parameter bounds, or `NA`), repeat the analysis with `bootstrap`. Bootstrap needs several individual data sets per output mapping or aggregated data with a subject count. With a single individual data set, every replicate fits the same data and the interval does not reflect the uncertainty.
 
 - When CI calculation fails, check parameter bounds, scaling (`lin` or `log`), and residual weighting. Poorly chosen settings in these areas often prevent reliable CI estimation.
 
