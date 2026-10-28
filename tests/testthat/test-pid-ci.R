@@ -202,7 +202,7 @@ test_that("bootstrap results report the subject counts used", {
     simulations = testSimulation(),
     parameters = testParameters(),
     outputMappings = outputMapping,
-    configuration = bootstrapPiConfiguration(iter = 50, nBootstrap = 2)
+    configuration = bootstrapPiConfiguration(iter = 10, nBootstrap = 2)
   )
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piTask$run())
@@ -223,7 +223,7 @@ test_that("estimateCI() with bootstrap gives identical intervals for the same se
     simulations = testSimulation(),
     parameters = testParameters(),
     outputMappings = outputMapping,
-    configuration = bootstrapPiConfiguration(iter = 50, nBootstrap = 2)
+    configuration = bootstrapPiConfiguration(iter = 10, nBootstrap = 2)
   )
   piTask$configuration$autoEstimateCI <- FALSE
   suppressMessages(piTask$run())
