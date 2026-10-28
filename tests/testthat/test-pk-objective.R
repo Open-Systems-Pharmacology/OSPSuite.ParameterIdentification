@@ -198,7 +198,7 @@ test_that("run() in PK mode counts a failed evaluation and gives an infinite cos
   task <- pkTask(simulation)
   priv <- task$.__enclos_env__$private
   expect_error(suppressMessages(task$run()), class = "initialSimulationError")
-  cost <- suppressMessages(priv$.pkObjectiveFunction(startValues(task)))
+  cost <- suppressMessages(objectiveClosure(task)(startValues(task))$modelCost)
   expect_identical(cost, Inf)
   expect_identical(priv$.failedEvaluations, 1)
   expect_identical(priv$.fnEvaluations, 1)
