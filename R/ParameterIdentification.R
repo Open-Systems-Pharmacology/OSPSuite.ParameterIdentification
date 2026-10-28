@@ -752,12 +752,11 @@ ParameterIdentification <- R6::R6Class(
     # Returns the list of output mappings used during objective function
     # evaluation. If no bootstrap seed is provided, the original mappings are
     # returned. If a `bootstrapSeed` is provided and differs from the
-    # previously active seed, the data set weights are resampled for it (see
-    # `.resampleDataSetWeights()`), and the means of aggregated data sets are
-    # redrawn (see `.resampleDataSetValues()`). The initial mapping state is
-    # extracted only once via
-    # `.extractOutputMappingState()`, and `.restoreOutputMappingsState()`
-    # restores it.
+    # previously active seed, the weights of individual data sets are resampled
+    # for it (see `.resampleMappingWeights()`), and the means of aggregated
+    # data sets are redrawn (see `.resampleDataSetValues()`). The initial
+    # mapping state is extracted only once via `.extractOutputMappingState()`,
+    # and `.restoreOutputMappingsState()` restores it.
     #
     # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
     #   returns the unmodified output mappings.

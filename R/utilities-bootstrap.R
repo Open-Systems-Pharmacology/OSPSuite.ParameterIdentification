@@ -215,9 +215,10 @@
 
 #' Resample mapping-level dataset weights
 #'
-#' Resamples dataset weights for each output mapping using a shared bootstrap
-#' strategy. Ensures mapping weights align with observed datasets and applies
-#' point-level resampling.
+#' Resamples the weights of the individual data sets of each output mapping
+#' (see `.resampleDataSetWeights()`). Aggregated data sets with error values
+#' (see `.isAggregatedWithErrors()`) keep their weights, since the design fixes
+#' their subject count and only their means are redrawn.
 #'
 #' @param outputMappings A list of `PIOutputMapping` objects.
 #' @param mappingWeights A list of named dataset weight lists, one per output
@@ -244,8 +245,17 @@
       stop(messages$errorDataSetWeightsMismatch())
     }
 
-    # All datasets are resampled equally using a single strategy
-    resampledMappingWeights[[idx]] <- .resampleDataSetWeights(dataSetWeights)
+    isIndividual <- !vapply(
+      mapping$observedDataSets[names(dataSetWeights)],
+      .isAggregatedWithErrors,
+      logical(1)
+    )
+    if (any(isIndividual)) {
+      dataSetWeights[isIndividual] <- .resampleDataSetWeights(
+        dataSetWeights[isIndividual]
+      )
+    }
+    resampledMappingWeights[[idx]] <- dataSetWeights
   }
 
   return(resampledMappingWeights)

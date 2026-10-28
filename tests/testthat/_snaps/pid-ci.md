@@ -24,8 +24,8 @@
 # estimateCI() works with bootstrap and aggregated data
 
     structure(list(group = "1", name = "Lipophilicity", path = "Vergin 1995 IV|Aciclovir|Lipophilicity", 
-        unit = "Log Units", estimate = 1.31890001595242, sd = 0.0591940742667178, 
-        cv = 0.0448813962777701, lowerCI = 1.27942179110131, upperCI = 1.3967435511038, 
+        unit = "Log Units", estimate = 1.31890001595242, sd = 0.00631045408522872, 
+        cv = 0.00478463417158407, lowerCI = 1.31280533029821, upperCI = 1.32509245284263, 
         ciType = "two-sided", initialValue = -0.097), class = "data.frame", row.names = c(NA, 
     -1L))
 
@@ -95,20 +95,22 @@
 
 # estimateCI() applies bootstrap resampling to mixed data (individual and aggregated)
 
-    list("AciclovirLaskinData.Laskin 1982.Group A" = c(20.976176963403, 
-    20.976176963403, 20.976176963403, 20.976176963403, 20.976176963403, 
-    20.976176963403, 20.976176963403, 20.976176963403, 20.976176963403, 
-    20.976176963403, 20.976176963403), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1, 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
+    list("AciclovirLaskinData.Laskin 1982.Group A" = c(20, 20, 20, 
+    20, 20, 20, 20, 20, 20, 20, 20), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0), AciclovirDataIndividuals.Aciclovir.Synthetic.id2 = c(1, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1), AciclovirDataIndividuals.Aciclovir.Synthetic.id3 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id4 = c(1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731, 1.4142135623731, 1.4142135623731, 
+    1.4142135623731, 1.4142135623731), AciclovirDataIndividuals.Aciclovir.Synthetic.id5 = c(0, 
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 ---
 
     list("AciclovirLaskinData.Laskin 1982.Group A" = c(2.37029894378793, 
-    2.44340776589524, 2.8138899779151, 2.98918098451395, 2.17274009628454, 
+    2.2591937067773, 3.0031228561711, 3.04406262330303, 2.17274009628454, 
     1.934701913342, 1.30778198581538, 0.732094122213311, 0.434305491125997, 
     0.164341798836176, 0.0264269601757405), AciclovirDataIndividuals.Aciclovir.Synthetic.id1 = c(2.37344988818222, 
     3.54193002749525, 3.28755595546681, 2.94819210466812, 2.59158605331322, 

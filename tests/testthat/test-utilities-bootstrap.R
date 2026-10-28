@@ -245,6 +245,41 @@ test_that(".resampleAndApplyMappingState() redraws each data set with its own su
   expect_equal(fourfoldCount$studyB, sameCount$studyB / 2, tolerance = 1e-6)
 })
 
+test_that(".resampleAndApplyMappingState() keeps the weights of aggregated data sets in every replicate", {
+  for (seed in 1:20) {
+    mapping <- aggregatedStudiesMapping()
+    mapping$setSubjectCount(c(studyA = 8, studyB = 20))
+    mappings <- list(mapping)
+    state <- .extractOutputMappingState(mappings)
+    originalWeights <- state$dataSetWeights[[1]]
+    .resampleAndApplyMappingState(mappings, state, seed = seed)
+    expect_identical(mapping$dataWeights, originalWeights)
+  }
+})
+
+test_that(".resampleAndApplyMappingState() draws only individual data sets when data are mixed", {
+  aggregatedName <- "AciclovirLaskinData.Laskin 1982.Group A"
+  individualWeights <- list()
+  for (seed in 1:20) {
+    mapping <- PIOutputMapping$new(quantity = testQuantity())
+    mapping$addObservedDataSets(syntheticObservedData())
+    mapping$addObservedDataSets(testObservedData())
+    mapping$setSubjectCount(8)
+    mappings <- list(mapping)
+    state <- .extractOutputMappingState(mappings)
+    originalWeights <- state$dataSetWeights[[1]]
+    .resampleAndApplyMappingState(mappings, state, seed = seed)
+    expect_identical(
+      mapping$dataWeights[[aggregatedName]],
+      originalWeights[[aggregatedName]]
+    )
+    individualWeights[[seed]] <- mapping$dataWeights[
+      setdiff(names(originalWeights), aggregatedName)
+    ]
+  }
+  expect_gt(length(unique(individualWeights)), 1)
+})
+
 test_that(".resampleAndApplyMappingState() redraws means with errors converted to the unit of the means", {
   aggregatedMapping <- function(yErrorValues, yErrorUnit) {
     dataSet <- ospsuite::DataSet$new(name = "aggregated")
