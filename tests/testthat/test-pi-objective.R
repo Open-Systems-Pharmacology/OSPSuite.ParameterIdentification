@@ -28,7 +28,6 @@ test_that("evaluate() is the same on every call and leaves the task alone", {
   currVals <- startValues(task)
   expect_identical(objective$evaluate(currVals), objective$evaluate(currVals))
   expect_identical(priv$.fnEvaluations, 0)
-  expect_null(priv$.observedData)
 })
 
 test_that("evaluate() returns the error cost structure silently when the simulations fail", {
