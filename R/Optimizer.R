@@ -149,7 +149,7 @@ Optimizer <- R6::R6Class(
           numDeriv::hessian(fn, x = par, method.args = methodArgs)
         },
         error = function(e) {
-          result$error <- messages$ciEstimationError(
+          result$error <<- messages$ciEstimationError(
             "Hessian calculation",
             e$message
           )
@@ -184,7 +184,7 @@ Optimizer <- R6::R6Class(
           },
           error = function(e) {
             if (is.null(result$error)) {
-              result$error <- messages$ciEstimationError(
+              result$error <<- messages$ciEstimationError(
                 "Covariance matrix calculation",
                 e$message
               )

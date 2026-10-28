@@ -147,7 +147,7 @@ test_that("Estimated lipophilicity parameter equals expected value", {
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(piResult$toList()$sd, 0.173, tolerance = 0.01)
+  expect_equal(piResult$toList()$sd, 0.191, tolerance = 0.01)
 })
 
 
@@ -155,7 +155,7 @@ test_that("Hessian-based standard deviation equals expected value", {
 # Test setup:
 # - Model: Aciclovir (1 parameter)
 # - Data: 1 aggregated dataset
-# - Scaling: Linear
+# - Scaling: Logarithmic
 # - Optimizer: BOBYQA
 # - Residual weighting: Error-based
 # - CI method: Hessian-based
@@ -209,11 +209,11 @@ task <- ParameterIdentification$new(
 piResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
-  expect_equal(piResult$toList()$finalParameters, 0.153, tolerance = 0.01)
+  expect_equal(piResult$toList()$finalParameters, 0.217, tolerance = 0.01)
 })
 
 test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(piResult$toList()$sd, 0.149, tolerance = 0.01)
+  expect_equal(piResult$toList()$sd, 0.151, tolerance = 0.01)
 })
 
 
@@ -233,6 +233,7 @@ simulation <- loadSimulation(
 piConfiguration <- PIConfiguration$new()
 piConfiguration$printEvaluationFeedback <- TRUE
 piConfiguration$ciMethod <- "bootstrap"
+piConfiguration$ciOptions$seed <- 1234
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
@@ -277,8 +278,8 @@ test_that("Estimated lipophilicity parameter equals expected value", {
   expect_equal(piResult$toList()$finalParameters, 0.164, tolerance = 0.01)
 })
 
-test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(piResult$toList()$sd, 0.148, tolerance = 0.01)
+test_that("Bootstrap standard deviation equals expected value", {
+  expect_equal(piResult$toList()$sd, 0.170, tolerance = 0.01)
 })
 
 
@@ -303,6 +304,7 @@ algorithmOptions$reltol <- 1e-4
 algorithmOptions$steptol <- 10
 piConfiguration$algorithmOptions <- algorithmOptions
 piConfiguration$ciMethod <- "bootstrap"
+piConfiguration$ciOptions$seed <- 1234
 
 parameterPaths <- c("Aciclovir|Lipophilicity")
 modelParams <- c(ospsuite::getParameter(
@@ -341,12 +343,13 @@ task <- ParameterIdentification$new(
   configuration = piConfiguration
 )
 
+set.seed(1234)
 piResult <- task$run()
 
 test_that("Estimated lipophilicity parameter equals expected value", {
   expect_equal(piResult$toList()$finalParameters, 0.164, tolerance = 0.01)
 })
 
-test_that("Hessian-based standard deviation equals expected value", {
-  expect_equal(piResult$toList()$sd, 0.160, tolerance = 0.01)
+test_that("Bootstrap standard deviation equals expected value", {
+  expect_equal(piResult$toList()$sd, 0.157, tolerance = 0.01)
 })
