@@ -113,7 +113,7 @@ outputMapping$setSubjectCount(12)
 outputMapping$setSubjectCount(c("StudyA" = 8, "StudyB" = 20))
 ```
 
-Without a subject count for every aggregated data set, the bootstrap stops with an error before the first replicate.
+Only points with a positive mean and an SD above 0, or a GSD above 1, are redrawn. An aggregated data set with at least one such point needs a subject count, otherwise the bootstrap stops with an error before the first replicate.
 
 ### Limits for Aggregated Data
 
