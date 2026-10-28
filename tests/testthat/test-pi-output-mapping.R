@@ -345,6 +345,18 @@ test_that("setSubjectCount() sets counts by data set label and keeps the others"
   )
 })
 
+test_that("replacing or removing a data set clears its subject count", {
+  synthetic <- "AciclovirDataIndividuals.Aciclovir.Synthetic.id1"
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(testObservedData())
+  mapping$addObservedDataSets(syntheticObservedData()[[synthetic]])
+  mapping$setSubjectCount(12)
+  mapping$addObservedDataSets(testObservedData())
+  expect_identical(mapping$subjectCount, setNames(12L, synthetic))
+  mapping$removeObservedDataSet(synthetic)
+  expect_length(mapping$subjectCount, 0)
+})
+
 test_that("setSubjectCount() rejects invalid counts and the binding is read-only", {
   mapping <- PIOutputMapping$new(quantity = testQuantity())
   expect_snapshot(mapping$setSubjectCount(13), error = TRUE)

@@ -112,7 +112,13 @@ PIOutputMapping <- R6::R6Class(
     .dataTransformations = NULL,
     .dataWeights = NULL,
     .subjectCount = NULL,
-    .scaling = NULL
+    .scaling = NULL,
+    # A replaced or removed data set must not keep the count of the old one
+    .dropSubjectCount = function(label) {
+      private$.subjectCount <- private$.subjectCount[
+        names(private$.subjectCount) != label
+      ]
+    }
   ),
   public = list(
     #' @description Initialize a new instance of the class.
@@ -185,6 +191,7 @@ PIOutputMapping <- R6::R6Class(
           }
         }
 
+        private$.dropSubjectCount(data[[idx]]$name)
         private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
       }
 
@@ -199,6 +206,7 @@ PIOutputMapping <- R6::R6Class(
     #' @description Removes specified observed data series.
     #' @param label The label of the observed data series to remove.
     removeObservedDataSet = function(label) {
+      private$.dropSubjectCount(label)
       private$.observedDataSets[[label]] <- NULL
       invisible(self)
     },
