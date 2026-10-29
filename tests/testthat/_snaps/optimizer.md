@@ -155,3 +155,14 @@
     Output
       [1] "Error during CI estimation step 'Covariance matrix calculation': Lapack routine dgesv: system is exactly singular: U[1,1] = 0"
 
+# Hessian CI stops when the objective function value has no cost variables
+
+    Code
+      optimizer$estimateCI(par = parTest, fn = fnScalar, lower = lowerTest, upper = upperTest)
+    Message
+      Starting confidence interval estimation using 'hessian' for parameter value(s):
+        0.8000, -1.500, 2.500
+    Condition
+      Error:
+      ! The Hessian method needs weightedSSR and nObservations in costVariables of the objective function value, missing: "weightedSSR" and "nObservations". Return a value with these fields, for example a <modelCost> object as <ParameterIdentification> does, or use `ciMethod = "PL"`.
+
