@@ -5,7 +5,7 @@
 \title{Validates Matching IDs across Simulation IDs, PI Parameters, and Output
 Mappings}
 \usage{
-.validateSimulationIds(simulationIds, piParameters, outputMappings)
+.validateSimulationIds(simulationIds, piParameters, outputMappings = NULL)
 }
 \arguments{
 \item{simulationIds}{Vector of simulation IDs.}
@@ -14,7 +14,8 @@ Mappings}
 extracted and validated against \code{simulationIds}.}
 
 \item{outputMappings}{List of \code{OutputMapping} instances, from which IDs are
-extracted and validated against \code{simulationIds}.}
+extracted and validated against \code{simulationIds}, or \code{NULL} to validate
+the parameters only (PK targets need no mapping for every simulation).}
 }
 \value{
 TRUE if all IDs match accordingly, otherwise throws an error

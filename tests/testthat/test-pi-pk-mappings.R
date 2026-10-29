@@ -169,7 +169,7 @@ test_that("calculateOFVProfiles errors for pkOutputMappings", {
   )
 })
 
-test_that(".getPKValues uses each mapping's own simulation batch, not always the first", {
+test_that("pkValues() uses each mapping's own simulation batch, not always the first", {
   pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   sim1 <- ospsuite::loadSimulation(
     pkmlPath,
@@ -262,20 +262,20 @@ test_that("a failed simulation in PK mode is reported by name and reason", {
     )
   )
 
-  # Evaluations by the optimizer log it and return the largest cost, also the
+  # Evaluations by the optimizer log it and return an infinite cost, also the
   # first
   priv$.fnEvaluations <- 0
   logged <- character()
   expect_no_warning(
     cost <- withCallingHandlers(
-      priv$.pkObjectiveFunction(task$parameters[[1]]$startValue),
+      objectiveClosure(task)(task$parameters[[1]]$startValue)$modelCost,
       message = function(m) {
         logged <<- c(logged, conditionMessage(m))
         invokeRestart("muffleMessage")
       }
     )
   )
-  expect_identical(cost, .Machine$double.xmax)
+  expect_identical(cost, Inf)
   expect_true(any(grepl(failedPattern, logged)))
 })
 
@@ -289,7 +289,7 @@ test_that("an error that is not a failed simulation stops a PK evaluation", {
     .package = "ospsuite"
   )
   expect_snapshot(
-    priv$.pkObjectiveFunction(task$parameters[[1]]$startValue),
+    objectiveClosure(task)(task$parameters[[1]]$startValue),
     error = TRUE
   )
 })
@@ -348,10 +348,10 @@ test_that("a failed simulation without a PK mapping only warns", {
   # The cost is that of the task without the failed simulation, and the
   # warning of the simulation engine is shown for the failed one
   for (doseValue in c(2.5e-4, 6e-4)) {
-    evaluation <- collectWarnings(priv$.pkObjectiveFunction(doseValue))
+    evaluation <- collectWarnings(objectiveClosure(task)(doseValue)$modelCost)
     expect_identical(
       evaluation$value,
-      singlePriv$.pkObjectiveFunction(doseValue)
+      objectiveClosure(single)(doseValue)$modelCost
     )
     expect_length(evaluation$warnings, 1)
     expect_false(grepl("^Simulation", evaluation$warnings))
@@ -376,7 +376,7 @@ test_that("a failed simulation without a PK mapping only warns", {
   bothFailPriv$.batchInitialization()
   expect_no_warning(
     expect_error(
-      bothFailPriv$.getPKValues(2.5e-4),
+      bothFailPriv$.objectiveFor()$pkValues(2.5e-4),
       paste0(
         "Simulations '",
         bothFail$simulations[[1]]$name,
@@ -389,7 +389,7 @@ test_that("a failed simulation without a PK mapping only warns", {
   )
 })
 
-test_that(".getPKValues routes a state-variable parameter as a molecule", {
+test_that("pkValues() routes a state-variable parameter as a molecule", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -416,13 +416,13 @@ test_that(".getPKValues routes a state-variable parameter as a molecule", {
   priv$.batchInitialization()
   simId <- names(priv$.simulations)[[1]]
 
-  pkValues <- priv$.getPKValues(stateVarParam$startValue)
+  pkValues <- priv$.objectiveFor()$pkValues(stateVarParam$startValue)
 
   expect_true(
-    stateVariableParameterPath %in% names(priv$.variableMolecules[[simId]])
+    stateVariableParameterPath %in% names(priv$.model$variableMolecules[[simId]])
   )
   expect_false(
-    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
+    stateVariableParameterPath %in% names(priv$.model$variableParameters[[simId]])
   )
   expect_true(is.finite(pkValues[[1]]))
 })

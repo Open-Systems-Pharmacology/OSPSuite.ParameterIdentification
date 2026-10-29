@@ -61,20 +61,6 @@ SimulationModel <- R6::R6Class(
       }
     },
 
-    # Selects the quantities of the PK mappings as the only outputs of the
-    # simulations
-    .selectPKOutputs = function(pkMappings) {
-      for (simulation in private$.simulations) {
-        ospsuite::clearOutputs(simulation)
-      }
-      for (mapping in pkMappings) {
-        ospsuite::addOutputs(
-          quantitiesOrPaths = mapping$quantity,
-          simulation = private$.simulations[[mapping$simId]]
-        )
-      }
-    },
-
     .simulationNames = function() {
       vapply(
         private$.simulations,
@@ -177,12 +163,10 @@ SimulationModel <- R6::R6Class(
     # @param parameters List of `PIParameters` objects, in the order of the
     #   optimizer values.
     # @param outputMappings List of `PIOutputMapping` objects whose quantities
-    #   and observed times the batches are built for. The simulations are
-    #   restored when the constructor exits.
-    # @param pkMappings List of `PKOutputMapping` objects whose quantities are
-    #   selected instead. `ospsuite::calculatePKAnalyses()` calculates the PK
-    #   parameters of the outputs selected in the simulation, so they stay
-    #   selected and the caller restores the simulations.
+    #   and observed times the batches are built for.
+    # @param pkMappings List of `PKOutputMapping` objects whose quantities the
+    #   batches are built for instead. The simulations are restored when the
+    #   constructor exits in both modes.
     # @param simulationRunOptions `SimulationRunOptions` for the batches, or
     #   `NULL` for the defaults.
     initialize = function(
@@ -204,6 +188,7 @@ SimulationModel <- R6::R6Class(
         "PKOutputMapping",
         nullAllowed = TRUE
       )
+      .validateSimulationIds(names(simulations), parameters, outputMappings)
       private$.simulations <- simulations
       private$.parameters <- parameters
       private$.simulationRunOptions <- simulationRunOptions
@@ -249,18 +234,18 @@ SimulationModel <- R6::R6Class(
       #   }
       # }
 
+      # A batch copies the output selections and the output schema of its
+      # simulation when it is built, so the simulations are restored when
+      # the constructor exits, also on an error
+      savedState <- .storeSimulationState(simulations)
+      on.exit(
+        .restoreSimulationState(simulations, savedState),
+        add = TRUE
+      )
       if (is.null(pkMappings)) {
-        # A batch copies the output selections and the output schema of its
-        # simulation when it is built, so the simulations are restored when
-        # the constructor exits, also on an error
-        savedState <- .storeSimulationState(simulations)
-        on.exit(
-          .restoreSimulationState(simulations, savedState),
-          add = TRUE
-        )
         private$.selectOutputs(outputMappings)
       } else {
-        private$.selectPKOutputs(pkMappings)
+        .selectPKOutputs(simulations, pkMappings)
       }
 
       # Seed each optimization parameter's start value into its variable

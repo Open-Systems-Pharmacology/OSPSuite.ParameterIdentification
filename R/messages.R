@@ -262,22 +262,25 @@ messages$errorMissingOptimizationResult <- function() {
 messages$errorSimulationIdMissing <- function(
   simulationIds,
   piParamIds,
-  outputMappingIds
+  outputMappingIds = NULL
 ) {
-  message <- utils::capture.output(cat(
-    "Mismatch or missing ID detected.\n",
-    "Ensure each Simulation ID matches with corresponding PIParameter and OutputMapping IDs.\n",
-    "Simulation IDs: ",
-    paste(simulationIds, collapse = ", "),
-    "\n",
-    "PIParameter IDs: ",
-    paste(piParamIds, collapse = ", "),
-    "\n",
-    "OutputMapping IDs: ",
-    paste(outputMappingIds, collapse = ", ")
-  ))
-
-  return(paste(message, collapse = "\n"))
+  kinds <- if (is.null(outputMappingIds)) {
+    "PIParameter IDs."
+  } else {
+    "PIParameter and OutputMapping IDs."
+  }
+  paste(
+    c(
+      "Mismatch or missing ID detected.",
+      paste("Ensure each Simulation ID matches with corresponding", kinds),
+      paste("Simulation IDs:", paste(simulationIds, collapse = ", ")),
+      paste("PIParameter IDs:", paste(piParamIds, collapse = ", ")),
+      if (!is.null(outputMappingIds)) {
+        paste("OutputMapping IDs:", paste(outputMappingIds, collapse = ", "))
+      }
+    ),
+    collapse = "\n"
+  )
 }
 
 messages$errorObservedDataNotFound <- function(
@@ -503,9 +506,9 @@ messages$errorPKMultiIndividualSimulation <- function(
   )
 }
 
-messages$errorPKZeroTarget <- function(pkParameter, quantityPath) {
+messages$pkValueNotFinite <- function(pkParameter, quantityPath) {
   ospsuite.utils::cliFormat(
-    "Target value for {.val {pkParameter}} at {.val {quantityPath}} is zero or negative. Cannot compute relative cost."
+    "The PK parameter {.val {pkParameter}} of {.val {quantityPath}} is not finite."
   )
 }
 
