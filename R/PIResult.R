@@ -1,8 +1,8 @@
 #' @title PIResult
 #' @docType class
 #' @description Structured output of a parameter identification task, including
-#' optimization results, confidence intervals, parameter metadata, and
-#' configuration.
+#' optimization results, confidence intervals, parameter metadata,
+#' configuration and, for PK targets, the achieved PK values.
 #'
 #' @keywords internal
 #' @format NULL
@@ -17,7 +17,24 @@ PIResult <- R6::R6Class(
     # Configuration used during parameter identification
     .configuration = NULL,
     # Flattened `PIParameters` metadata
-    .parameters = NULL
+    .parameters = NULL,
+
+    # Converts a PK value from the base unit to the unit of its target
+    .toDisplayUnit = function(val, pkParameter, targetUnit) {
+      if (anyNA(val)) {
+        return(NA_real_)
+      }
+      dim <- ospsuite::pkParameterByName(
+        pkParameter,
+        stopIfNotFound = TRUE
+      )$dimension
+      val /
+        ospsuite::toBaseUnit(
+          quantityOrDimension = dim,
+          values = 1,
+          unit = targetUnit
+        )
+    }
   ),
   public = list(
     #' @description Initializes a `PIResult` instance. For internal use only.
@@ -36,10 +53,15 @@ PIResult <- R6::R6Class(
     #'   a `modelCost` object as returned by the objective function. See
     #'   `toList()`.
     #' @param configuration (Optional) The `PIConfiguration` object used during
-    #'   parameter identification.
+    #'   parameter identification. The result keeps a clone of it.
     #' @param piParameters (Optional) A list of `PIParameter` objects used in
     #'   the optimization. If not provided, default parameter names will be
     #'   generated automatically.
+    #' @param pkMappings (Optional) A list of `PKOutputMapping` objects, the
+    #'   PK targets of the task.
+    #' @param achievedPKValues (Optional) A list of numeric scalars with the PK
+    #'   parameter values achieved at the optimized parameter estimate, one per
+    #'   PK mapping.
     #'
     #' @return A `PIResult` object containing optimization results, confidence
     #'   interval estimates (if available), parameter metadata (if available),
@@ -70,14 +92,23 @@ PIResult <- R6::R6Class(
     # - ciElapsed: numeric
     # - ciError: error object or NULL
     # - ciDetails: list (e.g. covariance matrix, bootstrap samples)
+    #
+    # If the task has PK targets (pkMappings):
+    # - pkMappings: list with quantityPath, pkParameter, targetValue and
+    #   targetUnit per mapping
+    # - achievedPKValues: list of numeric scalars in base units
     initialize = function(
       optimResult,
       ciResult = NULL,
       costDetails = NULL,
       configuration = NULL,
-      piParameters = NULL
+      piParameters = NULL,
+      pkMappings = NULL,
+      achievedPKValues = NULL
     ) {
-      private$.configuration <- configuration
+      private$.configuration <- if (!is.null(configuration)) {
+        configuration$clone()
+      }
       private$.costDetails <- costDetails
 
       # Validate and extract parameter metadata (optional)
@@ -118,11 +149,8 @@ PIResult <- R6::R6Class(
         finalParameters = optimResult$par,
         objectiveValue = optimResult$value,
         initialParameters = optimResult$startValues,
-        convergence = if (!is.finite(optimResult$value)) {
-          FALSE
-        } else {
-          optimResult$convergence
-        },
+        convergence = is.finite(optimResult$value) &&
+          isTRUE(optimResult$convergence),
         convergenceMessage = optimResult$convergenceMessage,
         algorithm = optimResult$algorithm,
         elapsed = optimResult$elapsed,
@@ -132,14 +160,30 @@ PIResult <- R6::R6Class(
         ciElapsed = ciResult$elapsed %||% NA_real_,
         ciError = ciResult$error,
         ciDetails = ciResult$details %||% list(),
-        sd = ciResult$sd %||% rep(NA_real_, length(optimResult$par)),
-        cv = ciResult$cv %||% rep(NA_real_, length(optimResult$par)),
+        # The profile likelihood reports se and rse
+        sd = ciResult$sd %||%
+          ciResult$se %||%
+          rep(NA_real_, length(optimResult$par)),
+        cv = ciResult$cv %||%
+          ciResult$rse %||%
+          rep(NA_real_, length(optimResult$par)),
         lowerCI = ciResult$lowerCI %||% rep(NA_real_, length(optimResult$par)),
         upperCI = ciResult$upperCI %||% rep(NA_real_, length(optimResult$par)),
         ciType = ciResult$ciType %||%
           rep(NA_character_, length(optimResult$par)),
         paramNames = paramNames
       )
+      if (!is.null(pkMappings)) {
+        private$.result$pkMappings <- lapply(pkMappings, function(m) {
+          list(
+            quantityPath = m$quantity$path,
+            pkParameter = m$pkParameter,
+            targetValue = m$targetValue,
+            targetUnit = m$targetUnit
+          )
+        })
+        private$.result$achievedPKValues <- achievedPKValues
+      }
     },
     #' @description Export PIResult to a `data.frame`.
     #'

@@ -75,6 +75,45 @@ test_that("run() reads the observed data once when it estimates the CI", {
   expect_equal(observedDataReads$reads, 2)
 })
 
+test_that("estimateCI() after run() starts from the estimates of run()", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration(iter = 3)
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(fit <- piTask$run())
+  estimate <- fit$toList()$finalParameters
+  # The model is edited between the two calls
+  piTask$parameters[[1]]$setValue(estimate + 1)
+  logged <- character()
+  ciResult <- withCallingHandlers(
+    piTask$estimateCI(),
+    message = function(m) {
+      logged <<- c(logged, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl(
+    messages$ciMethod("hessian", estimate, FALSE),
+    logged,
+    fixed = TRUE
+  )))
+  expect_identical(ciResult$toList()$finalParameters, estimate)
+  expect_identical(ciResult$toDataFrame()$estimate, estimate)
+})
+
+test_that("estimateCI() after run() keeps the cost details of the fit", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration(iter = 3)
+  piTask$configuration$autoEstimateCI <- FALSE
+  suppressMessages(fit <- piTask$run()$toList())
+  expect_identical(fit$costDetails$modelCost, fit$objectiveValue)
+  suppressMessages(ciResult <- piTask$estimateCI()$toList())
+  expect_identical(ciResult$costDetails, fit$costDetails)
+
+  piTask$configuration$autoEstimateCI <- TRUE
+  suppressMessages(result <- piTask$run()$toList())
+  expect_identical(result$costDetails$modelCost, result$objectiveValue)
+})
+
 
 # Bootstrap CI Method
 
