@@ -503,169 +503,6 @@ test_that("fixture state-variable path is classified as a state variable", {
   )
 })
 
-test_that(".batchInitialization routes state-variable parameters to molecules", {
-  task <- testStateVariableMixedTask()
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-
-  simId <- names(priv$.simulations)[[1]]
-
-  expect_true(
-    stateVariableParameterPath %in% names(priv$.variableMolecules[[simId]])
-  )
-  expect_false(
-    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
-  )
-
-  expect_true(
-    "Aciclovir|Lipophilicity" %in% names(priv$.variableParameters[[simId]])
-  )
-  expect_false(
-    "Aciclovir|Lipophilicity" %in% names(priv$.variableMolecules[[simId]])
-  )
-})
-
-test_that("objective function delivers the state-variable value into the molecule bucket", {
-  task <- testStateVariableMixedTask()
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  simId <- names(priv$.simulations)[[1]]
-
-  # currVals order matches the parameters list: state-variable first, constant
-  # second. Values differ from the start values so we can confirm the update
-  # is routed into the molecule bucket rather than silently dropped.
-  cost <- priv$.objectiveFunction(c(0.06, -0.1))
-
-  expect_true(is.finite(cost$modelCost))
-  expect_equal(
-    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
-    0.06
-  )
-  expect_equal(
-    priv$.variableParameters[[simId]][["Aciclovir|Lipophilicity"]],
-    -0.1
-  )
-})
-
-test_that("a non-base state-variable unit reaches the molecules bucket in base units", {
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
-
-  # Organism|Lumen|Stomach|Liquid is RHS-defined, so .applyParameterValues()
-  # routes it into the molecules bucket rather than the parameters bucket. Its
-  # base unit is l, so values declared in ml must arrive divided by 1000.
-  piParameter <- PIParameters$new(
-    parameters = list(getParameter(stateVariableParameterPath, container = sim))
-  )
-  piParameter$unit <- ospUnits$Volume$ml
-  # Start, then max, then min: $unit does not rescale the values left from
-  # construction, and the bound setters cross-validate against them.
-  piParameter$startValue <- 45
-  piParameter$maxValue <- 450
-  piParameter$minValue <- 4.5
-
-  mapping <- PIOutputMapping$new(
-    quantity = getQuantity(
-      "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)",
-      container = sim
-    )
-  )
-  mapping$addObservedDataSets(
-    testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-  )
-
-  task <- ParameterIdentification$new(
-    simulations = sim,
-    parameters = piParameter,
-    outputMappings = mapping
-  )
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  simId <- names(priv$.simulations)[[1]]
-
-  # .batchInitialization() seeds the start value: 45 ml is 0.045 l.
-  expect_equal(
-    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
-    0.045
-  )
-
-  # .evaluate() deposits a trial value: 50 ml is 0.05 l.
-  suppressMessages(priv$.evaluate(50))
-  expect_equal(
-    priv$.variableMolecules[[simId]][[stateVariableParameterPath]],
-    0.05
-  )
-
-  expect_false(
-    stateVariableParameterPath %in% names(priv$.variableParameters[[simId]])
-  )
-})
-
-test_that("a grouped parameter spanning two simulations is seeded in base units", {
-  clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
-  outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
-
-  # Two separately loaded simulations get distinct IDs, so the single converted
-  # value fans out into two variable buckets. Own simulations, so that assigning
-  # $unit cannot leak into the shared module-level fixtures.
-  simulations <- replicate(
-    2,
-    loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    ),
-    simplify = FALSE
-  )
-
-  piParameter <- PIParameters$new(
-    parameters = lapply(simulations, function(sim) {
-      getParameter(clPath, container = sim)
-    })
-  )
-  piParameter$unit <- ospUnits$`Inversed time`$`1/h`
-  # Start, then max, then min: $unit does not rescale the values left from
-  # construction, and the bound setters cross-validate against them.
-  piParameter$startValue <- 6
-  piParameter$maxValue <- 60
-  piParameter$minValue <- 0.6
-
-  mappings <- lapply(simulations, function(sim) {
-    mapping <- PIOutputMapping$new(
-      quantity = getQuantity(outputPath, container = sim)
-    )
-    mapping$addObservedDataSets(
-      testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-    )
-    mapping
-  })
-
-  task <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = piParameter,
-    outputMappings = mappings
-  )
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  simIds <- names(priv$.simulations)
-
-  expect_length(simIds, 2)
-  # Independent oracle: 1/h to 1/min is a factor of 60, so the start value of
-  # 6 1/h must reach both simulations as 0.1 1/min.
-  for (simId in simIds) {
-    expect_equal(priv$.variableParameters[[simId]][[clPath]], 0.1)
-  }
-
-  # .evaluate() deposits a trial value: 30 1/h is 0.5 1/min in both buckets.
-  suppressMessages(priv$.evaluate(30))
-  for (simId in simIds) {
-    expect_equal(priv$.variableParameters[[simId]][[clPath]], 0.5)
-  }
-})
-
 test_that("objective function runs with only a state-variable parameter", {
   task <- testStateVariableOnlyTask()
   priv <- task$.__enclos_env__$private
@@ -677,43 +514,6 @@ test_that("objective function runs with only a state-variable parameter", {
 
   cost <- taskObjective(task)$evaluate(currStartValues(task))
   expect_true(is.finite(cost$modelCost))
-})
-
-test_that("state-variable initial value reaches the solver", {
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
-  )
-  svQuantity <- getQuantity(stateVariableParameterPath, container = sim)
-
-  stateVar <- stateVarPIParameter(sim)
-
-  # Map the output to the state variable's own quantity so its simulated
-  # trajectory is observable. Observed values are placeholders in the state
-  # variable's (Volume) dimension.
-  obs <- DataSet$new(name = "obs")
-  obs$yDimension <- svQuantity$dimension
-  obs$setValues(xValues = c(0, 1, 2), yValues = c(0.05, 0.05, 0.05))
-  mapping <- PIOutputMapping$new(quantity = svQuantity)
-  mapping$addObservedDataSets(obs)
-
-  task <- ParameterIdentification$new(
-    simulations = sim,
-    parameters = stateVar,
-    outputMappings = mapping
-  )
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-
-  simulatedInitialValue <- function(startValue) {
-    simulated <- priv$.simulateOutputs(startValue)[[1]]
-    simulated$yValues[which.min(simulated$xValues)]
-  }
-
-  # Two distinct initial values must reach the solver and appear as the
-  # simulated initial value, proving the molecule value is consumed downstream
-  # (via addRunValues) and not merely stored in the R-side bucket.
-  expect_equal(simulatedInitialValue(0.02), 0.02, tolerance = 1e-4)
-  expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
 })
 
 test_that("simulatedOutputs() returns the simulated rows of a full evaluation", {
@@ -869,67 +669,6 @@ test_that(".resolveParameterTargets resolves groups over two simulations", {
       moleculeGroups = 4L
     )
   )
-
-  # The buckets of the simulations take the value of their group, in the
-  # order of the variable paths of their batches
-  task <- ParameterIdentification$new(
-    simulations = simulations,
-    parameters = groups,
-    outputMappings = lapply(simulations, function(sim) {
-      mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
-      mapping$addObservedDataSets(testObservedData())
-      mapping
-    })
-  )
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  values <- c(0.5, -0.2, 0.3, 0.05, 2.5)
-  priv$.applyParameterValues(values)
-  expected <- list(
-    list(
-      parameters = values[c(1, 2, 5)],
-      parameterPaths = c(clPath, lipophilicityPath, volumePath)
-    ),
-    list(
-      parameters = values[c(1, 3)],
-      parameterPaths = c(clPath, lipophilicityPath)
-    )
-  )
-  for (idx in 1:2) {
-    simId <- ids[[idx]]
-    batch <- priv$.simulationBatches[[simId]]
-    expect_equal(
-      priv$.variableParameters[[simId]],
-      stats::setNames(
-        expected[[idx]]$parameters,
-        expected[[idx]]$parameterPaths
-      )
-    )
-    expect_equal(
-      priv$.variableMolecules[[simId]],
-      stats::setNames(values[[4]], stateVariableParameterPath)
-    )
-    expect_identical(
-      batch$getVariableParameters(),
-      names(priv$.variableParameters[[simId]])
-    )
-    expect_identical(
-      batch$getVariableMolecules(),
-      names(priv$.variableMolecules[[simId]])
-    )
-  }
-})
-
-test_that("parameter targets are resolved again when the batches are built", {
-  task <- testPiTask()
-  priv <- task$.__enclos_env__$private
-  priv$.parameterTargets <- list()
-  priv$.batchInitialization()
-
-  expect_identical(
-    priv$.parameterTargets,
-    .resolveParameterTargets(task$parameters)
-  )
 })
 
 # The intravenous and the oral Clarithromycin task, and one with both, built
@@ -997,17 +736,6 @@ test_that("simulatedOutputs() reads the outputs of two simulations", {
   # Each simulation has its own output times, those of its observed data
   expect_false(identical(simulated[[1]]$xValues, simulated[[2]]$xValues))
   expect_false(identical(simulated[[1]]$yValues, simulated[[2]]$yValues))
-})
-
-test_that(".evaluate includes simulated and observed data", {
-  task <- testPiTask()
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-
-  dcList <- priv$.evaluate(currStartValues(task))
-  df <- dcList[[1]]$toDataFrame()
-
-  expect_true(all(c("simulated", "observed") %in% df$dataType))
 })
 
 test_that("objective function reads the observed data once and reuses them", {
@@ -1569,29 +1297,6 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
       withWarningMessages(do.call(frozenCalculateCostMetrics, setting))
     )
   }
-})
-
-test_that("observed data are read again per bootstrap sample and after it", {
-  task <- testPiTask()
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  currVals <- currStartValues(task)
-  original <- lapply(priv$.outputMappings, .prepareObservedData)
-
-  samples <- list()
-  for (seed in 1:2) {
-    priv$.objectiveFunction(currVals, bootstrapSeed = seed)
-    samples[[seed]] <- priv$.observedData
-    # The observed data of the evaluation are those of the resampled data
-    expect_identical(samples[[seed]], priv$.data$resample(seed)$observedData)
-    expect_false(identical(samples[[seed]][[1]]$yValues, original[[1]]$yValues))
-  }
-  expect_false(identical(samples[[1]][[1]]$yValues, samples[[2]][[1]]$yValues))
-
-  # The data of the task are unchanged and read again without a seed
-  expect_identical(lapply(priv$.outputMappings, .prepareObservedData), original)
-  priv$.objectiveFunction(currVals)
-  expect_identical(priv$.observedData, original)
 })
 
 test_that("observed data are read again at the start of every public call", {

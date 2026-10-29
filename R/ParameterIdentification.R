@@ -66,11 +66,6 @@ ParameterIdentification <- R6::R6Class(
     # The `SimulationModel` of the current public call, built in
     # `.batchInitialization()`
     .model = NULL,
-    # Mirrored from `.model` for the tests until they are rewritten (step 9)
-    .simulationBatches = NULL,
-    .variableMolecules = NULL,
-    .variableParameters = NULL,
-    .parameterTargets = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
     # List of `PIOutputMapping` objects
@@ -82,9 +77,6 @@ ParameterIdentification <- R6::R6Class(
     .objective = NULL,
     # The `PIObservations` of `.objective`
     .data = NULL,
-    # The prepared observed data of `.objective`, mirrored after every
-    # evaluation for the tests that read them until the tests are rewritten
-    .observedData = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Cost details of the best evaluation of the last optimization
@@ -113,7 +105,6 @@ ParameterIdentification <- R6::R6Class(
     .batchInitialization = function() {
       private$.objective <- NULL
       private$.data <- NULL
-      private$.observedData <- NULL
       private$.model <- SimulationModel$new(
         simulations = private$.simulations,
         parameters = private$.piParameters,
@@ -121,7 +112,6 @@ ParameterIdentification <- R6::R6Class(
         pkMappings = private$.pkMappings,
         simulationRunOptions = private$.configuration$simulationRunOptions
       )
-      private$.mirrorModel()
     },
 
     # The objective of the current public call
@@ -178,8 +168,6 @@ ParameterIdentification <- R6::R6Class(
 
         loggedFailures <- private$.model$loggedFailures
         runningCost <- objective$evaluate(currVals)
-        private$.observedData <- objective$observedData
-        private$.mirrorModel()
 
         # The objective logs a failed simulation with the model
         if (private$.model$loggedFailures > loggedFailures) {
@@ -232,70 +220,6 @@ ParameterIdentification <- R6::R6Class(
       evaluate <- private$.evaluationClosure(objective)
       costField <- private$.configuration$modelCostField
       function(values) evaluate(values)[[costField]]
-    },
-
-    # Shims for the tests until they are rewritten against the new classes
-    # (step 9). The buckets of the model are mirrored after every simulation
-    # because the tests read them from the facade.
-    .mirrorModel = function() {
-      private$.simulationBatches <- private$.model$simulationBatches
-      private$.variableParameters <- private$.model$variableParameters
-      private$.variableMolecules <- private$.model$variableMolecules
-      private$.parameterTargets <- private$.model$parameterTargets
-    },
-    .applyParameterValues = function(values) {
-      private$.model$.__enclos_env__$private$.applyParameterValues(values)
-      private$.mirrorModel()
-    },
-    # The `DataCombined` objects of the plots, one per output mapping
-    .evaluate = function(currVals) {
-      simulationResults <- private$.model$simulate(currVals)
-      private$.mirrorModel()
-      .observedVsPredicted(simulationResults, private$.outputMappings)
-    },
-    .runSimulations = function(
-      currVals,
-      silentMode = FALSE,
-      usedSimulations = NULL
-    ) {
-      private$.model$simulate(currVals, usedSimulations, silentMode)
-    },
-    .simulateOutputs = function(
-      currVals,
-      outputMappings = private$.outputMappings
-    ) {
-      private$.model$simulatedOutputs(currVals, outputMappings)
-    },
-    .pkObjectiveFunction = function(currVals) {
-      private$.evaluationClosure(private$.objectiveFor())(currVals)$modelCost
-    },
-    .getPKValues = function(paramValues) {
-      private$.objectiveFor()$pkValues(paramValues)
-    },
-    # `test-pid-aux.R` logs on a task whose batches are not initialized
-    .logSimulationFailure = function(currVals, cond) {
-      if (is.null(private$.model)) {
-        private$.batchInitialization()
-      }
-      private$.model$logFailure(currVals, cond)
-    },
-    # The evaluation closure of the objective, on the data of `bootstrapSeed`
-    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
-      objective <- private$.objectiveFor()
-      if (!is.null(bootstrapSeed)) {
-        objective <- objective$withData(private$.data$resample(bootstrapSeed))
-      }
-      private$.evaluationClosure(objective)(currVals)
-    },
-    # The output mappings the objective of `bootstrapSeed` evaluates, those of
-    # the task without a seed (the frozen oracle reads the observed data from
-    # them)
-    .getOutputMappings = function(bootstrapSeed = NULL) {
-      if (is.null(bootstrapSeed)) {
-        return(private$.outputMappings)
-      }
-      private$.objectiveFor()
-      private$.data$resample(bootstrapSeed)$outputMappings
     },
 
     # Apply Identified Parameter Values
@@ -677,7 +601,6 @@ ParameterIdentification <- R6::R6Class(
         parValues <- par
       }
       simulationResults <- private$.model$simulate(parValues)
-      private$.mirrorModel()
       .plotObsVsPred(simulationResults, private$.outputMappings)
     },
 
