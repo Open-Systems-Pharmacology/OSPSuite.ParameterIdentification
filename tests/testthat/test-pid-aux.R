@@ -313,6 +313,61 @@ test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
   expect_equal(hourGrid$ofv, baseGrid$ofv, tolerance = 1e-6)
 })
 
+test_that("gridSearch() and calculateOFVProfiles() count their evaluations from 1", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  piTask$configuration$autoEstimateCI <- FALSE
+  piTask$configuration$printEvaluationFeedback <- TRUE
+  capture_output(suppressMessages(piTask$run()))
+  gridOutput <- capture_output(
+    suppressMessages(piTask$gridSearch(totalEvaluations = 3))
+  )
+  expect_identical(parseFnevals(gridOutput), 1:3)
+  profileOutput <- capture_output(
+    suppressMessages(piTask$calculateOFVProfiles(totalEvaluations = 2L))
+  )
+  expect_identical(parseFnevals(profileOutput), 1:2)
+})
+
+test_that("gridSearch() sets the start values of parameters that share a path", {
+  simulations <- lapply(1:2, function(idx) {
+    ospsuite::loadSimulation(
+      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+      loadFromCache = FALSE,
+      addToCache = FALSE
+    )
+  })
+  parameters <- lapply(simulations, function(simulation) {
+    PIParameters$new(
+      parameters = list(
+        ospsuite::getParameter("Aciclovir|Lipophilicity", simulation)
+      )
+    )
+  })
+  mappings <- lapply(simulations, function(simulation) {
+    mapping <- PIOutputMapping$new(quantity = testQuantity(simulation))
+    mapping$addObservedDataSets(testObservedData())
+    mapping
+  })
+  piTask <- ParameterIdentification$new(
+    simulations = simulations,
+    parameters = parameters,
+    outputMappings = mappings
+  )
+  grid <- NULL
+  capture_output(suppressMessages(
+    grid <- piTask$gridSearch(
+      lower = c(-1, -1),
+      upper = c(1, 1),
+      totalEvaluations = 4,
+      setStartValue = TRUE
+    )
+  ))
+  best <- grid[which.min(grid$ofv), ]
+  expect_identical(parameters[[1]]$startValue, best[[1]])
+  expect_identical(parameters[[2]]$startValue, best[[2]])
+})
+
 
 # Calculate OFV Profiles
 
