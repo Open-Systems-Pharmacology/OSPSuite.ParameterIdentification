@@ -275,6 +275,23 @@ test_that("run() stores best running cost in costDetails", {
   expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
 })
 
+test_that("costDetails describe the fit, not a CI evaluation", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration(iter = 3)
+
+  suppressMessages(result <- piTask$run())
+  expect_equal(
+    result$toList()$objectiveValue,
+    result$toList()$costDetails$modelCost
+  )
+
+  suppressMessages(result <- piTask$estimateCI())
+  expect_equal(
+    result$toList()$objectiveValue,
+    result$toList()$costDetails$modelCost
+  )
+})
+
 test_that("run() succeeds with a state-variable optimization parameter", {
   piTask <- testStateVariableMixedTask()
   piTask$configuration <- lowIterPiConfiguration()
