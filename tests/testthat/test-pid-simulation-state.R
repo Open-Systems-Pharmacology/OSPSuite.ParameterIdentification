@@ -302,7 +302,7 @@ test_that("the simulations are restored after an error", {
     expect_error(task$run(), class = "initialSimulationError")
   ))
   expect_identical(simulationState(simulation), before)
-  startValues <- vapply(task$parameters, function(p) p$startValue, numeric(1))
+  startValues <- currStartValues(task)
   suppressWarnings(
     expect_error(task$plotResults(par = startValues), "failed")
   )

@@ -102,6 +102,9 @@ ParameterIdentification <- R6::R6Class(
     .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
+    # Stores the cost summary of the fit, taken before the CI estimation
+    # evaluates the objective function again
+    .fitCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Number of evaluations of `run()` whose simulations failed
@@ -891,7 +894,7 @@ ParameterIdentification <- R6::R6Class(
       PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
-        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+        costDetails = private$.fitCostSummary,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
@@ -1048,6 +1051,8 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
       private$.lastOptimResult <- optimResult
+      private$.fitCostSummary <- private$.bestCostSummary %||%
+        private$.lastCostSummary
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
@@ -1081,7 +1086,7 @@ ParameterIdentification <- R6::R6Class(
         piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = NULL,
-          costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+          costDetails = private$.fitCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )
