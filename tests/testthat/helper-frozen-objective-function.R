@@ -21,13 +21,13 @@
 # LLOQ rule, the log transformation, the data weights and the cost of every
 # output mapping, summed over the output mappings. The observed data are read
 # together with the simulated data, as on the first evaluation of a call. The
-# simulations are run by `.runSimulations()` of the task, for the output
+# simulations are run by the `SimulationModel` of the task, for the output
 # mappings of `bootstrapSeed`.
 #
 # @param task A `ParameterIdentification` object whose batches are
 #   initialized.
 # @param currVals Vector of parameter values.
-# @param bootstrapSeed Optional bootstrap seed (see `.getOutputMappings()`).
+# @param bootstrapSeed Optional bootstrap seed (see `PIObservations$resample()`).
 # @return The cost summary of all output mappings, a `modelCost` object.
 frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
   private <- task$.__enclos_env__$private
@@ -48,8 +48,8 @@ frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
     simId <- .getSimulationContainer(currOutputMapping$quantity)$id
     # Construct group names out of output path and simulation id
     groupName <- currOutputMapping$quantity$path
-    # `.runSimulations()` names the results by the simulation IDs. 2.2.0.9009
-    # looked them up by the ID of the batch of the simulation.
+    # `SimulationModel$simulate()` names the results by the simulation IDs.
+    # 2.2.0.9009 looked them up by the ID of the batch of the simulation.
     resultObject <- simulationResults[[simId]][[1]]
     obsVsPred$addSimulationResults(
       resultObject,

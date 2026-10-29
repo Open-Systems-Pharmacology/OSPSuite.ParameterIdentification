@@ -597,9 +597,8 @@ testStateVariableMixedTask <- function() {
   )
 }
 
-# PI task whose only optimization parameter is state-variable, so that
-# .variableParameters stays empty for the simulation (empty-parametersOrPaths
-# shadow path).
+# PI task whose only optimization parameter is state-variable, so that the
+# parameters bucket of the model stays empty for the simulation.
 testStateVariableOnlyTask <- function() {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
