@@ -1,7 +1,3 @@
-startValues <- function(task) {
-  vapply(task$parameters, function(p) p$startValue, numeric(1))
-}
-
 testObjective <- function(task) {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
@@ -15,7 +11,7 @@ testObjective <- function(task) {
 test_that("evaluate() returns the modelCost of the frozen objective function", {
   task <- testPiTask()
   objective <- testObjective(task)
-  currVals <- startValues(task)
+  currVals <- currStartValues(task)
   cost <- objective$evaluate(currVals)
   expect_s3_class(cost, "modelCost")
   expect_identical(cost, frozenObjectiveFunction(task, currVals))
@@ -25,7 +21,7 @@ test_that("evaluate() is the same on every call and leaves the task alone", {
   task <- testPiTask()
   objective <- testObjective(task)
   priv <- task$.__enclos_env__$private
-  currVals <- startValues(task)
+  currVals <- currStartValues(task)
   expect_identical(objective$evaluate(currVals), objective$evaluate(currVals))
   expect_identical(priv$.fnEvaluations, 0)
 })
@@ -41,7 +37,7 @@ test_that("evaluate() returns the error cost structure silently when the simulat
       stop(.simulationsFailedError("Aciclovir", 1L, "solver stopped"))
     }
   )
-  expect_silent(cost <- objective$evaluate(startValues(task)))
+  expect_silent(cost <- objective$evaluate(currStartValues(task)))
   expect_identical(cost, .createErrorCostStructure())
   expect_identical(priv$.failedEvaluations, 0)
 })
@@ -54,7 +50,7 @@ test_that("an infinite cost of successful simulations is not counted as a failed
     evaluate = function(values) .createErrorCostStructure(),
     observedData = NULL
   )
-  cost <- priv$.objectiveFunction(startValues(task))
+  cost <- priv$.objectiveFunction(currStartValues(task))
   expect_identical(priv$.failedEvaluations, 0)
   expect_identical(priv$.lastCostSummary, cost)
 })

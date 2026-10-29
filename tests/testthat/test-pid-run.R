@@ -55,11 +55,7 @@ test_that("run() stops on unconvertible observed data", {
 test_that("a failed simulation is reported by name and reason", {
   modPiTask <- testModifiedTask()
   priv <- modPiTask$.__enclos_env__$private
-  startValues <- vapply(
-    modPiTask$parameters,
-    function(p) p$startValue,
-    numeric(1)
-  )
+  startValues <- currStartValues(modPiTask)
 
   # plotResults() shows the warning of the simulation engine and stops with
   # the name of the failed simulation and the reason from that warning
