@@ -1314,10 +1314,11 @@ ParameterIdentification <- R6::R6Class(
       ofvGrid <- expand.grid(parameterGrid)
 
       # Calculate OFV
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       ofvGrid[["ofv"]] <- vapply(
         1:nrow(ofvGrid),
         function(i) {
-          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+          ofv <- fn(as.numeric(ofvGrid[i, ]))
           ofv[[private$.configuration$modelCostField]]
         },
         numeric(1)
@@ -1424,6 +1425,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       # Calculate OFV profile with parameter-specific grid
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       profileList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         parameterName <- parameterNames[idx]
@@ -1436,7 +1438,7 @@ ParameterIdentification <- R6::R6Class(
         # Calculate OFV for each grid row
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
-          ofv <- private$.objectiveFunction(currentGrid[gridIdx, ])
+          ofv <- fn(currentGrid[gridIdx, ])
           ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 
