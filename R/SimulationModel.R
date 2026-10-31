@@ -21,9 +21,6 @@ SimulationModel <- R6::R6Class(
     .simulationRunOptions = NULL,
     # Batches for result calculations, named by root container IDs
     .simulationBatches = NULL,
-    # For steady state calculations, with different outputs and times, named by
-    # root container IDs
-    .steadyStateBatches = NULL,
     # Named list by simulation IDs, with paths and start values for variable
     # molecules
     .variableMolecules = NULL,
@@ -210,44 +207,10 @@ SimulationModel <- R6::R6Class(
       ids <- names(simulations)
       private$.variableMolecules <-
         private$.variableParameters <-
-          private$.simulationBatches <-
-            private$.steadyStateBatches <- stats::setNames(
-              vector("list", length(simulations)),
-              ids
-            )
-
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, get the set of all state variables for each simulation
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     id <- simulation$root$id
-      #     moleculePaths <- getAllMoleculePathsIn(container = simulation)
-      #     # Only keep molecules that are not defined by formula
-      #     moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
-      #     moleculesStartValues <- getQuantityValuesByPath(
-      #       quantityPaths = moleculePaths,
-      #       simulation = simulation
-      #     )
-      #     # Save molecule start  values for this simulation ID
-      #     private$.variableMolecules[[id]] <- moleculesStartValues
-      #     names(private$.variableMolecules[[id]]) <- moleculePaths
-      #
-      #     variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
-      #     # Only keep parameters that initial values are not defined by formula
-      #     variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
-      #     # If the simulation does not contain any state variable parameters,
-      #     # do not try to retrieve the values.
-      #     if (!is.null(variableParametersPaths)){
-      #       variableParametersValues <- getQuantityValuesByPath(
-      #         quantityPaths = variableParametersPaths,
-      #         simulation = simulation
-      #       )
-      #       # Save parameter values for this simulation ID
-      #       private$.variableParameters[[id]] <- variableParametersValues
-      #       names(private$.variableParameters[[id]]) <- variableParametersPaths
-      #     }
-      #   }
-      # }
+          private$.simulationBatches <- stats::setNames(
+            vector("list", length(simulations)),
+            ids
+          )
 
       if (is.null(pkMappings)) {
         # A batch copies the output selections and the output schema of its
@@ -277,33 +240,6 @@ SimulationModel <- R6::R6Class(
           moleculesOrPaths = names(private$.variableMolecules[[simId]])
         )
       }
-
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, create new batches for ss simulation
-      # Add all state variables to the outputs and set the simulation time to
-      # steady state time
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     simId <- simulation$root$id
-      #     clearOutputIntervals(simulation)
-      #     clearOutputs(simulation)
-      #
-      #     # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
-      #     simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
-      #     # If no quantities are explicitly specified, simulate all outputs.
-      #     ospsuite::addOutputs(
-      #       quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
-      #       simulation = simulation
-      #     )
-      #
-      #     simBatch <- createSimulationBatch(
-      #       simulation = simulation,
-      #       parametersOrPaths = names(private$.variableParameters[[simId]]),
-      #       moleculesOrPaths = names(private$.variableMolecules[[simId]])
-      #     )
-      #     private$.steadyStateBatches[[simId]] <- simBatch
-      #   }
-      # }
     },
 
     # Applies the parameter values to the simulation batches and runs them.
@@ -326,26 +262,6 @@ SimulationModel <- R6::R6Class(
     simulate = function(values, usedSimulations = NULL, silentMode = FALSE) {
       usedSimulations <- usedSimulations %||% names(private$.simulationBatches)
       private$.applyParameterValues(values)
-
-      ##### 2DO - implement Steady-State when issue in Core is fixed
-      # # Simulate steady-states if specified
-      # if (configuration$simulateSteadyState) {
-      #
-      #   steadyStateResults <- vector("list", length(private$.steadyStateBatches))
-      #   #Set values for each simulation batch
-      #   for (simBatchIdx in seq_along(private$.steadyStateBatches)){
-      #     simId <- names(private$.steadyStateBatches)[[simBatchIdx]]
-      #     simBatch <- private$.steadyStateBatches[[simBatchIdx]]
-      #     resultsId <- simBatch$addRunValues(parameterValues = private$.variableParameters[[simId]],
-      #                           initialValues = private$.variableMolecules[[simId]])
-      #
-      #     names(steadyStateResults)[[simBatchIdx]] <- resultsId
-      #   }
-      #
-      #   # Run steady-state batches
-      #   ssResults <- ospsuite::runSimulationBatches(simulationBatches = private$.steadyStateBatches,
-      #                        simulationRunOptions = private$.configuration$simulationRunOptions)
-      #####
 
       for (simId in names(private$.simulationBatches)) {
         private$.simulationBatches[[simId]]$addRunValues(
