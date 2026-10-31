@@ -746,7 +746,8 @@ test_that("estimateCI() with the bootstrap method stops without replicate", {
       upper = upperTest,
       replicate = 1
     ),
-    error = TRUE
+    error = TRUE,
+    transform = scrubCallerName
   )
 })
 

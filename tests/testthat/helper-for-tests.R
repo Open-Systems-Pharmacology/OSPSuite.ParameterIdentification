@@ -145,6 +145,12 @@ currStartValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
+# ospsuite.utils names the test runner's entry point as the caller, which
+# differs between devtools::test() and R CMD check.
+scrubCallerName <- function(lines) {
+  sub("`[[:alnum:]._]+[(][)]`: argument", "`<caller>()`: argument", lines)
+}
+
 
 resetTestFactories <- function() {
   testSimulation <<- getTestSimulation()

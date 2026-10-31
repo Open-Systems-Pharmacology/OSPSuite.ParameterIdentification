@@ -156,7 +156,7 @@
         replicate = 1)
     Condition
       Error in `ospsuite.utils::validateIsOfType()`:
-      ! `test()`: argument "replicate" is of type <numeric>, but expected <function>!
+      ! `<caller>()`: argument "replicate" is of type <numeric>, but expected <function>!
 
 # Hessian CI reports a failed Hessian calculation
 

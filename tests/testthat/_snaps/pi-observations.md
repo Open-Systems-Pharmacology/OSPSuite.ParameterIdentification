@@ -4,7 +4,7 @@
       PIObservations$new(list(1))
     Condition
       Error in `ospsuite.utils::validateIsOfType()`:
-      ! `test()`: argument "outputMappings" is of type <list>, but expected <PIOutputMapping>!
+      ! `<caller>()`: argument "outputMappings" is of type <list>, but expected <PIOutputMapping>!
 
 ---
 
