@@ -85,13 +85,14 @@ ParameterIdentification <- R6::R6Class(
     .outputMappings = NULL,
     # `PIConfiguration` object instance
     .configuration = NULL,
-    # The `PIObjective` of the current public call and bootstrap sample,
-    # built on the first evaluation (see `.objectiveFor()`)
+    # The `PIObjective` of the current public call, built on the first
+    # evaluation (see `.objectiveFor()`)
     .objective = NULL,
     # The `PIObservations` of `.objective`
     .data = NULL,
-    # The prepared observed data of `.objective`, mirrored after every
-    # evaluation for the tests that read them until the tests are rewritten
+    # The prepared observed data of the last evaluated objective, bootstrap
+    # replicates included, mirrored for the tests that read them until the
+    # tests are rewritten
     .observedData = NULL,
     # Kinds of the reasons of failed simulations that the objective functions
     # logged in full in the current public call (see `.logSimulationFailure()`)
