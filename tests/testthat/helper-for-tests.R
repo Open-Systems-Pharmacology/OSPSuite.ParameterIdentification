@@ -250,22 +250,39 @@ bootstrapPiConfiguration <- function(iter = 2, nBootstrap = 3) {
 
 # Specialized Test Classes
 
-PISimFailureTester <- R6::R6Class(
-  inherit = ParameterIdentification,
+FailingSimulationModel <- R6::R6Class(
+  inherit = SimulationModel,
   cloneable = FALSE,
   private = list(
-    .simulated = FALSE,
+    .simulated = FALSE
+  ),
+  public = list(
     # The start values simulate, every later simulation fails
-    .simulateOutputs = function(currVals, outputMappings = NULL) {
+    simulatedOutputs = function(values, outputMappings) {
       if (!private$.simulated) {
         private$.simulated <- TRUE
-        return(super$.simulateOutputs(currVals))
+        return(super$simulatedOutputs(values, outputMappings))
       }
       stop(.simulationsFailedError(
         "Aciclovir",
         1L,
         "Simulated failure in evaluation"
       ))
+    }
+  )
+)
+
+PISimFailureTester <- R6::R6Class(
+  inherit = ParameterIdentification,
+  cloneable = FALSE,
+  private = list(
+    .batchInitialization = function() {
+      super$.batchInitialization()
+      private$.model <- FailingSimulationModel$new(
+        simulations = private$.simulations,
+        parameters = private$.piParameters,
+        outputMappings = private$.outputMappings
+      )
     }
   )
 )
@@ -627,4 +644,20 @@ objectiveClosure <- function(task, seed = NULL) {
     objective <- objective$withData(priv$.data$resample(seed))
   }
   priv$.evaluationClosure(objective)
+}
+
+# A PIObjective on the model of the task and the data of its output mappings,
+# resampled for the bootstrap replicate `seed` when one is given
+taskObjective <- function(task, seed = NULL) {
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  data <- PIObservations$new(priv$.outputMappings)
+  if (!is.null(seed)) {
+    data <- data$resample(seed)
+  }
+  PIObjective$new(
+    model = priv$.model,
+    data = data,
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+  )
 }

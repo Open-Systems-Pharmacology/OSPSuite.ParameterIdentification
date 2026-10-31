@@ -63,21 +63,13 @@ ParameterIdentification <- R6::R6Class(
   private = list(
     # Named list of simulations keyed by root container IDs
     .simulations = NULL,
-    # Batches for result calculations, named by root container IDs
+    # The `SimulationModel` of the current public call, built in
+    # `.batchInitialization()`
+    .model = NULL,
+    # Mirrored from `.model` for the tests until they are rewritten (step 9)
     .simulationBatches = NULL,
-    # For steady state calculations, with different outputs and times, named by
-    # root container IDs
-    .steadyStateBatches = NULL,
-    # Named list by simulation IDs, with paths and start values for variable
-    # molecules
     .variableMolecules = NULL,
-    # Named list by simulation IDs, detailing paths and start values for
-    # variable parameters
     .variableParameters = NULL,
-    # Named list by simulation IDs: the paths of the variable parameters and
-    # molecules of each simulation, in the order of the variable buckets, and
-    # the index of the `PIParameters` group whose value each of them takes.
-    # Resolved by `.resolveParameterTargets()` when the batches are built.
     .parameterTargets = NULL,
     # List of `PIParameter` objects for optimization
     .piParameters = NULL,
@@ -94,9 +86,6 @@ ParameterIdentification <- R6::R6Class(
     # replicates included, mirrored for the tests that read them until the
     # tests are rewritten
     .observedData = NULL,
-    # Kinds of the reasons of failed simulations that the objective functions
-    # logged in full in the current public call (see `.logSimulationFailure()`)
-    .loggedFailureKinds = character(),
     # Stores last optimization result
     .lastOptimResult = NULL,
     # Stores full cost summary from the best objective function evaluation
@@ -118,238 +107,43 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorMethodNotApplicableInPKMode(methodName))
       }
     },
-    # Applies a vector of optimizer values, one entry per `PIParameters` group,
-    # to every underlying model parameter. Values arrive in each group's
-    # `$unit`. `addRunValues()` reads base units, so they are converted here.
-    # This is the only place that writes into the variable buckets.
-    # State-variable (RHS-defined) parameters go into the molecule buckets,
-    # all others into the parameter buckets.
-    .applyParameterValues = function(values) {
-      if (length(values) != length(private$.piParameters)) {
-        stop(messages$errorParameterValuesLengthMismatch(
-          length(private$.piParameters),
-          length(values)
-        ))
-      }
-      if (is.null(private$.parameterTargets)) {
-        private$.parameterTargets <- .resolveParameterTargets(
-          private$.piParameters
-        )
-      }
-      baseValues <- vapply(
-        seq_along(values),
-        function(idx) {
-          .toBaseValue(private$.piParameters[[idx]], values[[idx]])
-        },
-        numeric(1)
-      )
-      for (simId in names(private$.parameterTargets)) {
-        target <- private$.parameterTargets[[simId]]
-        if (length(target$parameterPaths) > 0) {
-          private$.variableParameters[[simId]] <- stats::setNames(
-            baseValues[target$parameterGroups],
-            target$parameterPaths
-          )
-        }
-        if (length(target$moleculePaths) > 0) {
-          private$.variableMolecules[[simId]] <- stats::setNames(
-            baseValues[target$moleculeGroups],
-            target$moleculePaths
-          )
-        }
-      }
-    },
-
     # Batch Initialization for Simulations
     #
-    # Initializes simulation batches, preparing them for parameter
-    # identification by clearing outputs, updating schemas with observed data,
-    # and setting variable parameters. In standard mode, the simulations of the
-    # user are restored when this method exits, so that the public methods do
-    # not restore them themselves.
+    # Every public method that evaluates the objective function starts here.
+    # The simulations, the observed data sets and their transformations can
+    # change between two calls, so the observed data are read again and the
+    # model is built again from the current simulations and observed times.
+    # In standard mode, the model restores the simulations of the user when
+    # it is built. In PK mode, the PK outputs stay selected for the whole
+    # call and `run()`, the only public method in PK mode, restores them when
+    # it exits.
     .batchInitialization = function() {
-      # Every public method that evaluates the objective function starts here.
-      # The simulations, the observed data sets and their transformations can
-      # change between two calls, so the observed data are read again and the
-      # batches are built again from the current simulations and observed
-      # times.
       private$.objective <- NULL
       private$.data <- NULL
       private$.observedData <- NULL
-      # The reasons of failed simulations are logged in full again
-      private$.loggedFailureKinds <- character()
-      # `ospsuite::calculatePKAnalyses()` calculates the PK parameters of the
-      # outputs that are selected in the simulation when the PK objective
-      # function runs, not of the outputs of the batch. So the PK outputs are
-      # selected at every call, and the batches are built from them below.
-      # `run()`, the only public method in PK mode, restores the simulations
-      # when it exits.
-      if (!is.null(private$.pkMappings)) {
-        private$.selectPKOutputs()
-      }
-
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, get the set of all state variables for each simulation
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     id <- simulation$root$id
-      #     moleculePaths <- getAllMoleculePathsIn(container = simulation)
-      #     # Only keep molecules that are not defined by formula
-      #     moleculePaths <- .removeFormulaPaths(moleculePaths, simulation)
-      #     moleculesStartValues <- getQuantityValuesByPath(
-      #       quantityPaths = moleculePaths,
-      #       simulation = simulation
-      #     )
-      #     # Save molecule start  values for this simulation ID
-      #     private$.variableMolecules[[id]] <- moleculesStartValues
-      #     names(private$.variableMolecules[[id]]) <- moleculePaths
-      #
-      #     variableParametersPaths <- getAllStateVariableParametersPaths(simulation = simulation)
-      #     # Only keep parameters that initial values are not defined by formula
-      #     variableParametersPaths <- .removeFormulaPaths(variableParametersPaths, simulation)
-      #     # If the simulation does not contain any state variable parameters,
-      #     # do not try to retrieve the values.
-      #     if (!is.null(variableParametersPaths)){
-      #       variableParametersValues <- getQuantityValuesByPath(
-      #         quantityPaths = variableParametersPaths,
-      #         simulation = simulation
-      #       )
-      #       # Save parameter values for this simulation ID
-      #       private$.variableParameters[[id]] <- variableParametersValues
-      #       names(private$.variableParameters[[id]]) <- variableParametersPaths
-      #     }
-      #   }
-      # }
-
-      if (is.null(private$.pkMappings)) {
-        # A batch copies the output selections and the output schema of its
-        # simulation when it is built, so the simulations are restored when
-        # this method exits, also on an error
-        savedState <- .storeSimulationState(private$.simulations)
-        on.exit(
-          .restoreSimulationState(private$.simulations, savedState),
-          add = TRUE
-        )
-        # Clear output quantities of all simulations
-        for (simulation in private$.simulations) {
-          ospsuite::clearOutputs(simulation)
-        }
-        for (outputMapping in private$.outputMappings) {
-          simId <- outputMapping$simId
-          simulation <- private$.simulations[[simId]]
-          ospsuite::addOutputs(
-            quantitiesOrPaths = outputMapping$quantity,
-            simulation = simulation
-          )
-          for (dataset in outputMapping$observedDataSets) {
-            label <- dataset$name
-            xFactor <- outputMapping$dataTransformations$xFactors
-            if (length(xFactor) != 1) {
-              xFactor <- xFactor[[label]]
-            }
-            xOffset <- outputMapping$dataTransformations$xOffsets
-            if (length(xOffset) != 1) {
-              xOffset <- xOffset[[label]]
-            }
-            xVals <- ospsuite::toBaseUnit(
-              ospsuite::ospDimensions$Time,
-              values = (dataset$xValues + xOffset) * xFactor,
-              unit = dataset$xUnit
-            )
-            simulation$outputSchema$addTimePoints(xVals)
-          }
-        }
-      }
-
-      # Seed each optimization parameter's start value into its variable
-      # bucket. The paths of the buckets, from which the batches below are
-      # built, are resolved again.
-      private$.parameterTargets <- NULL
-      private$.applyParameterValues(
-        vapply(private$.piParameters, function(p) p$startValue, numeric(1))
+      private$.model <- SimulationModel$new(
+        simulations = private$.simulations,
+        parameters = private$.piParameters,
+        outputMappings = private$.outputMappings,
+        pkMappings = private$.pkMappings,
+        simulationRunOptions = private$.configuration$simulationRunOptions
       )
-
-      # Create simulation batches for identification runs
-      for (simulation in private$.simulations) {
-        simId <- simulation$root$id
-        # Parameters and molecules defined in the previous steps will be
-        # variable.
-        simBatch <- ospsuite::createSimulationBatch(
-          simulation = simulation,
-          parametersOrPaths = names(private$.variableParameters[[simId]]),
-          moleculesOrPaths = names(private$.variableMolecules[[simId]])
-        )
-        private$.simulationBatches[[simId]] <- simBatch
-      }
-
-      # 2DO: Enable steady-state
-      # If steady-state should be simulated, create new batches for ss simulation
-      # Add all state variables to the outputs and set the simulation time to
-      # steady state time
-      # if (private$.configuration$simulateSteadyState) {
-      #   for (simulation in private$.simulations) {
-      #     simId <- simulation$root$id
-      #     clearOutputIntervals(simulation)
-      #     clearOutputs(simulation)
-      #
-      #     # FIXME: WILL NOT WORK UNTIL https://github.com/Open-Systems-Pharmacology/OSPSuite-R/issues/1029 is fixed!!
-      #     simulation$outputSchema$addTimePoints(timePoints = private$.configuration$steadyStateTime)
-      #     # If no quantities are explicitly specified, simulate all outputs.
-      #     ospsuite::addOutputs(
-      #       quantitiesOrPaths = ospsuite::getAllStateVariablesPaths(simulation),
-      #       simulation = simulation
-      #     )
-      #
-      #     simBatch <- createSimulationBatch(
-      #       simulation = simulation,
-      #       parametersOrPaths = names(private$.variableParameters[[simId]]),
-      #       moleculesOrPaths = names(private$.variableMolecules[[simId]])
-      #     )
-      #     private$.steadyStateBatches[[simId]] <- simBatch
-      #   }
-      # }
-    },
-
-    # Selects the quantities of the PK mappings as the only outputs of the
-    # simulations.
-    .selectPKOutputs = function() {
-      for (simulation in private$.simulations) {
-        ospsuite::clearOutputs(simulation)
-      }
-      for (mapping in private$.pkMappings) {
-        ospsuite::addOutputs(
-          quantitiesOrPaths = mapping$quantity,
-          simulation = private$.simulations[[mapping$simId]]
-        )
-      }
+      private$.mirrorModel()
     },
 
     # The `PIObjective` of the current public call
     #
     # Built on the first evaluation after `.batchInitialization()`, which
-    # reads the observed data once (#271). Its `simulate` function logs and
-    # counts a failed simulation (see `.logSimulationFailure()`) and signals
-    # it again, so that `evaluate()` returns the error cost structure.
+    # reads the observed data once (#271), on the model of the call.
     #
     # @return The `PIObjective` object.
     .objectiveFor = function() {
-      outputMappings <- private$.outputMappings
       if (is.null(private$.objective)) {
-        private$.data <- PIObservations$new(outputMappings)
+        private$.data <- PIObservations$new(private$.outputMappings)
         private$.objective <- PIObjective$new(
+          model = private$.model,
           data = private$.data,
-          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
-          simulate = function(values) {
-            tryCatch(
-              private$.simulateOutputs(values, outputMappings = outputMappings),
-              simulationsFailedError = function(cond) {
-                private$.logSimulationFailure(values, cond)
-                message(messages$simulationError())
-                private$.failedEvaluations <- private$.failedEvaluations + 1
-                stop(cond)
-              }
-            )
-          }
+          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions
         )
       }
       private$.objective
@@ -369,12 +163,14 @@ ParameterIdentification <- R6::R6Class(
         # Increment function evaluations counter
         private$.fnEvaluations <- private$.fnEvaluations + 1
 
-        failedEvaluations <- private$.failedEvaluations
+        loggedFailures <- private$.model$loggedFailures
         runningCost <- objective$evaluate(currVals)
         private$.observedData <- objective$observedData
+        private$.mirrorModel()
 
-        # The simulate closure of `.objectiveFor()` counts failed simulations
-        if (private$.failedEvaluations > failedEvaluations) {
+        # The objective logs a failed simulation with the model
+        if (private$.model$loggedFailures > loggedFailures) {
+          private$.failedEvaluations <- private$.failedEvaluations + 1
           return(runningCost)
         }
 
@@ -409,23 +205,13 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Shim for the tests until they are rewritten against the objective: the
-    # evaluation closure of the objective, on the data of `bootstrapSeed`
-    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
-      objective <- private$.objectiveFor()
-      if (!is.null(bootstrapSeed)) {
-        objective <- objective$withData(private$.data$resample(bootstrapSeed))
-      }
-      private$.evaluationClosure(objective)(currVals)
-    },
-
     .pkObjectiveFunction = function(currVals) {
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
       pkValues <- tryCatch(
         private$.getPKValues(currVals),
         simulationsFailedError = function(cond) {
-          private$.logSimulationFailure(currVals, cond)
+          private$.model$logFailure(currVals, cond)
           return(NA)
         }
       )
@@ -456,51 +242,20 @@ ParameterIdentification <- R6::R6Class(
       return(cost)
     },
 
-    # Logs a failed evaluation of an objective function. The reason given by
-    # the simulation engine can be long (for negative values, it lists every
-    # variable that became negative) and comes again on many evaluations,
-    # often with another time of the failure in its first line. So a reason
-    # is logged in full only at the first failure of its kind in a public call
-    # (see `.failureReasonKinds()` and `.batchInitialization()`), and later
-    # reasons of that kind with their first line only.
-    #
-    # @param currVals Vector of parameter values of the evaluation.
-    # @param cond The error of the evaluation.
-    .logSimulationFailure = function(currVals, cond) {
-      if (inherits(cond, "simulationsFailedError")) {
-        reasons <- unique(cond$reasons)
-        kinds <- .failureReasonKinds(reasons)
-        # Of several reasons of one kind in the same error, only the first is
-        # logged in full
-        shorten <- kinds %in% private$.loggedFailureKinds | duplicated(kinds)
-        private$.loggedFailureKinds <- union(
-          private$.loggedFailureKinds,
-          kinds
-        )
-        reasons[shorten] <- messages$shortenedFailureReason(reasons[shorten])
-        cond$message <- messages$errorSimulationsFailed(
-          cond$simulationNames,
-          cond$failed,
-          reasons
-        )
-      }
-      messages$logSimulationError(currVals, cond)
-    },
-
     .getPKValues = function(paramValues) {
       # The PK objective function reports a failed simulation itself on every
       # evaluation, so the warning of the simulation engine is not repeated.
       # Only the results of the simulations of the PK mappings are used: the
       # task may have other simulations, whose failure does not fail the
       # evaluation.
-      simulationResults <- private$.runSimulations(
+      simulationResults <- private$.model$simulate(
         paramValues,
-        silentMode = TRUE,
         usedSimulations = unique(vapply(
           private$.pkMappings,
           function(mapping) mapping$simId,
           character(1)
-        ))
+        )),
+        silentMode = TRUE
       )
 
       lapply(private$.pkMappings, function(mapping) {
@@ -537,137 +292,20 @@ ParameterIdentification <- R6::R6Class(
       })
     },
 
-    # Run Simulations with Parameter Values
-    #
-    # Applies the parameter values to the simulation batches and runs them.
-    # If a simulation whose results are used fails, stops with the names of
-    # the simulations that failed and the reasons given by the simulation
-    # engine.
-    #
-    # @param currVals Vector of parameter values, in the order of the
-    #   `PIParameters` in the parameters list.
-    # @param silentMode If `TRUE`, the warnings of the simulation engine for
-    #   failed simulations are not shown; their reasons are still part of the
-    #   error.
-    # @param usedSimulations The IDs of the simulations whose results are
-    #   used, by default all. The failure of another simulation (in PK mode, a
-    #   simulation without a PK mapping) does not stop the run, and the
-    #   warning of the simulation engine is shown for it, also in silent mode.
-    # @return The result of `ospsuite::runSimulationBatches()`: for each
-    #   simulation batch, the list of its `SimulationResults`, named by the
-    #   simulation IDs.
-    .runSimulations = function(
-      currVals,
-      silentMode = FALSE,
-      usedSimulations = names(private$.simulationBatches)
-    ) {
-      private$.applyParameterValues(currVals)
-
-      ##### 2DO - implement Steady-State when issue in Core is fixed
-      # # Simulate steady-states if specified
-      # if (configuration$simulateSteadyState) {
-      #
-      #   steadyStateResults <- vector("list", length(private$.steadyStateBatches))
-      #   #Set values for each simulation batch
-      #   for (simBatchIdx in seq_along(private$.steadyStateBatches)){
-      #     simId <- names(private$.steadyStateBatches)[[simBatchIdx]]
-      #     simBatch <- private$.steadyStateBatches[[simBatchIdx]]
-      #     resultsId <- simBatch$addRunValues(parameterValues = private$.variableParameters[[simId]],
-      #                           initialValues = private$.variableMolecules[[simId]])
-      #
-      #     names(steadyStateResults)[[simBatchIdx]] <- resultsId
-      #   }
-      #
-      #   # Run steady-state batches
-      #   ssResults <- ospsuite::runSimulationBatches(simulationBatches = private$.steadyStateBatches,
-      #                        simulationRunOptions = private$.configuration$simulationRunOptions)
-      #####
-
-      # Apply initial and parameter values to simulation batches
-      for (simId in names(private$.simulationBatches)) {
-        private$.simulationBatches[[simId]]$addRunValues(
-          parameterValues = unlist(
-            private$.variableParameters[[simId]],
-            use.names = FALSE
-          ),
-          initialValues = unlist(
-            private$.variableMolecules[[simId]],
-            use.names = FALSE
-          )
-        )
-      }
-      # Run simulation batches. The simulation engine gives the reason for a
-      # failed simulation only in a warning, which the silent mode of
-      # `runSimulationBatches()` drops. So these warnings are collected for
-      # the error below, and muffled here in silent mode. Any other warning
-      # is left as it is.
-      engineWarnings <- list()
-      simulationResults <- withCallingHandlers(
-        ospsuite::runSimulationBatches(
-          simulationBatches = private$.simulationBatches,
-          simulationRunOptions = private$.configuration$simulationRunOptions
-        ),
-        warning = function(w) {
-          if (.isSimulationFailureWarning(w)) {
-            engineWarnings[[length(engineWarnings) + 1]] <<- w
-            if (silentMode) {
-              invokeRestart("muffleWarning")
-            }
-          }
-        }
-      )
-      # The results come in the order of the batches, named by batch IDs
-      names(simulationResults) <- names(private$.simulationBatches)
-
-      # A failed simulation has no results (#299)
-      failed <- vapply(
-        simulationResults,
-        function(results) length(results) == 0 || is.null(results[[1]]),
-        logical(1)
-      )
-      if (any(failed[usedSimulations])) {
-        # The message gives the position in the task of a failed simulation
-        # whose name other simulations share. The engine does not say which
-        # reason belongs to which simulation, so the message names every
-        # failed simulation, also one whose results are not used.
-        simulationNames <- vapply(
-          private$.simulations,
-          function(simulation) simulation$name,
-          character(1)
-        )
-        stop(.simulationsFailedError(
-          simulationNames,
-          failed = match(
-            names(simulationResults)[failed],
-            names(private$.simulations)
-          ),
-          reasons = vapply(engineWarnings, conditionMessage, character(1)),
-          call = sys.call()
-        ))
-      }
-      # Without a failed simulation whose results are used, the warnings of
-      # the engine are about simulations whose results are not used. They are
-      # shown in silent mode, too.
-      if (silentMode) {
-        for (engineWarning in engineWarnings) {
-          warning(engineWarning)
-        }
-      }
-      simulationResults
-    },
-
     # Simulation Evaluation with Parameter Values
     #
     # Evaluates simulations using specified parameter values, updating each
     # parameter before simulation runs. Generates `DataCombined` objects for
     # each output mapping, encapsulating both simulated and observed data.
-    # Used for plotting; the objective function uses `.simulateOutputs()`.
+    # Used for plotting; the objective uses
+    # `SimulationModel$simulatedOutputs()`.
     #
     # @param currVals Vector of parameter values for simulation.
     # @return List of `DataCombined` objects, one per output mapping.
     .evaluate = function(currVals) {
       outputMappings <- private$.outputMappings
-      simulationResults <- private$.runSimulations(currVals)
+      simulationResults <- private$.model$simulate(currVals)
+      private$.mirrorModel()
 
       obsVsPredList <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
@@ -695,49 +333,50 @@ ParameterIdentification <- R6::R6Class(
       return(obsVsPredList)
     },
 
-    # Simulated Values of Every Output Mapping
-    #
-    # Runs the simulations with the given parameter values and reads the
-    # simulated values of every output mapping directly from the simulation
-    # results as numeric vectors (see `.simulatedValues()`), without building
-    # `DataCombined` objects.
-    #
-    # @param currVals Vector of parameter values for simulation.
-    # @param outputMappings The output mappings of the evaluation, by default
-    #   those of the task.
-    # @return A list with one entry per output mapping, each a list with
-    #   `xValues`, the time values in min, and `yValues`, the values in the base
-    #   unit of the mapped quantity.
+    # Shims for the tests until they are rewritten against the new classes
+    # (step 9). The buckets of the model are mirrored after every simulation
+    # because the tests read them from the facade.
+    .mirrorModel = function() {
+      private$.simulationBatches <- private$.model$simulationBatches
+      private$.variableParameters <- private$.model$variableParameters
+      private$.variableMolecules <- private$.model$variableMolecules
+      private$.parameterTargets <- private$.model$parameterTargets
+    },
+    .applyParameterValues = function(values) {
+      private$.model$.__enclos_env__$private$.applyParameterValues(values)
+      private$.mirrorModel()
+    },
+    .runSimulations = function(
+      currVals,
+      silentMode = FALSE,
+      usedSimulations = NULL
+    ) {
+      private$.model$simulate(currVals, usedSimulations, silentMode)
+    },
     .simulateOutputs = function(
       currVals,
       outputMappings = private$.outputMappings
     ) {
-      # The objective function reports a failed simulation itself on every
-      # evaluation, so the warning of the simulation engine is not repeated
-      simulationResults <- private$.runSimulations(currVals, silentMode = TRUE)
-
-      # Time values are read once per simulation
-      times <- list()
-      simulated <- vector("list", length(outputMappings))
-      for (idx in seq_along(outputMappings)) {
-        simId <- outputMappings[[idx]]$simId
-        resultObject <- simulationResults[[simId]][[1]]
-        times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
-        simulated[[idx]] <- .simulatedValues(
-          resultObject,
-          outputMappings[[idx]]$quantity$path,
-          times[[simId]]
-        )
-      }
-      simulated
+      private$.model$simulatedOutputs(currVals, outputMappings)
     },
-
-    # Shim for the tests until they are rewritten against the objective: the
-    # output mappings the objective of `bootstrapSeed` evaluates, those of the
-    # task without a seed (the frozen oracle reads the observed data from them)
-    #
-    # @param bootstrapSeed Optional bootstrap seed.
-    # @return A list of `PIOutputMapping` objects.
+    # `test-pid-aux.R` logs on a task whose batches are not initialized
+    .logSimulationFailure = function(currVals, cond) {
+      if (is.null(private$.model)) {
+        private$.batchInitialization()
+      }
+      private$.model$logFailure(currVals, cond)
+    },
+    # The evaluation closure of the objective, on the data of `bootstrapSeed`
+    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
+      objective <- private$.objectiveFor()
+      if (!is.null(bootstrapSeed)) {
+        objective <- objective$withData(private$.data$resample(bootstrapSeed))
+      }
+      private$.evaluationClosure(objective)(currVals)
+    },
+    # The output mappings the objective of `bootstrapSeed` evaluates, those of
+    # the task without a seed (the frozen oracle reads the observed data from
+    # them)
     .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
@@ -773,7 +412,7 @@ ParameterIdentification <- R6::R6Class(
     .checkStartSimulation = function(values) {
       tryCatch(
         if (is.null(private$.pkMappings)) {
-          private$.simulateOutputs(values)
+          private$.model$simulatedOutputs(values, private$.outputMappings)
         } else {
           private$.getPKValues(values)
         },
@@ -967,16 +606,6 @@ ParameterIdentification <- R6::R6Class(
       names(private$.simulations) <- ids
 
       private$.piParameters <- parameters
-
-      private$.variableMolecules <-
-        private$.variableParameters <-
-          private$.simulationBatches <-
-            private$.steadyStateBatches <- vector("list", length(simulations))
-
-      names(private$.variableMolecules) <-
-        names(private$.variableParameters) <-
-          names(private$.simulationBatches) <-
-            names(private$.steadyStateBatches) <- ids
 
       if (hasPI) {
         outputMappings <- ospsuite.utils::toList(outputMappings)
