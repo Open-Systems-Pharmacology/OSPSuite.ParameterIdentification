@@ -1,6 +1,14 @@
 # PIObservations validates its input and is read-only
 
     Code
+      PIObservations$new(list(1))
+    Condition
+      Error in `ospsuite.utils::validateIsOfType()`:
+      ! `test()`: argument "outputMappings" is of type <list>, but expected <PIOutputMapping>!
+
+---
+
+    Code
       data$observedData <- NULL
     Condition
       Error:

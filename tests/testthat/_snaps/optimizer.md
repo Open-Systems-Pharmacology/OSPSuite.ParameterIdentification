@@ -149,6 +149,15 @@
       Error in `optimizer$estimateCI()`:
       ! The bootstrap method needs `replicate`, a `function(seed)` that returns the objective function of one bootstrap replicate.
 
+---
+
+    Code
+      optimizer$estimateCI(par = parTest, fn = fnObjective, lower = lowerTest, upper = upperTest,
+        replicate = 1)
+    Condition
+      Error in `ospsuite.utils::validateIsOfType()`:
+      ! `test()`: argument "replicate" is of type <numeric>, but expected <function>!
+
 # Hessian CI reports a failed Hessian calculation
 
     Code

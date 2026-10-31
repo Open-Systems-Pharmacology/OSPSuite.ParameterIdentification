@@ -196,11 +196,7 @@ test_that(".completeDataWeights() fills the data sets without weights with 1", {
 })
 
 test_that("PIObservations validates its input and is read-only", {
-  expect_error(
-    PIObservations$new(list(1)),
-    messages$errorWrongType("outputMappings", "list", "PIOutputMapping"),
-    fixed = TRUE
-  )
+  expect_snapshot(PIObservations$new(list(1)), error = TRUE)
   data <- PIObservations$new(testPiTask()$outputMappings)
   expect_snapshot(data$observedData <- NULL, error = TRUE)
   expect_snapshot(data$outputMappings <- NULL, error = TRUE)

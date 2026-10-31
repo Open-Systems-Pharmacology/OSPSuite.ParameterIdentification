@@ -738,7 +738,7 @@ test_that("estimateCI() with the bootstrap method stops without replicate", {
     messages$optimizationAlgorithm(piConfig$algorithm, parTest, FALSE),
     fixed = TRUE
   )
-  expect_error(
+  expect_snapshot(
     optimizer$estimateCI(
       par = parTest,
       fn = fnObjective,
@@ -746,8 +746,7 @@ test_that("estimateCI() with the bootstrap method stops without replicate", {
       upper = upperTest,
       replicate = 1
     ),
-    messages$errorWrongType("replicate", "numeric", "function"),
-    fixed = TRUE
+    error = TRUE
   )
 })
 
