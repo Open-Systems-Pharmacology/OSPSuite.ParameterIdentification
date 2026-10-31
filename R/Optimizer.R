@@ -668,7 +668,7 @@ Optimizer <- R6::R6Class(
     #' @param lower Numeric vector of lower parameter bounds.
     #' @param upper Numeric vector of upper parameter bounds.
     #' @param optimizer Optional instance of Optimizer used during profile
-    #'   likelihood or bootstrap CI estimation.
+    #'   likelihood CI estimation.
     #' @param replicate Function of one argument, the seed of a bootstrap
     #'   replicate, that returns the objective function of that replicate.
     #'   Required with `ciMethod = "bootstrap"`, unused otherwise.

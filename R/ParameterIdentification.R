@@ -77,13 +77,14 @@ ParameterIdentification <- R6::R6Class(
     .outputMappings = NULL,
     # `PIConfiguration` object instance
     .configuration = NULL,
-    # The `PIObjective` of the current public call and bootstrap sample,
-    # built on the first evaluation (see `.objectiveFor()`)
+    # The `PIObjective` of the current public call, built on the first
+    # evaluation (see `.objectiveFor()`)
     .objective = NULL,
     # The `PIObservations` of `.objective`
     .data = NULL,
-    # The prepared observed data of `.objective`, mirrored after every
-    # evaluation for the tests that read them until the tests are rewritten
+    # The prepared observed data of the last evaluated objective, bootstrap
+    # replicates included, mirrored for the tests that read them until the
+    # tests are rewritten
     .observedData = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
@@ -91,6 +92,9 @@ ParameterIdentification <- R6::R6Class(
     .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
+    # Stores the cost summary of the fit, taken before the CI estimation
+    # evaluates the objective function again
+    .fitCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Number of evaluations of `run()` whose simulations failed
@@ -530,7 +534,7 @@ ParameterIdentification <- R6::R6Class(
       PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
-        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+        costDetails = private$.fitCostSummary,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
@@ -677,6 +681,8 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
       private$.lastOptimResult <- optimResult
+      private$.fitCostSummary <- private$.bestCostSummary %||%
+        private$.lastCostSummary
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
@@ -710,7 +716,7 @@ ParameterIdentification <- R6::R6Class(
         piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = NULL,
-          costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+          costDetails = private$.fitCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )
@@ -938,10 +944,11 @@ ParameterIdentification <- R6::R6Class(
       ofvGrid <- expand.grid(parameterGrid)
 
       # Calculate OFV
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       ofvGrid[["ofv"]] <- vapply(
         1:nrow(ofvGrid),
         function(i) {
-          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+          ofv <- fn(as.numeric(ofvGrid[i, ]))
           ofv[[private$.configuration$modelCostField]]
         },
         numeric(1)
@@ -1048,6 +1055,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       # Calculate OFV profile with parameter-specific grid
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       profileList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         parameterName <- parameterNames[idx]
@@ -1060,7 +1068,7 @@ ParameterIdentification <- R6::R6Class(
         # Calculate OFV for each grid row
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
-          ofv <- private$.objectiveFunction(currentGrid[gridIdx, ])
+          ofv <- fn(currentGrid[gridIdx, ])
           ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 

@@ -55,11 +55,7 @@ test_that("run() stops on unconvertible observed data", {
 test_that("a failed simulation is reported by name and reason", {
   modPiTask <- testModifiedTask()
   priv <- modPiTask$.__enclos_env__$private
-  startValues <- vapply(
-    modPiTask$parameters,
-    function(p) p$startValue,
-    numeric(1)
-  )
+  startValues <- currStartValues(modPiTask)
 
   # plotResults() shows the warning of the simulation engine and stops with
   # the name of the failed simulation and the reason from that warning
@@ -277,6 +273,23 @@ test_that("run() stores best running cost in costDetails", {
   resultList <- result$toList()
 
   expect_equal(resultList$objectiveValue, resultList$costDetails$modelCost)
+})
+
+test_that("costDetails describe the fit, not a CI evaluation", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration(iter = 3)
+
+  suppressMessages(result <- piTask$run())
+  expect_equal(
+    result$toList()$objectiveValue,
+    result$toList()$costDetails$modelCost
+  )
+
+  suppressMessages(result <- piTask$estimateCI())
+  expect_equal(
+    result$toList()$objectiveValue,
+    result$toList()$costDetails$modelCost
+  )
 })
 
 test_that("run() succeeds with a state-variable optimization parameter", {

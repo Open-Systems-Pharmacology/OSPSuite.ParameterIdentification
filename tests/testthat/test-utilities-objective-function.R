@@ -485,10 +485,6 @@ test_that("calculateCostMetrics handles infinite values in xValues and yValues c
 
 # observed-data caching
 
-currStartValues <- function(task) {
-  vapply(task$parameters, function(p) p$startValue, numeric(1))
-}
-
 # state-variable parameter routing
 
 test_that("fixture state-variable path is classified as a state variable", {
