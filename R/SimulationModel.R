@@ -415,10 +415,7 @@ SimulationModel <- R6::R6Class(
 
     # Runs the simulations with the parameter values and reads the simulated
     # values of every output mapping from the results as numeric vectors (see
-    # `.simulatedValues()`). An output that is `NA` at an observed time of
-    # its mapping is a failed simulation, like one the engine reports. `NA`
-    # values elsewhere, such as a ratio that is undefined at time zero, are
-    # left to the interpolation of the cost kernel.
+    # `.simulatedValues()`).
     #
     # @param values Vector of parameter values.
     # @param outputMappings The output mappings of the evaluation.
@@ -439,23 +436,6 @@ SimulationModel <- R6::R6Class(
         resultObject <- simulationResults[[simId]][[1]]
         times[[simId]] <- times[[simId]] %||% .simulatedTimes(resultObject)
         simulated[[idx]] <- .simulatedValues(resultObject, path, times[[simId]])
-        # Only the observations that enter the cost are checked (see
-        # `.finiteValues()`)
-        mapping <- outputMappings[[idx]]
-        observedTimes <- .observedTimes(mapping)
-        observedValues <- unlist(
-          lapply(mapping$observedDataSets, function(dataset) dataset$yValues),
-          use.names = FALSE
-        )
-        usedTimes <- observedTimes[.finiteValues(observedTimes, observedValues)]
-        if (anyNA(.valuesAtTimes(simulated[[idx]], usedTimes))) {
-          stop(.simulationsFailedError(
-            private$.simulationNames(),
-            failed = match(simId, names(private$.simulations)),
-            reasons = messages$simulatedValuesNA(path),
-            call = sys.call()
-          ))
-        }
       }
       simulated
     },
@@ -523,30 +503,3 @@ SimulationModel <- R6::R6Class(
   unlist(times, use.names = FALSE)
 }
 
-#' Simulated values at given times
-#'
-#' @description The values of a simulated output at the given times, as the
-#'   cost kernel reads them, with `NA` wherever an `NA` value takes part in
-#'   the interpolation.
-#'
-#' @param simulated A list with `xValues` and `yValues`.
-#' @param times Times in min.
-#'
-#' @return A numeric vector of the length of `times`.
-#' @keywords internal
-#' @noRd
-.valuesAtTimes <- function(simulated, times) {
-  yValues <- simulated$yValues
-  if (length(times) == 0 || all(is.na(yValues))) {
-    return(rep(NA_real_, length(times)))
-  }
-  if (length(unique(simulated$xValues)) > 1) {
-    return(stats::approx(
-      simulated$xValues,
-      yValues,
-      xout = times,
-      na.rm = FALSE
-    )$y)
-  }
-  yValues[match(times, simulated$xValues)]
-}
