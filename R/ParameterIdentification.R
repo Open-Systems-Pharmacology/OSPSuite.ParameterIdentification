@@ -85,11 +85,14 @@ ParameterIdentification <- R6::R6Class(
     .outputMappings = NULL,
     # `PIConfiguration` object instance
     .configuration = NULL,
-    # The `PIObjective` of the current public call and bootstrap sample,
-    # built on the first evaluation (see `.objectiveFor()`)
+    # The `PIObjective` of the current public call, built on the first
+    # evaluation (see `.objectiveFor()`)
     .objective = NULL,
-    # The prepared observed data of `.objective`, mirrored after every
-    # evaluation for the tests that read them until the tests are rewritten
+    # The `PIObservations` of `.objective`
+    .data = NULL,
+    # The prepared observed data of the last evaluated objective, bootstrap
+    # replicates included, mirrored for the tests that read them until the
+    # tests are rewritten
     .observedData = NULL,
     # Kinds of the reasons of failed simulations that the objective functions
     # logged in full in the current public call (see `.logSimulationFailure()`)
@@ -115,11 +118,6 @@ ParameterIdentification <- R6::R6Class(
         stop(messages$errorMethodNotApplicableInPKMode(methodName))
       }
     },
-    # Most recently used bootstrap seed to detect when resampling is needed
-    .activeBootstrapSeed = NULL,
-    # Cached original weights and values of all datasets before bootstrap
-    .initialOutputMappingState = NULL,
-
     # Applies a vector of optimizer values, one entry per `PIParameters` group,
     # to every underlying model parameter. Values arrive in each group's
     # `$unit`. `addRunValues()` reads base units, so they are converted here.
@@ -176,6 +174,7 @@ ParameterIdentification <- R6::R6Class(
       # batches are built again from the current simulations and observed
       # times.
       private$.objective <- NULL
+      private$.data <- NULL
       private$.observedData <- NULL
       # The reasons of failed simulations are logged in full again
       private$.loggedFailureKinds <- character()
@@ -325,23 +324,20 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # The `PIObjective` of the current public call and bootstrap sample
+    # The `PIObjective` of the current public call
     #
-    # Built on the first evaluation after `.batchInitialization()` or a new
-    # bootstrap sample, which reads the observed data once (#271). Its
-    # `simulate` function logs and counts a failed simulation (see
-    # `.logSimulationFailure()`) and signals it again, so that `evaluate()`
-    # returns the error cost structure.
+    # Built on the first evaluation after `.batchInitialization()`, which
+    # reads the observed data once (#271). Its `simulate` function logs and
+    # counts a failed simulation (see `.logSimulationFailure()`) and signals
+    # it again, so that `evaluate()` returns the error cost structure.
     #
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return The `PIObjective` object.
-    .objectiveFor = function(bootstrapSeed = NULL) {
-      # A new sample resets the objective, so the mappings come first
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+    .objectiveFor = function() {
+      outputMappings <- private$.outputMappings
       if (is.null(private$.objective)) {
+        private$.data <- PIObservations$new(outputMappings)
         private$.objective <- PIObjective$new(
-          outputMappings = outputMappings,
+          data = private$.data,
           objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
           simulate = function(values) {
             tryCatch(
@@ -363,54 +359,64 @@ ParameterIdentification <- R6::R6Class(
     #
     # Counts the evaluations and the failed evaluations, keeps the last and
     # the best cost summary and prints the evaluation feedback. The
-    # `Optimizer` receives this method as its objective function.
+    # `Optimizer` receives this closure as its objective function.
     #
-    # @param currVals Vector of parameter values for simulation.
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
-    # @return The cost summary of the evaluation, a `modelCost` object.
-    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
-      # Increment function evaluations counter
-      private$.fnEvaluations <- private$.fnEvaluations + 1
+    # @param objective A `PIObjective` object.
+    # @return `function(currVals)` that returns the cost summary of the
+    #   evaluation of the parameter values, a `modelCost` object.
+    .evaluationClosure = function(objective) {
+      function(currVals) {
+        # Increment function evaluations counter
+        private$.fnEvaluations <- private$.fnEvaluations + 1
 
-      objective <- private$.objectiveFor(bootstrapSeed)
-      failedEvaluations <- private$.failedEvaluations
-      runningCost <- objective$evaluate(currVals)
-      private$.observedData <- objective$observedData
+        failedEvaluations <- private$.failedEvaluations
+        runningCost <- objective$evaluate(currVals)
+        private$.observedData <- objective$observedData
 
-      # The simulate closure of `.objectiveFor()` counts failed simulations
-      if (private$.failedEvaluations > failedEvaluations) {
+        # The simulate closure of `.objectiveFor()` counts failed simulations
+        if (private$.failedEvaluations > failedEvaluations) {
+          return(runningCost)
+        }
+
+        private$.lastCostSummary <- runningCost
+
+        # Evaluate running cost
+        costField <- private$.configuration$modelCostField
+        currCost <- runningCost[[costField]]
+        bestCost <- if (is.null(private$.bestCostSummary)) {
+          Inf
+        } else {
+          private$.bestCostSummary[[costField]]
+        }
+
+        # Only overwrite when strictly better
+        if (is.finite(currCost) && currCost < bestCost) {
+          private$.bestCostSummary <- runningCost
+        }
+
+        #  Optionally print evaluation feedback
+        if (private$.configuration$printEvaluationFeedback) {
+          cat(
+            messages$evaluationFeedback(
+              private$.fnEvaluations,
+              currVals,
+              runningCost[[private$.configuration$modelCostField]]
+            )
+          )
+        }
+
         return(runningCost)
       }
+    },
 
-      private$.lastCostSummary <- runningCost
-
-      # Evaluate running cost
-      costField <- private$.configuration$modelCostField
-      currCost <- runningCost[[costField]]
-      bestCost <- if (is.null(private$.bestCostSummary)) {
-        Inf
-      } else {
-        private$.bestCostSummary[[costField]]
+    # Shim for the tests until they are rewritten against the objective: the
+    # evaluation closure of the objective, on the data of `bootstrapSeed`
+    .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
+      objective <- private$.objectiveFor()
+      if (!is.null(bootstrapSeed)) {
+        objective <- objective$withData(private$.data$resample(bootstrapSeed))
       }
-
-      # Only overwrite when strictly better
-      if (is.finite(currCost) && currCost < bestCost) {
-        private$.bestCostSummary <- runningCost
-      }
-
-      #  Optionally print evaluation feedback
-      if (private$.configuration$printEvaluationFeedback) {
-        cat(
-          messages$evaluationFeedback(
-            private$.fnEvaluations,
-            currVals,
-            runningCost[[private$.configuration$modelCostField]]
-          )
-        )
-      }
-
-      return(runningCost)
+      private$.evaluationClosure(objective)(currVals)
     },
 
     .pkObjectiveFunction = function(currVals) {
@@ -658,11 +664,9 @@ ParameterIdentification <- R6::R6Class(
     # Used for plotting; the objective function uses `.simulateOutputs()`.
     #
     # @param currVals Vector of parameter values for simulation.
-    # @param bootstrapSeed Optional bootstrap seed. If given, the output
-    #   mappings are resampled for it (see `.getOutputMappings()`).
     # @return List of `DataCombined` objects, one per output mapping.
-    .evaluate = function(currVals, bootstrapSeed = NULL) {
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+    .evaluate = function(currVals) {
+      outputMappings <- private$.outputMappings
       simulationResults <- private$.runSimulations(currVals)
 
       obsVsPredList <- vector("list", length(outputMappings))
@@ -699,8 +703,8 @@ ParameterIdentification <- R6::R6Class(
     # `DataCombined` objects.
     #
     # @param currVals Vector of parameter values for simulation.
-    # @param outputMappings The output mappings of the evaluation (see
-    #   `.getOutputMappings()`), by default those of the task.
+    # @param outputMappings The output mappings of the evaluation, by default
+    #   those of the task.
     # @return A list with one entry per output mapping, each a list with
     #   `xValues`, the time values in min, and `yValues`, the values in the base
     #   unit of the mapped quantity.
@@ -728,69 +732,18 @@ ParameterIdentification <- R6::R6Class(
       simulated
     },
 
-    # Retrieve Output Mappings with Optional Bootstrap Resampling
+    # Shim for the tests until they are rewritten against the objective: the
+    # output mappings the objective of `bootstrapSeed` evaluates, those of the
+    # task without a seed (the frozen oracle reads the observed data from them)
     #
-    # Returns the list of output mappings used during objective function
-    # evaluation. If no bootstrap seed is provided, the original mappings are
-    # returned. If a `bootstrapSeed` is provided and differs from the
-    # previously active seed, the weights of individual data sets are resampled
-    # for it (see `.resampleMappingWeights()`), and the means of aggregated
-    # data sets are redrawn (see `.resampleDataSetValues()`). The initial
-    # mapping state is extracted only once via `.extractOutputMappingState()`,
-    # and `.restoreOutputMappingsState()` restores it.
-    #
-    # @param bootstrapSeed Optional integer used for bootstrap resampling. If NULL,
-    #   returns the unmodified output mappings.
-    # @return A list of `PIOutputMapping` objects, possibly modified with resampled
-    #   weights.
+    # @param bootstrapSeed Optional bootstrap seed.
+    # @return A list of `PIOutputMapping` objects.
     .getOutputMappings = function(bootstrapSeed = NULL) {
       if (is.null(bootstrapSeed)) {
         return(private$.outputMappings)
       }
-
-      # First-time bootstrap setup: cache the initial state
-      if (is.null(private$.initialOutputMappingState)) {
-        private$.initialOutputMappingState <- .extractOutputMappingState(
-          private$.outputMappings
-        )
-      }
-
-      # Trigger resampling only if the seed has changed
-      if (
-        is.null(private$.activeBootstrapSeed) ||
-          private$.activeBootstrapSeed != bootstrapSeed
-      ) {
-        private$.activeBootstrapSeed <- bootstrapSeed
-        private$.outputMappings <- .resampleAndApplyMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState,
-          bootstrapSeed
-        )
-        # Observed data changed, so the objective is built again
-        private$.objective <- NULL
-        private$.observedData <- NULL
-      }
-
-      return(private$.outputMappings)
-    },
-
-    # Restore Output Mapping State
-    #
-    # Restores `outputMappings` to their original state before bootstrap
-    # resampling, including both dataset weights and y-values. Clears
-    # bootstrap-related state.
-    .restoreOutputMappingsState = function() {
-      if (!is.null(private$.initialOutputMappingState)) {
-        private$.outputMappings <- .applyOutputMappingState(
-          private$.outputMappings,
-          private$.initialOutputMappingState
-        )
-      }
-      private$.initialOutputMappingState <- NULL
-      private$.activeBootstrapSeed <- NULL
-      # Observed data restored to its original state, so read it again
-      private$.objective <- NULL
-      private$.observedData <- NULL
+      private$.objectiveFor()
+      private$.data$resample(bootstrapSeed)$outputMappings
     },
 
     # Apply Identified Parameter Values
@@ -856,9 +809,9 @@ ParameterIdentification <- R6::R6Class(
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       fn <- if (!is.null(private$.pkMappings)) {
-        function(p, ...) private$.pkObjectiveFunction(p)
+        function(p) private$.pkObjectiveFunction(p)
       } else {
-        function(p, ...) private$.objectiveFunction(p, ...)
+        private$.evaluationClosure(private$.objectiveFor())
       }
 
       optimResult <- optimizer$run(
@@ -893,8 +846,6 @@ ParameterIdentification <- R6::R6Class(
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
 
-      on.exit(private$.restoreOutputMappingsState(), add = TRUE)
-
       currValues <- sapply(private$.piParameters, `[[`, "currValue")
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
@@ -905,24 +856,28 @@ ParameterIdentification <- R6::R6Class(
         private$.checkStartSimulation(currValues)
       }
 
-      if (
-        private$.configuration$ciMethod == "bootstrap" &&
-          is.null(private$.activeBootstrapSeed)
-      ) {
+      if (private$.configuration$ciMethod == "bootstrap") {
         .validateSubjectCounts(private$.outputMappings)
         .classifyObservedData(private$.outputMappings)
       }
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
-      fn <- function(p, ...) private$.objectiveFunction(p, ...)
+      objective <- private$.objectiveFor()
 
       ciResult <- optimizer$estimateCI(
         par = currValues,
-        fn = fn,
+        fn = private$.evaluationClosure(objective),
         lower = lower,
         upper = upper,
-        resetFn = function() private$.fnEvaluations <- 0
+        # Each replicate evaluates the objective on its resampled data, with
+        # the evaluation counter starting at 0
+        replicate = function(seed) {
+          private$.fnEvaluations <- 0
+          private$.evaluationClosure(
+            objective$withData(private$.data$resample(seed))
+          )
+        }
       )
       if (private$.configuration$ciMethod == "bootstrap") {
         ciResult$details$subjectCounts <- lapply(
@@ -1360,10 +1315,11 @@ ParameterIdentification <- R6::R6Class(
       ofvGrid <- expand.grid(parameterGrid)
 
       # Calculate OFV
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       ofvGrid[["ofv"]] <- vapply(
         1:nrow(ofvGrid),
         function(i) {
-          ofv <- private$.objectiveFunction(as.numeric(ofvGrid[i, ]))
+          ofv <- fn(as.numeric(ofvGrid[i, ]))
           ofv[[private$.configuration$modelCostField]]
         },
         numeric(1)
@@ -1470,6 +1426,7 @@ ParameterIdentification <- R6::R6Class(
       )
 
       # Calculate OFV profile with parameter-specific grid
+      fn <- private$.evaluationClosure(private$.objectiveFor())
       profileList <- vector(mode = "list", length = nrOfParameters)
       for (idx in seq_along(private$.piParameters)) {
         parameterName <- parameterNames[idx]
@@ -1482,7 +1439,7 @@ ParameterIdentification <- R6::R6Class(
         # Calculate OFV for each grid row
         ofvValues <- numeric(totalEvaluations)
         for (gridIdx in seq_len(totalEvaluations)) {
-          ofv <- private$.objectiveFunction(currentGrid[gridIdx, ])
+          ofv <- fn(currentGrid[gridIdx, ])
           ofvValues[gridIdx] <- ofv[[private$.configuration$modelCostField]]
         }
 

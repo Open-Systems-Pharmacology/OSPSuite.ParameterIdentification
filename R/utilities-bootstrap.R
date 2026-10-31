@@ -107,7 +107,7 @@
 }
 
 
-# RESAMPLING: APPLY STATE
+# RESAMPLING: SEED
 
 #' Evaluate an expression under a seed without touching the global stream
 #'
@@ -131,135 +131,8 @@
   expr
 }
 
-#' Apply resampled data set weights and values
-#'
-#' Resamples the data set weights of every output mapping for a bootstrap
-#' sample and the means of its aggregated data sets with a subject count (see
-#' `.resampleDataSetValues()`), and applies both.
-#' All draws are made under `seed`. The global random state is left as it was.
-#'
-#' @param outputMappings List of `PIOutputMapping` objects.
-#' @param mappingState A named list with `dataSetWeights` and `dataSetValues`.
-#' @param seed Integer used to drive resampling.
-#' @return Updated outputMappings list.
-#' @keywords internal
-#' @noRd
-.resampleAndApplyMappingState <- function(outputMappings, mappingState, seed) {
-  ospsuite.utils::validateIsSameLength(
-    outputMappings,
-    mappingState$dataSetWeights
-  )
-  ospsuite.utils::validateIsSameLength(
-    outputMappings,
-    mappingState$dataSetValues
-  )
-  .withSeed(seed, {
-    outputMappings <- .resampleAndApplyMappingWeights(
-      outputMappings = outputMappings,
-      mappingWeights = mappingState$dataSetWeights
-    )
-    mappingValues <- mappingState$dataSetValues
-    for (idx in seq_along(outputMappings)) {
-      subjectCounts <- outputMappings[[idx]]$subjectCount %||% integer()
-      dataSets <- outputMappings[[idx]]$observedDataSets
-      for (name in names(mappingValues[[idx]])) {
-        subjectCount <- unname(subjectCounts[name])
-        if (is.na(subjectCount)) {
-          next
-        }
-        values <- mappingValues[[idx]][[name]]
-        dataSet <- dataSets[[name]]
-        # An arithmetic SD may be in another unit than the means
-        yErrorValues <- if (identical(values$yErrorType, "ArithmeticStdDev")) {
-          ospsuite::toUnit(
-            dataSet$yDimension,
-            values$yErrorValues,
-            targetUnit = dataSet$yUnit,
-            sourceUnit = dataSet$yErrorUnit
-          )
-        } else {
-          values$yErrorValues
-        }
-        mappingValues[[idx]][[name]] <- .resampleDataSetValues(
-          values,
-          subjectCount = subjectCount,
-          yErrorValues = yErrorValues
-        )
-      }
-    }
-    .applyMappingValues(outputMappings, mappingValues)
-  })
-}
-
-#' Resample and apply dataset weights
-#'
-#' Resamples dataset weights based on a bootstrap seed and applies them to each
-#' output mapping.
-#'
-#' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of initial dataset weight lists, one per output
-#'   mapping.
-#' @return Updated list of `PIOutputMapping` objects.
-#' @keywords internal
-#' @noRd
-.resampleAndApplyMappingWeights <- function(outputMappings, mappingWeights) {
-  resampledMappingWeights <- .resampleMappingWeights(
-    outputMappings,
-    mappingWeights
-  )
-  .applyMappingWeights(outputMappings, resampledMappingWeights)
-}
-
 
 # RESAMPLING: WEIGHTS
-
-#' Resample mapping-level dataset weights
-#'
-#' Resamples the weights of the individual data sets of each output mapping
-#' (see `.resampleDataSetWeights()`). Aggregated data sets with error values
-#' (see `.isAggregatedWithErrors()`) keep their weights, since the design fixes
-#' their subject count and only their means are redrawn.
-#'
-#' @param outputMappings A list of `PIOutputMapping` objects.
-#' @param mappingWeights A list of named dataset weight lists, one per output
-#'   mapping.
-#' @return A list of resampled dataset weight lists, one per output mapping.
-#' @keywords internal
-#' @noRd
-.resampleMappingWeights <- function(outputMappings, mappingWeights) {
-  ospsuite.utils::validateIsSameLength(mappingWeights, outputMappings)
-
-  resampledMappingWeights <- vector("list", length(outputMappings))
-
-  for (idx in seq_along(outputMappings)) {
-    mapping <- outputMappings[[idx]]
-    dataSetWeights <- mappingWeights[[idx]]
-
-    if (
-      !ospsuite.utils::isSameLength(dataSetWeights, mapping$observedDataSets) ||
-        !ospsuite.utils::isIncluded(
-          names(dataSetWeights),
-          names(mapping$observedDataSets)
-        )
-    ) {
-      stop(messages$errorDataSetWeightsMismatch())
-    }
-
-    isIndividual <- !vapply(
-      mapping$observedDataSets[names(dataSetWeights)],
-      .isAggregatedWithErrors,
-      logical(1)
-    )
-    if (any(isIndividual)) {
-      dataSetWeights[isIndividual] <- .resampleDataSetWeights(
-        dataSetWeights[isIndividual]
-      )
-    }
-    resampledMappingWeights[[idx]] <- dataSetWeights
-  }
-
-  return(resampledMappingWeights)
-}
 
 #' Resample dataset-level weights using bootstrap
 #'
@@ -363,7 +236,7 @@
 #' error value is returned unchanged.
 #'
 #' @param dataSetValues A list with `xValues`, `yValues`, `yErrorValues` and
-#'   `yErrorType` of one data set (see `.extractDataSetValues()`).
+#'   `yErrorType` of one data set.
 #' @param subjectCount The number of subjects `n` behind the data set.
 #' @param yErrorValues The error values in the unit of `yValues`.
 #' @return `dataSetValues` with new `yValues`.

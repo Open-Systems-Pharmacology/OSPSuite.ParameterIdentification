@@ -508,7 +508,6 @@ bootstrapCase <- function(dataSets) {
       bootstrapSeed = seed
     )
   }
-  private$.restoreOutputMappingsState()
   results[[length(results) + 1]] <- private$.objectiveFunction(-0.2)
   results
 }
