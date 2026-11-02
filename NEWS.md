@@ -12,9 +12,7 @@
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
-- `run()`, `estimateCI()`, `gridSearch()` and `calculateOFVProfiles()` treat a simulated output that is `NA` at an observed time as a failed evaluation with an infinite cost, like a simulation the engine reports as failed. At the start values, this stops `run()` as a failed start simulation does.
-- `ParameterIdentification$new()` with `pkOutputMappings` stops when a simulation of the task has no parameter to vary, with the message of the standard mode (#330).
-- `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`. A failed evaluation of PK targets has the cost `Inf`.
+- `ParameterIdentification$new()` with `pkOutputMappings` stops when a simulation of the task has no parameter to vary, with a message that lists the simulation and parameter IDs. `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`, and a failed evaluation of PK targets has the cost `Inf` (#330).
 - `PIResult` reports the `sd` and `cv` of profile likelihood intervals, which were `NA`, always one logical `convergence`, and the cost details and configuration of the fit also when `estimateCI()` is called after `run()`.
 - `estimateCI()` called after `run()` starts from the estimates of `run()` instead of the current parameter values of the model, and reports them with the units and bounds of the fit.
 

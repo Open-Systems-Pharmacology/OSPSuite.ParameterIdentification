@@ -416,7 +416,9 @@ test_that("pkValues() routes a state-variable parameter as a molecule", {
   priv$.batchInitialization()
   simId <- names(priv$.simulations)[[1]]
 
-  pkValues <- priv$.objectiveFor()$pkValues(stateVarParam$startValue)
+  pkValues <- priv$.withPKOutputs(
+    priv$.objectiveFor()$pkValues(stateVarParam$startValue)
+  )
 
   expect_true(
     stateVariableParameterPath %in% names(priv$.model$variableMolecules[[simId]])

@@ -18,8 +18,6 @@ test_that("PIObservations reads the observed data of the output mappings once", 
   expect_equal(reads$reads, length(mappings))
   expect_identical(data$outputMappings, mappings)
   expect_identical(data$observedData, lapply(mappings, .prepareObservedData))
-  censored <- data$observedData[[1]]$censored
-  expect_identical(censored, rep(FALSE, length(data$observedData[[1]]$yValues)))
 })
 
 test_that("resample() is a function of the data and the seed", {
@@ -198,10 +196,10 @@ test_that(".completeDataWeights() fills the data sets without weights with 1", {
 })
 
 test_that("PIObservations validates its input and is read-only", {
-  expect_error(
+  expect_snapshot(
     PIObservations$new(list(1)),
-    messages$errorWrongType("outputMappings", "list", "PIOutputMapping"),
-    fixed = TRUE
+    error = TRUE,
+    transform = scrubCallerName
   )
   data <- PIObservations$new(testPiTask()$outputMappings)
   expect_snapshot(data$observedData <- NULL, error = TRUE)

@@ -137,14 +137,6 @@ messages$shortenedFailureReason <- function(reasons) {
   )
 }
 
-# A reason of a failed simulation (see `.simulationsFailedError()`), not to
-# be confused with `errorSimulatedValuesMissing()` of the cost kernel
-messages$simulatedValuesNA <- function(path) {
-  ospsuite.utils::cliFormat(
-    "The simulated values of {.val {path}} are {.val NA} at an observed time."
-  )
-}
-
 # `mappingIndices` are the positions of output mappings and `quantityPaths`
 # the paths of their quantities
 # `dataType` is "simulated" or "observed". `index` is the position of the
