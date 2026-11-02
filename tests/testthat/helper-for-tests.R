@@ -643,7 +643,8 @@ objectiveClosure <- function(task, seed = NULL) {
   if (!is.null(seed)) {
     objective <- objective$withData(priv$.data$resample(seed))
   }
-  priv$.evaluationClosure(objective)
+  closure <- priv$.evaluationClosure(objective)
+  function(values) priv$.withPKOutputs(closure(values))
 }
 
 # A PIObjective on the model of the task and the data of its output mappings,

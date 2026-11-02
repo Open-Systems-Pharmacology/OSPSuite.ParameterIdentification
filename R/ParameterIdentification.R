@@ -148,17 +148,29 @@ ParameterIdentification <- R6::R6Class(
       private$.objective
     },
 
-    # The objective of the current public call, if it supports a feature
-    #
-    # @param feature `"supportsCI"` or `"supportsPlots"`.
-    # @param methodName The public method, for the error.
-    # @return The objective, or an error when it does not support the feature.
-    .objectiveSupporting = function(feature, methodName) {
-      objective <- private$.objectiveFor()
-      if (!objective[[feature]]) {
+    .assertNotPKMode = function(methodName) {
+      if (!is.null(private$.pkMappings)) {
         stop(messages$errorMethodNotApplicableInPKMode(methodName))
       }
-      objective
+    },
+
+    # Evaluates `code` with the PK outputs selected in the simulations
+    #
+    # `ospsuite::calculatePKAnalyses()` analyses the outputs selected in the
+    # simulation, so they are selected once around the evaluations of a call
+    # and the simulations are restored when `code` exits, also on an error.
+    # Without PK mappings, only evaluates `code`.
+    .withPKOutputs = function(code) {
+      if (is.null(private$.pkMappings)) {
+        return(code)
+      }
+      savedState <- .storeSimulationState(private$.simulations)
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
+      .selectPKOutputs(private$.simulations, private$.pkMappings)
+      code
     },
 
     # The evaluation closure around `evaluate()` of the objective
@@ -285,10 +297,12 @@ ParameterIdentification <- R6::R6Class(
       private$.model$simulatedOutputs(currVals, outputMappings)
     },
     .pkObjectiveFunction = function(currVals) {
-      private$.evaluationClosure(private$.objectiveFor())(currVals)$modelCost
+      private$.withPKOutputs(
+        private$.evaluationClosure(private$.objectiveFor())(currVals)$modelCost
+      )
     },
     .getPKValues = function(paramValues) {
-      private$.objectiveFor()$pkValues(paramValues)
+      private$.withPKOutputs(private$.objectiveFor()$pkValues(paramValues))
     },
     # `test-pid-aux.R` logs on a task whose batches are not initialized
     .logSimulationFailure = function(currVals, cond) {
@@ -582,7 +596,7 @@ ParameterIdentification <- R6::R6Class(
       private$.failedEvaluations <- 0
 
       # Run optimization algorithm
-      optimResult <- private$.runAlgorithm()
+      optimResult <- private$.withPKOutputs(private$.runAlgorithm())
       if (private$.failedEvaluations > private$.fnEvaluations / 2) {
         warning(messages$warningMostEvaluationsFailed(
           private$.failedEvaluations,
@@ -595,7 +609,9 @@ ParameterIdentification <- R6::R6Class(
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
-          private$.objectiveFor()$pkValues(optimResult$par),
+          private$.withPKOutputs(
+            private$.objectiveFor()$pkValues(optimResult$par)
+          ),
           error = function(e) {
             warning(messages$warnAchievedPKValuesFailure(e$message))
             as.list(rep(NA_real_, length(private$.pkMappings)))
@@ -647,11 +663,11 @@ ParameterIdentification <- R6::R6Class(
     #' @return The same [`PIResult`] object returned by the `run()` method,
     #'   updated to include confidence interval estimates.
     estimateCI = function() {
-      private$.batchInitialization()
-      private$.objectiveSupporting("supportsCI", "estimateCI")
+      private$.assertNotPKMode("estimateCI")
       if (is.null(private$.lastOptimResult)) {
         stop(messages$errorMissingOptimizationResult())
       }
+      private$.batchInitialization()
       private$.estimateCI()
     },
 
@@ -670,8 +686,8 @@ ParameterIdentification <- R6::R6Class(
     #' - Predicted vs. observed values
     #' - Residuals vs. time
     plotResults = function(par = NULL) {
+      private$.assertNotPKMode("plotResults")
       private$.batchInitialization()
-      private$.objectiveSupporting("supportsPlots", "plotResults")
 
       # Run evaluate once. If the input argument is missing, run with current
       # values. Otherwise, use the supplied values
@@ -798,8 +814,8 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(totalEvaluations)
       ospsuite.utils::validateIsLogical(setStartValue)
 
+      private$.assertNotPKMode("gridSearch")
       private$.batchInitialization()
-      private$.objectiveSupporting("supportsPlots", "gridSearch")
 
       nrOfParameters <- length(private$.piParameters)
 
@@ -934,8 +950,8 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsNumeric(boundFactor)
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
+      private$.assertNotPKMode("calculateOFVProfiles")
       private$.batchInitialization()
-      private$.objectiveSupporting("supportsPlots", "calculateOFVProfiles")
 
       nrOfParameters <- length(private$.piParameters)
 

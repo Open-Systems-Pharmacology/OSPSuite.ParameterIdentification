@@ -28,6 +28,10 @@ pkTask <- function(simulation = testSimulation(), iter = 2) {
   )
 }
 
+withPKOutputs <- function(task, code) {
+  task$.__enclos_env__$private$.withPKOutputs(code)
+}
+
 pkObjective <- function(task) {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
@@ -46,15 +50,15 @@ test_that("evaluate() returns the relative squared deviation sum as a modelCost"
   task <- pkTask()
   objective <- pkObjective(task)
   values <- startValues(task)
-  pkValue <- objective$pkValues(values)[[1]]
+  pkValue <- withPKOutputs(task, objective$pkValues(values))[[1]]
   target <- task$pkOutputMappings[[1]]$targetValueInBaseUnit
-  cost <- objective$evaluate(values)
+  cost <- withPKOutputs(task, objective$evaluate(values))
   expect_s3_class(cost, "modelCost")
   expect_identical(cost$modelCost, ((pkValue - target) / target)^2)
   expect_identical(cost$minLogProbability, cost$modelCost)
   expect_identical(cost$costVariables$nObservations, 1L)
   expect_identical(nrow(cost$residualDetails), 0L)
-  expect_identical(objective$evaluate(values), cost)
+  expect_identical(withPKOutputs(task, objective$evaluate(values)), cost)
 })
 
 test_that("evaluate() logs a failed simulation and returns the error cost structure", {
@@ -103,7 +107,7 @@ test_that("evaluate() treats a PK value that is not finite as a failed evaluatio
   )))
 })
 
-test_that("pkValues() selects the PK outputs for the analyses and restores them", {
+test_that("the PK outputs are selected around the analyses and restored", {
   task <- pkTask()
   simulation <- task$simulations[[1]]
   objective <- pkObjective(task)
@@ -111,7 +115,7 @@ test_that("pkValues() selects the PK outputs for the analyses and restores them"
   seen <- list()
   original <- ospsuite::calculatePKAnalyses
   testthat::with_mocked_bindings(
-    pkValues <- objective$pkValues(startValues(task)),
+    pkValues <- withPKOutputs(task, objective$pkValues(startValues(task))),
     calculatePKAnalyses = function(results) {
       seen[[length(seen) + 1]] <<- simulationOutputs(simulation)
       original(results)
@@ -123,72 +127,54 @@ test_that("pkValues() selects the PK outputs for the analyses and restores them"
   expect_identical(seen, list(testQuantity(simulation)$path))
   expect_identical(simulationOutputs(simulation), before)
   testthat::with_mocked_bindings(
-    expect_error(objective$pkValues(startValues(task)), "Injected PK failure"),
+    expect_snapshot(
+      withPKOutputs(task, objective$pkValues(startValues(task))),
+      error = TRUE
+    ),
     calculatePKAnalyses = function(results) stop("Injected PK failure"),
     .package = "ospsuite"
   )
   expect_identical(simulationOutputs(simulation), before)
 })
 
-test_that("PKObjective does not support confidence intervals and plots", {
+test_that("withData() returns the objective, which has no observed data", {
   objective <- pkObjective(pkTask())
-  expect_false(objective$supportsCI)
-  expect_false(objective$supportsPlots)
   expect_identical(objective$withData(NULL), objective)
-  expect_snapshot(objective$supportsCI <- TRUE, error = TRUE)
-})
-
-test_that("PIObjective supports confidence intervals and plots", {
-  task <- testPiTask()
-  priv <- task$.__enclos_env__$private
-  priv$.batchInitialization()
-  objective <- PIObjective$new(
-    model = priv$.model,
-    data = PIObservations$new(priv$.outputMappings),
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
-  )
-  expect_true(objective$supportsCI)
-  expect_true(objective$supportsPlots)
 })
 
 test_that("PKObjective validates the model and the mappings", {
   task <- pkTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
-  expect_error(
+  expect_snapshot(
     PKObjective$new(model = list(1), pkMappings = task$pkOutputMappings),
-    messages$errorWrongType("model", "list", "SimulationModel"),
-    fixed = TRUE
+    error = TRUE
   )
-  expect_error(
+  expect_snapshot(
     PKObjective$new(model = priv$.model, pkMappings = list(1)),
-    messages$errorWrongType("pkMappings", "list", "PKOutputMapping"),
-    fixed = TRUE
+    error = TRUE
   )
 })
 
-test_that("estimateCI() gives the PK mode error before the missing result error", {
+test_that("estimateCI() gives the PK mode error before building the model", {
   task <- pkTask()
   simulation <- task$simulations[[1]]
   before <- simulationOutputs(simulation)
-  expect_error(
-    task$estimateCI(),
-    messages$errorMethodNotApplicableInPKMode("estimateCI"),
-    fixed = TRUE
-  )
+  expect_snapshot(task$estimateCI(), error = TRUE)
+  expect_null(task$.__enclos_env__$private$.model)
   expect_identical(simulationOutputs(simulation), before)
 })
 
 test_that("ParameterIdentification stops when a simulation has no parameter of the task in PK mode", {
   simulations <- list(freshSimulation(), freshSimulation())
-  expect_error(
+  expect_snapshot(
     ParameterIdentification$new(
       simulations = simulations,
       parameters = testPKParameters(simulations[[1]]),
       pkOutputMappings = list(pkMapping(simulations[[1]]), pkMapping(simulations[[2]]))
     ),
-    "Mismatch or missing ID detected",
-    fixed = TRUE
+    error = TRUE,
+    transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
   )
 })
 
@@ -210,7 +196,10 @@ test_that("run() in PK mode reads the achieved PK values through the objective",
   priv <- task$.__enclos_env__$private
   expect_s3_class(result, "PKResult")
   expect_s3_class(priv$.objective, "PKObjective")
-  achieved <- priv$.objective$pkValues(priv$.lastOptimResult$par)[[1]]
+  achieved <- withPKOutputs(
+    task,
+    priv$.objective$pkValues(priv$.lastOptimResult$par)
+  )[[1]]
   expect_equal(
     result$toDataFrame()$achievedValue,
     ospsuite::toUnit(
