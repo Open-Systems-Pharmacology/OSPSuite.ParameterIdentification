@@ -117,14 +117,14 @@ test_that("the constructor leaves the simulations unchanged in PK mode", {
 test_that("the constructor stops when a simulation has no parameter of the task", {
   simulations <- list(freshSimulation(), freshSimulation())
   names(simulations) <- vapply(simulations, function(s) s$root$id, character(1))
-  expect_error(
+  expect_snapshot(
     SimulationModel$new(
       simulations = simulations,
       parameters = list(testPKParameters(simulations[[1]])),
       pkMappings = list(pkMappingFor(simulations[[1]]))
     ),
-    "Mismatch or missing ID detected",
-    fixed = TRUE
+    error = TRUE,
+    transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
   )
 })
 
