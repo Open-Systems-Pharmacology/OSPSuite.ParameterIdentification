@@ -148,11 +148,13 @@ test_that("PKObjective validates the model and the mappings", {
   priv$.batchInitialization()
   expect_snapshot(
     PKObjective$new(model = list(1), pkMappings = task$pkOutputMappings),
-    error = TRUE
+    error = TRUE,
+    transform = scrubCallerName
   )
   expect_snapshot(
     PKObjective$new(model = priv$.model, pkMappings = list(1)),
-    error = TRUE
+    error = TRUE,
+    transform = scrubCallerName
   )
 })
 

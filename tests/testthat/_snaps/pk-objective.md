@@ -12,7 +12,7 @@
       PKObjective$new(model = list(1), pkMappings = task$pkOutputMappings)
     Condition
       Error in `ospsuite.utils::validateIsOfType()`:
-      ! `as.data.frame()`: argument "model" is of type <list>, but expected <SimulationModel>!
+      ! `<caller>()`: argument "model" is of type <list>, but expected <SimulationModel>!
 
 ---
 
@@ -20,7 +20,7 @@
       PKObjective$new(model = priv$.model, pkMappings = list(1))
     Condition
       Error in `ospsuite.utils::validateIsOfType()`:
-      ! `as.data.frame()`: argument "pkMappings" is of type <list>, but expected <PKOutputMapping>!
+      ! `<caller>()`: argument "pkMappings" is of type <list>, but expected <PKOutputMapping>!
 
 # estimateCI() gives the PK mode error before building the model
 
