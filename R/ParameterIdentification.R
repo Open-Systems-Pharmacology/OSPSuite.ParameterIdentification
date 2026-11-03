@@ -90,9 +90,6 @@ ParameterIdentification <- R6::R6Class(
     .lastOptimResult = NULL,
     # Cost details of the best evaluation of the last optimization
     .fitCostDetails = NULL,
-    # Clones of the `PIParameters` at the end of the last optimization, so
-    # that the results keep the units and bounds of the fit
-    .fitParameters = NULL,
     # Stores full cost summary from the best objective function evaluation
     .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
@@ -415,15 +412,14 @@ ParameterIdentification <- R6::R6Class(
     #   after its optimization. Nothing can change between the optimization
     #   and the estimation then, so the start values are not checked again.
     #   The caller initializes the batches (see `.batchInitialization()`).
-    # @return A `PIResult` object with the confidence intervals, centred on
-    #   the estimates of the last `run()`.
+    # @return A `PIResult` object with the confidence intervals.
     .estimateCI = function(fromRun = FALSE) {
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
 
-      currValues <- private$.lastOptimResult$par
-      lower <- sapply(private$.fitParameters, `[[`, "minValue")
-      upper <- sapply(private$.fitParameters, `[[`, "maxValue")
+      currValues <- sapply(private$.piParameters, `[[`, "currValue")
+      lower <- sapply(private$.piParameters, `[[`, "minValue")
+      upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
       # After `run()`, the estimate was evaluated by the optimizer, and a stop
       # would discard the finished fit
@@ -472,7 +468,7 @@ ParameterIdentification <- R6::R6Class(
         ciResult = ciResult,
         costDetails = private$.fitCostDetails,
         configuration = private$.configuration,
-        piParameters = private$.fitParameters
+        piParameters = private$.piParameters
       )
     }
   ),
@@ -593,7 +589,6 @@ ParameterIdentification <- R6::R6Class(
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
       private$.fitCostDetails <- NULL
-      private$.fitParameters <- NULL
       private$.bestCostSummary <- NULL
       private$.lastCostSummary <- NULL
       # Reset function evaluations counter
@@ -613,10 +608,6 @@ ParameterIdentification <- R6::R6Class(
       # evaluation closure, so the fit is recorded before they start
       private$.fitCostDetails <- private$.bestCostSummary %||%
         private$.lastCostSummary
-      private$.fitParameters <- lapply(
-        private$.piParameters,
-        function(parameter) parameter$clone()
-      )
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
