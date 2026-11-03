@@ -1,8 +1,7 @@
 #' @title PIResult
 #' @docType class
 #' @description Structured output of a parameter identification task, including
-#' optimization results, confidence intervals, parameter metadata,
-#' configuration and, for PK targets, the achieved PK values.
+#' optimization results, confidence intervals and parameter metadata.
 #'
 #' @keywords internal
 #' @format NULL
@@ -14,27 +13,8 @@ PIResult <- R6::R6Class(
     .result = NULL,
     # Detailed cost structure from objective function evaluation
     .costDetails = NULL,
-    # Configuration used during parameter identification
-    .configuration = NULL,
     # Flattened `PIParameters` metadata
-    .parameters = NULL,
-
-    # Converts a PK value from the base unit to the unit of its target
-    .toDisplayUnit = function(val, pkParameter, targetUnit) {
-      if (anyNA(val)) {
-        return(NA_real_)
-      }
-      dim <- ospsuite::pkParameterByName(
-        pkParameter,
-        stopIfNotFound = TRUE
-      )$dimension
-      val /
-        ospsuite::toBaseUnit(
-          quantityOrDimension = dim,
-          values = 1,
-          unit = targetUnit
-        )
-    }
+    .parameters = NULL
   ),
   public = list(
     #' @description Initializes a `PIResult` instance. For internal use only.
@@ -53,19 +33,15 @@ PIResult <- R6::R6Class(
     #'   a `modelCost` object as returned by the objective function. See
     #'   `toList()`.
     #' @param configuration (Optional) The `PIConfiguration` object used during
-    #'   parameter identification. The result keeps a clone of it.
+    #'   parameter identification, read for the CI method when `ciResult` is
+    #'   `NULL`.
     #' @param piParameters (Optional) A list of `PIParameter` objects used in
     #'   the optimization. If not provided, default parameter names will be
     #'   generated automatically.
-    #' @param pkMappings (Optional) A list of `PKOutputMapping` objects, the
-    #'   PK targets of the task.
-    #' @param achievedPKValues (Optional) A list of numeric scalars with the PK
-    #'   parameter values achieved at the optimized parameter estimate, one per
-    #'   PK mapping.
     #'
     #' @return A `PIResult` object containing optimization results, confidence
-    #'   interval estimates (if available), parameter metadata (if available),
-    #'   and configuration.
+    #'   interval estimates (if available) and parameter metadata (if
+    #'   available).
     #'
     #' @keywords internal
     #
@@ -83,8 +59,8 @@ PIResult <- R6::R6Class(
     # - fnEvaluations: integer
     #
     # If CI is estimated (ciResult):
-    # - sd: numeric vector
-    # - cv: numeric vector
+    # - sd, cv: numeric vectors, filled by the hessian and bootstrap methods
+    # - se, rse: numeric vectors, filled by the profile likelihood method
     # - lowerCI: numeric vector
     # - upperCI: numeric vector
     # - ciType: character vector
@@ -92,23 +68,13 @@ PIResult <- R6::R6Class(
     # - ciElapsed: numeric
     # - ciError: error object or NULL
     # - ciDetails: list (e.g. covariance matrix, bootstrap samples)
-    #
-    # If the task has PK targets (pkMappings):
-    # - pkMappings: list with quantityPath, pkParameter, targetValue and
-    #   targetUnit per mapping
-    # - achievedPKValues: list of numeric scalars in base units
     initialize = function(
       optimResult,
       ciResult = NULL,
       costDetails = NULL,
       configuration = NULL,
-      piParameters = NULL,
-      pkMappings = NULL,
-      achievedPKValues = NULL
+      piParameters = NULL
     ) {
-      private$.configuration <- if (!is.null(configuration)) {
-        configuration$clone()
-      }
       private$.costDetails <- costDetails
 
       # Validate and extract parameter metadata (optional)
@@ -160,30 +126,16 @@ PIResult <- R6::R6Class(
         ciElapsed = ciResult$elapsed %||% NA_real_,
         ciError = ciResult$error,
         ciDetails = ciResult$details %||% list(),
-        # The profile likelihood reports se and rse
-        sd = ciResult$sd %||%
-          ciResult$se %||%
-          rep(NA_real_, length(optimResult$par)),
-        cv = ciResult$cv %||%
-          ciResult$rse %||%
-          rep(NA_real_, length(optimResult$par)),
+        sd = ciResult$sd %||% rep(NA_real_, length(optimResult$par)),
+        cv = ciResult$cv %||% rep(NA_real_, length(optimResult$par)),
+        se = ciResult$se %||% rep(NA_real_, length(optimResult$par)),
+        rse = ciResult$rse %||% rep(NA_real_, length(optimResult$par)),
         lowerCI = ciResult$lowerCI %||% rep(NA_real_, length(optimResult$par)),
         upperCI = ciResult$upperCI %||% rep(NA_real_, length(optimResult$par)),
         ciType = ciResult$ciType %||%
           rep(NA_character_, length(optimResult$par)),
         paramNames = paramNames
       )
-      if (!is.null(pkMappings)) {
-        private$.result$pkMappings <- lapply(pkMappings, function(m) {
-          list(
-            quantityPath = m$quantity$path,
-            pkParameter = m$pkParameter,
-            targetValue = m$targetValue,
-            targetUnit = m$targetUnit
-          )
-        })
-        private$.result$achievedPKValues <- achievedPKValues
-      }
     },
     #' @description Export PIResult to a `data.frame`.
     #'
@@ -194,8 +146,11 @@ PIResult <- R6::R6Class(
     #' - `path`: Full parameter path
     #' - `unit`: Unit of the parameter
     #' - `estimate`: Estimated parameter value after optimization
-    #' - `sd`: Standard deviation from CI estimation
-    #' - `cv`: Coefficient of variation
+    #' - `sd` and `cv`: Standard deviation and coefficient of variation of
+    #'   the estimate, for the hessian and bootstrap methods
+    #' - `se` and `rse`: Standard error, the half-width of the interval
+    #'   divided by the z-score of the confidence level, and relative standard
+    #'   error, for the profile likelihood method
     #' - `lowerCI`: Lower confidence bound
     #' - `upperCI`: Upper confidence bound
     #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
@@ -214,8 +169,11 @@ PIResult <- R6::R6Class(
         path = params$path,
         unit = params$unit,
         estimate = x$finalParameters[group_idx],
-        sd = x$sd[group_idx],
-        cv = x$cv[group_idx],
+        if (identical(x$ciMethod, "PL")) {
+          list(se = x$se[group_idx], rse = x$rse[group_idx])
+        } else {
+          list(sd = x$sd[group_idx], cv = x$cv[group_idx])
+        },
         lowerCI = x$lowerCI[group_idx],
         upperCI = x$upperCI[group_idx],
         ciType = x$ciType[group_idx],
@@ -265,16 +223,21 @@ PIResult <- R6::R6Class(
       ospsuite.utils::ospPrintItems(metaSummary, title = "Optimization Summary")
 
       # Parameters table
+      uncertainty <- if (identical(x$ciMethod, "PL")) {
+        c(SE = "se", RSE = "rse")
+      } else {
+        c(SD = "sd", CV = "cv")
+      }
       paramSummaries <- lapply(seq_along(x$paramNames), function(i) {
         paste0(
           "Estimate = ",
           .formatValues(x$finalParameters[i]),
           ", ",
-          "SD = ",
-          .formatValues(x$sd[i]),
+          names(uncertainty)[[1]], " = ",
+          .formatValues(x[[uncertainty[[1]]]][i]),
           ", ",
-          "CV = ",
-          .formatValues(x$cv[i]),
+          names(uncertainty)[[2]], " = ",
+          .formatValues(x[[uncertainty[[2]]]][i]),
           ", ",
           "CI = [",
           .formatValues(x$lowerCI[i]),

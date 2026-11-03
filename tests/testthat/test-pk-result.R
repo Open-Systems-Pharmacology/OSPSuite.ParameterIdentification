@@ -239,17 +239,15 @@ test_that("PKResult$print() does not error", {
 })
 
 test_that("PKResult is a PIResult with the PK targets section", {
-  configuration <- PIConfiguration$new()
   result <- PKResult$new(
     optimResult = mockPKOptimResult(),
     pkMappings = list(pkMapping1),
     achievedPKValues = list(28.5),
-    costDetails = .createErrorCostStructure(),
-    configuration = configuration
+    costDetails = .createErrorCostStructure()
   )
   expect_s3_class(result, "PIResult")
   lst <- result$toList()
-  expect_identical(lst$ciMethod, "hessian")
+  expect_identical(lst$ciMethod, NA_character_)
   expect_s3_class(lst$costDetails, "modelCost")
   expect_identical(lst$paramNames, "par1")
   expect_identical(
