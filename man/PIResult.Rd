@@ -87,8 +87,9 @@ available).
 \item \code{estimate}: Estimated parameter value after optimization
 \item \code{sd} and \code{cv}: Standard deviation and coefficient of variation of
 the estimate, for the hessian and bootstrap methods
-\item \code{se} and \code{rse}: Standard error from the half-width of the interval
-and relative standard error, for the profile likelihood method
+\item \code{se} and \code{rse}: Standard error, the half-width of the interval
+divided by the z-score of the confidence level, and relative standard
+error, for the profile likelihood method
 \item \code{lowerCI}: Lower confidence bound
 \item \code{upperCI}: Upper confidence bound
 \item \code{ciType}: Type of confidence interval ("two-sided", "one-sided", or "failed")

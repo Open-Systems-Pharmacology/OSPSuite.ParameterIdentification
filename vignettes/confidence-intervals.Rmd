@@ -123,7 +123,7 @@ The part of the interval width that comes from the redrawn means scales roughly 
 
 ## Reading CI Results
 
-The printout of a `PIResult` object shows the main outcomes of a parameter identification run, including parameter estimates, their uncertainty and confidence intervals (if available). The `hessian` and `bootstrap` methods report the standard deviation and the coefficient of variation of each estimate. The `PL` method reports the standard error, taken from the half-width of the interval, and the relative standard error instead.
+The printout of a `PIResult` object shows the main outcomes of a parameter identification run, including parameter estimates, their uncertainty and confidence intervals (if available). The `hessian` and `bootstrap` methods report the standard deviation and the coefficient of variation of each estimate. The `PL` method reports the standard error instead, which is the half-width of the interval divided by the z-score of the confidence level, and the relative standard error, which is the standard error divided by the absolute estimate. This equals the standard error of a symmetric normal interval of the same width.
 
 For programmatic access, the results can be exported as a data frame or as a list. The data frame has one row per parameter, with the estimate, its uncertainty (`sd` and `cv` for `hessian` and `bootstrap`, `se` and `rse` for `PL`), the confidence bounds and `ciType`, which only `bootstrap` sets. The list holds all details of the run, including the cost.
 

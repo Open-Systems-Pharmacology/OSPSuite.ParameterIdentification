@@ -148,8 +148,9 @@ PIResult <- R6::R6Class(
     #' - `estimate`: Estimated parameter value after optimization
     #' - `sd` and `cv`: Standard deviation and coefficient of variation of
     #'   the estimate, for the hessian and bootstrap methods
-    #' - `se` and `rse`: Standard error from the half-width of the interval
-    #'   and relative standard error, for the profile likelihood method
+    #' - `se` and `rse`: Standard error, the half-width of the interval
+    #'   divided by the z-score of the confidence level, and relative standard
+    #'   error, for the profile likelihood method
     #' - `lowerCI`: Lower confidence bound
     #' - `upperCI`: Upper confidence bound
     #' - `ciType`: Type of confidence interval ("two-sided", "one-sided", or "failed")
