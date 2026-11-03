@@ -759,9 +759,14 @@ ParameterIdentification <- R6::R6Class(
       )
 
       # Set starting point for next round of optimization
-      if (setStartValue) {
+      if (setStartValue && !any(is.finite(ofvGrid[["ofv"]]))) {
+        warning(messages$warningGridSearchAllFailed(), call. = FALSE)
+      } else if (setStartValue) {
         bestValues <- unlist(
-          ofvGrid[which.min(ofvGrid[["ofv"]]), seq_along(private$.piParameters)],
+          ofvGrid[
+            which.min(ofvGrid[["ofv"]]),
+            seq_along(private$.piParameters)
+          ],
           use.names = FALSE
         )
         for (idx in seq_along(private$.piParameters)) {

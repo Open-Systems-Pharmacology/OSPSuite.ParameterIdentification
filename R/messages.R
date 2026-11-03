@@ -196,6 +196,12 @@ messages$gridSearchParameterValueSet <- function(bestValues) {
   )
 }
 
+messages$warningGridSearchAllFailed <- function() {
+  ospsuite.utils::cliFormat(
+    "Every evaluation of the grid search failed, so the start values are not updated. Check the parameter bounds and the solver settings."
+  )
+}
+
 messages$logScaleFlagError <- function() {
   "Logarithmic scaling is not available for non-positive parameter values."
 }

@@ -49,6 +49,15 @@
     Output
       [1]      Inf      Inf 413.1742 417.4718
 
+# gridSearch() keeps the start values when every evaluation fails
+
+    Code
+      grid <- suppressMessages(piTask$gridSearch(lower = c(0, -0.5), upper = c(1,
+        -0.3), totalEvaluations = 4, setStartValue = TRUE))
+    Condition
+      Warning:
+      Every evaluation of the grid search failed, so the start values are not updated. Check the parameter bounds and the solver settings.
+
 # calculateOFVProfiles() works with multiple parameters
 
     Code
