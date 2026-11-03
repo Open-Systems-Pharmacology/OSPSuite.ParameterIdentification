@@ -148,20 +148,6 @@ test_that("PIResult reports NA se and rse for hessian intervals", {
   expect_false(any(c("se", "rse") %in% names(df)))
 })
 
-test_that("PIResult carries the PK targets only when given", {
+test_that("PIResult carries no PK targets", {
   expect_false("pkMappings" %in% names(PIResult$new(optimResultFor())$toList()))
-  simulation <- testSimulation()
-  mapping <- PKOutputMapping$new(
-    quantity = testQuantity(simulation),
-    pkParameter = "C_max",
-    targetValue = 30,
-    targetUnit = testQuantity(simulation)$unit
-  )
-  result <- PIResult$new(
-    optimResultFor(),
-    pkMappings = list(mapping),
-    achievedPKValues = list(28.5)
-  )$toList()
-  expect_identical(result$pkMappings[[1]]$targetValue, 30)
-  expect_identical(result$achievedPKValues, list(28.5))
 })

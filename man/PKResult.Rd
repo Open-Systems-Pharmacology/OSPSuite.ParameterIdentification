@@ -39,8 +39,7 @@ achieved PK values.
   piParameters = NULL,
   pkMappings,
   achievedPKValues,
-  costDetails = NULL,
-  configuration = NULL
+  costDetails = NULL
 )}
     \if{html}{\out{</div>}}
   }
@@ -55,8 +54,6 @@ the optimization.}
 values achieved at the optimized parameter estimate.}
       \item{\code{costDetails}}{(Optional) The cost details of the best evaluation,
 a \code{modelCost} object.}
-      \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
-parameter identification.}
     }
     \if{html}{\out{</div>}}
   }

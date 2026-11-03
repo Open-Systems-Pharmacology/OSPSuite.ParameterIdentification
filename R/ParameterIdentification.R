@@ -640,8 +640,7 @@ ParameterIdentification <- R6::R6Class(
           piParameters = private$.piParameters,
           pkMappings = private$.pkMappings,
           achievedPKValues = achievedPKValues,
-          costDetails = private$.fitCostDetails,
-          configuration = private$.configuration
+          costDetails = private$.fitCostDetails
         )
       } else if (private$.configuration$autoEstimateCI) {
         # The steps of `estimateCI()` after its checks, without a new batch

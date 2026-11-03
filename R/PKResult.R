@@ -9,6 +9,24 @@
 PKResult <- R6::R6Class(
   "PKResult",
   inherit = PIResult,
+  private = list(
+    # Converts a PK value from the base unit to the unit of its target
+    .toDisplayUnit = function(val, pkParameter, targetUnit) {
+      if (anyNA(val)) {
+        return(NA_real_)
+      }
+      dim <- ospsuite::pkParameterByName(
+        pkParameter,
+        stopIfNotFound = TRUE
+      )$dimension
+      val /
+        ospsuite::toBaseUnit(
+          quantityOrDimension = dim,
+          values = 1,
+          unit = targetUnit
+        )
+    }
+  ),
   public = list(
     #' @description Initializes a `PKResult` instance. For internal use only.
     #'
@@ -20,26 +38,36 @@ PKResult <- R6::R6Class(
     #'   values achieved at the optimized parameter estimate.
     #' @param costDetails (Optional) The cost details of the best evaluation,
     #'   a `modelCost` object.
-    #' @param configuration (Optional) The `PIConfiguration` object used during
-    #'   parameter identification.
     #'
     #' @keywords internal
+    #
+    # Adds to private$.result:
+    # - pkMappings: list with quantityPath, pkParameter, targetValue and
+    #   targetUnit per mapping
+    # - achievedPKValues: list of numeric scalars in base units
     initialize = function(
       optimResult,
       piParameters = NULL,
       pkMappings,
       achievedPKValues,
-      costDetails = NULL,
-      configuration = NULL
+      costDetails = NULL
     ) {
       super$initialize(
         optimResult = optimResult,
         costDetails = costDetails,
-        configuration = configuration,
-        piParameters = piParameters,
-        pkMappings = pkMappings,
-        achievedPKValues = achievedPKValues
+        piParameters = piParameters
       )
+      # CI estimation is not available for PK targets
+      private$.result$ciMethod <- NA_character_
+      private$.result$pkMappings <- lapply(pkMappings, function(m) {
+        list(
+          quantityPath = m$quantity$path,
+          pkParameter = m$pkParameter,
+          targetValue = m$targetValue,
+          targetUnit = m$targetUnit
+        )
+      })
+      private$.result$achievedPKValues <- achievedPKValues
     },
     #' @description Export PKResult to a `data.frame` in long format. Produces
     #'   N * M rows, where N is the number of optimized parameters and M is the
