@@ -13,8 +13,7 @@
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 - `ParameterIdentification$new()` with `pkOutputMappings` stops when a simulation of the task has no parameter to vary, with a message that lists the simulation and parameter IDs. `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`, and a failed evaluation of PK targets has the cost `Inf` (#330).
-- `PIResult` reports the `sd` and `cv` of profile likelihood intervals, which were `NA`, always one logical `convergence`, and the cost details and configuration of the fit also when `estimateCI()` is called after `run()`.
-- `estimateCI()` called after `run()` starts from the estimates of `run()` instead of the current parameter values of the model, and reports them with the units and bounds of the fit.
+- `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE`. `PIResult` now reports the standard error `se` and the relative standard error `rse` of profile likelihood intervals, which were computed but not shown, in `toList()`, `print()` and `toDataFrame()`, where they replace the `sd` and `cv` columns of the other methods. `PIResult$convergence` is always a single `TRUE` or `FALSE` (#370, #371).
 
 # ospsuite.parameteridentification 2.3.0
 
