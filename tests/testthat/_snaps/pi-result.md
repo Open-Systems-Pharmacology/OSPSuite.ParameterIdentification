@@ -62,6 +62,12 @@
       $cv
       [1] 0.1578494
       
+      $se
+      [1] NA
+      
+      $rse
+      [1] NA
+      
       $lowerCI
       [1] 0.9071235
       
@@ -145,4 +151,23 @@
       1     1 Lipophilicity Vergin 1995 IV|Aciclovir|Lipophilicity Log Units  1.31349
                sd        cv   lowerCI  upperCI ciType initialValue
       1 0.2073337 0.1578494 0.9071235 1.719857   <NA>       -0.097
+
+# PIResult reports se and rse for profile likelihood intervals
+
+    Code
+      result$print()
+    Output
+      <PIResult>
+      Optimization Summary:
+        * Algorithm: BOBYQA
+        * CI Method: PL
+        * Convergence: TRUE
+        * Objective value: 778.1
+        * Iterations: 3
+        * Function evaluations: 3
+        * Elapsed (optimization): 1.510 s
+        * Elapsed (CI): 0.5000 s
+      Parameter Estimates:
+        * Lipophilicity: Estimate = 2.000, SE = 0.2000, RSE = 0.1000, CI = [0.9000,
+        1.700]
 

@@ -90,7 +90,15 @@ optimResultFor <- function(...) {
   )
 }
 
-test_that("PIResult reports the profile likelihood se and rse as sd and cv", {
+test_that("PIResult reports one logical convergence", {
+  convergenceOf <- function(...) PIResult$new(optimResultFor(...))$toList()$convergence
+  expect_identical(convergenceOf(convergence = NULL), FALSE)
+  expect_identical(convergenceOf(convergence = NA), FALSE)
+  expect_identical(convergenceOf(value = Inf), FALSE)
+  expect_identical(convergenceOf(), TRUE)
+})
+
+test_that("PIResult reports se and rse for profile likelihood intervals", {
   ciResult <- list(
     se = 0.2,
     rse = 0.1,
@@ -100,28 +108,44 @@ test_that("PIResult reports the profile likelihood se and rse as sd and cv", {
     elapsed = 0.5,
     details = list()
   )
-  result <- PIResult$new(optimResultFor(par = 2), ciResult = ciResult)$toList()
-  expect_identical(result$sd, 0.2)
-  expect_identical(result$cv, 0.1)
-  expect_identical(result$ciMethod, "PL")
-})
-
-test_that("PIResult reports one logical convergence", {
-  convergenceOf <- function(...) PIResult$new(optimResultFor(...))$toList()$convergence
-  expect_identical(convergenceOf(convergence = NULL), FALSE)
-  expect_identical(convergenceOf(convergence = NA), FALSE)
-  expect_identical(convergenceOf(value = Inf), FALSE)
-  expect_identical(convergenceOf(), TRUE)
-})
-
-test_that("PIResult keeps a clone of the configuration", {
-  configuration <- PIConfiguration$new()
-  result <- PIResult$new(optimResultFor(), configuration = configuration)
-  configuration$ciMethod <- "PL"
-  expect_identical(
-    result$.__enclos_env__$private$.configuration$ciMethod,
-    "hessian"
+  result <- PIResult$new(
+    optimResultFor(par = 2),
+    ciResult = ciResult,
+    piParameters = list(piParameterLipo)
   )
+  lst <- result$toList()
+  expect_identical(lst$se, 0.2)
+  expect_identical(lst$rse, 0.1)
+  expect_identical(lst$sd, NA_real_)
+  expect_identical(lst$cv, NA_real_)
+  df <- result$toDataFrame()
+  expect_identical(df$se, c(0.2, 0.2))
+  expect_identical(df$rse, c(0.1, 0.1))
+  expect_false(any(c("sd", "cv") %in% names(df)))
+  expect_snapshot(result$print())
+})
+
+test_that("PIResult reports NA se and rse for hessian intervals", {
+  ciResult <- list(
+    sd = 0.2,
+    cv = 0.1,
+    lowerCI = 0.9,
+    upperCI = 1.7,
+    method = "hessian",
+    elapsed = 0.5,
+    details = list()
+  )
+  result <- PIResult$new(
+    optimResultFor(par = 2),
+    ciResult = ciResult,
+    piParameters = list(piParameterLipo)
+  )
+  lst <- result$toList()
+  expect_identical(lst$se, NA_real_)
+  expect_identical(lst$rse, NA_real_)
+  df <- result$toDataFrame()
+  expect_identical(df$sd, c(0.2, 0.2))
+  expect_false(any(c("se", "rse") %in% names(df)))
 })
 
 test_that("PIResult carries the PK targets only when given", {
