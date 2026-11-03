@@ -17,6 +17,18 @@ test_that(".ofvGrid() evaluates every point of the grid", {
   expect_equal(grid$ofv, (grid$a - 1)^2 + (grid$b - 2)^2)
 })
 
+test_that(".ofvGrid() uses every point of a perfect power", {
+  grid <- .ofvGrid(
+    sum,
+    lower = c(0, 0, 0),
+    upper = c(4, 4, 4),
+    logScaleFlag = c(FALSE, FALSE, FALSE),
+    totalEvaluations = 125,
+    parameterNames = c("a", "b", "c")
+  )
+  expect_identical(nrow(grid), 125L)
+})
+
 test_that(".ofvGrid() spaces a log-scaled parameter geometrically", {
   grid <- .ofvGrid(
     quadratic,
