@@ -141,6 +141,16 @@ testPiTask <- function() {
   )
 }
 
+currStartValues <- function(task) {
+  vapply(task$parameters, function(p) p$startValue, numeric(1))
+}
+
+# ospsuite.utils names the test runner's entry point as the caller, which
+# differs between devtools::test() and R CMD check.
+scrubCallerName <- function(lines) {
+  sub("`[[:alnum:]._]+[(][)]`: argument", "`<caller>()`: argument", lines)
+}
+
 
 resetTestFactories <- function() {
   testSimulation <<- getTestSimulation()
@@ -632,7 +642,8 @@ objectiveClosure <- function(task, seed = NULL) {
   if (!is.null(seed)) {
     objective <- objective$withData(priv$.data$resample(seed))
   }
-  priv$.evaluationClosure(objective)
+  closure <- priv$.evaluationClosure(objective)
+  function(values) priv$.withPKOutputs(closure(values))
 }
 
 # A PIObjective on the model of the task and the data of its output mappings,

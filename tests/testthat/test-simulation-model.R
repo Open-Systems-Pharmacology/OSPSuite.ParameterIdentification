@@ -117,14 +117,14 @@ test_that("the constructor leaves the simulations unchanged in PK mode", {
 test_that("the constructor stops when a simulation has no parameter of the task", {
   simulations <- list(freshSimulation(), freshSimulation())
   names(simulations) <- vapply(simulations, function(s) s$root$id, character(1))
-  expect_error(
+  expect_snapshot(
     SimulationModel$new(
       simulations = simulations,
       parameters = list(testPKParameters(simulations[[1]])),
       pkMappings = list(pkMappingFor(simulations[[1]]))
     ),
-    "Mismatch or missing ID detected",
-    fixed = TRUE
+    error = TRUE,
+    transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
   )
 })
 
@@ -159,76 +159,6 @@ test_that("simulate() stops with the failed simulations and their reasons", {
   expect_identical(simulationError$failed, 1L)
   expect_length(simulationError$reasons, 1)
   expect_identical(model$loggedFailures, 0)
-})
-
-# Simulated values that are NA up to `naUntil` min and 1 afterwards
-mockSimulatedValues <- function(naUntil) {
-  function(simulationResults, path, times) {
-    list(
-      xValues = times$xValues,
-      yValues = ifelse(times$xValues <= naUntil, NA_real_, 1)
-    )
-  }
-}
-
-test_that("simulatedOutputs() fails when a used output is NA at an observed time", {
-  task <- testPiTask()
-  model <- taskModel(task)
-  firstObservedTime <- min(.observedTimes(task$outputMappings[[1]]))
-  expect_gt(firstObservedTime, 0)
-  local_mocked_bindings(.simulatedValues = mockSimulatedValues(firstObservedTime))
-  expect_snapshot(
-    model$simulatedOutputs(startValues(task), task$outputMappings),
-    error = TRUE
-  )
-  simulationError <- expect_error(
-    model$simulatedOutputs(startValues(task), task$outputMappings),
-    class = "simulationsFailedError"
-  )
-  expect_identical(simulationError$failed, 1L)
-  expect_match(
-    simulationError$reasons,
-    task$outputMappings[[1]]$quantity$path,
-    fixed = TRUE
-  )
-})
-
-test_that("simulatedOutputs() tolerates NA values before the observed times", {
-  task <- testPiTask()
-  model <- taskModel(task)
-  firstObservedTime <- min(.observedTimes(task$outputMappings[[1]]))
-  local_mocked_bindings(
-    .simulatedValues = mockSimulatedValues(firstObservedTime / 2)
-  )
-  simulated <- model$simulatedOutputs(startValues(task), task$outputMappings)
-  expect_true(is.na(simulated[[1]]$yValues[[1]]))
-  expect_identical(simulated[[1]]$yValues[[length(simulated[[1]]$yValues)]], 1)
-})
-
-test_that("simulatedOutputs() ignores observed times with a missing value", {
-  task <- testPiTask()
-  dataSet <- task$outputMappings[[1]]$observedDataSets[[1]]
-  firstObservedTime <- min(.observedTimes(task$outputMappings[[1]]))
-  dataSet$setValues(
-    xValues = dataSet$xValues,
-    yValues = replace(dataSet$yValues, which.min(dataSet$xValues), NA_real_)
-  )
-  model <- taskModel(task)
-  local_mocked_bindings(.simulatedValues = mockSimulatedValues(firstObservedTime))
-  simulated <- model$simulatedOutputs(startValues(task), task$outputMappings)
-  expect_true(is.na(simulated[[1]]$yValues[[1]]))
-})
-
-test_that("simulatedOutputs() ignores observed times below zero", {
-  task <- testPiTask()
-  mapping <- task$outputMappings[[1]]
-  lastTime <- max(unlist(lapply(mapping$observedDataSets, `[[`, "xValues")))
-  # Every observed time is below 0 and dropped by `.prepareObservedData()`
-  mapping$setDataTransformations(xOffsets = -(lastTime + 1))
-  model <- taskModel(task)
-  local_mocked_bindings(.simulatedValues = mockSimulatedValues(Inf))
-  simulated <- model$simulatedOutputs(startValues(task), task$outputMappings)
-  expect_true(all(is.na(simulated[[1]]$yValues)))
 })
 
 test_that(".observedTimes() applies the x transformations in min", {

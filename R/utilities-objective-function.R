@@ -529,10 +529,8 @@
 #'
 #' @return A list with one entry per observation in `name` (the data set),
 #'   `xValues`, `xDimension`, `yValues`, `yErrorValues`, `yErrorType` and
-#'   `lloq`, `censored`, the declared censoring flag of each observation,
-#'   `FALSE` until data sets can declare it, the log-transformed `logYValues`
-#'   and `logLloq`, and `hasLloq`, `lloqMin`, `logEpsilon` and `xUnit`, the
-#'   unit of the x values.
+#'   `lloq`, the log-transformed `logYValues` and `logLloq`, and `hasLloq`,
+#'   `lloqMin`, `logEpsilon` and `xUnit`, the unit of the x values.
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
@@ -560,7 +558,6 @@
     yErrorValues = rows$yErrorValues,
     yErrorType = rows$yErrorType,
     lloq = lloq,
-    censored = rep(FALSE, length(rows$yValues)),
     hasLloq = hasLloq,
     lloqMin = if (hasLloq) min(lloq, na.rm = TRUE) else NA_real_,
     logYValues = ospsuite.utils::logSafe(

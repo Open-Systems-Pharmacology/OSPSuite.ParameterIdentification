@@ -6,7 +6,9 @@
 #'   target. `evaluate()` keeps no state between calls, like
 #'   `PIObjective$evaluate()`. A failed simulation or a PK value that is not
 #'   finite is logged with the model and gives the error cost structure.
-#'   Confidence intervals and plots are not available for PK targets.
+#'   `ospsuite::calculatePKAnalyses()` analyses the outputs selected in the
+#'   simulation, so the caller selects the PK outputs around the evaluations
+#'   (see `ParameterIdentification$.withPKOutputs()`).
 #'
 #' @keywords internal
 #' @noRd
@@ -28,20 +30,6 @@ PKObjective <- R6::R6Class(
         private$.pkMappings
       } else {
         stop(messages$errorPropertyReadOnly("pkMappings"))
-      }
-    },
-    supportsCI = function(value) {
-      if (missing(value)) {
-        FALSE
-      } else {
-        stop(messages$errorPropertyReadOnly("supportsCI"))
-      }
-    },
-    supportsPlots = function(value) {
-      if (missing(value)) {
-        FALSE
-      } else {
-        stop(messages$errorPropertyReadOnly("supportsPlots"))
       }
     }
   ),
@@ -110,13 +98,6 @@ PKObjective <- R6::R6Class(
         usedSimulations = private$.simIds,
         silentMode = TRUE
       )
-      # `calculatePKAnalyses()` analyses the outputs that are selected in the
-      # simulation when it runs
-      simulations <- private$.model$simulations
-      savedState <- .storeSimulationState(simulations)
-      on.exit(.restoreSimulationState(simulations, savedState), add = TRUE)
-      .selectPKOutputs(simulations, private$.pkMappings)
-
       lapply(private$.pkMappings, function(mapping) {
         simResult <- simulationResults[[mapping$simId]][[1]]
         pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)

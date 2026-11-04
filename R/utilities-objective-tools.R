@@ -18,14 +18,15 @@
   parameterNames
 ) {
   nrOfParameters <- length(parameterNames)
-  gridSize <- floor(totalEvaluations^(1 / nrOfParameters))
+  # The tolerance keeps perfect powers such as 125^(1 / 3) from rounding down
+  gridSize <- floor(totalEvaluations^(1 / nrOfParameters) + 1e-8)
   parameterGrid <- vector("list", nrOfParameters)
   names(parameterGrid) <- parameterNames
 
   for (idx in seq_len(nrOfParameters)) {
     if (logScaleFlag[idx]) {
       if (lower[idx] <= 0 | upper[idx] <= 0) {
-        stop(messages$logScaleFlagError())
+        stop(messages$logScaleFlagError(), call. = FALSE)
       }
       parameterGrid[[idx]] <- exp(seq(
         log(lower[idx]),
@@ -64,7 +65,13 @@
 #'   parameter values and the column `ofv`.
 #' @keywords internal
 #' @noRd
-.ofvProfiles <- function(fn, par, boundFactor, totalEvaluations, parameterNames) {
+.ofvProfiles <- function(
+  fn,
+  par,
+  boundFactor,
+  totalEvaluations,
+  parameterNames
+) {
   nrOfParameters <- length(parameterNames)
   lower <- ifelse(par < 0, (1 + boundFactor) * par, (1 - boundFactor) * par)
   upper <- ifelse(par < 0, (1 - boundFactor) * par, (1 + boundFactor) * par)

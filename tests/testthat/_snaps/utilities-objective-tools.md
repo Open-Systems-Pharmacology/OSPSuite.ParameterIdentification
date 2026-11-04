@@ -4,6 +4,6 @@
       .ofvGrid(quadratic, lower = c(0, 1), upper = c(100, 1), logScaleFlag = c(TRUE,
         FALSE), totalEvaluations = 9, parameterNames = c("a", "b"))
     Condition
-      Error in `.ofvGrid()`:
+      Error:
       ! Logarithmic scaling is not available for non-positive parameter values.
 

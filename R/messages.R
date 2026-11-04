@@ -137,14 +137,6 @@ messages$shortenedFailureReason <- function(reasons) {
   )
 }
 
-# A reason of a failed simulation (see `.simulationsFailedError()`), not to
-# be confused with `errorSimulatedValuesMissing()` of the cost kernel
-messages$simulatedValuesNA <- function(path) {
-  ospsuite.utils::cliFormat(
-    "The simulated values of {.val {path}} are {.val NA} at an observed time."
-  )
-}
-
 # `mappingIndices` are the positions of output mappings and `quantityPaths`
 # the paths of their quantities
 # `dataType` is "simulated" or "observed". `index` is the position of the
@@ -201,6 +193,12 @@ messages$gridSearchParameterValueSet <- function(bestValues) {
     "Starting point for the next optimization updated to parameter values: ",
     "\n",
     paste(signif(bestValues, 4), collapse = " ")
+  )
+}
+
+messages$warningGridSearchAllFailed <- function() {
+  ospsuite.utils::cliFormat(
+    "Every evaluation of the grid search failed, so the start values are not updated. Check the parameter bounds and the solver settings."
   )
 }
 
