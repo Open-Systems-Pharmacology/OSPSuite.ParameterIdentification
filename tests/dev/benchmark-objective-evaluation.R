@@ -111,9 +111,25 @@ tBuild <- now() - t0
 
 priv <- task$.__enclos_env__$private
 priv$.batchInitialization()
+# A build with the objective classes keeps the batches and buckets in the
+# `SimulationModel` of the task and evaluates through its evaluation closure
+model <- priv$.model
+bucket <- function(name) {
+  if (is.null(model)) priv[[paste0(".", name)]] else model[[name]]
+}
+objectiveFunction <- if (is.function(priv$.objectiveFunction)) {
+  function(p) priv$.objectiveFunction(p)
+} else {
+  priv$.evaluationClosure(priv$.objectiveFor())
+}
+applyValues <- if (is.null(model)) {
+  priv$.applyParameterValues
+} else {
+  model$.__enclos_env__$private$.applyParameterValues
+}
 start <- vapply(piParameters, function(p) p$startValue, numeric(1))
 # The first evaluation also reads the observed data
-invisible(priv$.objectiveFunction(start))
+invisible(objectiveFunction(start))
 
 timeIt <- function(expr) {
   expr <- substitute(expr)
@@ -131,34 +147,32 @@ timeIt <- function(expr) {
 }
 
 runBatches <- function() {
-  for (simId in names(priv$.simulationBatches)) {
-    priv$.simulationBatches[[simId]]$addRunValues(
+  batches <- bucket("simulationBatches")
+  for (simId in names(batches)) {
+    batches[[simId]]$addRunValues(
       parameterValues = unlist(
-        priv$.variableParameters[[simId]],
+        bucket("variableParameters")[[simId]],
         use.names = FALSE
       ),
       initialValues = unlist(
-        priv$.variableMolecules[[simId]],
+        bucket("variableMolecules")[[simId]],
         use.names = FALSE
       )
     )
   }
   runSimulationBatches(
-    priv$.simulationBatches,
+    batches,
     simulationRunOptions = cfg$simulationRunOptions,
     silentMode = TRUE
   )
 }
 
 # Paths are resolved once per run when the task caches their targets
-resolvesPathsPerEvaluation <- !exists(
-  ".parameterTargets",
-  envir = priv,
-  inherits = FALSE
-)
+resolvesPathsPerEvaluation <- is.null(model) &&
+  !exists(".parameterTargets", envir = priv, inherits = FALSE)
 
-evaluation <- timeIt(priv$.objectiveFunction(start))
-applyParameterValues <- timeIt(priv$.applyParameterValues(start))
+evaluation <- timeIt(objectiveFunction(start))
+applyParameterValues <- timeIt(applyValues(start))
 getSimulationContainer <- if (resolvesPathsPerEvaluation) {
   timeIt(
     for (p in piParameters) {
@@ -172,7 +186,9 @@ getSimulationContainer <- if (resolvesPathsPerEvaluation) {
 }
 simulation <- timeIt(runBatches())
 # Parameter values, simulation and simulated values of every output mapping
-simulated <- if (exists(".simulateOutputs", envir = priv, inherits = FALSE)) {
+simulated <- if (!is.null(model)) {
+  timeIt(model$simulatedOutputs(start, task$outputMappings))
+} else if (exists(".simulateOutputs", envir = priv, inherits = FALSE)) {
   timeIt(priv$.simulateOutputs(start))
 } else {
   timeIt(priv$.evaluate(start, includeObserved = FALSE))
