@@ -33,14 +33,11 @@ PIObservations <- R6::R6Class(
         )
       }
       .resampleDataSetValues(
-        list(
-          yValues = dataSet$yValues,
-          yErrorValues = dataSet$yErrorValues,
-          yErrorType = dataSet$yErrorType
-        ),
-        subjectCount = subjectCount,
-        yErrorValues = yErrorValues
-      )$yValues
+        dataSet$yValues,
+        yErrorValues,
+        dataSet$yErrorType,
+        subjectCount
+      )
     }
   ),
   active = list(

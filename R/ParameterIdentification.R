@@ -189,11 +189,7 @@ ParameterIdentification <- R6::R6Class(
         # Evaluate running cost
         costField <- private$.configuration$modelCostField
         currCost <- runningCost[[costField]]
-        bestCost <- if (is.null(private$.bestCostSummary)) {
-          Inf
-        } else {
-          private$.bestCostSummary[[costField]]
-        }
+        bestCost <- private$.bestCostSummary[[costField]] %||% Inf
 
         # Only overwrite when strictly better
         if (is.finite(currCost) && currCost < bestCost) {
@@ -202,13 +198,7 @@ ParameterIdentification <- R6::R6Class(
 
         #  Optionally print evaluation feedback
         if (private$.configuration$printEvaluationFeedback) {
-          cat(
-            messages$evaluationFeedback(
-              private$.fnEvaluations,
-              currVals,
-              runningCost[[private$.configuration$modelCostField]]
-            )
-          )
+          cat(messages$evaluationFeedback(private$.fnEvaluations, currVals, currCost))
         }
 
         return(runningCost)
