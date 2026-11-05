@@ -139,11 +139,7 @@ gridSearchErrors <- function(piTask, ...) {
 }
 
 test_that("gridSearch() logs the full reason of a failed simulation once", {
-  sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   # A negative dose makes the simulation fail with a reason of many lines,
   # which lists the variables that became negative
   enableNegativeValuesCheck(sim)
@@ -182,11 +178,7 @@ test_that("gridSearch() logs the full reason of a failed simulation once", {
 })
 
 test_that("gridSearch() logs the full reason once if the failure time varies", {
-  sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   # A negative dose makes the simulation fail with negative values. The
   # engine gives the time of the failure in the first line of the reason, so
   # the reasons differ when the start time of the dose changes.
@@ -289,7 +281,6 @@ test_that("gridSearch() stops on unconvertible observed data", {
 })
 
 test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
-  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
   observed <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
@@ -297,7 +288,7 @@ test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
   # Each task loads its own simulation and builds its own PIParameters, so that
   # assigning $unit cannot leak into the shared module-level fixtures.
   clearanceTask <- function(unit) {
-    sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
+    sim <- freshSimulation()
     piParameter <- PIParameters$new(
       parameters = list(getParameter(clPath, container = sim))
     )
@@ -353,11 +344,7 @@ test_that("gridSearch() and calculateOFVProfiles() count their evaluations from 
 
 test_that("gridSearch() sets the start values of parameters that share a path", {
   simulations <- lapply(1:2, function(idx) {
-    ospsuite::loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    )
+    freshSimulation()
   })
   parameters <- lapply(simulations, function(simulation) {
     PIParameters$new(

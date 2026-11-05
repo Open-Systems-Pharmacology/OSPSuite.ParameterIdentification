@@ -576,11 +576,7 @@ test_that("simulatedOutputs() reads several outputs of one simulation", {
 })
 
 test_that(".simulatedValues orders a population result as DataCombined", {
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   # Three individuals with different lipophilicity, so that their values
   # differ at every time
   populationFile <- tempfile(fileext = ".csv")
@@ -616,11 +612,7 @@ test_that(".resolveParameterTargets resolves groups over two simulations", {
   volumePath <- "Organism|Liver|Volume"
   simulations <- replicate(
     2,
-    loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    ),
+    freshSimulation(),
     simplify = FALSE
   )
   ids <- vapply(simulations, function(sim) sim$root$id, character(1))
@@ -860,11 +852,7 @@ aciclovirPlasmaPaths <- c(
 # A task with the lipophilicity of one Aciclovir simulation as the parameter
 # and a list of observed data sets for each output path
 aciclovirTask <- function(dataSetsByPath) {
-  sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   ParameterIdentification$new(
     simulations = sim,
     parameters = PIParameters$new(
@@ -969,11 +957,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
   # frozen objective function uses `.calculateCensoredContribution()` of the
   # package, so this compares with output mappings of one LLOQ each instead.
   m3Contribution <- function(dataSetsByMapping, scaling, options) {
-    sim <- ospsuite::loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    )
+    sim <- freshSimulation()
     task <- ParameterIdentification$new(
       simulations = sim,
       parameters = PIParameters$new(

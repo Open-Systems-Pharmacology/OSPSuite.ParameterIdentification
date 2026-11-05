@@ -39,11 +39,7 @@ test_that("ParameterIdentification errors when both outputMappings and pkOutputM
 
 test_that("ParameterIdentification errors when pkOutputMapping belongs to a different simulation", {
   sim1 <- testSimulation()
-  sim2 <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim2 <- freshSimulation()
   mapping_from_sim2 <- PKOutputMapping$new(
     quantity = testQuantity(sim2),
     pkParameter = "C_max",
@@ -170,17 +166,8 @@ test_that("calculateOFVProfiles errors for pkOutputMappings", {
 })
 
 test_that("pkValues() uses each mapping's own simulation batch, not always the first", {
-  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
-  sim1 <- ospsuite::loadSimulation(
-    pkmlPath,
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
-  sim2 <- ospsuite::loadSimulation(
-    pkmlPath,
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim1 <- freshSimulation()
+  sim2 <- freshSimulation()
 
   # Lower clearance in sim2 so its C_max is detectably higher than sim1's
   # at the same dose — proves each mapping was evaluated against its own sim.
@@ -240,11 +227,7 @@ test_that("pkValues() uses each mapping's own simulation batch, not always the f
 })
 
 test_that("a failed simulation in PK mode is reported by name and reason", {
-  sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   sim$solver$mxStep <- 1
   task <- testPKTask(sim)
   priv <- task$.__enclos_env__$private
@@ -296,11 +279,7 @@ test_that("an error that is not a failed simulation stops a PK evaluation", {
 
 test_that("a failed simulation without a PK mapping only warns", {
   newSimulation <- function(failing = FALSE) {
-    simulation <- ospsuite::loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    )
+    simulation <- freshSimulation()
     if (failing) {
       simulation$solver$mxStep <- 1
     }
@@ -430,13 +409,12 @@ test_that("pkValues() routes a state-variable parameter as a molecule", {
 })
 
 test_that("run() applies a non-base parameter unit in PK mode", {
-  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 
   # Own simulation per task: earlier run()s mutate the cached simulation's Dose
   # via .applyFinalValues(), which would break the equality oracle.
   doseTask <- function(unit, startValue, minValue, maxValue) {
-    sim <- loadSimulation(pkmlPath, loadFromCache = FALSE, addToCache = FALSE)
+    sim <- freshSimulation()
     piParameter <- PIParameters$new(
       parameters = list(getParameter(testDosePath, container = sim))
     )

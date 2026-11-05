@@ -1,7 +1,7 @@
 # the PK outputs are selected around the analyses and restored
 
     Code
-      withPKOutputs(task, objective$pkValues(startValues(task)))
+      withPKOutputs(task, objective$pkValues(currStartValues(task)))
     Condition
       Error in `ospsuite::calculatePKAnalyses()`:
       ! Injected PK failure

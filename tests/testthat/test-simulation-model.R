@@ -1,7 +1,3 @@
-startValues <- function(task) {
-  vapply(task$parameters, function(p) p$startValue, numeric(1))
-}
-
 taskModel <- function(task) {
   SimulationModel$new(
     simulations = task$simulations,
@@ -33,11 +29,11 @@ test_that("the model builds the batches and buckets of the task", {
   # parameters bucket, both with their start values in base units
   expect_identical(
     model$variableParameters[[simId]],
-    c("Aciclovir|Lipophilicity" = .toBaseValue(task$parameters[[2]], startValues(task)[[2]]))
+    c("Aciclovir|Lipophilicity" = .toBaseValue(task$parameters[[2]], currStartValues(task)[[2]]))
   )
   expect_identical(
     model$variableMolecules[[simId]],
-    stats::setNames(.toBaseValue(task$parameters[[1]], startValues(task)[[1]]), stateVariableParameterPath)
+    stats::setNames(.toBaseValue(task$parameters[[1]], currStartValues(task)[[1]]), stateVariableParameterPath)
   )
   expect_identical(
     model$parameterTargets,
@@ -58,7 +54,7 @@ test_that("simulatedOutputs() gives the simulated values of the task", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   model <- taskModel(task)
-  values <- startValues(task)
+  values <- currStartValues(task)
   observed <- .prepareObservedData(task$outputMappings[[1]])
   simulated <- model$simulatedOutputs(values, task$outputMappings)
   # One output per mapping, a finite time course covering the observed times
@@ -80,23 +76,6 @@ test_that("the constructor leaves the simulations unchanged", {
   expect_identical(outputState(simulation), before)
 })
 
-pkMappingFor <- function(simulation) {
-  PKOutputMapping$new(
-    quantity = testQuantity(simulation),
-    pkParameter = "C_max",
-    targetValue = 30,
-    targetUnit = testQuantity(simulation)$unit
-  )
-}
-
-freshSimulation <- function() {
-  ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
-}
-
 test_that("the constructor leaves the simulations unchanged in PK mode", {
   simulation <- testSimulation()
   parameters <- list(testPKParameters(simulation))
@@ -104,7 +83,7 @@ test_that("the constructor leaves the simulations unchanged in PK mode", {
   model <- SimulationModel$new(
     simulations = stats::setNames(list(simulation), simulation$root$id),
     parameters = parameters,
-    pkMappings = list(pkMappingFor(simulation))
+    pkMappings = list(pkMapping(simulation))
   )
   expect_identical(outputState(simulation), before)
   results <- model$simulate(vapply(parameters, function(p) p$startValue, numeric(1)))
@@ -121,7 +100,7 @@ test_that("the constructor stops when a simulation has no parameter of the task"
     SimulationModel$new(
       simulations = simulations,
       parameters = list(testPKParameters(simulations[[1]])),
-      pkMappings = list(pkMappingFor(simulations[[1]]))
+      pkMappings = list(pkMapping(simulations[[1]]))
     ),
     error = TRUE,
     transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
@@ -149,7 +128,7 @@ test_that("simulate() stops with the failed simulations and their reasons", {
   task <- testModifiedTask()
   model <- taskModel(task)
   simulationError <- expect_error(
-    suppressWarnings(model$simulate(startValues(task))),
+    suppressWarnings(model$simulate(currStartValues(task))),
     class = "simulationsFailedError"
   )
   expect_identical(
@@ -215,11 +194,7 @@ test_that("simulate() routes the state-variable value into the molecule bucket",
 })
 
 test_that("simulate() converts a non-base state-variable unit into the base unit", {
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   # The stomach liquid volume is defined by a right-hand side, so it goes into
   # the molecules bucket. Its base unit is l, so values in ml arrive divided
   # by 1000.
@@ -250,11 +225,7 @@ test_that("simulate() seeds a grouped parameter of two simulations in base units
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
   simulations <- replicate(
     2,
-    loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    ),
+    freshSimulation(),
     simplify = FALSE
   )
   piParameter <- PIParameters$new(
@@ -293,11 +264,7 @@ test_that("simulate() fills the buckets of grouped parameters by position", {
   volumePath <- "Organism|Liver|Volume"
   simulations <- replicate(
     2,
-    loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    ),
+    freshSimulation(),
     simplify = FALSE
   )
   group <- function(path, positions) {

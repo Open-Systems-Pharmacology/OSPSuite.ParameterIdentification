@@ -2,8 +2,8 @@
 
     Code
       SimulationModel$new(simulations = simulations, parameters = list(
-        testPKParameters(simulations[[1]])), pkMappings = list(pkMappingFor(
-        simulations[[1]])))
+        testPKParameters(simulations[[1]])), pkMappings = list(pkMapping(simulations[[
+        1]])))
     Condition
       Error in `.validateSimulationIds()`:
       ! Mismatch or missing ID detected.
