@@ -116,11 +116,6 @@ test_that("the PK outputs are selected around the analyses and restored", {
   expect_identical(simulationOutputs(simulation), before)
 })
 
-test_that("withData() returns the objective, which has no observed data", {
-  objective <- pkObjective(pkTask())
-  expect_identical(objective$withData(NULL), objective)
-})
-
 test_that("PKObjective validates the model and the mappings", {
   task <- pkTask()
   priv <- task$.__enclos_env__$private

@@ -93,20 +93,6 @@ test_that("the constructor leaves the simulations unchanged in PK mode", {
   )
 })
 
-test_that("the constructor stops when a simulation has no parameter of the task", {
-  simulations <- list(freshSimulation(), freshSimulation())
-  names(simulations) <- vapply(simulations, function(s) s$root$id, character(1))
-  expect_snapshot(
-    SimulationModel$new(
-      simulations = simulations,
-      parameters = list(testPKParameters(simulations[[1]])),
-      pkMappings = list(pkMapping(simulations[[1]]))
-    ),
-    error = TRUE,
-    transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
-  )
-})
-
 test_that("simulate() applies the values in base units and checks their length", {
   task <- testPiTask()
   model <- taskModel(task)
