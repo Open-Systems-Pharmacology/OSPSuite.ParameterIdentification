@@ -1,6 +1,6 @@
 # Reference results of the objective function (#303), with public data only.
 #
-# Evaluates `.objectiveFunction()` and the public methods of
+# Evaluates the objective function and the public methods of
 # `ParameterIdentification` for a set of tasks and settings, and either stores
 # the results or compares them with stored results. Use it to check that a
 # change of the evaluation keeps every result identical:
@@ -195,14 +195,46 @@ newTask <- function(simulations, parameters, mappings, configuration = NULL) {
 
 privateOf <- function(task) task$.__enclos_env__$private
 
+# The objective function of a task whose batches are initialized, on the data
+# of `bootstrapSeed` when given. A base build evaluates through the facade's
+# method, a build with the objective classes through its evaluation closure.
+objectiveFunction <- function(private, bootstrapSeed = NULL) {
+  if (is.function(private$.objectiveFunction)) {
+    return(function(par) {
+      private$.objectiveFunction(par, bootstrapSeed = bootstrapSeed)
+    })
+  }
+  objective <- private$.objectiveFor()
+  if (!is.null(bootstrapSeed)) {
+    objective <- objective$withData(private$.data$resample(bootstrapSeed))
+  }
+  evaluate <- private$.evaluationClosure(objective)
+  function(par) private$.withPKOutputs(evaluate(par))
+}
+
+# The PK objective function of a task, which returns the cost as a number
+pkObjectiveFunction <- function(private) {
+  if (is.function(private$.pkObjectiveFunction)) {
+    return(private$.pkObjectiveFunction)
+  }
+  evaluate <- objectiveFunction(private)
+  function(dose) evaluate(dose)$modelCost
+}
+
+# The PK values of a task at one dose
+pkValues <- function(private, dose) {
+  if (is.function(private$.getPKValues)) {
+    return(private$.getPKValues(dose))
+  }
+  private$.withPKOutputs(private$.objectiveFor()$pkValues(dose))
+}
+
 # Evaluates the objective function for each parameter set, in this order, on
 # the same task
 evaluateObjective <- function(task, parameterSets, bootstrapSeed = NULL) {
   private <- privateOf(task)
   private$.batchInitialization()
-  lapply(parameterSets, function(par) {
-    private$.objectiveFunction(par, bootstrapSeed = bootstrapSeed)
-  })
+  lapply(parameterSets, objectiveFunction(private, bootstrapSeed))
 }
 
 # A task with one Aciclovir simulation, its lipophilicity as the parameter
@@ -503,12 +535,9 @@ bootstrapCase <- function(dataSets) {
   piNamespace$.classifyObservedData(private$.outputMappings)
   results <- list()
   for (seed in c(11L, 12L, 11L)) {
-    results[[length(results) + 1]] <- private$.objectiveFunction(
-      -0.2,
-      bootstrapSeed = seed
-    )
+    results[[length(results) + 1]] <- objectiveFunction(private, seed)(-0.2)
   }
-  results[[length(results) + 1]] <- private$.objectiveFunction(-0.2)
+  results[[length(results) + 1]] <- objectiveFunction(private)(-0.2)
   results
 }
 cases$bootstrapAggregated <- function() bootstrapCase(laskinData())
@@ -714,6 +743,9 @@ cases$runAndHessianCI <- function() {
     ci = withoutRunTimes(task$estimateCI()$toList())
   )
 }
+# The results list `se` and `rse`, and `estimateCI()` reports the cost details
+# of the fit instead of the best cost seen during the interval estimation
+attr(cases$runAndHessianCI, "expectChange") <- TRUE
 cases$runHJKBAndProfileCI <- function() {
   task <- runTask(piConfiguration(
     algorithm = "HJKB",
@@ -726,6 +758,8 @@ cases$runHJKBAndProfileCI <- function() {
     ci = withoutRunTimes(task$estimateCI()$toList())
   )
 }
+# As `runAndHessianCI`, with the standard errors of the profiles filled
+attr(cases$runHJKBAndProfileCI, "expectChange") <- TRUE
 cases$runAndBootstrapCI <- function() {
   task <- aciclovirTask(dataSets = individualData())
   task$configuration <- piConfiguration(
@@ -738,6 +772,8 @@ cases$runAndBootstrapCI <- function() {
     ci = withoutRunTimes(task$estimateCI()$toList())
   )
 }
+# As `runAndHessianCI`; the base commit reported the cost of a replicate
+attr(cases$runAndBootstrapCI, "expectChange") <- TRUE
 cases$gridSearchAndProfiles <- function() {
   task <- runTask(piConfiguration())
   list(
@@ -802,14 +838,15 @@ doseSets <- list(2.5e-4, 1e-4, 6e-4, 2.5e-4)
 cases$pkObjective <- function() {
   private <- privateOf(pkTask())
   private$.batchInitialization()
+  pkCost <- pkObjectiveFunction(private)
   lapply(doseSets, function(dose) {
-    list(
-      pkValues = private$.getPKValues(dose),
-      cost = private$.pkObjectiveFunction(dose)
-    )
+    list(pkValues = pkValues(private, dose), cost = pkCost(dose))
   })
 }
 cases$pkRun <- function() withoutRunTimes(pkTask()$run()$toList())
+# `PKResult` is a `PIResult` now, whose list has the CI fields and the cost
+# details, too
+attr(cases$pkRun, "expectChange") <- TRUE
 # A simulation that fails in PK mode: the first evaluation stops, the later
 # ones return the largest cost. The base commit stops with a type error about
 # `NULL` and shows the warning of the simulation engine on every evaluation
@@ -817,14 +854,9 @@ cases$pkFailingSimulation <- structure(
   function() {
     private <- privateOf(pkTask(mxStep = 1))
     private$.batchInitialization()
-    first <- tryCatch(
-      private$.pkObjectiveFunction(doseSets[[1]]),
-      error = conditionMessage
-    )
-    list(
-      first = first,
-      later = lapply(doseSets[2:3], private$.pkObjectiveFunction)
-    )
+    pkCost <- pkObjectiveFunction(private)
+    first <- tryCatch(pkCost(doseSets[[1]]), error = conditionMessage)
+    list(first = first, later = lapply(doseSets[2:3], pkCost))
   },
   expectChange = TRUE
 )
@@ -849,10 +881,12 @@ cases$pkUnmappedFailingSimulation <- function() {
   private <- privateOf(task)
   private$.batchInitialization()
   list(
-    costs = lapply(doseSets, private$.pkObjectiveFunction),
+    costs = lapply(doseSets, pkObjectiveFunction(private)),
     run = withoutRunTimes(task$run()$toList())
   )
 }
+# As `pkRun`
+attr(cases$pkUnmappedFailingSimulation, "expectChange") <- TRUE
 
 # ---- run and compare -------------------------------------------------------
 
