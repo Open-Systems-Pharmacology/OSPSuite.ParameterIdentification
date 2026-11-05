@@ -24,15 +24,6 @@ PKObjective <- R6::R6Class(
     # simulations, whose failure does not fail the evaluation.
     .simIds = NULL
   ),
-  active = list(
-    pkMappings = function(value) {
-      if (missing(value)) {
-        private$.pkMappings
-      } else {
-        stop(messages$errorPropertyReadOnly("pkMappings"))
-      }
-    }
-  ),
   public = list(
     # @param model A `SimulationModel` object.
     # @param pkMappings List of `PKOutputMapping` objects.
@@ -130,13 +121,6 @@ PKObjective <- R6::R6Class(
         }
         vals
       })
-    },
-
-    # The objective has no observed data to replace.
-    # @param data Ignored.
-    # @return This objective.
-    withData = function(data) {
-      self
     }
   )
 )

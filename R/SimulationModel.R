@@ -185,7 +185,6 @@ SimulationModel <- R6::R6Class(
         "PKOutputMapping",
         nullAllowed = TRUE
       )
-      .validateSimulationIds(names(simulations), parameters, outputMappings)
       private$.simulations <- simulations
       private$.parameters <- parameters
       private$.simulationRunOptions <- simulationRunOptions
