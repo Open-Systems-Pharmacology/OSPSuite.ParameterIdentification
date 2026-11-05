@@ -12,6 +12,7 @@
 ## Minor improvements and bug fixes
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
+- `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE` (#371).
 - `ParameterIdentification$new()` with `pkOutputMappings` stops when a simulation of the task has no parameter to vary, with a message that lists the simulation and parameter IDs. `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`, and a failed evaluation of PK targets has the cost `Inf` (#330).
 
 # ospsuite.parameteridentification 2.3.0
