@@ -154,15 +154,15 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Evaluates `code` with the PK outputs selected in the simulations
+    # Calls `fn` with the PK outputs selected in the simulations
     #
     # `ospsuite::calculatePKAnalyses()` analyses the outputs selected in the
     # simulation, so they are selected once around the evaluations of a call
-    # and the simulations are restored when `code` exits, also on an error.
-    # Without PK mappings, only evaluates `code`.
-    .withPKOutputs = function(code) {
+    # and the simulations are restored when `fn` exits, also on an error.
+    # Without PK mappings, only calls `fn`.
+    .withPKOutputs = function(fn) {
       if (is.null(private$.pkMappings)) {
-        return(code)
+        return(fn())
       }
       savedState <- .storeSimulationState(private$.simulations)
       on.exit(
@@ -170,7 +170,7 @@ ParameterIdentification <- R6::R6Class(
         add = TRUE
       )
       .selectPKOutputs(private$.simulations, private$.pkMappings)
-      code
+      fn()
     },
 
     # The evaluation closure around `evaluate()` of the objective
@@ -297,12 +297,14 @@ ParameterIdentification <- R6::R6Class(
       private$.model$simulatedOutputs(currVals, outputMappings)
     },
     .pkObjectiveFunction = function(currVals) {
-      private$.withPKOutputs(
+      private$.withPKOutputs(function() {
         private$.evaluationClosure(private$.objectiveFor())(currVals)$modelCost
-      )
+      })
     },
     .getPKValues = function(paramValues) {
-      private$.withPKOutputs(private$.objectiveFor()$pkValues(paramValues))
+      private$.withPKOutputs(function() {
+        private$.objectiveFor()$pkValues(paramValues)
+      })
     },
     # `test-pid-aux.R` logs on a task whose batches are not initialized
     .logSimulationFailure = function(currVals, cond) {
@@ -596,7 +598,9 @@ ParameterIdentification <- R6::R6Class(
       private$.failedEvaluations <- 0
 
       # Run optimization algorithm
-      optimResult <- private$.withPKOutputs(private$.runAlgorithm())
+      optimResult <- private$.withPKOutputs(function() {
+        private$.runAlgorithm()
+      })
       if (private$.failedEvaluations > private$.fnEvaluations / 2) {
         warning(messages$warningMostEvaluationsFailed(
           private$.failedEvaluations,
@@ -609,9 +613,9 @@ ParameterIdentification <- R6::R6Class(
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
-          private$.withPKOutputs(
+          private$.withPKOutputs(function() {
             private$.objectiveFor()$pkValues(optimResult$par)
-          ),
+          }),
           error = function(e) {
             warning(messages$warnAchievedPKValuesFailure(e$message))
             as.list(rep(NA_real_, length(private$.pkMappings)))

@@ -29,7 +29,7 @@ pkTask <- function(simulation = testSimulation(), iter = 2) {
 }
 
 withPKOutputs <- function(task, code) {
-  task$.__enclos_env__$private$.withPKOutputs(code)
+  task$.__enclos_env__$private$.withPKOutputs(function() code)
 }
 
 pkObjective <- function(task) {
