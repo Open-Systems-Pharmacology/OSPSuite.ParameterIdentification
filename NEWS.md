@@ -18,6 +18,9 @@
 - `estimateCI()` cannot be used with `pkOutputMappings` and stops with an error.
 - A failed evaluation of PK targets has the cost `Inf`
 - `PKResult$toList()` returns the same fields as `PIResult$toList()`, with the confidence interval fields set to `NA` and the cost details of the fit.
+- `gridSearch()` and `calculateOFVProfiles()` count the evaluations they print from 1 in every call instead of continuing the count of the previous call.
+- `gridSearch(setStartValue = TRUE)` keeps the start values and warns when every grid point fails, instead of setting them to the first grid point.
+- `gridSearch()` uses the full grid size when `totalEvaluations` is a perfect power, for example 5 points per parameter for 125 evaluations of 3 parameters instead of 4.
 
 # ospsuite.parameteridentification 2.3.0
 
