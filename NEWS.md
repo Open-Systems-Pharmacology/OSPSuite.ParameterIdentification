@@ -4,6 +4,7 @@
 
 - `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, `DiceKriging` is no longer a dependency, and aggregated data now require `PIOutputMapping$setSubjectCount()` (#355, #312, #318).
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
+- `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
 
 ## Major changes
 
@@ -13,8 +14,13 @@
 
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 - `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE` (#371).
-- `ParameterIdentification$new()` with `pkOutputMappings` stops when a simulation of the task has no parameter to vary, with a message that lists the simulation and parameter IDs. `estimateCI()` with `pkOutputMappings` reports that it is not available for PK targets also before `run()`, and a failed evaluation of PK targets has the cost `Inf` (#330).
-- `PIResult` now reports the standard error `se` and the relative standard error `rse` of profile likelihood intervals, which were computed but not shown, in `toList()`, `print()` and `toDataFrame()`, where they replace the `sd` and `cv` columns of the other methods. `PIResult$convergence` is always a single `TRUE` or `FALSE` (#370).
+- `ParameterIdentification$new()` stops when any simulation of the task has no parameter to vary, also for `pkOutputMappings` mode. Previously, this check was only performed for `outputMappings` mode. (#330)
+- `estimateCI()` cannot be used with `pkOutputMappings` and stops with an error.
+- A failed evaluation of PK targets has the cost `Inf`
+- `PKResult$toList()` returns the same fields as `PIResult$toList()`, with the confidence interval fields set to `NA` and the cost details of the fit.
+- `gridSearch()` and `calculateOFVProfiles()` count the evaluations they print from 1 in every call instead of continuing the count of the previous call.
+- `gridSearch(setStartValue = TRUE)` keeps the start values and warns when every grid point fails, instead of setting them to the first grid point.
+- `gridSearch()` uses the full grid size when `totalEvaluations` is a perfect power, for example 5 points per parameter for 125 evaluations of 3 parameters instead of 4.
 
 # ospsuite.parameteridentification 2.3.0
 

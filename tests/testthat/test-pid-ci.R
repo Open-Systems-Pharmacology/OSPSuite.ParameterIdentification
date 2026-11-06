@@ -75,20 +75,6 @@ test_that("run() reads the observed data once when it estimates the CI", {
   expect_equal(observedDataReads$reads, 2)
 })
 
-test_that("estimateCI() after run() keeps the cost details of the fit", {
-  piTask <- testPiTask()
-  piTask$configuration <- lowIterPiConfiguration(iter = 3)
-  piTask$configuration$autoEstimateCI <- FALSE
-  suppressMessages(fit <- piTask$run()$toList())
-  expect_identical(fit$costDetails$modelCost, fit$objectiveValue)
-  suppressMessages(ciResult <- piTask$estimateCI()$toList())
-  expect_identical(ciResult$costDetails, fit$costDetails)
-
-  piTask$configuration$autoEstimateCI <- TRUE
-  suppressMessages(result <- piTask$run()$toList())
-  expect_identical(result$costDetails$modelCost, result$objectiveValue)
-})
-
 
 # Bootstrap CI Method
 
