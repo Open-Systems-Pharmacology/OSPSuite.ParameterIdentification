@@ -586,6 +586,26 @@ test_that("Optimizer estimates confidence intervals using profile likelihood met
   expect_snapshot_value(ciResult, style = "deparse", tolerance = 1e-4)
 })
 
+test_that("Profile likelihood calls resetFn once per step", {
+  piConfig <- PIConfiguration$new()
+  piConfig$algorithm <- "HJKB"
+  piConfig$ciMethod <- "PL"
+  piConfig$ciOptions <- list(maxIter = 2)
+  optimizer <- Optimizer$new(piConfig)
+  resets <- 0
+  # Two steps rarely cross the cost threshold, so maxIter warnings are expected
+  suppressWarnings(suppressMessages(
+    ciResult <- optimizer$estimateCI(
+      par = parTest,
+      fn = fnObjective,
+      lower = lowerTest,
+      upper = upperTest,
+      resetFn = function() resets <<- resets + 1
+    )
+  ))
+  expect_equal(resets, nrow(ciResult$details$paramHistory))
+})
+
 
 # Replicate factory for bootstrap: each seed picks one observed data set
 makeReplicateBootstrap <- function(yObsList) {
