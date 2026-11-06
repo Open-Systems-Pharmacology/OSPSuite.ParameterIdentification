@@ -179,7 +179,7 @@ test_that("ParameterIdentification stops when a simulation has no parameter of t
   )
 })
 
-test_that("run() in PK mode counts a failed evaluation and gives an infinite cost", {
+test_that(".evaluationClosure() in PK mode counts a failed evaluation and gives an infinite cost", {
   simulation <- freshSimulation()
   simulation$solver$mxStep <- 1
   task <- pkTask(simulation)
@@ -189,6 +189,25 @@ test_that("run() in PK mode counts a failed evaluation and gives an infinite cos
   expect_identical(cost, Inf)
   expect_identical(priv$.failedEvaluations, 1)
   expect_identical(priv$.fnEvaluations, 1)
+})
+
+test_that("run() in PK mode warns when most evaluations fail after a good start", {
+  task <- pkTask()
+  runBatches <- ospsuite::runSimulationBatches
+  calls <- 0
+  local_mocked_bindings(
+    runSimulationBatches = function(simulationBatches, ...) {
+      calls <<- calls + 1
+      if (calls == 1) {
+        return(runBatches(simulationBatches, ...))
+      }
+      lapply(simulationBatches, function(batch) list(NULL))
+    },
+    .package = "ospsuite"
+  )
+  expect_snapshot(result <- suppressMessages(task$run()))
+  priv <- task$.__enclos_env__$private
+  expect_gt(priv$.failedEvaluations, priv$.fnEvaluations / 2)
 })
 
 test_that("run() in PK mode reads the achieved PK values through the objective", {
