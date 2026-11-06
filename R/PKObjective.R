@@ -48,25 +48,23 @@ PKObjective <- R6::R6Class(
         self$pkValues(values),
         simulationsFailedError = function(cond) {
           private$.model$logFailure(values, cond)
+          message(messages$simulationError())
           NULL
         }
       )
-      if (!is.null(pkValues)) {
-        notFinite <- !vapply(pkValues, is.finite, logical(1))
-        if (any(notFinite)) {
-          mapping <- private$.pkMappings[[which(notFinite)[[1]]]]
-          private$.model$logFailure(
-            values,
-            simpleError(messages$pkValueNotFinite(
-              mapping$pkParameter,
-              mapping$quantity$path
-            ))
-          )
-          pkValues <- NULL
-        }
-      }
       if (is.null(pkValues)) {
-        message(messages$simulationError())
+        return(.createErrorCostStructure())
+      }
+      notFinite <- !vapply(pkValues, is.finite, logical(1))
+      if (any(notFinite)) {
+        mapping <- private$.pkMappings[[which(notFinite)[[1]]]]
+        private$.model$logFailure(
+          values,
+          simpleError(messages$errorPKValueNotFinite(
+            mapping$pkParameter,
+            mapping$quantity$path
+          ))
+        )
         return(.createErrorCostStructure())
       }
       targets <- vapply(

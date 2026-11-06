@@ -101,10 +101,14 @@ test_that("evaluate() treats a PK value that is not finite as a failed evaluatio
   expect_identical(cost, .createErrorCostStructure())
   expect_identical(priv$.model$loggedFailures, 1)
   expect_true(any(grepl(
-    messages$pkValueNotFinite("C_max", task$pkOutputMappings[[1]]$quantity$path),
+    messages$errorPKValueNotFinite(
+      "C_max",
+      task$pkOutputMappings[[1]]$quantity$path
+    ),
     logged,
     fixed = TRUE
   )))
+  expect_false(any(grepl(messages$simulationError(), logged, fixed = TRUE)))
 })
 
 test_that("the PK outputs are selected around the analyses and restored", {
