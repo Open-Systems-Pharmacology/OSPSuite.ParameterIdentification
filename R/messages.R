@@ -178,14 +178,6 @@ messages$profilesNotSupplied <- function() {
   "Supply the result of the calculateOFVProfiles() method as the argument to the plotOFVProfiles() method."
 }
 
-messages$plotGridParameterCount <- function(count) {
-  paste0(
-    "The plotGrid() function requires a data frame with 3 columns, but ",
-    count,
-    " columns were supplied"
-  )
-}
-
 messages$gridSearchParameterValueSet <- function(bestValues) {
   cat(
     "Grid search completed.",
@@ -245,10 +237,6 @@ messages$evaluationFeedback <- function(fneval, par, objValue) {
   )
 }
 
-messages$hessianEstimation <- function() {
-  "Post-hoc estimation of Hessian matrix."
-}
-
 messages$statusAutoEstimateCI <- function() {
   "Skipping confidence interval estimation (autoEstimateCI = FALSE)"
 }
@@ -292,10 +280,6 @@ messages$errorObservedDataNotFound <- function(
     quantityPath,
     simulationPath
   )
-}
-
-messages$errorNoParentContainer <- function(type) {
-  paste0(type, " is not a parent container of entity.")
 }
 
 messages$errorUnitConversion <- function(quantityName, observedDataName) {
