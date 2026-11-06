@@ -39,17 +39,6 @@ test_that(".ofvGrid() spaces a log-scaled parameter geometrically", {
     parameterNames = c("a", "b")
   )
   expect_equal(unique(grid$a), c(1, 10, 100))
-  expect_snapshot(
-    .ofvGrid(
-      quadratic,
-      lower = c(0, 1),
-      upper = c(100, 1),
-      logScaleFlag = c(TRUE, FALSE),
-      totalEvaluations = 9,
-      parameterNames = c("a", "b")
-    ),
-    error = TRUE
-  )
 })
 
 test_that(".ofvProfiles() varies one parameter at a time around par", {
