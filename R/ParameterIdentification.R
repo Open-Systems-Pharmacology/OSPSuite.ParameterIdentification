@@ -516,7 +516,8 @@ ParameterIdentification <- R6::R6Class(
           private$.evaluationClosure(
             objective$withData(private$.data$resample(seed))
           )
-        }
+        },
+        resetFn = function() private$.fnEvaluations <- 0
       )
       if (private$.configuration$ciMethod == "bootstrap") {
         ciResult$details$subjectCounts <- lapply(

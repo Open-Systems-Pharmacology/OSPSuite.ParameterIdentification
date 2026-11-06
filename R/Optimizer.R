@@ -231,7 +231,8 @@ Optimizer <- R6::R6Class(
       par,
       fn,
       controlCI,
-      optimizer
+      optimizer,
+      resetFn = NULL
     ) {
       result <- private$.initializeCIResult()
 
@@ -258,7 +259,8 @@ Optimizer <- R6::R6Class(
           optimizer,
           p,
           -1,
-          controlCI
+          controlCI,
+          resetFn
         )
         upperResult <- private$.computeProfileCI(
           par,
@@ -266,7 +268,8 @@ Optimizer <- R6::R6Class(
           optimizer,
           p,
           1,
-          controlCI
+          controlCI,
+          resetFn
         )
 
         lowerCI[p] <- lowerResult$ci
@@ -298,7 +301,8 @@ Optimizer <- R6::R6Class(
       optimizer,
       p,
       direction,
-      controlCI
+      controlCI,
+      resetFn = NULL
     ) {
       ci <- NA_real_
 
@@ -323,6 +327,10 @@ Optimizer <- R6::R6Class(
         newPar[p] <- par[p] + direction * epsilon * i
 
         fixedParams <- list(idx = p, values = newPar[p])
+
+        if (!is.null(resetFn)) {
+          resetFn()
+        }
 
         # Run optimization with current fixed parameter
         optimResult <- optimizer$run(
@@ -672,6 +680,8 @@ Optimizer <- R6::R6Class(
     #' @param replicate Function of one argument, the seed of a bootstrap
     #'   replicate, that returns the objective function of that replicate.
     #'   Required with `ciMethod = "bootstrap"`, unused otherwise.
+    #' @param resetFn Optional function without arguments, called before each
+    #'   profile likelihood step. Unused by the other CI methods.
     #' @return List with confidence interval results including lower and upper
     #'   bounds, standard errors, coefficient of variation, and method details.
     estimateCI = function(
@@ -680,13 +690,15 @@ Optimizer <- R6::R6Class(
       lower,
       upper,
       optimizer = NULL,
-      replicate = NULL
+      replicate = NULL,
+      resetFn = NULL
     ) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
       ospsuite.utils::validateIsNumeric(upper)
       ospsuite.utils::validateIsOfType(optimizer, "Optimizer", TRUE)
       ospsuite.utils::validateIsOfType(replicate, "function", TRUE)
+      ospsuite.utils::validateIsOfType(resetFn, "function", TRUE)
       if (!inherits(fn, "preprocessedFn")) {
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
       }
@@ -721,7 +733,8 @@ Optimizer <- R6::R6Class(
         upper = upper,
         controlCI = ciOptions,
         optimizer = optimizer,
-        replicate = replicate
+        replicate = replicate,
+        resetFn = resetFn
       )
       filteredArgs <- argsList[intersect(names(argsList), allowedArgs)]
 
