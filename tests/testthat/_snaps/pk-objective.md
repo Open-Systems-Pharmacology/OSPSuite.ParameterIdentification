@@ -43,3 +43,13 @@
       Simulation IDs: <id>, <id>
       PIParameter IDs: <id>
 
+# run() in PK mode warns when most evaluations fail after a good start
+
+    Code
+      result <- suppressMessages(task$run())
+    Condition
+      Warning in `task$run()`:
+      The simulations failed in 4 of 4 evaluations. Check the parameter bounds and the solver settings.
+      Warning in `value[[3L]]()`:
+      Post-optimization PK value computation failed. achievedValue will be "NA". Detail: Simulation 'Vergin 1995 IV' failed.
+

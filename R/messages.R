@@ -504,7 +504,7 @@ messages$errorPKMultiIndividualSimulation <- function(
   )
 }
 
-messages$pkValueNotFinite <- function(pkParameter, quantityPath) {
+messages$errorPKValueNotFinite <- function(pkParameter, quantityPath) {
   ospsuite.utils::cliFormat(
     "The PK parameter {.val {pkParameter}} of {.val {quantityPath}} is not finite."
   )
