@@ -216,6 +216,10 @@ test_that("run() in PK mode reads the achieved PK values through the objective",
   priv <- task$.__enclos_env__$private
   expect_s3_class(result, "PKResult")
   expect_s3_class(priv$.objective, "PKObjective")
+  expect_equal(
+    result$toList()$costDetails$modelCost,
+    result$toList()$objectiveValue
+  )
   achieved <- withPKOutputs(
     task,
     priv$.objective$pkValues(priv$.lastOptimResult$par)
