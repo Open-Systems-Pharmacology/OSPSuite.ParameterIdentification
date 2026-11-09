@@ -405,17 +405,12 @@ test_that("run() reports the estimate in the declared unit and applies the match
   # It cannot detect a conversion regression, because setValue() converts
   # correctly regardless. The conversion itself is covered by the gridSearch
   # and molecules bucket tests above.
-  pkmlPath <- system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
   outputPath <- "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)"
 
   # Own simulation and PIParameters, so that assigning $unit cannot leak into
   # the shared module-level fixtures used by unrelated snapshot tests.
-  sim <- ospsuite::loadSimulation(
-    pkmlPath,
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   piParameter <- PIParameters$new(
     parameters = list(ospsuite::getParameter(clPath, container = sim))
   )

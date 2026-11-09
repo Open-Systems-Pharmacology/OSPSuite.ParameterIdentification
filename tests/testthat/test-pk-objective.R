@@ -1,24 +1,3 @@
-startValues <- function(task) {
-  vapply(task$parameters, function(p) p$startValue, numeric(1))
-}
-
-freshSimulation <- function() {
-  ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
-}
-
-pkMapping <- function(simulation = testSimulation()) {
-  PKOutputMapping$new(
-    quantity = testQuantity(simulation),
-    pkParameter = "C_max",
-    targetValue = 30,
-    targetUnit = testQuantity(simulation)$unit
-  )
-}
-
 pkTask <- function(simulation = testSimulation(), iter = 2) {
   ParameterIdentification$new(
     simulations = simulation,
@@ -49,7 +28,7 @@ simulationOutputs <- function(simulation) {
 test_that("evaluate() returns the relative squared deviation sum as a modelCost", {
   task <- pkTask()
   objective <- pkObjective(task)
-  values <- startValues(task)
+  values <- currStartValues(task)
   pkValue <- withPKOutputs(task, objective$pkValues(values))[[1]]
   target <- task$pkOutputMappings[[1]]$targetValueInBaseUnit
   cost <- withPKOutputs(task, objective$evaluate(values))
@@ -69,7 +48,7 @@ test_that("evaluate() logs a failed simulation and returns the error cost struct
   priv <- task$.__enclos_env__$private
   expect_no_warning(
     suppressMessages(expect_message(
-      cost <- objective$evaluate(startValues(task)),
+      cost <- objective$evaluate(currStartValues(task)),
       messages$simulationError(),
       fixed = TRUE
     ))
@@ -92,7 +71,7 @@ test_that("evaluate() treats a PK value that is not finite as a failed evaluatio
   )
   logged <- character()
   cost <- withCallingHandlers(
-    objective$evaluate(startValues(task)),
+    objective$evaluate(currStartValues(task)),
     message = function(m) {
       logged <<- c(logged, conditionMessage(m))
       invokeRestart("muffleMessage")
@@ -119,7 +98,7 @@ test_that("the PK outputs are selected around the analyses and restored", {
   seen <- list()
   original <- ospsuite::calculatePKAnalyses
   testthat::with_mocked_bindings(
-    pkValues <- withPKOutputs(task, objective$pkValues(startValues(task))),
+    pkValues <- withPKOutputs(task, objective$pkValues(currStartValues(task))),
     calculatePKAnalyses = function(results) {
       seen[[length(seen) + 1]] <<- simulationOutputs(simulation)
       original(results)
@@ -132,7 +111,7 @@ test_that("the PK outputs are selected around the analyses and restored", {
   expect_identical(simulationOutputs(simulation), before)
   testthat::with_mocked_bindings(
     expect_snapshot(
-      withPKOutputs(task, objective$pkValues(startValues(task))),
+      withPKOutputs(task, objective$pkValues(currStartValues(task))),
       error = TRUE
     ),
     calculatePKAnalyses = function(results) stop("Injected PK failure"),
@@ -185,7 +164,7 @@ test_that(".evaluationClosure() in PK mode counts a failed evaluation and gives 
   task <- pkTask(simulation)
   priv <- task$.__enclos_env__$private
   expect_error(suppressMessages(task$run()), class = "initialSimulationError")
-  cost <- suppressMessages(objectiveClosure(task)(startValues(task))$modelCost)
+  cost <- suppressMessages(objectiveClosure(task)(currStartValues(task))$modelCost)
   expect_identical(cost, Inf)
   expect_identical(priv$.failedEvaluations, 1)
   expect_identical(priv$.fnEvaluations, 1)

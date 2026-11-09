@@ -104,15 +104,6 @@ SimulationModel <- R6::R6Class(
     }
   ),
   active = list(
-    # Named list of `Simulation` objects, keyed by root container IDs
-    # (read-only)
-    simulations = function(value) {
-      if (missing(value)) {
-        private$.simulations
-      } else {
-        stop(messages$errorPropertyReadOnly("simulations"))
-      }
-    },
     # Named list of `SimulationBatch` objects (read-only)
     simulationBatches = function(value) {
       if (missing(value)) {
@@ -380,7 +371,9 @@ SimulationModel <- R6::R6Class(
 #' @param outputMapping A `PIOutputMapping` object.
 #'
 #' @return The times of all observed data sets of the mapping in min, with
-#'   the x transformations of the mapping applied.
+#'   the x transformations of the mapping applied. Computed by hand and not
+#'   with `.prepareObservedData()`, which reads the observed data once per
+#'   public call, for the objective.
 #' @keywords internal
 #' @noRd
 .observedTimes <- function(outputMapping) {

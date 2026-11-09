@@ -329,11 +329,7 @@ testModifiedTask <- function() {
 # the molecular weight of the mass concentrations, which are mapped to a molar
 # output, is removed after the data set was added to the mapping
 testUnconvertibleDataTask <- function() {
-  sim <- ospsuite::loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
   mapping <- PIOutputMapping$new(quantity = testQuantity(sim))
   mapping$addObservedDataSets(dataSet)
@@ -352,11 +348,7 @@ testUnconvertibleDataTask <- function() {
 # The simulations at the positions `failing` fail.
 testTwoSimulationsTask <- function(failing = integer()) {
   simulations <- lapply(1:2, function(idx) {
-    ospsuite::loadSimulation(
-      system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-      loadFromCache = FALSE,
-      addToCache = FALSE
-    )
+    freshSimulation()
   })
   for (idx in failing) {
     simulations[[idx]]$solver$mxStep <- 1
@@ -484,23 +476,6 @@ getTestDataFilePath <- function(fileName) {
   file.path(dataPath, fileName, fsep = .Platform$file.sep)
 }
 
-getSimulationFilePath <- function(simulationName) {
-  getTestDataFilePath(paste0(simulationName, ".pkml"))
-}
-
-loadTestSimulation <- function(
-  simulationName,
-  loadFromCache = FALSE,
-  addToCache = TRUE
-) {
-  simFile <- getSimulationFilePath(simulationName)
-  sim <- ospsuite::loadSimulation(
-    simFile,
-    loadFromCache = loadFromCache,
-    addToCache = addToCache
-  )
-}
-
 executeWithTestFile <- function(actionWithFile) {
   newFile <- tempfile()
   actionWithFile(newFile)
@@ -607,9 +582,8 @@ testStateVariableMixedTask <- function() {
   )
 }
 
-# PI task whose only optimization parameter is state-variable, so that
-# .variableParameters stays empty for the simulation (empty-parametersOrPaths
-# shadow path).
+# PI task whose only optimization parameter is state-variable, so that the
+# parameters bucket of the model stays empty for the simulation.
 testStateVariableOnlyTask <- function() {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
@@ -660,5 +634,22 @@ taskObjective <- function(task, seed = NULL) {
     model = priv$.model,
     data = data,
     objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+  )
+}
+
+freshSimulation <- function() {
+  ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+}
+
+pkMapping <- function(simulation = testSimulation()) {
+  PKOutputMapping$new(
+    quantity = testQuantity(simulation),
+    pkParameter = "C_max",
+    targetValue = 30,
+    targetUnit = testQuantity(simulation)$unit
   )
 }

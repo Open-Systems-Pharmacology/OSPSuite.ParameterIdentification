@@ -232,38 +232,37 @@
 #'   would be centred on the median, below `mu_j`.
 #'
 #' A point with a non-finite error, a non-positive mean or a `GSD` not above 1
-#' keeps its value. A data set without `yErrorType` or without any finite
-#' error value is returned unchanged.
+#' keeps its value. Without `yErrorType` or without any finite error value
+#' `yValues` is returned unchanged.
 #'
-#' @param dataSetValues A list with `xValues`, `yValues`, `yErrorValues` and
-#'   `yErrorType` of one data set.
-#' @param subjectCount The number of subjects `n` behind the data set.
+#' @param yValues The means of one data set.
 #' @param yErrorValues The error values in the unit of `yValues`.
-#' @return `dataSetValues` with new `yValues`.
+#' @param yErrorType The error type of the data set, or `NULL`.
+#' @param subjectCount The number of subjects `n` behind the data set.
+#' @return The redrawn `yValues`.
 #' @keywords internal
 #' @noRd
 .resampleDataSetValues <- function(
-  dataSetValues,
-  subjectCount,
-  yErrorValues = dataSetValues$yErrorValues
+  yValues,
+  yErrorValues,
+  yErrorType,
+  subjectCount
 ) {
-  errorType <- dataSetValues$yErrorType
-  y <- dataSetValues$yValues
+  y <- yValues
   err <- yErrorValues
-  if (is.null(errorType) || !any(is.finite(err))) {
-    return(dataSetValues)
+  if (is.null(yErrorType) || !any(is.finite(err))) {
+    return(y)
   }
   e <- stats::rnorm(length(y))
-  redraw <- .redrawablePoints(y, err, errorType)
-  if (errorType == "GeometricStdDev") {
+  redraw <- .redrawablePoints(y, err, yErrorType)
+  if (yErrorType == "GeometricStdDev") {
     logSd <- log(err[redraw]) / sqrt(subjectCount)
     y[redraw] <- exp(log(y[redraw]) + logSd * e[redraw])
   } else {
     s2 <- log(1 + (err[redraw] / y[redraw])^2 / subjectCount)
     y[redraw] <- exp(log(y[redraw]) - s2 / 2 + sqrt(s2) * e[redraw])
   }
-  dataSetValues$yValues <- y
-  dataSetValues
+  y
 }
 
 #' Stabilize bootstrap coefficient of variation by minimal symmetric trimming

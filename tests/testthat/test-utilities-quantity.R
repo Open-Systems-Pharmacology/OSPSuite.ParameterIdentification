@@ -2,11 +2,7 @@
 
 clearancePiParameter <- function() {
   clPath <- "Neighborhoods|Kidney_pls_Kidney_ur|Aciclovir|Renal Clearances-TS-Aciclovir|TSspec"
-  sim <- loadSimulation(
-    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
-    loadFromCache = FALSE,
-    addToCache = FALSE
-  )
+  sim <- freshSimulation()
   PIParameters$new(
     parameters = list(getParameter(clPath, container = sim))
   )
