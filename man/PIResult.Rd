@@ -49,8 +49,9 @@ such as \code{par}, \code{value}, \code{startValues}, \code{elapsed}, \code{conv
       \item{\code{ciResult}}{(Optional) A named list of confidence interval results,
 returned by \code{Optimizer$estimateCI()}. Contains fields like \code{sd}, \code{cv},
 \code{lowerCI}, \code{upperCI}, \code{ciType}, \code{elapsed}, and \code{details}.}
-      \item{\code{costDetails}}{(Optional) A named list with detailed cost metrics
-computed during optimization.}
+      \item{\code{costDetails}}{(Optional) The cost details of the best evaluation,
+a \code{modelCost} object as returned by the objective function. See
+\code{toList()}.}
       \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
 parameter identification.}
       \item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
@@ -105,7 +106,14 @@ and configuration.
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A named list containing all result values.
+    A named list containing all result values and \code{costDetails},
+a \code{modelCost} object: \code{modelCost} (the total cost),
+\code{minLogProbability}, \code{costVariables} (one row with \code{nObservations},
+\code{M3Contribution}, \code{rawSSR} and \code{weightedSSR}) and \code{residualDetails}
+(one row per observation with \code{index}, \code{x}, \code{yObserved},
+\code{ySimulated}, \code{scaleFactor}, \code{errorWeights}, \code{robustWeights},
+\code{userWeights}, \code{totalWeights}, \code{rawResiduals} and
+\code{weightedResiduals}).
   }
 }
 

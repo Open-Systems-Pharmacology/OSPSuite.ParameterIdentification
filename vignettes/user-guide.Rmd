@@ -314,7 +314,7 @@ piResult$toDataFrame()
 ```
 
 -   Use `$toList()` to export full details, including diagnostics, cost metrics, and residuals.\
-    `costDetails` includes items such as `rawSSR`, `weightedSSR`, `rawResiduals`, `weightedResiduals`, `errorWeights`, `userWeights`, `yObserved`, and `ySimulated`:
+    `costDetails` is the `modelCost` object of the best evaluation. Its fields and columns are listed under `toList()` in `?PIResult`:
 
 ```{r}
 names(piResult$toList())

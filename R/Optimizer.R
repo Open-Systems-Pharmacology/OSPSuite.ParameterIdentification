@@ -143,6 +143,22 @@ Optimizer <- R6::R6Class(
         )
       )
 
+      # Currently assumes SSR objective; extend with MLE logic as needed
+      # For SSR-based objective: Cov(θ) = σ² * (H / 2)^(-1), with σ² = SSR / (n - p)
+      # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
+      cost <- fn(p = par, modelCostField = NULL)
+      costVariables <- if (is.list(cost)) cost$costVariables else NULL
+      missingFields <- setdiff(
+        c("weightedSSR", "nObservations"),
+        names(costVariables)
+      )
+      if (length(missingFields) > 0) {
+        stop(messages$errorHessianCostVariables(missingFields))
+      }
+      nObs <- costVariables[["nObservations"]]
+      dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
+      sigma2 <- costVariables[["weightedSSR"]] / dof # for MLE use: sigma2 = 1
+
       # Compute the Hessian matrix numerically
       hess <- tryCatch(
         {
@@ -156,25 +172,6 @@ Optimizer <- R6::R6Class(
           NULL
         }
       )
-
-      # Currently assumes SSR objective; extend with MLE logic as needed
-      # For SSR-based objective: Cov(θ) = σ² * (H / 2)^(-1), with σ² = SSR / (n - p)
-      # For MLE-based cost, use Cov(θ) = (H / 2)^(-1) without scaling
-      cost <- fn(p = par, modelCostField = NULL)
-      ssr <- purrr::pluck(
-        cost,
-        "costVariables",
-        "weightedSSR",
-        .default = 1
-      )
-      nObs <- purrr::pluck(
-        cost,
-        "costVariables",
-        "nObservations",
-        .default = length(par) + 1
-      )
-      dof <- max(1, nObs - length(par)) # ensure DoF ≥ 1
-      sigma2 <- ssr / dof # for MLE use: sigma2 = 1
 
       if (!is.null(hess)) {
         # Invert Hessian to obtain covariance matrix
@@ -681,7 +678,10 @@ Optimizer <- R6::R6Class(
     #'
     #' @param par Numeric vector of parameter values for confidence interval
     #'   estimation.
-    #' @param fn Objective function used for parameter estimation.
+    #' @param fn Objective function used for parameter estimation. The
+    #'   Hessian method needs a value with `costVariables$weightedSSR` and
+    #'   `costVariables$nObservations`, as the objective function of
+    #'   `ParameterIdentification` returns, and stops otherwise.
     #' @param lower Numeric vector of lower parameter bounds.
     #' @param upper Numeric vector of upper parameter bounds.
     #' @param optimizer Optional instance of Optimizer used during profile

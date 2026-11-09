@@ -141,6 +141,10 @@ testPiTask <- function() {
   )
 }
 
+currStartValues <- function(task) {
+  vapply(task$parameters, function(p) p$startValue, numeric(1))
+}
+
 
 resetTestFactories <- function() {
   testSimulation <<- getTestSimulation()

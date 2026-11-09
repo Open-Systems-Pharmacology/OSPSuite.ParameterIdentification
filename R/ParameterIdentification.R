@@ -85,8 +85,11 @@ ParameterIdentification <- R6::R6Class(
     .outputMappings = NULL,
     # `PIConfiguration` object instance
     .configuration = NULL,
-    # Observed data of each output mapping in base units, read once per
-    # public call and bootstrap sample by `.getObservedData()`
+    # The `PIObjective` of the current public call and bootstrap sample,
+    # built on the first evaluation (see `.objectiveFor()`)
+    .objective = NULL,
+    # The prepared observed data of `.objective`, mirrored after every
+    # evaluation for the tests that read them until the tests are rewritten
     .observedData = NULL,
     # Kinds of the reasons of failed simulations that the objective functions
     # logged in full in the current public call (see `.logSimulationFailure()`)
@@ -97,6 +100,9 @@ ParameterIdentification <- R6::R6Class(
     .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
+    # Stores the cost summary of the fit, taken before the CI estimation
+    # evaluates the objective function again
+    .fitCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Number of evaluations of `run()` whose simulations failed
@@ -169,6 +175,7 @@ ParameterIdentification <- R6::R6Class(
       # change between two calls, so the observed data are read again and the
       # batches are built again from the current simulations and observed
       # times.
+      private$.objective <- NULL
       private$.observedData <- NULL
       # The reasons of failed simulations are logged in full again
       private$.loggedFailureKinds <- character()
@@ -318,75 +325,64 @@ ParameterIdentification <- R6::R6Class(
       }
     },
 
-    # Aggregate Model Cost Calculation
+    # The `PIObjective` of the current public call and bootstrap sample
     #
-    # Calculates and aggregates the model cost across all output mappings for
-    # parameter estimation. Adjusts the evaluations counter, processes each
-    # output mapping's cost via `.mappingCostTerms()` (the steps of
-    # `.calculateCostMetrics()` on numeric vectors), and aggregates the
-    # results into total cost summary.
+    # Built on the first evaluation after `.batchInitialization()` or a new
+    # bootstrap sample, which reads the observed data once (#271). Its
+    # `simulate` function logs and counts a failed simulation (see
+    # `.logSimulationFailure()`) and signals it again, so that `evaluate()`
+    # returns the error cost structure.
+    #
+    # @param bootstrapSeed Optional bootstrap seed. If given, the output
+    #   mappings are resampled for it (see `.getOutputMappings()`).
+    # @return The `PIObjective` object.
+    .objectiveFor = function(bootstrapSeed = NULL) {
+      # A new sample resets the objective, so the mappings come first
+      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+      if (is.null(private$.objective)) {
+        private$.objective <- PIObjective$new(
+          outputMappings = outputMappings,
+          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
+          simulate = function(values) {
+            tryCatch(
+              private$.simulateOutputs(values, outputMappings = outputMappings),
+              simulationsFailedError = function(cond) {
+                private$.logSimulationFailure(values, cond)
+                message(messages$simulationError())
+                private$.failedEvaluations <- private$.failedEvaluations + 1
+                stop(cond)
+              }
+            )
+          }
+        )
+      }
+      private$.objective
+    },
+
+    # The evaluation closure around `PIObjective$evaluate()`
+    #
+    # Counts the evaluations and the failed evaluations, keeps the last and
+    # the best cost summary and prints the evaluation feedback. The
+    # `Optimizer` receives this method as its objective function.
+    #
     # @param currVals Vector of parameter values for simulation.
     # @param bootstrapSeed Optional bootstrap seed. If given, the output
     #   mappings are resampled for it (see `.getOutputMappings()`).
-    # @return Aggregated total cost summary.
+    # @return The cost summary of the evaluation, a `modelCost` object.
     .objectiveFunction = function(currVals, bootstrapSeed = NULL) {
       # Increment function evaluations counter
       private$.fnEvaluations <- private$.fnEvaluations + 1
 
-      outputMappings <- private$.getOutputMappings(bootstrapSeed)
+      objective <- private$.objectiveFor(bootstrapSeed)
+      failedEvaluations <- private$.failedEvaluations
+      runningCost <- objective$evaluate(currVals)
+      private$.observedData <- objective$observedData
 
-      # The observed data are static within a public call and bootstrap
-      # sample: they are read on the first evaluation and reused, so the .NET
-      # `DataSet` objects are not read and converted to base units on every
-      # evaluation. They are read outside of the `tryCatch()` below, so that
-      # an error in the observed data stops the call with its own message
-      # instead of being reported as a failed simulation.
-      observedData <- private$.getObservedData(outputMappings)
-
-      # Run simulation and catch errors
-      simulatedList <- tryCatch(
-        private$.simulateOutputs(currVals, outputMappings = outputMappings),
-        simulationsFailedError = function(cond) {
-          private$.logSimulationFailure(currVals, cond)
-          return(NA)
-        }
-      )
-
-      if (anyNA(simulatedList)) {
-        message(messages$simulationError())
-        private$.failedEvaluations <- private$.failedEvaluations + 1
-        return(.createErrorCostStructure())
+      # The simulate closure of `.objectiveFor()` counts failed simulations
+      if (private$.failedEvaluations > failedEvaluations) {
+        return(runningCost)
       }
 
-      # Evaluate cost per output mapping, on the simulated values and the
-      # prepared observed data (see `.mappingCostTerms()`)
-      costTerms <- vector("list", length(outputMappings))
-      validatedScalings <- character()
-      for (idx in seq_along(outputMappings)) {
-        # Extract cost function options
-        costControl <- private$.configuration$objectiveFunctionOptions
-        costControl$scaling <- outputMappings[[idx]]$scaling
-        # The options of the output mappings differ only in their scaling
-        if (!costControl$scaling %in% validatedScalings) {
-          ospsuite.utils::validateIsOption(
-            options = costControl,
-            validOptions = ObjectiveFunctionSpecs
-          )
-          validatedScalings <- c(validatedScalings, costControl$scaling)
-        }
-
-        costTerms[[idx]] <- .mappingCostTerms(
-          simulated = simulatedList[[idx]],
-          observed = observedData[[idx]],
-          dataWeights = outputMappings[[idx]]$dataWeights,
-          costControl = costControl,
-          index = idx,
-          quantityPath = outputMappings[[idx]]$quantity$path
-        )
-      }
-
-      # Aggregate cost across all output mappings, in one step
-      runningCost <- .combineCostTerms(costTerms)
       private$.lastCostSummary <- runningCost
 
       # Evaluate running cost
@@ -732,21 +728,6 @@ ParameterIdentification <- R6::R6Class(
       simulated
     },
 
-    # Observed data of every output mapping, in base units and with the data
-    # transformations applied (see `.prepareObservedData()`). They are read on
-    # the first call after `.batchInitialization()` or a new bootstrap sample
-    # and reused afterwards: reading the values of observed `DataSet` objects
-    # from .NET is slow and retains memory on every read (#271).
-    #
-    # @param outputMappings The output mappings of the current evaluation.
-    # @return A list with the prepared observed data of each output mapping.
-    .getObservedData = function(outputMappings) {
-      if (is.null(private$.observedData)) {
-        private$.observedData <- lapply(outputMappings, .prepareObservedData)
-      }
-      private$.observedData
-    },
-
     # Retrieve Output Mappings with Optional Bootstrap Resampling
     #
     # Returns the list of output mappings used during objective function
@@ -785,7 +766,8 @@ ParameterIdentification <- R6::R6Class(
           private$.initialOutputMappingState,
           bootstrapSeed
         )
-        # Observed data changed, so they must be read again
+        # Observed data changed, so the objective is built again
+        private$.objective <- NULL
         private$.observedData <- NULL
       }
 
@@ -807,6 +789,7 @@ ParameterIdentification <- R6::R6Class(
       private$.initialOutputMappingState <- NULL
       private$.activeBootstrapSeed <- NULL
       # Observed data restored to its original state, so read it again
+      private$.objective <- NULL
       private$.observedData <- NULL
     },
 
@@ -957,7 +940,7 @@ ParameterIdentification <- R6::R6Class(
       PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
-        costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+        costDetails = private$.fitCostSummary,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
@@ -1114,6 +1097,8 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
       private$.lastOptimResult <- optimResult
+      private$.fitCostSummary <- private$.bestCostSummary %||%
+        private$.lastCostSummary
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
@@ -1147,7 +1132,7 @@ ParameterIdentification <- R6::R6Class(
         piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = NULL,
-          costDetails = private$.bestCostSummary %||% private$.lastCostSummary,
+          costDetails = private$.fitCostSummary,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )
