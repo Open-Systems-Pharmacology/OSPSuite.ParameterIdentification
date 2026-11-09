@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9005</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9006</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,6 +53,8 @@
 <code>estimateCI()</code> with <code>ciMethod = "bootstrap"</code> no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, <code>DiceKriging</code> is no longer a dependency, and aggregated data now require <code>PIOutputMapping$setSubjectCount()</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/355" class="external-link">#355</a>, <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/312" class="external-link">#312</a>, <a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/318" class="external-link">#318</a>).</li>
 <li>
 <code>estimateCI()</code> with <code>ciMethod = "bootstrap"</code> gives different results also for individual data, because a data set drawn <code>k</code> times now counts <code>k</code> times instead of <code>k²</code> and the output mappings of a task are drawn independently of each other (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/203" class="external-link">#203</a>).</li>
+<li>
+<code>PIResult$toDataFrame()</code> with <code>ciMethod = "PL"</code> reports the standard error <code>se</code> and the relative standard error <code>rse</code> instead of the <code>sd</code> and <code>cv</code> columns, and <code>toList()</code> and <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> also show them (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/370" class="external-link">#370</a>).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="major-changes-development-version">Major changes<a class="anchor" aria-label="anchor" href="#major-changes-development-version"></a></h3>
@@ -63,6 +65,22 @@
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
 <ul><li>
 <code>ParameterIdentification$run()</code> and <code>estimateCI()</code> now report in <code>ciError</code> why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned <code>NA</code> standard deviations and confidence intervals without an error message (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/360" class="external-link">#360</a>).</li>
+<li>
+<code>estimateCI()</code> reports the cost details of the fit that <code>run()</code> produced instead of the best cost seen during the interval estimation, also in <code>run()</code> with <code>autoEstimateCI = TRUE</code> (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/371" class="external-link">#371</a>).</li>
+<li>
+<code>ParameterIdentification$new()</code> stops when any simulation of the task has no parameter to vary, also for <code>pkOutputMappings</code> mode. Previously, this check was only performed for <code>outputMappings</code> mode. (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/330" class="external-link">#330</a>)</li>
+<li>
+<code>estimateCI()</code> cannot be used with <code>pkOutputMappings</code> and stops with an error.</li>
+<li>A failed evaluation of PK targets has the cost <code>Inf</code>
+</li>
+<li>
+<code>PKResult$toList()</code> returns the same fields as <code>PIResult$toList()</code>, with the confidence interval fields set to <code>NA</code> and the cost details of the fit.</li>
+<li>
+<code>gridSearch()</code> and <code>calculateOFVProfiles()</code> count the evaluations they print from 1 in every call instead of continuing the count of the previous call.</li>
+<li>
+<code>gridSearch(setStartValue = TRUE)</code> keeps the start values and warns when every grid point fails, instead of setting them to the first grid point.</li>
+<li>
+<code>gridSearch()</code> uses the full grid size when <code>totalEvaluations</code> is a perfect power, for example 5 points per parameter for 125 evaluations of 3 parameters instead of 4.</li>
 </ul></div>
 </div>
     <div class="section level2">

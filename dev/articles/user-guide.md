@@ -502,8 +502,8 @@ print(piResult)
 #>   • Objective value: 6.536
 #>   • Iterations: 112
 #>   • Function evaluations: 114
-#>   • Elapsed (optimization): 16.57 s
-#>   • Elapsed (CI): 7.207 s
+#>   • Elapsed (optimization): 16.40 s
+#>   • Elapsed (CI): 7.190 s
 #> Parameter Estimates:
 #>   • Lipophilicity: Estimate = -1.282, SD = 0.1090, CV = 0.08503, CI = [-1.495,
 #>   -1.068]
@@ -547,9 +547,9 @@ piResult$toDataFrame()
 
 - Use `$toList()` to export full details, including diagnostics, cost
   metrics, and residuals.  
-  `costDetails` includes items such as `rawSSR`, `weightedSSR`,
-  `rawResiduals`, `weightedResiduals`, `errorWeights`, `userWeights`,
-  `yObserved`, and `ySimulated`:
+  `costDetails` is the `modelCost` object of the best evaluation. Its
+  fields and columns are listed under `toList()` in
+  [`?PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md):
 
 ``` r
 
@@ -559,8 +559,9 @@ names(piResult$toList())
 #>  [7] "elapsed"            "iterations"         "fnEvaluations"     
 #> [10] "ciMethod"           "ciElapsed"          "ciError"           
 #> [13] "ciDetails"          "sd"                 "cv"                
-#> [16] "lowerCI"            "upperCI"            "ciType"            
-#> [19] "paramNames"         "costDetails"
+#> [16] "se"                 "rse"                "lowerCI"           
+#> [19] "upperCI"            "ciType"             "paramNames"        
+#> [22] "costDetails"
 ```
 
 #### Diagnostics

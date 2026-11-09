@@ -8,7 +8,7 @@ mismatches that could disrupt parameter identification processes.
 ## Usage
 
 ``` r
-.validateSimulationIds(simulationIds, piParameters, outputMappings)
+.validateSimulationIds(simulationIds, piParameters, outputMappings = NULL)
 ```
 
 ## Arguments
@@ -25,7 +25,8 @@ mismatches that could disrupt parameter identification processes.
 - outputMappings:
 
   List of `OutputMapping` instances, from which IDs are extracted and
-  validated against `simulationIds`.
+  validated against `simulationIds`, or `NULL` to validate the
+  parameters only (PK targets need no mapping for every simulation).
 
 ## Value
 

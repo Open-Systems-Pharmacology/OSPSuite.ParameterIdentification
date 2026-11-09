@@ -1,8 +1,14 @@
 # PKResult
 
-Structured output of a PK-target parameter identification task,
-including optimization results, achieved PK values, and mapping
-metadata.
+Structured output of a PK-target parameter identification task. A
+`PIResult` whose `toDataFrame()` and
+[`print()`](https://rdrr.io/r/base/print.html) show the PK targets and
+the achieved PK values.
+
+## Super class
+
+[`PIResult`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.md)
+-\> `PKResult`
 
 ## Methods
 
@@ -12,11 +18,13 @@ metadata.
 
 - [`PKResult$toDataFrame()`](#method-PKResult-toDataFrame)
 
-- [`PKResult$toList()`](#method-PKResult-toList)
-
 - [`PKResult$print()`](#method-PKResult-print)
 
 - [`PKResult$clone()`](#method-PKResult-clone)
+
+Inherited methods
+
+- [`PIResult$toList()`](https://www.open-systems-pharmacology.org/OSPSuite.ParameterIdentification/dev/reference/PIResult.html#method-toList)
 
 ------------------------------------------------------------------------
 
@@ -26,7 +34,13 @@ Initializes a `PKResult` instance. For internal use only.
 
 #### Usage
 
-    PKResult$new(optimResult, piParameters = NULL, pkMappings, achievedPKValues)
+    PKResult$new(
+      optimResult,
+      piParameters = NULL,
+      pkMappings,
+      achievedPKValues,
+      costDetails = NULL
+    )
 
 #### Arguments
 
@@ -46,6 +60,11 @@ Initializes a `PKResult` instance. For internal use only.
 
   A list of numeric scalars with the PK parameter values achieved at the
   optimized parameter estimate.
+
+- `costDetails`:
+
+  (Optional) The cost details of the best evaluation, a `modelCost`
+  object.
 
 ------------------------------------------------------------------------
 
@@ -82,20 +101,6 @@ A data frame with the following columns:
 
 - `parameterPath`: Path of the optimized parameter in the simulation
   (`NA` when `piParameters` was not provided)
-
-------------------------------------------------------------------------
-
-### `PKResult$toList()`
-
-Returns the full internal result list.
-
-#### Usage
-
-    PKResult$toList()
-
-#### Returns
-
-A named list containing all result values.
 
 ------------------------------------------------------------------------
 

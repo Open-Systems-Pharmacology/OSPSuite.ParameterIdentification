@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ospsuite.parameteridentification</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9005</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">2.3.0.9006</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -264,14 +264,31 @@ few plausible values and check whether the conclusions change.</p>
 </h2>
 <p>The printout of a <code>PIResult</code> object shows the main
 outcomes of a parameter identification run, including parameter
-estimates, standard deviations, coefficients of variation, and
-confidence intervals (if available).</p>
+estimates, their uncertainty and confidence intervals (if available).
+The <code>hessian</code> and <code>bootstrap</code> methods report the
+standard deviation and the coefficient of variation of each estimate.
+The <code>PL</code> method reports the standard error instead, which is
+the half-width of the interval divided by the z-score of the confidence
+level, and the relative standard error, which is the standard error
+divided by the absolute estimate. This equals the standard error of a
+symmetric normal interval of the same width.</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mo>=</mo><mfrac><mrow><msub><mi>θ</mi><mi>U</mi></msub><mo>−</mo><msub><mi>θ</mi><mi>L</mi></msub></mrow><mrow><mn>2</mn><mspace width="0.167em"></mspace><msub><mi>z</mi><mrow><mn>1</mn><mo>−</mo><mi>α</mi><mi>/</mi><mn>2</mn></mrow></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mo>=</mo><mfrac><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mrow><mo stretchy="false" form="prefix">|</mo><mover><mi>θ</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">|</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">\mathrm{SE} = \frac{\theta_U - \theta_L}{2\,z_{1-\alpha/2}}, \qquad \mathrm{RSE} = \frac{\mathrm{SE}}{|\hat\theta|}</annotation></semantics></math></p>
+<p>Here
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mi>L</mi></msub><annotation encoding="application/x-tex">\theta_L</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mi>U</mi></msub><annotation encoding="application/x-tex">\theta_U</annotation></semantics></math>
+are the bounds of the interval,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mrow><mn>1</mn><mo>−</mo><mi>α</mi><mi>/</mi><mn>2</mn></mrow></msub><annotation encoding="application/x-tex">z_{1-\alpha/2}</annotation></semantics></math>
+is the z-score of the confidence level and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>θ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\theta</annotation></semantics></math>
+is the estimate.</p>
 <p>For programmatic access, the results can be exported as a data frame
 or as a list. The data frame has one row per parameter, with the
-estimate, its standard deviation and coefficient of variation, the
-confidence bounds and <code>ciType</code>, which only
-<code>bootstrap</code> sets. The list holds all details of the run,
-including the cost.</p>
+estimate, its uncertainty (<code>sd</code> and <code>cv</code> for
+<code>hessian</code> and <code>bootstrap</code>, <code>se</code> and
+<code>rse</code> for <code>PL</code>), the confidence bounds and
+<code>ciType</code>, which only <code>bootstrap</code> sets. The list
+holds all details of the run, including the cost.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">resultTable</span> <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toDataFrame</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">resultList</span> <span class="op">&lt;-</span> <span class="va">piResult</span><span class="op">$</span><span class="fu">toList</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>

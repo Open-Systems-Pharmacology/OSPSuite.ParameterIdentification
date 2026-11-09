@@ -1,8 +1,7 @@
 # PIResult
 
 Structured output of a parameter identification task, including
-optimization results, confidence intervals, parameter metadata, and
-configuration.
+optimization results, confidence intervals and parameter metadata.
 
 ## Methods
 
@@ -54,13 +53,13 @@ confidence interval estimation.
 
 - `costDetails`:
 
-  (Optional) A named list with detailed cost metrics computed during
-  optimization.
+  (Optional) The cost details of the best evaluation, a `modelCost`
+  object as returned by the objective function. See `toList()`.
 
 - `configuration`:
 
   (Optional) The `PIConfiguration` object used during parameter
-  identification.
+  identification, read for the CI method when `ciResult` is `NULL`.
 
 - `piParameters`:
 
@@ -71,8 +70,7 @@ confidence interval estimation.
 #### Returns
 
 A `PIResult` object containing optimization results, confidence interval
-estimates (if available), parameter metadata (if available), and
-configuration.
+estimates (if available) and parameter metadata (if available).
 
 ------------------------------------------------------------------------
 
@@ -98,9 +96,12 @@ A data frame with the following columns:
 
 - `estimate`: Estimated parameter value after optimization
 
-- `sd`: Standard deviation from CI estimation
+- `sd` and `cv`: Standard deviation and coefficient of variation of the
+  estimate, for the hessian and bootstrap methods
 
-- `cv`: Coefficient of variation
+- `se` and `rse`: Standard error, the half-width of the interval divided
+  by the z-score of the confidence level, and relative standard error,
+  for the profile likelihood method
 
 - `lowerCI`: Lower confidence bound
 
@@ -123,7 +124,13 @@ Returns the full internal result list.
 
 #### Returns
 
-A named list containing all result values.
+A named list containing all result values and `costDetails`, a
+`modelCost` object: `modelCost` (the total cost), `minLogProbability`,
+`costVariables` (one row with `nObservations`, `M3Contribution`,
+`rawSSR` and `weightedSSR`) and `residualDetails` (one row per
+observation with `index`, `x`, `yObserved`, `ySimulated`, `scaleFactor`,
+`errorWeights`, `robustWeights`, `userWeights`, `totalWeights`,
+`rawResiduals` and `weightedResiduals`).
 
 ------------------------------------------------------------------------
 
