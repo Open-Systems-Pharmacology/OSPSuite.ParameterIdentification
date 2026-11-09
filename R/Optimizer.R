@@ -366,12 +366,10 @@ Optimizer <- R6::R6Class(
     # Estimate confidence intervals using Bootstrap method.
     .estimateBootstrapCI = function(
       par,
-      fn,
       lower,
       upper,
       controlCI,
-      optimizer = NULL,
-      resetFn = NULL
+      replicate
     ) {
       result <- private$.initializeCIResult()
 
@@ -388,17 +386,10 @@ Optimizer <- R6::R6Class(
       for (i in seq_len(nBootstrap)) {
         message(messages$statusBootstrap(i, nBootstrap))
 
-        if (!is.null(resetFn)) {
-          resetFn()
-        }
-
-        # Pass individual seed to obj. function to resample observed data
-        bootstrapFn <- function(p) fn(p, bootstrapSeed = seedVector[i])
-
-        # Re-optimize with resampled data
+        # Re-optimize with the data of the replicate
         optimResult <- self$run(
           par = par,
-          fn = bootstrapFn,
+          fn = replicate(seedVector[i]),
           lower = lower,
           upper = upper
         )
@@ -685,7 +676,12 @@ Optimizer <- R6::R6Class(
     #' @param lower Numeric vector of lower parameter bounds.
     #' @param upper Numeric vector of upper parameter bounds.
     #' @param optimizer Optional instance of Optimizer used during profile
-    #'   likelihood or bootstrap CI estimation.
+    #'   likelihood CI estimation.
+    #' @param replicate Function of one argument, the seed of a bootstrap
+    #'   replicate, that returns the objective function of that replicate.
+    #'   Required with `ciMethod = "bootstrap"`, unused otherwise.
+    #' @param resetFn Optional function without arguments, called before each
+    #'   profile likelihood step. Unused by the other CI methods.
     #' @return List with confidence interval results including lower and upper
     #'   bounds, standard errors, coefficient of variation, and method details.
     estimateCI = function(
@@ -694,20 +690,26 @@ Optimizer <- R6::R6Class(
       lower,
       upper,
       optimizer = NULL,
+      replicate = NULL,
       resetFn = NULL
     ) {
       ospsuite.utils::validateIsNumeric(par)
       ospsuite.utils::validateIsNumeric(lower)
       ospsuite.utils::validateIsNumeric(upper)
       ospsuite.utils::validateIsOfType(optimizer, "Optimizer", TRUE)
+      ospsuite.utils::validateIsOfType(replicate, "function", TRUE)
+      ospsuite.utils::validateIsOfType(resetFn, "function", TRUE)
       if (!inherits(fn, "preprocessedFn")) {
         ospsuite.utils::validateIsOfType(fn, "function", FALSE)
+      }
+      ciMethod <- private$.configuration$ciMethod
+      if (ciMethod == "bootstrap" && is.null(replicate)) {
+        stop(messages$errorBootstrapReplicateMissing())
       }
 
       private$.verbose <- FALSE
 
       fn <- private$.preprocessFn(fn)
-      ciMethod <- private$.configuration$ciMethod
       ciOptions <- modifyList(
         CIDefaults[[ciMethod]],
         private$.configuration$ciOptions %||% list(),
@@ -731,6 +733,7 @@ Optimizer <- R6::R6Class(
         upper = upper,
         controlCI = ciOptions,
         optimizer = optimizer,
+        replicate = replicate,
         resetFn = resetFn
       )
       filteredArgs <- argsList[intersect(names(argsList), allowedArgs)]

@@ -2,7 +2,7 @@ testObjective <- function(task) {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   PIObjective$new(
-    outputMappings = priv$.outputMappings,
+    data = PIObservations$new(priv$.outputMappings),
     objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
     simulate = function(values) priv$.simulateOutputs(values)
   )
@@ -31,7 +31,7 @@ test_that("evaluate() returns the error cost structure silently when the simulat
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   objective <- PIObjective$new(
-    outputMappings = priv$.outputMappings,
+    data = PIObservations$new(priv$.outputMappings),
     objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
     simulate = function(values) {
       stop(.simulationsFailedError("Aciclovir", 1L, "solver stopped"))
@@ -50,7 +50,7 @@ test_that("an infinite cost of successful simulations is not counted as a failed
     evaluate = function(values) .createErrorCostStructure(),
     observedData = NULL
   )
-  cost <- priv$.objectiveFunction(currStartValues(task))
+  cost <- priv$.evaluationClosure(priv$.objective)(currStartValues(task))
   expect_identical(priv$.failedEvaluations, 0)
   expect_identical(priv$.lastCostSummary, cost)
 })
@@ -60,8 +60,19 @@ test_that("observedData of PIObjective is read-only", {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
-  objective <- PIObjective$new(priv$.outputMappings, options, function(values) {
-    NULL
-  })
+  data <- PIObservations$new(priv$.outputMappings)
+  objective <- PIObjective$new(data, options, function(values) NULL)
   expect_snapshot(objective$observedData <- NULL, error = TRUE)
+})
+
+test_that("withData() gives an objective on the new data and leaves the original alone", {
+  task <- testPiTask()
+  objective <- testObjective(task)
+  data <- PIObservations$new(task$outputMappings)
+  currVals <- currStartValues(task)
+  cost <- objective$evaluate(currVals)
+  resampled <- objective$withData(data$resample(1))
+  expect_identical(resampled$observedData, data$resample(1)$observedData)
+  expect_false(identical(resampled$evaluate(currVals), cost))
+  expect_identical(objective$evaluate(currVals), cost)
 })

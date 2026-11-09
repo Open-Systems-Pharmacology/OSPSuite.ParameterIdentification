@@ -11,7 +11,7 @@
 # an error that is not a failed simulation stops every evaluation
 
     Code
-      priv$.objectiveFunction(piTask$parameters[[1]]$startValue)
+      objectiveClosure(piTask)(piTask$parameters[[1]]$startValue)
     Condition
       Error in `.simulatedValues()`:
       ! Output not in the results

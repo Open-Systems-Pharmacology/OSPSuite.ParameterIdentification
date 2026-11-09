@@ -145,6 +145,12 @@ currStartValues <- function(task) {
   vapply(task$parameters, function(p) p$startValue, numeric(1))
 }
 
+# ospsuite.utils names the test runner's entry point as the caller, which
+# differs between devtools::test() and R CMD check.
+scrubCallerName <- function(lines) {
+  sub("`[[:alnum:]._]+[(][)]`: argument", "`<caller>()`: argument", lines)
+}
+
 
 resetTestFactories <- function() {
   testSimulation <<- getTestSimulation()
@@ -260,17 +266,6 @@ PISimFailureTester <- R6::R6Class(
         1L,
         "Simulated failure in evaluation"
       ))
-    }
-  )
-)
-
-PIResampleTester <- R6::R6Class(
-  inherit = ParameterIdentification,
-  cloneable = FALSE,
-  private = list(
-    # Override to retain modified outputMappings after bootstrap
-    .restoreOutputMappingsState = function() {
-      return(NULL)
     }
   )
 )
@@ -621,4 +616,15 @@ testStateVariableOnlyTask <- function() {
     parameters = stateVarParam,
     outputMappings = mapping
   )
+}
+
+# The evaluation closure of the facade on the objective of the current call,
+# with the data of the bootstrap replicate `seed` when one is given
+objectiveClosure <- function(task, seed = NULL) {
+  priv <- task$.__enclos_env__$private
+  objective <- priv$.objectiveFor()
+  if (!is.null(seed)) {
+    objective <- objective$withData(priv$.data$resample(seed))
+  }
+  priv$.evaluationClosure(objective)
 }

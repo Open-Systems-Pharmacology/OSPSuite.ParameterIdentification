@@ -37,7 +37,7 @@ test_that("an error that is not a failed simulation stops every evaluation", {
     .simulatedValues = function(...) stop("Output not in the results")
   )
   expect_snapshot(
-    priv$.objectiveFunction(piTask$parameters[[1]]$startValue),
+    objectiveClosure(piTask)(piTask$parameters[[1]]$startValue),
     error = TRUE
   )
 })
@@ -77,7 +77,7 @@ test_that("a failed simulation is reported by name and reason", {
   priv$.fnEvaluations <- 0
   expect_no_warning(
     cost <- withCallingHandlers(
-      priv$.objectiveFunction(startValues),
+      objectiveClosure(modPiTask)(startValues),
       message = function(m) {
         logged <<- c(logged, conditionMessage(m))
         invokeRestart("muffleMessage")
@@ -136,7 +136,7 @@ test_that("several failed simulations are reported with their reasons", {
   logged <- character()
   expect_no_warning(
     withCallingHandlers(
-      priv$.objectiveFunction(startValue),
+      objectiveClosure(piTask)(startValue),
       message = function(m) {
         logged <<- c(logged, conditionMessage(m))
         invokeRestart("muffleMessage")
