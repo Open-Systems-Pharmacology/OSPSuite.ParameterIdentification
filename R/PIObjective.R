@@ -1,13 +1,14 @@
 #' @title PIObjective
 #' @docType class
 #' @description The cost of a parameter vector for the observed data it was
-#'   built with. `evaluate()` keeps no state between calls. Counting the
-#'   evaluations and tracking the best cost are left to the
-#'   `ParameterIdentification` facade, which builds one objective per public
-#'   call and wraps it in its evaluation closure, and `withData()` gives the
-#'   objective of a bootstrap replicate on the resampled data. The `simulate`
-#'   function of the facade logs and counts failed simulations, and the cost
-#'   calculation warns about an invalid cost.
+#'   built with, simulated through a `SimulationModel`. `evaluate()` keeps no
+#'   state between calls. Counting the evaluations and tracking the best cost
+#'   are left to the `ParameterIdentification` facade, which builds one
+#'   objective per public call and wraps it in its evaluation closure, and
+#'   `withData()` gives the objective of a bootstrap replicate on the
+#'   resampled data. A failed simulation is logged with the model and gives
+#'   the error cost structure, and the cost calculation warns about an
+#'   invalid cost.
 #'
 #' @keywords internal
 #' @noRd
@@ -15,17 +16,15 @@ PIObjective <- R6::R6Class(
   "PIObjective",
   cloneable = FALSE,
   private = list(
+    # The `SimulationModel` that simulates the output mappings
+    .model = NULL,
     # The `PIObservations` object with the output mappings and their prepared
     # observed data
     .data = NULL,
     # The complete list of `PIConfiguration$objectiveFunctionOptions`
     .objectiveFunctionOptions = NULL,
     # The objective function options of each output mapping, with its scaling
-    .costControls = NULL,
-    # `function(values)` that returns the simulated values of every output
-    # mapping (see `ParameterIdentification$.simulateOutputs()`) or signals a
-    # `simulationsFailedError`
-    .simulate = NULL
+    .costControls = NULL
   ),
   active = list(
     # The prepared observed data of each output mapping (read-only)
@@ -38,15 +37,16 @@ PIObjective <- R6::R6Class(
     }
   ),
   public = list(
+    # @param model A `SimulationModel` object.
     # @param data A `PIObservations` object.
     # @param objectiveFunctionOptions The complete list of
     #   `PIConfiguration$objectiveFunctionOptions`.
-    # @param simulate `function(values)` returning the simulated values of
-    #   every output mapping, in the order of `data$outputMappings`.
-    initialize = function(data, objectiveFunctionOptions, simulate) {
+    initialize = function(model, data, objectiveFunctionOptions) {
+      ospsuite.utils::validateIsOfType(model, "SimulationModel")
+      ospsuite.utils::validateIsOfType(data, "PIObservations")
+      private$.model <- model
       private$.data <- data
       private$.objectiveFunctionOptions <- objectiveFunctionOptions
-      private$.simulate <- simulate
       outputMappings <- data$outputMappings
       private$.costControls <- lapply(outputMappings, function(mapping) {
         costControl <- objectiveFunctionOptions
@@ -68,14 +68,18 @@ PIObjective <- R6::R6Class(
     # @return A `modelCost` object, the error cost structure when the
     #   simulations fail.
     evaluate = function(values) {
+      outputMappings <- private$.data$outputMappings
       simulated <- tryCatch(
-        private$.simulate(values),
-        simulationsFailedError = function(cond) NULL
+        private$.model$simulatedOutputs(values, outputMappings),
+        simulationsFailedError = function(cond) {
+          private$.model$logFailure(values, cond)
+          message(messages$simulationError())
+          NULL
+        }
       )
       if (is.null(simulated)) {
         return(.createErrorCostStructure())
       }
-      outputMappings <- private$.data$outputMappings
       observedData <- private$.data$observedData
       costTerms <- vector("list", length(outputMappings))
       for (idx in seq_along(outputMappings)) {
@@ -92,14 +96,14 @@ PIObjective <- R6::R6Class(
       .combineCostTerms(costTerms)
     },
 
-    # The objective on other data, with the same options and simulations.
+    # The objective on other data, with the same options and model.
     # @param data A `PIObservations` object.
     # @return A new `PIObjective` object.
     withData = function(data) {
       PIObjective$new(
+        model = private$.model,
         data = data,
-        objectiveFunctionOptions = private$.objectiveFunctionOptions,
-        simulate = private$.simulate
+        objectiveFunctionOptions = private$.objectiveFunctionOptions
       )
     }
   )
