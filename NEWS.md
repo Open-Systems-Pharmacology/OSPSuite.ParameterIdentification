@@ -4,6 +4,7 @@
 
 - `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, `DiceKriging` is no longer a dependency, and aggregated data now require `PIOutputMapping$setSubjectCount()` (#355, #312, #318).
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
+- `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
 
 ## Major changes
 
@@ -16,6 +17,7 @@
 - `ParameterIdentification$new()` stops when any simulation of the task has no parameter to vary, also for `pkOutputMappings` mode. Previously, this check was only performed for `outputMappings` mode. (#330)
 - `estimateCI()` cannot be used with `pkOutputMappings` and stops with an error.
 - A failed evaluation of PK targets has the cost `Inf`
+- `PKResult$toList()` returns the same fields as `PIResult$toList()`, with the confidence interval fields set to `NA` and the cost details of the fit.
 
 # ospsuite.parameteridentification 2.3.0
 

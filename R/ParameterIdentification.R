@@ -88,13 +88,12 @@ ParameterIdentification <- R6::R6Class(
     .observedData = NULL,
     # Stores last optimization result
     .lastOptimResult = NULL,
+    # Cost details of the best evaluation of the last optimization
+    .fitCostDetails = NULL,
     # Stores full cost summary from the best objective function evaluation
     .bestCostSummary = NULL,
     # Stores full cost summary from last objective function evaluation
     .lastCostSummary = NULL,
-    # Stores the cost summary of the fit, taken before the CI estimation
-    # evaluates the objective function again
-    .fitCostSummary = NULL,
     # Number of function evaluations
     .fnEvaluations = 0,
     # Number of evaluations of `run()` whose simulations failed
@@ -470,7 +469,7 @@ ParameterIdentification <- R6::R6Class(
       PIResult$new(
         optimResult = private$.lastOptimResult,
         ciResult = ciResult,
-        costDetails = private$.fitCostSummary,
+        costDetails = private$.fitCostDetails,
         configuration = private$.configuration,
         piParameters = private$.piParameters
       )
@@ -592,6 +591,7 @@ ParameterIdentification <- R6::R6Class(
       private$.batchInitialization()
       # Clear previous optimization results and diagnostics
       private$.lastOptimResult <- NULL
+      private$.fitCostDetails <- NULL
       private$.bestCostSummary <- NULL
       private$.lastCostSummary <- NULL
       # Reset function evaluations counter
@@ -609,7 +609,9 @@ ParameterIdentification <- R6::R6Class(
         ))
       }
       private$.lastOptimResult <- optimResult
-      private$.fitCostSummary <- private$.bestCostSummary %||%
+      # The confidence interval evaluations below also go through the
+      # evaluation closure, so the fit is recorded before they start
+      private$.fitCostDetails <- private$.bestCostSummary %||%
         private$.lastCostSummary
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
@@ -633,7 +635,8 @@ ParameterIdentification <- R6::R6Class(
           optimResult = optimResult,
           piParameters = private$.piParameters,
           pkMappings = private$.pkMappings,
-          achievedPKValues = achievedPKValues
+          achievedPKValues = achievedPKValues,
+          costDetails = private$.fitCostDetails
         )
       } else if (private$.configuration$autoEstimateCI) {
         # The steps of `estimateCI()` after its checks, without a new batch
@@ -646,7 +649,7 @@ ParameterIdentification <- R6::R6Class(
         piResult <- PIResult$new(
           optimResult = optimResult,
           ciResult = NULL,
-          costDetails = private$.fitCostSummary,
+          costDetails = private$.fitCostDetails,
           configuration = private$.configuration,
           piParameters = private$.piParameters
         )

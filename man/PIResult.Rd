@@ -6,8 +6,7 @@
 \title{PIResult}
 \description{
 Structured output of a parameter identification task, including
-optimization results, confidence intervals, parameter metadata, and
-configuration.
+optimization results, confidence intervals and parameter metadata.
 }
 \keyword{internal}
 \section{Methods}{
@@ -53,7 +52,8 @@ returned by \code{Optimizer$estimateCI()}. Contains fields like \code{sd}, \code
 a \code{modelCost} object as returned by the objective function. See
 \code{toList()}.}
       \item{\code{configuration}}{(Optional) The \code{PIConfiguration} object used during
-parameter identification.}
+parameter identification, read for the CI method when \code{ciResult} is
+\code{NULL}.}
       \item{\code{piParameters}}{(Optional) A list of \code{PIParameter} objects used in
 the optimization. If not provided, default parameter names will be
 generated automatically.}
@@ -62,8 +62,8 @@ generated automatically.}
   }
   \subsection{Returns}{
     A \code{PIResult} object containing optimization results, confidence
-interval estimates (if available), parameter metadata (if available),
-and configuration.
+interval estimates (if available) and parameter metadata (if
+available).
   }
 }
 
@@ -85,8 +85,11 @@ and configuration.
 \item \code{path}: Full parameter path
 \item \code{unit}: Unit of the parameter
 \item \code{estimate}: Estimated parameter value after optimization
-\item \code{sd}: Standard deviation from CI estimation
-\item \code{cv}: Coefficient of variation
+\item \code{sd} and \code{cv}: Standard deviation and coefficient of variation of
+the estimate, for the hessian and bootstrap methods
+\item \code{se} and \code{rse}: Standard error, the half-width of the interval
+divided by the z-score of the confidence level, and relative standard
+error, for the profile likelihood method
 \item \code{lowerCI}: Lower confidence bound
 \item \code{upperCI}: Upper confidence bound
 \item \code{ciType}: Type of confidence interval ("two-sided", "one-sided", or "failed")
