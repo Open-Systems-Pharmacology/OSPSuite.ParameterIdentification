@@ -712,22 +712,25 @@ test_that("state-variable initial value reaches the solver", {
   expect_equal(simulatedInitialValue(0.09), 0.09, tolerance = 1e-4)
 })
 
-test_that(".simulateOutputs returns the simulated rows of a full evaluation", {
+test_that("simulatedOutputs() returns the simulated rows of a full evaluation", {
   task <- testPiTask()
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- priv$.evaluate(currVals)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
-  simulated <- priv$.simulateOutputs(currVals)
+  simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
   expect_length(simulated, 1)
   expect_identical(simulated[[1]]$xValues, fullSimulated$xValues)
   expect_identical(simulated[[1]]$yValues, fullSimulated$yValues)
 })
 
-test_that(".simulateOutputs reads several outputs of one simulation", {
+test_that("simulatedOutputs() reads several outputs of one simulation", {
   sim <- loadSimulation(
     system.file("extdata", "Aciclovir.pkml", package = "ospsuite")
   )
@@ -759,8 +762,8 @@ test_that(".simulateOutputs reads several outputs of one simulation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- priv$.evaluate(currVals)
-  simulated <- priv$.simulateOutputs(currVals)
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)
+  simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
   expect_length(simulated, 2)
   for (idx in 1:2) {
@@ -972,13 +975,13 @@ test_that("the cost of two simulations is the sum of their costs", {
   }
 })
 
-test_that(".simulateOutputs reads the outputs of two simulations", {
+test_that("simulatedOutputs() reads the outputs of two simulations", {
   task <- clarithromycinTasks()$both
   priv <- task$.__enclos_env__$private
   currVals <- currStartValues(task)
 
-  full <- priv$.evaluate(currVals)
-  simulated <- priv$.simulateOutputs(currVals)
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)
+  simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
   expect_length(simulated, 2)
   for (idx in 1:2) {
@@ -1031,7 +1034,10 @@ test_that("observed data equal the observed rows of a full evaluation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- priv$.evaluate(currVals)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),
@@ -1043,8 +1049,7 @@ test_that("observed data equal the observed rows of a full evaluation", {
   isObserved <- converted$dataType == "observed"
   expected <- converted[isObserved, , drop = FALSE]
 
-  priv$.objectiveFunction(currVals)
-  observed <- priv$.observedData[[1]]
+  observed <- taskObjective(task)$observedData[[1]]
 
   for (column in c(
     "xValues",

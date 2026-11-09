@@ -53,3 +53,4 @@ test_that("plotOFVProfiles() x-axis label is the last `|`-segment of the paramet
   expect_equal(plot$labels$x, "paramZ")
   expect_equal(plot$labels$title, longPath)
 })
+

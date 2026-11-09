@@ -99,6 +99,28 @@ test_that("gridSearch() returns `Inf` upon simulation failure", {
   expect_snapshot(gridSearchResults$ofv)
 })
 
+test_that("gridSearch() keeps the start values when every evaluation fails", {
+  piTask <- ParameterIdentification$new(
+    simulations = sim_250mg,
+    parameters = list(piParameterLipo_250mg, piParameterCl_250mg),
+    outputMappings = outputMapping_250mg
+  )
+  startValues <- vapply(piTask$parameters, function(x) x$startValue, 1)
+  expect_snapshot(
+    grid <- suppressMessages(piTask$gridSearch(
+      lower = c(0, -0.5),
+      upper = c(1, -0.3),
+      totalEvaluations = 4,
+      setStartValue = TRUE
+    ))
+  )
+  expect_true(all(is.infinite(grid$ofv)))
+  expect_equal(
+    vapply(piTask$parameters, function(x) x$startValue, 1),
+    startValues
+  )
+})
+
 # The errors that the objective function logs in a grid search, without
 # "Error: "
 gridSearchErrors <- function(piTask, ...) {
@@ -311,6 +333,22 @@ test_that("gridSearch OFVs are invariant to a non-base parameter unit", {
   )
 
   expect_equal(hourGrid$ofv, baseGrid$ofv, tolerance = 1e-6)
+})
+
+test_that("gridSearch() and calculateOFVProfiles() count their evaluations from 1", {
+  piTask <- testPiTask()
+  piTask$configuration <- lowIterPiConfiguration()
+  piTask$configuration$autoEstimateCI <- FALSE
+  piTask$configuration$printEvaluationFeedback <- TRUE
+  capture_output(suppressMessages(piTask$run()))
+  gridOutput <- capture_output(
+    suppressMessages(piTask$gridSearch(totalEvaluations = 3))
+  )
+  expect_identical(parseFnevals(gridOutput), 1:3)
+  profileOutput <- capture_output(
+    suppressMessages(piTask$calculateOFVProfiles(totalEvaluations = 2L))
+  )
+  expect_identical(parseFnevals(profileOutput), 1:2)
 })
 
 
