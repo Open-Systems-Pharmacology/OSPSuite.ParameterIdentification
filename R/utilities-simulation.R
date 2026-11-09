@@ -214,7 +214,8 @@
 #' @param piParameters List of `PIParameter` instances, from which IDs are
 #'   extracted and validated against `simulationIds`.
 #' @param outputMappings List of `OutputMapping` instances, from which IDs are
-#'   extracted and validated against `simulationIds`.
+#'   extracted and validated against `simulationIds`, or `NULL` to validate
+#'   the parameters only (PK targets need no mapping for every simulation).
 #'
 #' @return TRUE if all IDs match accordingly, otherwise throws an error
 #'   detailing the mismatch or absence of IDs.
@@ -222,7 +223,7 @@
 .validateSimulationIds <- function(
   simulationIds,
   piParameters,
-  outputMappings
+  outputMappings = NULL
 ) {
   # Extract unique IDs from piParameters assuming up to two levels of list depth
   piParamIds <- lapply(piParameters, function(param) {
@@ -237,20 +238,22 @@
   piParamIds <- unique(unlist(piParamIds))
 
   # Extract unique IDs from outputMappings
-  outputMappingIds <- lapply(outputMappings, function(mapping) {
-    .getSimulationContainer(mapping$quantity)$id
-  })
-  outputMappingIds <- unique(unlist(outputMappingIds))
+  outputMappingIds <- NULL
+  if (!is.null(outputMappings)) {
+    outputMappingIds <- lapply(outputMappings, function(mapping) {
+      .getSimulationContainer(mapping$quantity)$id
+    })
+    outputMappingIds <- sort(unique(unlist(outputMappingIds)))
+  }
 
   # sort IDs before comparison
   simulationIds <- sort(unique(unlist(simulationIds)))
   piParamIds <- sort(piParamIds)
-  outputMappingIds <- sort(outputMappingIds)
 
   # Validate that simulationId is identical with piParamIds and outputMappingIds
   if (
     !identical(simulationIds, piParamIds) ||
-      !identical(simulationIds, outputMappingIds)
+      (!is.null(outputMappings) && !identical(simulationIds, outputMappingIds))
   ) {
     stop(
       messages$errorSimulationIdMissing(
@@ -263,6 +266,24 @@
   }
 
   return()
+}
+
+#' Selects the quantities of PK mappings as the only outputs
+#'
+#' @param simulations Named list of `Simulation` objects, by simulation ID.
+#' @param pkMappings List of `PKOutputMapping` objects.
+#' @keywords internal
+#' @noRd
+.selectPKOutputs <- function(simulations, pkMappings) {
+  for (simulation in simulations) {
+    ospsuite::clearOutputs(simulation)
+  }
+  for (mapping in pkMappings) {
+    ospsuite::addOutputs(
+      quantitiesOrPaths = mapping$quantity,
+      simulation = simulations[[mapping$simId]]
+    )
+  }
 }
 
 #' Stores current simulation output state

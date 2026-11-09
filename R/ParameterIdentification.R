@@ -102,21 +102,13 @@ ParameterIdentification <- R6::R6Class(
     # List of `PKOutputMapping` objects (PK metric mode)
     .pkMappings = NULL,
 
-    .assertNotPKMode = function(methodName) {
-      if (!is.null(private$.pkMappings)) {
-        stop(messages$errorMethodNotApplicableInPKMode(methodName))
-      }
-    },
     # Batch Initialization for Simulations
     #
     # Every public method that evaluates the objective function starts here.
     # The simulations, the observed data sets and their transformations can
     # change between two calls, so the observed data are read again and the
     # model is built again from the current simulations and observed times.
-    # In standard mode, the model restores the simulations of the user when
-    # it is built. In PK mode, the PK outputs stay selected for the whole
-    # call and `run()`, the only public method in PK mode, restores them when
-    # it exits.
+    # The model restores the simulations of the user when it is built.
     .batchInitialization = function() {
       private$.objective <- NULL
       private$.data <- NULL
@@ -131,13 +123,20 @@ ParameterIdentification <- R6::R6Class(
       private$.mirrorModel()
     },
 
-    # The `PIObjective` of the current public call
+    # The objective of the current public call
     #
     # Built on the first evaluation after `.batchInitialization()`, which
     # reads the observed data once (#271), on the model of the call.
     #
-    # @return The `PIObjective` object.
+    # @return The `PKObjective` object with PK mappings, otherwise the
+    #   `PIObjective` object.
     .objectiveFor = function() {
+      if (is.null(private$.objective) && !is.null(private$.pkMappings)) {
+        private$.objective <- PKObjective$new(
+          model = private$.model,
+          pkMappings = private$.pkMappings
+        )
+      }
       if (is.null(private$.objective)) {
         private$.data <- PIObservations$new(private$.outputMappings)
         private$.objective <- PIObjective$new(
@@ -149,13 +148,38 @@ ParameterIdentification <- R6::R6Class(
       private$.objective
     },
 
-    # The evaluation closure around `PIObjective$evaluate()`
+    .assertNotPKMode = function(methodName) {
+      if (!is.null(private$.pkMappings)) {
+        stop(messages$errorMethodNotApplicableInPKMode(methodName))
+      }
+    },
+
+    # Calls `fn` with the PK outputs selected in the simulations
+    #
+    # `ospsuite::calculatePKAnalyses()` analyses the outputs selected in the
+    # simulation, so they are selected once around the evaluations of a call
+    # and the simulations are restored when `fn` exits, also on an error.
+    # Without PK mappings, only calls `fn`.
+    .withPKOutputs = function(fn) {
+      if (is.null(private$.pkMappings)) {
+        return(fn())
+      }
+      savedState <- .storeSimulationState(private$.simulations)
+      on.exit(
+        .restoreSimulationState(private$.simulations, savedState),
+        add = TRUE
+      )
+      .selectPKOutputs(private$.simulations, private$.pkMappings)
+      fn()
+    },
+
+    # The evaluation closure around `evaluate()` of the objective
     #
     # Counts the evaluations and the failed evaluations, keeps the last and
     # the best cost summary and prints the evaluation feedback. The
     # `Optimizer` receives this closure as its objective function.
     #
-    # @param objective A `PIObjective` object.
+    # @param objective A `PIObjective` or `PKObjective` object.
     # @return `function(currVals)` that returns the cost summary of the
     #   evaluation of the parameter values, a `modelCost` object.
     .evaluationClosure = function(objective) {
@@ -203,93 +227,6 @@ ParameterIdentification <- R6::R6Class(
 
         return(runningCost)
       }
-    },
-
-    .pkObjectiveFunction = function(currVals) {
-      private$.fnEvaluations <- private$.fnEvaluations + 1
-
-      pkValues <- tryCatch(
-        private$.getPKValues(currVals),
-        simulationsFailedError = function(cond) {
-          private$.model$logFailure(currVals, cond)
-          return(NA)
-        }
-      )
-
-      if (any(!vapply(pkValues, is.finite, logical(1)))) {
-        message(messages$simulationError())
-        private$.failedEvaluations <- private$.failedEvaluations + 1
-        return(.Machine$double.xmax)
-      }
-
-      cost <- 0
-      for (i in seq_along(private$.pkMappings)) {
-        stopifnot(length(pkValues[[i]]) == 1L)
-        target <- private$.pkMappings[[i]]$targetValueInBaseUnit
-        if (target <= 0) {
-          stop(messages$errorPKZeroTarget(
-            private$.pkMappings[[i]]$pkParameter,
-            private$.pkMappings[[i]]$quantity$path
-          ))
-        }
-        cost <- cost + ((pkValues[[i]] - target) / target)^2
-      }
-
-      if (private$.configuration$printEvaluationFeedback) {
-        cat(messages$evaluationFeedback(private$.fnEvaluations, currVals, cost))
-      }
-
-      return(cost)
-    },
-
-    .getPKValues = function(paramValues) {
-      # The PK objective function reports a failed simulation itself on every
-      # evaluation, so the warning of the simulation engine is not repeated.
-      # Only the results of the simulations of the PK mappings are used: the
-      # task may have other simulations, whose failure does not fail the
-      # evaluation.
-      simulationResults <- private$.model$simulate(
-        paramValues,
-        usedSimulations = unique(vapply(
-          private$.pkMappings,
-          function(mapping) mapping$simId,
-          character(1)
-        )),
-        silentMode = TRUE
-      )
-
-      lapply(private$.pkMappings, function(mapping) {
-        simResult <- simulationResults[[mapping$simId]][[1]]
-        pkAnalysis <- ospsuite::calculatePKAnalyses(simResult)
-        pkParam <- tryCatch(
-          pkAnalysis$pKParameterFor(
-            quantityPath = mapping$quantity$path,
-            pkParameter = mapping$pkParameter
-          ),
-          error = function(e) {
-            stop(messages$errorPKParameterNotAvailable(
-              mapping$pkParameter,
-              mapping$quantity$path,
-              e$message
-            ))
-          }
-        )
-        vals <- pkParam$values
-        if (length(vals) == 0L) {
-          stop(messages$errorPKParameterNotAvailable(
-            mapping$pkParameter,
-            mapping$quantity$path
-          ))
-        }
-        if (length(vals) > 1L) {
-          stop(messages$errorPKMultiIndividualSimulation(
-            mapping$pkParameter,
-            mapping$quantity$path,
-            length(vals)
-          ))
-        }
-        vals
-      })
     },
 
     # Simulation Evaluation with Parameter Values
@@ -359,6 +296,16 @@ ParameterIdentification <- R6::R6Class(
     ) {
       private$.model$simulatedOutputs(currVals, outputMappings)
     },
+    .pkObjectiveFunction = function(currVals) {
+      private$.withPKOutputs(function() {
+        private$.evaluationClosure(private$.objectiveFor())(currVals)$modelCost
+      })
+    },
+    .getPKValues = function(paramValues) {
+      private$.withPKOutputs(function() {
+        private$.objectiveFor()$pkValues(paramValues)
+      })
+    },
     # `test-pid-aux.R` logs on a task whose batches are not initialized
     .logSimulationFailure = function(currVals, cond) {
       if (is.null(private$.model)) {
@@ -414,7 +361,7 @@ ParameterIdentification <- R6::R6Class(
         if (is.null(private$.pkMappings)) {
           private$.model$simulatedOutputs(values, private$.outputMappings)
         } else {
-          private$.getPKValues(values)
+          private$.objectiveFor()$pkValues(values)
         },
         simulationsFailedError = function(cond) {
           stop(errorCondition(
@@ -447,15 +394,9 @@ ParameterIdentification <- R6::R6Class(
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
-      fn <- if (!is.null(private$.pkMappings)) {
-        function(p) private$.pkObjectiveFunction(p)
-      } else {
-        private$.evaluationClosure(private$.objectiveFor())
-      }
-
       optimResult <- optimizer$run(
         par = startValues,
-        fn = fn,
+        fn = private$.evaluationClosure(private$.objectiveFor()),
         lower = lower,
         upper = upper
       )
@@ -471,17 +412,11 @@ ParameterIdentification <- R6::R6Class(
     # not `estimateCI()`.
     #
     # @param fromRun `TRUE` when `run()` estimates the confidence intervals
-    #   after its optimization. The batches are initialized already then, and
-    #   nothing can change between the optimization and the estimation, so the
-    #   observed data that the optimization read are used again. Otherwise,
-    #   the batches are initialized, which reads the observed data again (see
-    #   `.batchInitialization()`).
+    #   after its optimization. Nothing can change between the optimization
+    #   and the estimation then, so the start values are not checked again.
+    #   The caller initializes the batches (see `.batchInitialization()`).
     # @return A `PIResult` object with the confidence intervals.
     .estimateCI = function(fromRun = FALSE) {
-      # Initialize batches
-      if (!fromRun) {
-        private$.batchInitialization()
-      }
       # Reset function evaluations counter
       private$.fnEvaluations <- 0
 
@@ -629,6 +564,7 @@ ParameterIdentification <- R6::R6Class(
         if (!all(mappingSimIds %in% unlist(ids))) {
           stop(messages$errorPKMappingSimulationMismatch())
         }
+        .validateSimulationIds(ids, parameters)
         private$.pkMappings <- pkOutputMappings
       }
     },
@@ -643,17 +579,6 @@ ParameterIdentification <- R6::R6Class(
     #' @return A [`PIResult`] object in standard mode, or a `PKResult` object
     #'   (internal) when `pkOutputMappings` was provided.
     run = function() {
-      # In PK mode, the PK outputs stay selected in the simulations for the
-      # whole call (see `.batchInitialization()`). Store the output selections
-      # and the output schema of the simulations, and restore them when this
-      # method exits, also on an error.
-      if (!is.null(private$.pkMappings)) {
-        savedState <- .storeSimulationState(private$.simulations)
-        on.exit(
-          .restoreSimulationState(private$.simulations, savedState),
-          add = TRUE
-        )
-      }
       # A bootstrap after the run needs the subject counts of the aggregated
       # data: check them before the optimization and before the previous
       # results are cleared
@@ -674,7 +599,9 @@ ParameterIdentification <- R6::R6Class(
       private$.failedEvaluations <- 0
 
       # Run optimization algorithm
-      optimResult <- private$.runAlgorithm()
+      optimResult <- private$.withPKOutputs(function() {
+        private$.runAlgorithm()
+      })
       if (private$.failedEvaluations > private$.fnEvaluations / 2) {
         warning(messages$warningMostEvaluationsFailed(
           private$.failedEvaluations,
@@ -687,7 +614,9 @@ ParameterIdentification <- R6::R6Class(
 
       achievedPKValues <- if (!is.null(private$.pkMappings)) {
         tryCatch(
-          private$.getPKValues(optimResult$par),
+          private$.withPKOutputs(function() {
+            private$.objectiveFor()$pkValues(optimResult$par)
+          }),
           error = function(e) {
             warning(messages$warnAchievedPKValuesFailure(e$message))
             as.list(rep(NA_real_, length(private$.pkMappings)))
@@ -739,13 +668,11 @@ ParameterIdentification <- R6::R6Class(
     #' @return The same [`PIResult`] object returned by the `run()` method,
     #'   updated to include confidence interval estimates.
     estimateCI = function() {
-      # Stop if executed before optimization
+      private$.assertNotPKMode("estimateCI")
       if (is.null(private$.lastOptimResult)) {
         stop(messages$errorMissingOptimizationResult())
       }
-
-      private$.assertNotPKMode("estimateCI")
-
+      private$.batchInitialization()
       private$.estimateCI()
     },
 
@@ -1029,7 +956,6 @@ ParameterIdentification <- R6::R6Class(
       ospsuite.utils::validateIsInteger(totalEvaluations)
 
       private$.assertNotPKMode("calculateOFVProfiles")
-
       private$.batchInitialization()
 
       nrOfParameters <- length(private$.piParameters)

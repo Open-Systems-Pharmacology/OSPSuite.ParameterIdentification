@@ -80,6 +80,40 @@ test_that("the constructor leaves the simulations unchanged", {
   expect_identical(outputState(simulation), before)
 })
 
+pkMappingFor <- function(simulation) {
+  PKOutputMapping$new(
+    quantity = testQuantity(simulation),
+    pkParameter = "C_max",
+    targetValue = 30,
+    targetUnit = testQuantity(simulation)$unit
+  )
+}
+
+freshSimulation <- function() {
+  ospsuite::loadSimulation(
+    system.file("extdata", "Aciclovir.pkml", package = "ospsuite"),
+    loadFromCache = FALSE,
+    addToCache = FALSE
+  )
+}
+
+test_that("the constructor leaves the simulations unchanged in PK mode", {
+  simulation <- testSimulation()
+  parameters <- list(testPKParameters(simulation))
+  before <- outputState(simulation)
+  model <- SimulationModel$new(
+    simulations = stats::setNames(list(simulation), simulation$root$id),
+    parameters = parameters,
+    pkMappings = list(pkMappingFor(simulation))
+  )
+  expect_identical(outputState(simulation), before)
+  results <- model$simulate(vapply(parameters, function(p) p$startValue, numeric(1)))
+  expect_identical(
+    results[[simulation$root$id]][[1]]$allQuantityPaths,
+    testQuantity(simulation)$path
+  )
+})
+
 test_that("simulate() applies the values in base units and checks their length", {
   task <- testPiTask()
   model <- taskModel(task)
