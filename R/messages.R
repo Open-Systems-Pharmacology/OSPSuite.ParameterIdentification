@@ -318,7 +318,7 @@ messages$errorNotModelCost <- function(class) {
 
 messages$errorModelCostFieldsMissing <- function(fields) {
   ospsuite.utils::cliFormat(
-    "The cost details lack the fields {.field {fields}} of a {.cls modelCost} object."
+    "The cost details lack the field{?s} {.field {fields}} of a {.cls modelCost} object."
   )
 }
 

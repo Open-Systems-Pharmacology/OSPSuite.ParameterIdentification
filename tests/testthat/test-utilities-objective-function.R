@@ -276,6 +276,12 @@ test_that(".validateModelCost names the missing fields", {
   expect_snapshot(.validateModelCost(cost), error = TRUE)
 })
 
+test_that(".validateModelCost names a missing table once, without its columns", {
+  cost <- .createErrorCostStructure()
+  cost$residualDetails <- NULL
+  expect_snapshot(.validateModelCost(cost), error = TRUE)
+})
+
 # plot.modelCost
 
 test_that("plot.modelCost shows only the raw series when weighting leaves residuals unchanged", {
@@ -429,8 +435,14 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
 })
 
 test_that("the weights in residualDetails reproduce the weighted residuals", {
+  # A valid SD for every observation, so that every error weight differs
+  # from 1
+  withErrors <- obsVsPredDf
+  observed <- withErrors$dataType == "observed"
+  withErrors$yErrorType <- "ArithmeticStdDev"
+  withErrors$yErrorValues[observed] <- 0.1 * withErrors$yValues[observed] + 0.05
   result <- .calculateCostMetrics(
-    obsVsPredDf,
+    withErrors,
     residualWeightingMethod = "error",
     robustMethod = "huber"
   )
@@ -579,10 +591,7 @@ test_that("simulatedOutputs() returns the simulated rows of a full evaluation", 
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(
-    priv$.model$simulate(currVals),
-    task$outputMappings
-  )[[1]]$toDataFrame()
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
   fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
@@ -815,10 +824,7 @@ test_that("observed data equal the observed rows of a full evaluation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(
-    priv$.model$simulate(currVals),
-    task$outputMappings
-  )[[1]]$toDataFrame()
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
   converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),
@@ -1335,7 +1341,10 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
   )
   for (setting in settings) {
     expect_identical(
-      withWarningMessages(asFrozenCost(do.call(.calculateCostMetrics, setting))),
+      withWarningMessages(asFrozenCost(do.call(
+        .calculateCostMetrics,
+        setting
+      ))),
       withWarningMessages(do.call(frozenCalculateCostMetrics, setting))
     )
   }

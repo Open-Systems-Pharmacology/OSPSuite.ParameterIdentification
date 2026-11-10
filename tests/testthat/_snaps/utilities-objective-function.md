@@ -14,6 +14,14 @@
       Error in `.validateModelCost()`:
       ! The cost details lack the fields minLogProbability, costVariables$weightedSSR, and residualDetails$totalWeights of a <modelCost> object.
 
+# .validateModelCost names a missing table once, without its columns
+
+    Code
+      .validateModelCost(cost)
+    Condition
+      Error in `.validateModelCost()`:
+      ! The cost details lack the field residualDetails of a <modelCost> object.
+
 # calculateCostMetrics returns correct cost metric values for default parameters
 
     structure(list(modelCost = 677.390283322667, minLogProbability = 348.803465526585, 

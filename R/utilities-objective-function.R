@@ -663,25 +663,17 @@
     stop(messages$errorNotModelCost(class(costDetails)))
   }
   reference <- .createErrorCostStructure()
-  missingFields <- c(
-    setdiff(names(reference), names(costDetails)),
-    paste0(
-      "costVariables$",
-      setdiff(
-        names(reference$costVariables),
-        names(costDetails$costVariables)
-      ),
-      recycle0 = TRUE
-    ),
-    paste0(
-      "residualDetails$",
-      setdiff(
-        names(reference$residualDetails),
-        names(costDetails$residualDetails)
-      ),
-      recycle0 = TRUE
+  missingFields <- setdiff(names(reference), names(costDetails))
+  for (table in setdiff(c("costVariables", "residualDetails"), missingFields)) {
+    missingColumns <- setdiff(
+      names(reference[[table]]),
+      names(costDetails[[table]])
     )
-  )
+    missingFields <- c(
+      missingFields,
+      paste0(table, "$", missingColumns, recycle0 = TRUE)
+    )
+  }
   if (length(missingFields) > 0) {
     stop(messages$errorModelCostFieldsMissing(missingFields))
   }

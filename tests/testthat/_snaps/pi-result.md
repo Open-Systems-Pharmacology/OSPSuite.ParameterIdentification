@@ -4,7 +4,7 @@
       PIResult$new(optimResult, costDetails = costDetails)
     Condition
       Error in `.validateModelCost()`:
-      ! The cost details lack the fields costVariables$nObservations of a <modelCost> object.
+      ! The cost details lack the field costVariables$nObservations of a <modelCost> object.
 
 # toList() produces expected output
 
