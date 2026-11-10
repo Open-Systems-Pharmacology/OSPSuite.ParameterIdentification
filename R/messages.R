@@ -310,6 +310,18 @@ messages$errorHessianCostVariables <- function(fields) {
   )
 }
 
+messages$errorNotModelCost <- function(class) {
+  ospsuite.utils::cliFormat(
+    "The cost details must be a {.cls modelCost} object, not {.cls {class}}."
+  )
+}
+
+messages$errorModelCostFieldsMissing <- function(fields) {
+  ospsuite.utils::cliFormat(
+    "The cost details lack the fields {.field {fields}} of a {.cls modelCost} object."
+  )
+}
+
 messages$errorBootstrapReplicateMissing <- function() {
   ospsuite.utils::cliFormat(
     "The bootstrap method needs {.arg replicate}, a {.code function(seed)} that returns the objective function of one bootstrap replicate."

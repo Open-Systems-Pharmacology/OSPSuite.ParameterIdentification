@@ -1,3 +1,19 @@
+# .validateModelCost stops on an object that is not a modelCost
+
+    Code
+      .validateModelCost(list(modelCost = 1))
+    Condition
+      Error in `.validateModelCost()`:
+      ! The cost details must be a <modelCost> object, not <list>.
+
+# .validateModelCost names the missing fields
+
+    Code
+      .validateModelCost(cost)
+    Condition
+      Error in `.validateModelCost()`:
+      ! The cost details lack the fields minLogProbability, costVariables$weightedSSR, and residualDetails$totalWeights of a <modelCost> object.
+
 # calculateCostMetrics returns correct cost metric values for default parameters
 
     structure(list(modelCost = 677.390283322667, minLogProbability = 348.803465526585, 

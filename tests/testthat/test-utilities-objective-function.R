@@ -232,6 +232,50 @@ test_that(".createErrorCostStructure stamps a non-NA index onto the residual row
   expect_equal(errorOut$residualDetails$index, 2)
 })
 
+test_that(".createErrorCostStructure counts no observations", {
+  expect_equal(.createErrorCostStructure()$costVariables$nObservations, 0)
+})
+
+test_that("a failed output mapping adds no observations to the combined cost", {
+  threeObservations <- .costKernel(
+    simulatedX = c(0, 1, 2, 3),
+    simulatedY = c(1, 2, 3, 2),
+    observedX = c(0.5, 1.5, 2.5),
+    observedY = c(1.4, 2.7, 2.2),
+    userWeights = c(1, 1, 1),
+    yErrorValues = NULL,
+    yErrorType = NULL,
+    residualWeightingMethod = "none",
+    robustMethod = "none",
+    scaleVar = FALSE,
+    censoredContribution = 0,
+    index = 1L
+  )
+  combined <- .combineCostTerms(
+    list(threeObservations, .errorCostTerms(index = 2L))
+  )
+  expect_equal(combined$costVariables$nObservations, 3)
+})
+
+# .validateModelCost
+
+test_that(".validateModelCost accepts the cost of the kernel and of a failure", {
+  expect_no_error(.validateModelCost(.calculateCostMetrics(obsVsPredDf)))
+  expect_no_error(.validateModelCost(.createErrorCostStructure()))
+})
+
+test_that(".validateModelCost stops on an object that is not a modelCost", {
+  expect_snapshot(.validateModelCost(list(modelCost = 1)), error = TRUE)
+})
+
+test_that(".validateModelCost names the missing fields", {
+  cost <- .createErrorCostStructure()
+  cost$minLogProbability <- NULL
+  cost$costVariables$weightedSSR <- NULL
+  cost$residualDetails$totalWeights <- NULL
+  expect_snapshot(.validateModelCost(cost), error = TRUE)
+})
+
 # plot.modelCost
 
 test_that("plot.modelCost shows only the raw series when weighting leaves residuals unchanged", {
@@ -382,6 +426,23 @@ test_that("calculateCostMetrics with residualWeightingMethod `error` returns exp
     residualWeightingMethod = "error"
   )
   expect_equal(resultArith$modelCost, resultGeom$modelCost)
+})
+
+test_that("the weights in residualDetails reproduce the weighted residuals", {
+  result <- .calculateCostMetrics(
+    obsVsPredDf,
+    residualWeightingMethod = "error",
+    robustMethod = "huber"
+  )
+  details <- result$residualDetails
+  expect_equal(
+    details$errorWeights * details$robustWeights * details$userWeights,
+    details$totalWeights
+  )
+  expect_equal(
+    details$rawResiduals * details$scaleFactor * details$totalWeights,
+    details$weightedResiduals
+  )
 })
 
 test_that("robust methods (huber, bisquare) modify the residuals appropriately", {
@@ -821,13 +882,14 @@ applyCostSetting <- function(task, scaling = "lin", options = list()) {
 
 # Expects identical results and warnings from the objective function and from
 # the objective function of 2.2.0.9009, for each parameter value, in this
-# order. The first evaluation reads the observed data, the later ones reuse
-# them.
+# order, the objective function in the convention of 2.2.0.9009
+# (`asFrozenCost()`). The first evaluation reads the observed data, the later
+# ones reuse them.
 expectFrozenObjective <- function(task, values, bootstrapSeed = NULL) {
   objective <- taskObjective(task, bootstrapSeed)
   for (value in values) {
     testthat::expect_identical(
-      withWarningMessages(objective$evaluate(value)),
+      withWarningMessages(asFrozenCost(objective$evaluate(value))),
       withWarningMessages(frozenObjectiveFunction(task, value, bootstrapSeed))
     )
   }
@@ -1228,7 +1290,7 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
   expect_identical(.combineCostTerms(terms[1]), costs[[1]])
   expect_identical(.createErrorCostStructure(index = 2L), costs[[2]])
   expect_identical(
-    .createErrorCostStructure(index = 2L),
+    asFrozenCost(.createErrorCostStructure(index = 2L)),
     frozenCreateErrorCostStructure(index = 2L)
   )
 })
@@ -1273,7 +1335,7 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
   )
   for (setting in settings) {
     expect_identical(
-      withWarningMessages(do.call(.calculateCostMetrics, setting)),
+      withWarningMessages(asFrozenCost(do.call(.calculateCostMetrics, setting))),
       withWarningMessages(do.call(frozenCalculateCostMetrics, setting))
     )
   }
@@ -1519,20 +1581,20 @@ test_that("GSD weights of a mapping on the log scale are 1 / log(GSD)", {
   # The same GSD for all observations, one of them below 1 (#325)
   terms <- logScaleErrorTerms(c(0.5, 2, 10), rep(1.5, 3))
 
-  # 1 / log(1.5) = 2.47 for every observation
-  expect_equal(terms$errorWeights, c(2.47, 2.47, 2.47))
+  # 1 / log(1.5) for every observation
+  expect_equal(terms$errorWeights, rep(1 / log(1.5), 3))
 })
 
 test_that("arithmetic SD weights of a mapping on the log scale use the CV", {
   # CV = 0.2 for all observations, one of them below 1 (#325):
-  # 1 / sqrt(log(1 + 0.2^2)) = 5.05
+  # 1 / sqrt(log(1 + 0.2^2))
   terms <- logScaleErrorTerms(
     c(0.5, 2, 10),
     c(0.1, 0.4, 2),
     yErrorType = "ArithmeticStdDev"
   )
 
-  expect_equal(terms$errorWeights, c(5.05, 5.05, 5.05))
+  expect_equal(terms$errorWeights, rep(1 / sqrt(log(1 + 0.2^2)), 3))
 })
 
 test_that("an invalid error of a value below 1 on the log scale is reported", {
@@ -1542,7 +1604,7 @@ test_that("an invalid error of a value below 1 on the log scale is reported", {
     terms <- logScaleErrorTerms(c(0.5, 2, 10), c(1, 1.5, 1.5)),
     regexp = "unit weights"
   )
-  expect_equal(terms$errorWeights, c(1, 2.47, 2.47))
+  expect_equal(terms$errorWeights, c(1, 1 / log(1.5), 1 / log(1.5)))
 })
 
 test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
@@ -1560,8 +1622,12 @@ test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
 
   details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
 
-  # 1 / log(GSD), rounded to 2 digits
-  expect_equal(details$errorWeights, c(5.48, 3.81, 2.47, 2.97, 1.70, 1.44))
+  # 1 / log(GSD), to the single precision in which a DataSet stores values
+  expect_equal(
+    details$errorWeights,
+    1 / log(c(1.2, 1.3, 1.5, 1.4, 1.8, 2)),
+    tolerance = 1e-6
+  )
 })
 
 test_that("objective function weights arithmetic SDs by CV on the log scale", {
@@ -1589,6 +1655,11 @@ test_that("objective function weights arithmetic SDs by CV on the log scale", {
 
   details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
 
-  # 1 / sqrt(log(1 + CV^2)) for the CVs 0.2 to 0.6, rounded to 2 digits
-  expect_equal(details$errorWeights, c(5.05, 3.41, 2.60, 2.12, 1.80))
+  # 1 / sqrt(log(1 + CV^2)) for the CVs 0.2 to 0.6, to the single precision
+  # in which a DataSet stores values
+  expect_equal(
+    details$errorWeights,
+    1 / sqrt(log(1 + c(0.2, 0.3, 0.4, 0.5, 0.6)^2)),
+    tolerance = 1e-6
+  )
 })

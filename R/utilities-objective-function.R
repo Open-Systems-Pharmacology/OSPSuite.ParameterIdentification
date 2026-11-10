@@ -262,10 +262,10 @@
     yObserved = observedY,
     ySimulated = simulatedYApprox,
     scaleFactor = scaleFactor,
-    errorWeights = round(errorWeights, 2),
-    robustWeights = round(robustWeights, 2),
+    errorWeights = errorWeights,
+    robustWeights = robustWeights,
     userWeights = userWeights,
-    totalWeights = round(totalWeights, 2),
+    totalWeights = totalWeights,
     rawResiduals = rawResiduals,
     weightedResiduals = weightedResiduals,
     index = index
@@ -648,6 +648,46 @@
   )
 }
 
+#' Validate the structure of a `modelCost` object
+#'
+#' Stops unless the object is a `modelCost` object with the fields, the
+#' `costVariables` columns and the `residualDetails` columns that
+#' `.newModelCost()` creates.
+#'
+#' @param costDetails The object to validate.
+#' @return `costDetails`, invisibly.
+#' @keywords internal
+#' @noRd
+.validateModelCost <- function(costDetails) {
+  if (!inherits(costDetails, "modelCost")) {
+    stop(messages$errorNotModelCost(class(costDetails)))
+  }
+  reference <- .createErrorCostStructure()
+  missingFields <- c(
+    setdiff(names(reference), names(costDetails)),
+    paste0(
+      "costVariables$",
+      setdiff(
+        names(reference$costVariables),
+        names(costDetails$costVariables)
+      ),
+      recycle0 = TRUE
+    ),
+    paste0(
+      "residualDetails$",
+      setdiff(
+        names(reference$residualDetails),
+        names(costDetails$residualDetails)
+      ),
+      recycle0 = TRUE
+    )
+  )
+  if (length(missingFields) > 0) {
+    stop(messages$errorModelCostFieldsMissing(missingFields))
+  }
+  invisible(costDetails)
+}
+
 #' Compute error-based residual weights
 #'
 #' @param yValues Vector of y-values on the linear scale, required for
@@ -810,8 +850,8 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
 
 #' Cost terms of a failed evaluation
 #'
-#' @description The terms of `.createErrorCostStructure()`: infinite costs
-#'   and one `residualDetails` row of `NA` values.
+#' @description The terms of `.createErrorCostStructure()`: infinite costs,
+#'   no observations and one `residualDetails` row of `NA` values.
 #'
 #' @param index Output-mapping index stored on the `residualDetails` row.
 #' @return A list of the arguments of `.newModelCost()`.
@@ -821,7 +861,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   list(
     modelCost = Inf,
     minLogProbability = Inf,
-    nObservations = 1,
+    nObservations = 0,
     weightedSSR = Inf,
     rawSSR = Inf,
     M3Contribution = Inf,
