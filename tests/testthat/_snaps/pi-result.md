@@ -1,3 +1,11 @@
+# PIResult stops on cost details without the documented structure
+
+    Code
+      PIResult$new(optimResult, costDetails = costDetails)
+    Condition
+      Error in `.validateModelCost()`:
+      ! The cost details lack the field costVariables$nObservations of a <modelCost> object.
+
 # toList() produces expected output
 
     Code

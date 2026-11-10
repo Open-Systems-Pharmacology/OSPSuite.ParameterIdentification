@@ -21,6 +21,8 @@
 - `gridSearch()` and `calculateOFVProfiles()` count the evaluations they print from 1 in every call instead of continuing the count of the previous call.
 - `gridSearch(setStartValue = TRUE)` keeps the start values and warns when every grid point fails, instead of setting them to the first grid point.
 - `gridSearch()` uses the full grid size when `totalEvaluations` is a perfect power, for example 5 points per parameter for 125 evaluations of 3 parameters instead of 4.
+- `PIResult$toList()` reports the `errorWeights`, `robustWeights` and `totalWeights` of `costDetails$residualDetails` unrounded, so they reproduce the weighted residuals (#383).
+- `PIResult$toList()` counts no observations for a failed output mapping in `costDetails$costVariables$nObservations`, instead of one (#383).
 
 # ospsuite.parameteridentification 2.3.0
 

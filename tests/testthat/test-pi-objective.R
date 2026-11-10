@@ -4,7 +4,7 @@ test_that("evaluate() returns the modelCost of the frozen objective function", {
   currVals <- currStartValues(task)
   cost <- objective$evaluate(currVals)
   expect_s3_class(cost, "modelCost")
-  expect_identical(cost, frozenObjectiveFunction(task, currVals))
+  expect_identical(asFrozenCost(cost), frozenObjectiveFunction(task, currVals))
 })
 
 test_that("evaluate() is the same on every call and leaves the task alone", {
