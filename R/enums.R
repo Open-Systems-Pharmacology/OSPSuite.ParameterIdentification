@@ -235,7 +235,11 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' - **`none`** - Keep all BLQ observations (default).
 #' - **`always`** - Remove all BLQ observations (Beal M1, PK-Sim "Always").
 #' - **`trailingSingle`** - Keep the first point of each trailing BLQ run per
-#'   dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
+#'   dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing"). With
+#'   `blqMethod = "m3"` the kept first point of each trailing run is censored.
+#'
+#' `always` cannot be combined with `blqMethod = "m3"`, since no BLQ
+#' observation would be left to censor.
 #'
 #' Note: in the current release `blqRemove` is validated and stored but not yet
 #' applied at runtime. Setting `always` or `trailingSingle` does not yet remove
@@ -283,13 +287,12 @@ BLQMethods <- ospsuite.utils::enum(c(
 #' @export
 #' @name BLQOptions
 #' @details Settings include:
-#' - **`linScaleCV`** - Coefficient of variation for linear scaling, applied to
-#'   `lloq` values. Default is `0.2`.
-#' - **`logScaleSD`** - Standard deviation for logarithmic scaling. Default is
-#'   derived from a coefficient of variation of `0.2`.
+#' - **`cv`** - Coefficient of variation of a measurement at the LLOQ, a number
+#'   greater than 0 and at most 1. Default is `0.2`. Under linear scaling the
+#'   standard deviation of a censored observation is `cv` times its LLOQ, under
+#'   logarithmic scaling it is `sqrt(log(1 + cv^2))`.
 BLQOptions <- ospsuite.utils::enum(list(
-  linScaleCV = 0.2,
-  logScaleSD = sqrt(log(1 + 0.2^2)) / log(10)
+  cv = 0.2
 ))
 
 #' Residual Weighting Methods for Cost Function

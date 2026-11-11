@@ -135,11 +135,19 @@ test_that("objectiveFunctionOptions rejects invalid scaleVar", {
   )
 })
 
-test_that("objectiveFunctionType no longer accepts m3", {
+test_that("objectiveFunctionType m3 stops with an error naming blqMethod", {
   piConfiguration <- PIConfiguration$new()
-  expect_error(
+  expect_snapshot(
     piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "m3",
-    regexp = "objectiveFunctionType"
+    error = TRUE
+  )
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions <- list(objectiveFunctionType = "m3"),
+    error = TRUE
+  )
+  expect_equal(
+    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
+    "lsq"
   )
 })
 
@@ -367,36 +375,48 @@ test_that("blqMethod accepts m3 without an objectiveType constraint", {
   expect_equal(piConfiguration$blqMethod, "m3")
 })
 
-test_that("blqOptions defaults match BLQOptions", {
+test_that("blqOptions defaults to a coefficient of variation of 0.2", {
   piConfiguration <- PIConfiguration$new()
-  expect_equal(piConfiguration$blqOptions$linScaleCV, 0.2)
-  expect_equal(
-    piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+  expect_equal(piConfiguration$blqOptions, list(cv = 0.2))
+})
+
+test_that("blqOptions sets cv by list and by field", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqOptions <- list(cv = 0.3)
+  expect_equal(piConfiguration$blqOptions$cv, 0.3)
+  piConfiguration$blqOptions$cv <- 1
+  expect_equal(piConfiguration$blqOptions$cv, 1)
+})
+
+test_that("blqOptions rejects a cv outside (0, 1]", {
+  piConfiguration <- PIConfiguration$new()
+  expect_error(piConfiguration$blqOptions$cv <- 0, regexp = "cv")
+  expect_error(piConfiguration$blqOptions$cv <- 1.5, regexp = "cv")
+  expect_equal(piConfiguration$blqOptions$cv, 0.2)
+})
+
+test_that("blqOptions stops on the removed keys linScaleCV and logScaleSD", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$blqOptions <- list(linScaleCV = 0.3),
+    error = TRUE
   )
-})
-
-test_that("blqOptions can be set and merged partially", {
-  piConfiguration <- PIConfiguration$new()
-  piConfiguration$blqOptions <- list(linScaleCV = 0.3)
-  expect_equal(piConfiguration$blqOptions$linScaleCV, 0.3)
-  expect_equal(
-    piConfiguration$blqOptions$logScaleSD,
-    sqrt(log(1 + 0.2^2, base = 10) / log(10))
+  expect_snapshot(
+    piConfiguration$blqOptions <- list(linScaleCV = 0.3, logScaleSD = 0.1),
+    error = TRUE
   )
+  expect_equal(piConfiguration$blqOptions, list(cv = 0.2))
 })
 
-test_that("blqOptions single-field assignment is validated", {
+test_that("objectiveFunctionOptions stops on the removed keys linScaleCV and logScaleSD", {
   piConfiguration <- PIConfiguration$new()
-  piConfiguration$blqOptions$linScaleCV <- 0.4
-  expect_equal(piConfiguration$blqOptions$linScaleCV, 0.4)
-})
-
-test_that("blqOptions rejects out-of-range numeric", {
-  piConfiguration <- PIConfiguration$new()
-  expect_error(
-    piConfiguration$blqOptions$linScaleCV <- 5,
-    regexp = "linScaleCV"
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions$logScaleSD <- 0.1,
+    error = TRUE
+  )
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions <- list(linScaleCV = 0.2),
+    error = TRUE
   )
 })
 
@@ -408,6 +428,25 @@ test_that("blqOptions warns and ignores unknown keys", {
     fixed = TRUE
   )
   expect_false("unknownKey" %in% names(piConfiguration$blqOptions))
+})
+
+test_that("blqRemove always and blqMethod m3 are rejected in either order", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqRemove <- "always"
+  expect_snapshot(piConfiguration$blqMethod <- "m3", error = TRUE)
+  expect_equal(piConfiguration$blqMethod, "lloqHalf")
+
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqMethod <- "m3"
+  expect_snapshot(piConfiguration$blqRemove <- "always", error = TRUE)
+  expect_equal(piConfiguration$blqRemove, "none")
+})
+
+test_that("blqRemove trailingSingle is allowed with blqMethod m3", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqMethod <- "m3"
+  expect_silent(piConfiguration$blqRemove <- "trailingSingle")
+  expect_equal(piConfiguration$blqRemove, "trailingSingle")
 })
 
 test_that("BLQ enums expose the documented values", {

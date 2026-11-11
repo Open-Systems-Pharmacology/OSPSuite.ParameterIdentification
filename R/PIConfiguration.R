@@ -65,6 +65,10 @@ PIConfiguration <- R6::R6Class(
         private$.objectiveFunctionOptions
       } else {
         ospsuite.utils::validateIsOfType(value, "list")
+        .stopOnRemovedBlqKeys(names(value))
+        if (identical(value$objectiveFunctionType, "m3")) {
+          stop(messages$errorM3ObjectiveFunctionType(), call. = FALSE)
+        }
         unknownKeys <- setdiff(names(value), names(ObjectiveFunctionSpecs))
         if (length(unknownKeys) > 0) {
           warning(
@@ -99,6 +103,9 @@ PIConfiguration <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, BLQRemoveModes)
+        if (value == "always" && private$.blqMethod == "m3") {
+          stop(messages$errorBlqRemoveWithM3(), call. = FALSE)
+        }
         private$.blqRemove <- value
       }
     },
@@ -113,6 +120,9 @@ PIConfiguration <- R6::R6Class(
       } else {
         ospsuite.utils::validateIsCharacter(value)
         ospsuite.utils::validateEnumValue(value, BLQMethods)
+        if (value == "m3" && private$.blqRemove == "always") {
+          stop(messages$errorBlqRemoveWithM3(), call. = FALSE)
+        }
         private$.blqMethod <- value
       }
     },
@@ -127,6 +137,7 @@ PIConfiguration <- R6::R6Class(
         private$.blqOptions
       } else {
         ospsuite.utils::validateIsOfType(value, "list")
+        .stopOnRemovedBlqKeys(names(value))
         unknownKeys <- setdiff(names(value), names(BLQOptionSpecs))
         if (length(unknownKeys) > 0) {
           warning(
@@ -338,3 +349,15 @@ PIConfiguration <- R6::R6Class(
     }
   )
 )
+
+#' Stop on the BLQ keys replaced by `blqOptions$cv`
+#'
+#' @param keys Names of the options being set.
+#' @keywords internal
+#' @noRd
+.stopOnRemovedBlqKeys <- function(keys) {
+  removed <- intersect(keys, c("linScaleCV", "logScaleSD"))
+  if (length(removed) > 0) {
+    stop(messages$errorRemovedBlqOption(removed), call. = FALSE)
+  }
+}

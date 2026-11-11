@@ -16,8 +16,12 @@ The available modes are:
 \item \strong{\code{none}} - Keep all BLQ observations (default).
 \item \strong{\code{always}} - Remove all BLQ observations (Beal M1, PK-Sim "Always").
 \item \strong{\code{trailingSingle}} - Keep the first point of each trailing BLQ run per
-dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing").
+dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing"). With
+\code{blqMethod = "m3"} the kept first point of each trailing run is censored.
 }
+
+\code{always} cannot be combined with \code{blqMethod = "m3"}, since no BLQ
+observation would be left to censor.
 
 Note: in the current release \code{blqRemove} is validated and stored but not yet
 applied at runtime. Setting \code{always} or \code{trailingSingle} does not yet remove

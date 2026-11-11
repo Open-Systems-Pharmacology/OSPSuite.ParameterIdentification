@@ -391,6 +391,24 @@ messages$messageOptionsReset <- function(
   )
 }
 
+messages$errorRemovedBlqOption <- function(keys) {
+  ospsuite.utils::cliFormat(
+    "{cli::qty(length(keys))}Option{?s} {.arg {keys}} {?was/were} removed. Set the coefficient of variation of BLQ observations with {.code blqOptions$cv} instead."
+  )
+}
+
+messages$errorM3ObjectiveFunctionType <- function() {
+  ospsuite.utils::cliFormat(
+    "{.val m3} is no longer an {.arg objectiveFunctionType}. Set {.code blqMethod = \"m3\"} instead."
+  )
+}
+
+messages$errorBlqRemoveWithM3 <- function() {
+  ospsuite.utils::cliFormat(
+    "{.code blqRemove = \"always\"} removes every BLQ observation, so {.code blqMethod = \"m3\"} has nothing to censor. Choose another {.arg blqRemove} or {.arg blqMethod}."
+  )
+}
+
 messages$warningUnknownOptions <- function(keys, fieldName) {
   ospsuite.utils::cliFormat(
     "{cli::qty(length(keys))}Unknown option{?s} for {.field {fieldName}}: {.val {keys}}. Ignored."

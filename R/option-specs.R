@@ -45,6 +45,5 @@ ObjectiveFunctionSpecs <- list(
 
 #' @noRd
 BLQOptionSpecs <- list(
-  linScaleCV = ospsuite.utils::numericOption(min = 1e-9, max = 1),
-  logScaleSD = ospsuite.utils::numericOption(min = 1e-9)
+  cv = ospsuite.utils::numericOption(min = .Machine$double.eps, max = 1)
 )
