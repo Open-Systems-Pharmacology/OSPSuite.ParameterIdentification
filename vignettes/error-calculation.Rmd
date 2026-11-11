@@ -58,9 +58,9 @@ A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfigu
 - **`lloqHalf`** (default): substitute the BLQ value with half the LLOQ.
 - **`lloq`**: clamp the BLQ value to the LLOQ.
 - **`none`**: use the stored BLQ value unchanged.
-- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The `blqOptions` field (`linScaleCV`, `logScaleSD`) parameterises this censored contribution.
+- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The likelihood needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
 
-`blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run.
+`blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run. `always` cannot be combined with `m3`, because no BLQ observation would be left to censor. With `trailingSingle` and `m3`, the kept first point of each trailing run is censored.
 
 These settings implement the standard strategies catalogued by Beal (2001), where each method is identified by an M-number:
 
@@ -73,10 +73,10 @@ The publication is listed in the References section.
 
 ```{r, eval=FALSE}
 piConfiguration$blqMethod <- "m3"
-piConfiguration$blqOptions <- list(linScaleCV = 0.2)
+piConfiguration$blqOptions <- list(cv = 0.2)
 ```
 
-In the current release the substitution methods (`none`, `lloq`, `lloqHalf`) share the same half-LLOQ behaviour, and `blqRemove` is validated but not yet applied during optimization; these distinctions are introduced in later releases.
+The substitution methods `none`, `lloq` and `lloqHalf` currently share the same behaviour: simulated values below the LLOQ are set to half the LLOQ. `blqRemove` is validated and stored, but does not yet remove observations during optimization.
 
 
 
