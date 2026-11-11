@@ -13,8 +13,8 @@ discrepancies between simulations and observed data are evaluated.
 \details{
 The methods include:
 \itemize{
-\item \strong{\code{none}} – No weighting applied, treating all residuals equally.
-\item \strong{\code{error}} – Weights based on error estimates for the dependent variable
+\item \strong{\code{none}} - No weighting applied, treating all residuals equally.
+\item \strong{\code{error}} - Weights based on error estimates for the dependent variable
 in observed data.
 }
 }

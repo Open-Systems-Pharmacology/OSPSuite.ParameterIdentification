@@ -90,6 +90,59 @@ PIConfiguration <- R6::R6Class(
       }
     },
 
+    #' @field blqRemove Mode selecting which BLQ observations enter the
+    #'   objective. See [`ospsuite.parameteridentification::BLQRemoveModes`].
+    #'   Defaults to `none`.
+    blqRemove = function(value) {
+      if (missing(value)) {
+        private$.blqRemove
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, BLQRemoveModes)
+        private$.blqRemove <- value
+      }
+    },
+
+    #' @field blqMethod Method selecting how retained BLQ observations
+    #'   contribute to the cost. See
+    #'   [`ospsuite.parameteridentification::BLQMethods`]. Defaults to
+    #'   `lloqHalf`.
+    blqMethod = function(value) {
+      if (missing(value)) {
+        private$.blqMethod
+      } else {
+        ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateEnumValue(value, BLQMethods)
+        private$.blqMethod <- value
+      }
+    },
+
+    #' @field blqOptions Named list of parameters consumed by the `m3` BLQ
+    #'   method. Defaults in [`ospsuite.parameteridentification::BLQOptions`].
+    #'   Partial lists are merged with the current settings; only the provided
+    #'   keys are updated and validated. Unknown keys produce a warning and are
+    #'   ignored.
+    blqOptions = function(value) {
+      if (missing(value)) {
+        private$.blqOptions
+      } else {
+        ospsuite.utils::validateIsOfType(value, "list")
+        unknownKeys <- setdiff(names(value), names(BLQOptionSpecs))
+        if (length(unknownKeys) > 0) {
+          warning(
+            messages$warningUnknownOptions(unknownKeys, "blqOptions"),
+            call. = FALSE
+          )
+          value <- value[names(value) %in% names(BLQOptionSpecs)]
+        }
+        if (length(value) == 0) {
+          return(invisible(NULL))
+        }
+        ospsuite.utils::validateIsOption(value, BLQOptionSpecs[names(value)])
+        private$.blqOptions <- modifyList(private$.blqOptions, value)
+      }
+    },
+
     #' @field algorithm Optimization algorithm name. See
     #'   [`ospsuite.parameteridentification::Algorithms`] for a list of
     #'   supported algorithms. Defaults to `BOBYQA`. Changing the algorithm
@@ -240,6 +293,9 @@ PIConfiguration <- R6::R6Class(
     .printEvaluationFeedback = NULL,
     .simulationRunOptions = NULL,
     .objectiveFunctionOptions = NULL,
+    .blqRemove = NULL,
+    .blqMethod = NULL,
+    .blqOptions = NULL,
     .algorithm = NULL,
     .algorithmOptions = NULL,
     .modelCostField = NULL,
@@ -255,6 +311,9 @@ PIConfiguration <- R6::R6Class(
       private$.steadyStateTime <- 1000
       private$.printEvaluationFeedback <- FALSE
       private$.objectiveFunctionOptions <- ObjectiveFunctionOptions
+      private$.blqRemove <- "none"
+      private$.blqMethod <- "lloqHalf"
+      private$.blqOptions <- BLQOptions
       private$.algorithm <- "BOBYQA"
       private$.ciMethod <- "hessian"
       private$.modelCostField <- "modelCost"
@@ -270,6 +329,8 @@ PIConfiguration <- R6::R6Class(
         "Objective function type" = private$.objectiveFunctionOptions$objectiveFunctionType,
         "Residual weighting method" = private$.objectiveFunctionOptions$residualWeightingMethod,
         "Robust residual calculation method" = private$.objectiveFunctionOptions$robustMethod,
+        "BLQ removal mode" = private$.blqRemove,
+        "BLQ handling method" = private$.blqMethod,
         "Print feedback after each function evaluation" = private$.printEvaluationFeedback
       ))
       # private$printLine("Simulate to steady-state", private$.simulateSteadyState)
