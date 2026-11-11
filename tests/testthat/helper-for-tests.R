@@ -633,7 +633,9 @@ taskObjective <- function(task, seed = NULL) {
   PIObjective$new(
     model = priv$.model,
     data = data,
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
+    blqMethod = task$configuration$blqMethod,
+    blqOptions = task$configuration$blqOptions
   )
 }
 

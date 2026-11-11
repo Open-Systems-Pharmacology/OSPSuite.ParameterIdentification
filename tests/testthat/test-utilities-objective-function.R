@@ -1,5 +1,9 @@
 # .calculateCensoredContribution
 
+# The coefficient of variation whose log-scale SD sqrt(log(1 + cv^2)) is the
+# value 0.086 the recorded log-scale results were calculated with
+cvOfSd0086 <- sqrt(exp(0.086^2) - 1)
+
 obsVsPredDf <- readr::read_csv(
   getTestDataFilePath("Aciclovir_obsVsPredDf.csv"),
   show_col_types = FALSE
@@ -14,7 +18,7 @@ test_that(".calculateCensoredContribution correctly calculates result with linea
     observed = obsDf,
     simulated = predDf,
     scaling = "lin",
-    linScaleCV = 0.25
+    cv = 0.25
   )
   expect_equal(result, 0.545702, tolerance = 1e-4)
 })
@@ -28,7 +32,7 @@ test_that(".calculateCensoredContribution correctly calculates result with logar
     observed = obsDfLog,
     simulated = predDfLog,
     scaling = "log",
-    logScaleSD = 0.086
+    cv = cvOfSd0086
   )
   expect_equal(result, 0.437086, tolerance = 1e-4)
 })
@@ -41,7 +45,7 @@ test_that(".calculateCensoredContribution can handle a minimal dataset with a si
     observed = obsDfSingle,
     simulated = predDfSingle,
     scaling = "lin",
-    linScaleCV = 0.2
+    cv = 0.2
   )
   expect_equal(result, 0, tolerance = 1e-4)
 })
@@ -53,7 +57,7 @@ test_that(".calculateCensoredContribution throws an error when LLOQ values are m
       observed = obsDf,
       simulated = predDf,
       scaling = "lin",
-      linScaleCV = 0.2
+      cv = 0.2
     )
   )
   obsDf$lloq <- NULL
@@ -62,7 +66,7 @@ test_that(".calculateCensoredContribution throws an error when LLOQ values are m
       observed = obsDf,
       simulated = predDf,
       scaling = "lin",
-      linScaleCV = 0.2
+      cv = 0.2
     )
   )
 })
@@ -92,7 +96,7 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
       observed = observed,
       simulated = simulated,
       scaling = "lin",
-      linScaleCV = 0.2
+      cv = 0.2
     ),
     sum(-2 * log10(stats::pnorm((lloq - simulatedY) / (0.2 * lloq))))
   )
@@ -101,7 +105,7 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
       observed = transform(observed, yValues = log(yValues), lloq = log(lloq)),
       simulated = transform(simulated, yValues = log(yValues)),
       scaling = "log",
-      logScaleSD = 0.086
+      cv = cvOfSd0086
     ),
     sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / 0.086)))
   )
@@ -112,7 +116,7 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
       observed = observed,
       simulated = simulated,
       scaling = "lin",
-      linScaleCV = 0.2
+      cv = 0.2
     ),
     sum(-2 * log10(stats::pnorm((2 - simulatedY) / (0.2 * 2))))
   )
@@ -125,25 +129,19 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
       observed = obsDf,
       simulated = predDf,
       scaling = "invalidOption",
-      linScaleCV = 0.2
+      cv = 0.2
     )
   )
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "lin",
-      logScaleSD = 0.086
+  for (scaling in c("lin", "log")) {
+    expect_error(
+      .calculateCensoredContribution(
+        observed = obsDf,
+        simulated = predDf,
+        scaling = scaling
+      ),
+      "not compatible"
     )
-  )
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "log",
-      linScaleCV = 0.2
-    )
-  )
+  }
 })
 
 # .newModelCost
@@ -471,15 +469,36 @@ test_that("least squares and M3 methods produce different model costs", {
   obsVsPredDf$lloq <- 2.5
   result_lsq <- .calculateCostMetrics(
     obsVsPredDf,
-    objectiveFunctionType = "lsq"
+    blqMethod = "lloqHalf"
   )
   result_m3 <- .calculateCostMetrics(
     obsVsPredDf,
-    objectiveFunctionType = "m3",
+    blqMethod = "m3",
     scaling = "lin",
-    linScaleCV = 0.2
+    cv = 0.2
   )
   expect_true(result_lsq$modelCost != result_m3$modelCost)
+})
+
+test_that("kernel costs with an LLOQ equal those recorded before the BLQ options moved", {
+  obsVsPredDf$lloq <- 2.5
+  expect_equal(
+    .calculateCostMetrics(obsVsPredDf, blqMethod = "lloqHalf")$modelCost,
+    677.39028332266685
+  )
+  expect_equal(
+    .calculateCostMetrics(
+      obsVsPredDf,
+      blqMethod = "m3",
+      scaling = "lin",
+      cv = 0.2
+    )$modelCost,
+    677.91813542239265
+  )
+  expect_equal(
+    .calculateCostMetrics(obsVsPredDf)$modelCost,
+    .calculateCostMetrics(obsVsPredDf, blqMethod = "none")$modelCost
+  )
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
@@ -499,6 +518,8 @@ test_that("the cost stops without simulated or observed data", {
 
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"
+  costControl$blqMethod <- "lloqHalf"
+  costControl$cv <- 0.2
   observed <- .prepareObservedData(testOutputMapping()[[1]])
   expect_error(
     .mappingCostTerms(
@@ -873,7 +894,12 @@ withWarningMessages <- function(expr) {
 # objective function option, the given ones and the defaults for the others,
 # and initializes the batches, as a public method does. The observed data are
 # then read again.
-applyCostSetting <- function(task, scaling = "lin", options = list()) {
+applyCostSetting <- function(
+  task,
+  scaling = "lin",
+  options = list(),
+  blq = list()
+) {
   mappings <- task$outputMappings
   scaling <- rep_len(scaling, length(mappings))
   for (idx in seq_along(mappings)) {
@@ -882,6 +908,11 @@ applyCostSetting <- function(task, scaling = "lin", options = list()) {
   task$configuration$objectiveFunctionOptions <- utils::modifyList(
     PIConfiguration$new()$objectiveFunctionOptions,
     options
+  )
+  task$configuration$blqMethod <- blq$blqMethod %||% "lloqHalf"
+  task$configuration$blqOptions <- utils::modifyList(
+    PIConfiguration$new()$blqOptions,
+    blq$blqOptions %||% list()
   )
   task$.__enclos_env__$private$.batchInitialization()
 }
@@ -988,10 +1019,10 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
     list(
       list(),
       list(scaling = "log"),
-      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
-        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+        blq = list(blqMethod = "m3", blqOptions = list(cv = cvOfSd0086))
       )
     ),
     lipophilicityValues
@@ -1007,10 +1038,10 @@ test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapp
     list(
       list(),
       list(scaling = "log"),
-      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
-        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+        blq = list(blqMethod = "m3", blqOptions = list(cv = cvOfSd0086))
       )
     ),
     lipophilicityValues
@@ -1024,7 +1055,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
   # The M3 contribution with the data sets in the given output mappings. The
   # frozen objective function uses `.calculateCensoredContribution()` of the
   # package, so this compares with output mappings of one LLOQ each instead.
-  m3Contribution <- function(dataSetsByMapping, scaling, options) {
+  m3Contribution <- function(dataSetsByMapping, scaling, blq) {
     sim <- freshSimulation()
     task <- ParameterIdentification$new(
       simulations = sim,
@@ -1041,7 +1072,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
         mapping
       })
     )
-    applyCostSetting(task, scaling = scaling, options = options)
+    applyCostSetting(task, scaling = scaling, blq = blq)
     taskObjective(task)$evaluate(
       lipophilicityValues[[1]]
     )$costVariables$M3Contribution
@@ -1050,22 +1081,22 @@ test_that("censored values contribute alike in one or in two output mappings", {
   for (setting in list(
     list(
       scaling = "lin",
-      options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)
+      blq = list(blqMethod = "m3")
     ),
     list(
       scaling = "log",
-      options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+      blq = list(blqMethod = "m3", blqOptions = list(cv = cvOfSd0086))
     )
   )) {
     together <- m3Contribution(
       list(unname(dataSets)),
       setting$scaling,
-      setting$options
+      setting$blq
     )
     separate <- m3Contribution(
       list(dataSets$dataSet1, dataSets$dataSet2),
       setting$scaling,
-      setting$options
+      setting$blq
     )
     expect_gt(together, 0)
     expect_equal(together, separate)
@@ -1164,10 +1195,10 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
       list(),
       list(scaling = "log"),
       list(options = list(residualWeightingMethod = "error")),
-      list(options = list(objectiveFunctionType = "m3", linScaleCV = 0.2)),
+      list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
-        options = list(objectiveFunctionType = "m3", logScaleSD = 0.086)
+        blq = list(blqMethod = "m3", blqOptions = list(cv = cvOfSd0086))
       ),
       list(
         scaling = c("lin", "log"),
@@ -1329,12 +1360,12 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
     list(df = geometricDf, residualWeightingMethod = "error"),
     list(df = obsVsPredDf, robustMethod = "huber"),
     list(df = obsVsPredDf, robustMethod = "bisquare"),
-    list(df = lloqDf, objectiveFunctionType = "lsq"),
+    list(df = lloqDf, blqMethod = "lloqHalf"),
     list(
       df = lloqDf,
-      objectiveFunctionType = "m3",
+      blqMethod = "m3",
       scaling = "lin",
-      linScaleCV = 0.2
+      cv = 0.2
     ),
     list(df = obsVsPredDf, scaleVar = TRUE),
     list(df = infiniteDf)
@@ -1345,7 +1376,9 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
         .calculateCostMetrics,
         setting
       ))),
-      withWarningMessages(do.call(frozenCalculateCostMetrics, setting))
+      withWarningMessages(
+        do.call(frozenCalculateCostMetrics, frozenCostArguments(setting))
+      )
     )
   }
 })
@@ -1404,6 +1437,8 @@ test_that("LLOQ, scaling and weights changed between calls take effect", {
 test_that("the LLOQ rule stops when simulated values are missing", {
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"
+  costControl$blqMethod <- "lloqHalf"
+  costControl$cv <- 0.2
   costTerms <- function(lloq) {
     dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
     if (!is.null(lloq)) {
@@ -1578,6 +1613,8 @@ logScaleErrorTerms <- function(
   simulated <- list(xValues = 0:4, yValues = c(1, 0.6, 2.2, 11, 5))
   costControl <- list(
     objectiveFunctionType = "lsq",
+    blqMethod = "lloqHalf",
+    cv = 0.2,
     residualWeightingMethod = "error",
     robustMethod = "none",
     scaleVar = FALSE,

@@ -23,7 +23,11 @@ PIObjective <- R6::R6Class(
     .data = NULL,
     # The complete list of `PIConfiguration$objectiveFunctionOptions`
     .objectiveFunctionOptions = NULL,
-    # The objective function options of each output mapping, with its scaling
+    # `PIConfiguration$blqMethod` and `PIConfiguration$blqOptions`
+    .blqMethod = NULL,
+    .blqOptions = NULL,
+    # The objective function options of each output mapping, with its scaling,
+    # `blqMethod` and `cv`
     .costControls = NULL
   ),
   active = list(
@@ -41,26 +45,35 @@ PIObjective <- R6::R6Class(
     # @param data A `PIObservations` object.
     # @param objectiveFunctionOptions The complete list of
     #   `PIConfiguration$objectiveFunctionOptions`.
-    initialize = function(model, data, objectiveFunctionOptions) {
+    # @param blqMethod `PIConfiguration$blqMethod`.
+    # @param blqOptions The complete list of `PIConfiguration$blqOptions`.
+    initialize = function(
+      model,
+      data,
+      objectiveFunctionOptions,
+      blqMethod,
+      blqOptions
+    ) {
       ospsuite.utils::validateIsOfType(model, "SimulationModel")
       ospsuite.utils::validateIsOfType(data, "PIObservations")
+      ospsuite.utils::validateIsOption(
+        objectiveFunctionOptions,
+        ObjectiveFunctionSpecs
+      )
+      ospsuite.utils::validateEnumValue(blqMethod, BLQMethods)
+      ospsuite.utils::validateIsOption(blqOptions, BLQOptionSpecs)
       private$.model <- model
       private$.data <- data
       private$.objectiveFunctionOptions <- objectiveFunctionOptions
-      outputMappings <- data$outputMappings
-      private$.costControls <- lapply(outputMappings, function(mapping) {
+      private$.blqMethod <- blqMethod
+      private$.blqOptions <- blqOptions
+      private$.costControls <- lapply(data$outputMappings, function(mapping) {
         costControl <- objectiveFunctionOptions
         costControl$scaling <- mapping$scaling
+        costControl$blqMethod <- blqMethod
+        costControl$cv <- blqOptions$cv
         costControl
       })
-      # The options of the output mappings differ only in their scaling
-      scalings <- vapply(outputMappings, function(mapping) mapping$scaling, "")
-      for (costControl in private$.costControls[!duplicated(scalings)]) {
-        ospsuite.utils::validateIsOption(
-          options = costControl,
-          validOptions = ObjectiveFunctionSpecs
-        )
-      }
     },
 
     # Evaluates the cost of the parameter values.
@@ -103,7 +116,9 @@ PIObjective <- R6::R6Class(
       PIObjective$new(
         model = private$.model,
         data = data,
-        objectiveFunctionOptions = private$.objectiveFunctionOptions
+        objectiveFunctionOptions = private$.objectiveFunctionOptions,
+        blqMethod = private$.blqMethod,
+        blqOptions = private$.blqOptions
       )
     }
   )
