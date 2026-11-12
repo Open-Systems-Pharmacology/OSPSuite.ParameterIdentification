@@ -234,7 +234,10 @@ test_that("blqRemove = always keeps every per-observation vector at the quantifi
 })
 
 test_that("blqRemove = trailingSingle drops all but the first of the trailing run", {
-  kept <- PIObservations$new(list(blqMapping()), "trailingSingle")$observedData[[1]]
+  kept <- PIObservations$new(
+    list(blqMapping()),
+    "trailingSingle"
+  )$observedData[[1]]
   expect_identical(kept$dataSetIndex, 1:4)
   mapping <- blqMapping(c(5, 0.1, 4, 0.1, 0.1))
   kept <- PIObservations$new(list(mapping), "trailingSingle")$observedData[[1]]
@@ -286,7 +289,9 @@ test_that("resample() applies blqRemove to the redrawn values", {
   for (seed in 1:10) {
     redrawn <- PIObservations$new(list(mapping))$resample(seed)
     observed <- redrawn$observedData[[1]]
-    expected <- observed$dataSetIndex[!.isBlqValues(observed$yValues, observed$lloq)]
+    expected <- observed$dataSetIndex[
+      !.isBlqValues(observed$yValues, observed$lloq)
+    ]
     kept <- original$resample(seed)$observedData[[1]]$dataSetIndex
     expect_identical(kept, expected)
     keptFirstPoint <- keptFirstPoint || 1L %in% kept

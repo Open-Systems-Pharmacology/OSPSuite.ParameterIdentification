@@ -126,7 +126,8 @@ test_that("m3 under log scaling ignores the stored value of a censored observati
   expect_identical(terms$x, c(60, 120))
   expect_equal(
     terms$modelCost,
-    log(9 / 10)^2 + log(4 / 5)^2 +
+    log(9 / 10)^2 +
+      log(4 / 5)^2 +
       -2 * log(stats::pnorm((log(2) - log(1)) / sqrt(log(1 + 0.2^2))))
   )
 })
@@ -1042,7 +1043,9 @@ test_that("objective function with an LLOQ gives the recorded costs", {
     ),
     lipophilicityValues
   )
-  expect_equal(costs, c(
+  expect_equal(
+    costs,
+    c(
       1220.2393362842672104,
       657.4726692176054712,
       16.3816363783996124,
@@ -1051,7 +1054,8 @@ test_that("objective function with an LLOQ gives the recorded costs", {
       657.8799182603720510,
       7.2808531862041646,
       16.0917878128034637
-    ))
+    )
+  )
 })
 
 test_that("objective function with two LLOQs in an output mapping gives the recorded costs", {
@@ -1071,7 +1075,9 @@ test_that("objective function with two LLOQs in an output mapping gives the reco
     ),
     lipophilicityValues
   )
-  expect_equal(costs, c(
+  expect_equal(
+    costs,
+    c(
       1412.6285263451634364,
       868.3906019359211541,
       12.9622061142714955,
@@ -1080,7 +1086,8 @@ test_that("objective function with two LLOQs in an output mapping gives the reco
       849.9689432511274845,
       6.3258207804017719,
       11.6224753838891903
-    ))
+    )
+  )
 })
 
 test_that("censored values contribute alike in one or in two output mappings", {
@@ -1258,7 +1265,9 @@ test_that("objective function for several data sets with LLOQs gives the recorde
     ),
     lipophilicityValues
   )
-  expect_equal(costs, c(
+  expect_equal(
+    costs,
+    c(
       4077.93639166568664223,
       2220.13733736031144872,
       20.50730380080133486,
@@ -1271,7 +1280,8 @@ test_that("objective function for several data sets with LLOQs gives the recorde
       11.16899597451127946,
       0.20227508624352725,
       0.32456224250170529
-    ))
+    )
+  )
 })
 
 test_that("objective function equals 2.2.0.9009 for two simulations with grouped parameters", {

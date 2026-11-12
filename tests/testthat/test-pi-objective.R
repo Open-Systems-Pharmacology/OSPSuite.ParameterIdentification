@@ -32,6 +32,25 @@ test_that("evaluate() with an LLOQ gives the recorded cost of each blqMethod", {
   }
 })
 
+test_that("the objective of a task leaves out the BLQ observations removed by blqRemove", {
+  residualRows <- function(blqRemove) {
+    task <- lloqTask()
+    task$configuration$blqRemove <- blqRemove
+    priv <- task$.__enclos_env__$private
+    priv$.batchInitialization()
+    cost <- priv$.objectiveFor()$evaluate(currStartValues(task))
+    nrow(cost$residualDetails)
+  }
+  dataSet <- lloqTask()$outputMappings[[1]]$observedDataSets[[1]]
+  blqCount <- sum(dataSet$yValues <= dataSet$LLOQ)
+  expect_gt(blqCount, 1)
+  all <- residualRows("none")
+  expect_identical(residualRows("always"), all - blqCount)
+  trailing <- residualRows("trailingSingle")
+  expect_gte(trailing, all - blqCount + 1)
+  expect_lt(trailing, all)
+})
+
 test_that("withData() keeps blqMethod and cv", {
   task <- lloqTask("m3")
   task$configuration$blqOptions$cv <- 0.5
