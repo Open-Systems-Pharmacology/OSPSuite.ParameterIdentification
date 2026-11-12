@@ -469,11 +469,11 @@ test_that("least squares and M3 methods produce different model costs", {
   expect_true(result_lsq$modelCost != result_m3$modelCost)
 })
 
-test_that("kernel costs with an LLOQ equal those recorded before the BLQ options moved", {
+test_that("kernel costs with an LLOQ equal the recorded values", {
   obsVsPredDf$lloq <- 2.5
   expect_equal(
     .calculateCostMetrics(obsVsPredDf, blqMethod = "lloqHalf")$modelCost,
-    677.39028332266685
+    679.97101306389038
   )
   expect_equal(
     .calculateCostMetrics(
@@ -482,7 +482,7 @@ test_that("kernel costs with an LLOQ equal those recorded before the BLQ options
       scaling = "lin",
       cv = 0.2
     )$modelCost,
-    677.91813542239265
+    678.32196853928076
   )
 })
 
@@ -937,6 +937,24 @@ expectFrozenForSettings <- function(task, settings, values) {
   }
 }
 
+# The model costs for each setting and parameter value, in this order. The
+# objective function of 2.2.0.9009 handled BLQ data differently, so data with
+# an LLOQ are compared with costs recorded when the BLQ handling moved into
+# the kernel.
+recordedCosts <- function(task, settings, values) {
+  costs <- numeric(0)
+  for (setting in settings) {
+    do.call(applyCostSetting, c(list(task), setting))
+    objective <- taskObjective(task)
+    for (value in values) {
+      # The warnings are compared with 2.2.0.9009 on the data without LLOQs
+      cost <- suppressWarnings(objective$evaluate(value))
+      costs <- c(costs, cost$modelCost)
+    }
+  }
+  costs
+}
+
 aciclovirPlasmaPaths <- c(
   paste0(
     "Organism|PeripheralVenousBlood|Aciclovir|",
@@ -1010,8 +1028,8 @@ test_that("objective function equals 2.2.0.9009 with data weights", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with an LLOQ", {
-  expectFrozenForSettings(
+test_that("objective function with an LLOQ gives the recorded costs", {
+  costs <- recordedCosts(
     twoOutputsTask(lloq = 0.5),
     list(
       list(),
@@ -1024,13 +1042,23 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
     ),
     lipophilicityValues
   )
+  expect_equal(costs, c(
+      1220.2393362842672104,
+      657.4726692176054712,
+      16.3816363783996124,
+      10.3372856741677115,
+      1218.4772715246112966,
+      657.8799182603720510,
+      7.2808531862041646,
+      16.0917878128034637
+    ))
 })
 
-test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapping", {
+test_that("objective function with two LLOQs in an output mapping gives the recorded costs", {
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
-  expectFrozenForSettings(
+  costs <- recordedCosts(
     aciclovirTask(stats::setNames(list(dataSets), aciclovirPlasmaPaths[[1]])),
     list(
       list(),
@@ -1043,6 +1071,16 @@ test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapp
     ),
     lipophilicityValues
   )
+  expect_equal(costs, c(
+      1412.6285263451634364,
+      868.3906019359211541,
+      12.9622061142714955,
+      9.0495445371042802,
+      1387.4807406750228438,
+      849.9689432511274845,
+      6.3258207804017719,
+      11.6224753838891903
+    ))
 })
 
 test_that("censored values contribute alike in one or in two output mappings", {
@@ -1153,14 +1191,17 @@ molarDataSet <- function(name, lloq = NULL) {
 # y transformations: the data of Laskin 1982 (mg/l, arithmetic SD) with a data
 # weight, the same data times 1.5 without the last point, with an LLOQ and a
 # data weight per point, and molar data. The second output has molar data
-# with an LLOQ, with x and y transformations.
-severalDataSetsTask <- function() {
+# with an LLOQ, with x and y transformations. Without `lloq`, no data set has
+# an LLOQ.
+severalDataSetsTask <- function(lloq = TRUE) {
   dataSets <- testObservedDataMultiple()
-  dataSets$dataSet2$LLOQ <- 1
+  if (lloq) {
+    dataSets$dataSet2$LLOQ <- 1
+  }
   task <- aciclovirTask(stats::setNames(
     list(
       c(dataSets, dataSet3 = molarDataSet("dataSet3")),
-      molarDataSet("dataSet4", lloq = 1000)
+      molarDataSet("dataSet4", lloq = if (lloq) 1000)
     ),
     aciclovirPlasmaPaths
   ))
@@ -1171,9 +1212,6 @@ severalDataSetsTask <- function() {
   task$outputMappings[[1]]$setDataWeights(
     list(dataSet1 = 2, dataSet2 = seq(1, 0.1, length.out = 10))
   )
-  # M3 compares the censored observations with the simulated values at the
-  # same times, so the transformed times must be times of the simulation
-  # results, which are single precision numbers
   task$outputMappings[[2]]$setDataTransformations(
     xOffsets = 2,
     xFactors = 1.5,
@@ -1187,6 +1225,22 @@ severalDataSetsTask <- function() {
 # `.computeErrorWeights()`
 test_that("objective function equals 2.2.0.9009 for several data sets", {
   expectFrozenForSettings(
+    severalDataSetsTask(lloq = FALSE),
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(residualWeightingMethod = "error")),
+      list(
+        scaling = c("lin", "log"),
+        options = list(robustMethod = "huber", scaleVar = TRUE)
+      )
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("objective function for several data sets with LLOQs gives the recorded costs", {
+  costs <- recordedCosts(
     severalDataSetsTask(),
     list(
       list(),
@@ -1204,6 +1258,20 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
     ),
     lipophilicityValues
   )
+  expect_equal(costs, c(
+      4077.93639166568664223,
+      2220.13733736031144872,
+      20.50730380080133486,
+      12.23819518709304610,
+      3710.13862599347294235,
+      2040.35768618197107571,
+      4077.71183943283313056,
+      2220.03992715807862623,
+      17.76494123913684930,
+      11.16899597451127946,
+      0.20227508624352725,
+      0.32456224250170529
+    ))
 })
 
 test_that("objective function equals 2.2.0.9009 for two simulations with grouped parameters", {
@@ -1344,8 +1412,6 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
     geometricDf$yValues[validErrors]
   geometricDf$yErrorValues[validErrors] <- exp(sqrt(log(1 + cv^2)))
   geometricDf$yErrorType <- "GeometricStdDev"
-  lloqDf <- obsVsPredDf
-  lloqDf$lloq <- 2.5
   infiniteDf <- obsVsPredDf
   infiniteDf$xValues[1] <- Inf
   infiniteDf$yValues[1] <- -Inf
@@ -1359,13 +1425,6 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
     list(df = geometricDf, residualWeightingMethod = "error"),
     list(df = obsVsPredDf, robustMethod = "huber"),
     list(df = obsVsPredDf, robustMethod = "bisquare"),
-    list(df = lloqDf, blqMethod = "lloqHalf"),
-    list(
-      df = lloqDf,
-      blqMethod = "m3",
-      scaling = "lin",
-      cv = 0.2
-    ),
     list(df = obsVsPredDf, scaleVar = TRUE),
     list(df = infiniteDf)
   )

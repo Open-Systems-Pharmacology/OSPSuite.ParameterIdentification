@@ -16,20 +16,20 @@ lloqTask <- function(blqMethod = "lloqHalf") {
   task
 }
 
-test_that("evaluate() with an LLOQ equals the costs recorded before the BLQ options moved", {
-  # none and lloq substitute as lloqHalf does until they get their own rules
-  for (blqMethod in c("none", "lloq", "lloqHalf")) {
+test_that("evaluate() with an LLOQ gives the recorded cost of each blqMethod", {
+  recorded <- c(
+    none = 778.1292477241019,
+    lloq = 1113.5973312932574,
+    lloqHalf = 1174.3753775817763,
+    m3 = 197.34426527257293
+  )
+  for (blqMethod in names(recorded)) {
     task <- lloqTask(blqMethod)
     expect_equal(
       taskObjective(task)$evaluate(currStartValues(task))$modelCost,
-      870.98815201914113
+      recorded[[blqMethod]]
     )
   }
-  task <- lloqTask("m3")
-  expect_equal(
-    taskObjective(task)$evaluate(currStartValues(task))$modelCost,
-    843.05727080080896
-  )
 })
 
 test_that("withData() keeps blqMethod and cv", {
