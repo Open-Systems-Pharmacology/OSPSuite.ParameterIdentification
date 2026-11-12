@@ -102,6 +102,7 @@ PIConfiguration <- R6::R6Class(
         private$.blqRemove
       } else {
         ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateIsOfLength(value, 1)
         ospsuite.utils::validateEnumValue(value, BLQRemoveModes)
         if (value == "always" && private$.blqMethod == "m3") {
           stop(messages$errorBlqRemoveWithM3(), call. = FALSE)
@@ -119,6 +120,7 @@ PIConfiguration <- R6::R6Class(
         private$.blqMethod
       } else {
         ospsuite.utils::validateIsCharacter(value)
+        ospsuite.utils::validateIsOfLength(value, 1)
         ospsuite.utils::validateEnumValue(value, BLQMethods)
         if (value == "m3" && private$.blqRemove == "always") {
           stop(messages$errorBlqRemoveWithM3(), call. = FALSE)

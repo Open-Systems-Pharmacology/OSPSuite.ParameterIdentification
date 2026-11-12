@@ -19,10 +19,9 @@ default).
 \item \strong{\code{m3}} - Add the censored-likelihood contribution (Beal M3).
 }
 
-Note: in the current release \code{none}, \code{lloq}, and \code{lloqHalf} are not yet
-distinguished at runtime. All three apply the same half-LLOQ substitution;
-\code{m3} is the only method with distinct behavior. The \code{lloq} clamp and the
-\code{none} pass-through are differentiated in a later release.
+Note: \code{none}, \code{lloq} and \code{lloqHalf} are not yet distinguished at runtime.
+All three set simulated values below the LLOQ to half the LLOQ and use the
+observed values as stored. \code{m3} is the only method with its own behavior.
 }
 \seealso{
 The \code{error-calculation} vignette for the Beal (2001) method taxonomy.

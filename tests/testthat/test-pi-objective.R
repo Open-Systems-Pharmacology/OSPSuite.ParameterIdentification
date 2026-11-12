@@ -17,11 +17,14 @@ lloqTask <- function(blqMethod = "lloqHalf") {
 }
 
 test_that("evaluate() with an LLOQ equals the costs recorded before the BLQ options moved", {
-  task <- lloqTask()
-  expect_equal(
-    taskObjective(task)$evaluate(currStartValues(task))$modelCost,
-    870.98815201914113
-  )
+  # none and lloq substitute as lloqHalf does until they get their own rules
+  for (blqMethod in c("none", "lloq", "lloqHalf")) {
+    task <- lloqTask(blqMethod)
+    expect_equal(
+      taskObjective(task)$evaluate(currStartValues(task))$modelCost,
+      870.98815201914113
+    )
+  }
   task <- lloqTask("m3")
   expect_equal(
     taskObjective(task)$evaluate(currStartValues(task))$modelCost,
@@ -98,7 +101,13 @@ test_that("observedData of PIObjective is read-only", {
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
   data <- PIObservations$new(priv$.outputMappings)
-  objective <- PIObjective$new(priv$.model, data, options, "lloqHalf", BLQOptions)
+  objective <- PIObjective$new(
+    priv$.model,
+    data,
+    options,
+    "lloqHalf",
+    BLQOptions
+  )
   expect_snapshot(objective$observedData <- NULL, error = TRUE)
 })
 

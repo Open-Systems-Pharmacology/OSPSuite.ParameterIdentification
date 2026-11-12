@@ -53,31 +53,20 @@ piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 
 A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfiguration` settings control how such observations are treated.
 
-`blqMethod` selects how a retained BLQ observation contributes to the error:
+`blqMethod` selects how a BLQ observation contributes to the error:
 
-- **`lloqHalf`** (default): substitute the BLQ value with half the LLOQ.
-- **`lloq`**: clamp the BLQ value to the LLOQ.
-- **`none`**: use the stored BLQ value unchanged.
-- **`m3`**: treat the BLQ value as censored and score it by the likelihood that the prediction falls below the LLOQ (Beal's M3 method), keeping all data in the fit for a more statistically robust result. The likelihood needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
-
-`blqRemove` selects which BLQ observations enter the fit at all: `none` (default) keeps them all, `always` drops them all, and `trailingSingle` keeps only the first point of each trailing BLQ run. `always` cannot be combined with `m3`, because no BLQ observation would be left to censor. With `trailingSingle` and `m3`, the kept first point of each trailing run is censored.
-
-These settings implement the standard strategies catalogued by Beal (2001), where each method is identified by an M-number:
-
-- **M1** (discard all BLQ): `blqRemove = "always"`.
-- **M3** (censored likelihood): `blqMethod = "m3"`.
-- **M5** (substitute LLOQ/2): `blqMethod = "lloqHalf"`.
-- **M6** (drop trailing BLQ): `blqRemove = "trailingSingle"`.
-
-The publication is listed in the References section.
+- **`lloqHalf`** (default): simulated values below the LLOQ are set to half the LLOQ, and the observed values are used as stored. This is a variant of Beal's M5 method.
+- **`m3`**: the BLQ observation is scored by the likelihood that the prediction falls below the LLOQ (Beal's M3 method). The likelihood needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
+- **`lloq`** and **`none`** are accepted and currently behave as `lloqHalf`.
 
 ```{r, eval=FALSE}
 piConfiguration$blqMethod <- "m3"
 piConfiguration$blqOptions <- list(cv = 0.2)
 ```
 
-The substitution methods `none`, `lloq` and `lloqHalf` currently share the same behaviour: simulated values below the LLOQ are set to half the LLOQ. `blqRemove` is validated and stored, but does not yet remove observations during optimization.
+`blqRemove` selects which BLQ observations enter the fit: `none` (default), `always` or `trailingSingle`. It is validated and stored, but does not yet remove observations during optimization. `always` cannot be combined with `m3`, because no BLQ observation would be left to censor.
 
+The method numbers refer to the strategies catalogued by Beal (2001), listed in the References section.
 
 
 ## Advanced Error Model Customization

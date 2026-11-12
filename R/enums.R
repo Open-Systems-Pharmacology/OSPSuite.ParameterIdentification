@@ -241,9 +241,8 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' `always` cannot be combined with `blqMethod = "m3"`, since no BLQ
 #' observation would be left to censor.
 #'
-#' Note: in the current release `blqRemove` is validated and stored but not yet
-#' applied at runtime. Setting `always` or `trailingSingle` does not yet remove
-#' any observations; the removal logic is added in a later release.
+#' Note: `blqRemove` is validated and stored but not yet applied at runtime.
+#' Setting `always` or `trailingSingle` does not yet remove any observations.
 #'
 #' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQRemoveModes <- ospsuite.utils::enum(c(
@@ -265,10 +264,9 @@ BLQRemoveModes <- ospsuite.utils::enum(c(
 #' - **`lloqHalf`** - Substitute the observed value with half the LLOQ (Beal M5).
 #' - **`m3`** - Add the censored-likelihood contribution (Beal M3).
 #'
-#' Note: in the current release `none`, `lloq`, and `lloqHalf` are not yet
-#' distinguished at runtime. All three apply the same half-LLOQ substitution;
-#' `m3` is the only method with distinct behavior. The `lloq` clamp and the
-#' `none` pass-through are differentiated in a later release.
+#' Note: `none`, `lloq` and `lloqHalf` are not yet distinguished at runtime.
+#' All three set simulated values below the LLOQ to half the LLOQ and use the
+#' observed values as stored. `m3` is the only method with its own behavior.
 #'
 #' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQMethods <- ospsuite.utils::enum(c(

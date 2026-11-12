@@ -142,7 +142,9 @@ test_that("objectiveFunctionType m3 stops with an error naming blqMethod", {
     error = TRUE
   )
   expect_snapshot(
-    piConfiguration$objectiveFunctionOptions <- list(objectiveFunctionType = "m3"),
+    piConfiguration$objectiveFunctionOptions <- list(
+      objectiveFunctionType = "m3"
+    ),
     error = TRUE
   )
   expect_equal(
@@ -350,14 +352,28 @@ test_that("blqRemove and blqMethod have expected defaults", {
 })
 
 test_that("blqRemove accepts valid modes and rejects invalid ones", {
-  # blqRemove filtering is not yet applied at runtime (added in a later step);
-  # these tests cover the validation surface only.
   piConfiguration <- PIConfiguration$new()
   piConfiguration$blqRemove <- "always"
   expect_equal(piConfiguration$blqRemove, "always")
   piConfiguration$blqRemove <- "trailingSingle"
   expect_equal(piConfiguration$blqRemove, "trailingSingle")
-  expect_error(piConfiguration$blqRemove <- "sometimes")
+  expect_snapshot(piConfiguration$blqRemove <- "sometimes", error = TRUE)
+})
+
+test_that("blqRemove and blqMethod reject more than one value", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$blqRemove <- c("none", "always"),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_snapshot(
+    piConfiguration$blqMethod <- c("m3", "none"),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_equal(piConfiguration$blqRemove, "none")
+  expect_equal(piConfiguration$blqMethod, "lloqHalf")
 })
 
 test_that("blqMethod accepts all four methods and rejects invalid ones", {
@@ -366,7 +382,7 @@ test_that("blqMethod accepts all four methods and rejects invalid ones", {
     piConfiguration$blqMethod <- method
     expect_equal(piConfiguration$blqMethod, method)
   }
-  expect_error(piConfiguration$blqMethod <- "censored")
+  expect_snapshot(piConfiguration$blqMethod <- "censored", error = TRUE)
 })
 
 test_that("blqMethod accepts m3 without an objectiveType constraint", {
@@ -390,8 +406,16 @@ test_that("blqOptions sets cv by list and by field", {
 
 test_that("blqOptions rejects a cv outside (0, 1]", {
   piConfiguration <- PIConfiguration$new()
-  expect_error(piConfiguration$blqOptions$cv <- 0, regexp = "cv")
-  expect_error(piConfiguration$blqOptions$cv <- 1.5, regexp = "cv")
+  expect_snapshot(
+    piConfiguration$blqOptions$cv <- 0,
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_snapshot(
+    piConfiguration$blqOptions$cv <- 1.5,
+    error = TRUE,
+    transform = scrubCallerName
+  )
   expect_equal(piConfiguration$blqOptions$cv, 0.2)
 })
 
@@ -422,11 +446,7 @@ test_that("objectiveFunctionOptions stops on the removed keys linScaleCV and log
 
 test_that("blqOptions warns and ignores unknown keys", {
   piConfiguration <- PIConfiguration$new()
-  expect_warning(
-    piConfiguration$blqOptions <- list(unknownKey = "x"),
-    messages$warningUnknownOptions("unknownKey", "blqOptions"),
-    fixed = TRUE
-  )
+  expect_snapshot(piConfiguration$blqOptions <- list(unknownKey = "x"))
   expect_false("unknownKey" %in% names(piConfiguration$blqOptions))
 })
 

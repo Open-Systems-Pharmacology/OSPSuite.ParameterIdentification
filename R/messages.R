@@ -403,6 +403,12 @@ messages$errorM3ObjectiveFunctionType <- function() {
   )
 }
 
+messages$errorMissingCensoredCV <- function() {
+  ospsuite.utils::cliFormat(
+    "The M3 contribution needs the coefficient of variation {.arg cv} of BLQ observations."
+  )
+}
+
 messages$errorBlqRemoveWithM3 <- function() {
   ospsuite.utils::cliFormat(
     "{.code blqRemove = \"always\"} removes every BLQ observation, so {.code blqMethod = \"m3\"} has nothing to censor. Choose another {.arg blqRemove} or {.arg blqMethod}."

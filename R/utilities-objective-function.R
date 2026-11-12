@@ -15,8 +15,8 @@
 #'   `residualWeightingMethod = "error"`. The error type must be one of
 #'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
 #' @param blqMethod A string selecting how BLQ observations contribute to the
-#'   cost. `"m3"` adds the censored contribution; any other value adds none.
-#'   Defaults to `"none"`.
+#'   cost. `"m3"` adds the censored contribution, and any other value adds
+#'   none. Defaults to `"none"`.
 #' @param residualWeightingMethod A string indicating the method to weight the
 #'   residuals. Options include `"none"` (default) and `"error"`.
 #' @param robustMethod A string indicating the robust method to apply to the
@@ -941,7 +941,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   }
 
   if (is.null(cv)) {
-    stop("Scaling method and scaling parameters are not compatible.")
+    stop(messages$errorMissingCensoredCV(), call. = FALSE)
   }
   stDev <- if (scaling == "lin") {
     abs(cv * simulatedCensored$lloq)

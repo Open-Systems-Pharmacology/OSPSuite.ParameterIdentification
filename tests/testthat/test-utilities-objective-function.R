@@ -132,16 +132,14 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
       cv = 0.2
     )
   )
-  for (scaling in c("lin", "log")) {
-    expect_error(
-      .calculateCensoredContribution(
-        observed = obsDf,
-        simulated = predDf,
-        scaling = scaling
-      ),
-      "not compatible"
-    )
-  }
+  expect_snapshot(
+    .calculateCensoredContribution(
+      observed = obsDf,
+      simulated = predDf,
+      scaling = "log"
+    ),
+    error = TRUE
+  )
 })
 
 # .newModelCost
@@ -495,10 +493,6 @@ test_that("kernel costs with an LLOQ equal those recorded before the BLQ options
     )$modelCost,
     677.91813542239265
   )
-  expect_equal(
-    .calculateCostMetrics(obsVsPredDf)$modelCost,
-    .calculateCostMetrics(obsVsPredDf, blqMethod = "none")$modelCost
-  )
 })
 
 test_that("calculateCostMetrics correctly scales residuals when scaleVar is TRUE", {
@@ -612,7 +606,10 @@ test_that("simulatedOutputs() returns the simulated rows of a full evaluation", 
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
@@ -653,7 +650,10 @@ test_that("simulatedOutputs() reads several outputs of one simulation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
   expect_length(simulated, 2)
@@ -802,7 +802,10 @@ test_that("simulatedOutputs() reads the outputs of two simulations", {
   priv <- task$.__enclos_env__$private
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
   expect_length(simulated, 2)
@@ -845,7 +848,10 @@ test_that("observed data equal the observed rows of a full evaluation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),
@@ -1666,7 +1672,9 @@ test_that("objective function weights GSDs by 1 / log(GSD) on the log scale", {
     options = list(residualWeightingMethod = "error")
   )
 
-  details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
+  details <- taskObjective(task)$evaluate(lipophilicityValues[[
+    1
+  ]])$residualDetails
 
   # 1 / log(GSD), to the single precision in which a DataSet stores values
   expect_equal(
@@ -1699,7 +1707,9 @@ test_that("objective function weights arithmetic SDs by CV on the log scale", {
     options = list(residualWeightingMethod = "error")
   )
 
-  details <- taskObjective(task)$evaluate(lipophilicityValues[[1]])$residualDetails
+  details <- taskObjective(task)$evaluate(lipophilicityValues[[
+    1
+  ]])$residualDetails
 
   # 1 / sqrt(log(1 + CV^2)) for the CVs 0.2 to 0.6, to the single precision
   # in which a DataSet stores values

@@ -148,7 +148,7 @@ currStartValues <- function(task) {
 # ospsuite.utils names the test runner's entry point as the caller, which
 # differs between devtools::test() and R CMD check.
 scrubCallerName <- function(lines) {
-  sub("`[[:alnum:]._]+[(][)]`: argument", "`<caller>()`: argument", lines)
+  sub("`[[:alnum:]._]+[(][)]`: ", "`<caller>()`: ", lines)
 }
 
 

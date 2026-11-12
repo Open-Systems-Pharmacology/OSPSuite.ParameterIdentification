@@ -23,9 +23,8 @@ dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing"). With
 \code{always} cannot be combined with \code{blqMethod = "m3"}, since no BLQ
 observation would be left to censor.
 
-Note: in the current release \code{blqRemove} is validated and stored but not yet
-applied at runtime. Setting \code{always} or \code{trailingSingle} does not yet remove
-any observations; the removal logic is added in a later release.
+Note: \code{blqRemove} is validated and stored but not yet applied at runtime.
+Setting \code{always} or \code{trailingSingle} does not yet remove any observations.
 }
 \seealso{
 The \code{error-calculation} vignette for the Beal (2001) method taxonomy.
