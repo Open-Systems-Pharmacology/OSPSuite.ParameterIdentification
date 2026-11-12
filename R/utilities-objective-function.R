@@ -946,7 +946,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   stDev <- if (scaling == "lin") {
     abs(cv * simulatedCensored$lloq)
   } else {
-    sqrt(log(1 + cv^2))
+    sqrt(log1p(cv^2))
   }
 
   censoredProbabilities <- stats::pnorm(

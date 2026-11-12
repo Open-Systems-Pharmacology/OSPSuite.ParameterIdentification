@@ -454,7 +454,7 @@ frozenCostArguments <- function(args) {
   }
   if (!is.null(args$cv)) {
     args$linScaleCV <- args$cv
-    args$logScaleSD <- sqrt(log(1 + args$cv^2))
+    args$logScaleSD <- sqrt(log1p(args$cv^2))
   }
   args[setdiff(names(args), c("blqMethod", "cv"))]
 }

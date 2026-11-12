@@ -109,6 +109,17 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
     ),
     sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / 0.086)))
   )
+  # The default cv 0.2 gives the log-scale SD sqrt(log(1 + 0.2^2)) = 0.198042
+  sdOfDefaultCv <- sqrt(log(1 + 0.2^2))
+  expect_equal(
+    .calculateCensoredContribution(
+      observed = transform(observed, yValues = log(yValues), lloq = log(lloq)),
+      simulated = transform(simulated, yValues = log(yValues)),
+      scaling = "log",
+      cv = 0.2
+    ),
+    sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / sdOfDefaultCv)))
+  )
   # One LLOQ for all values
   observed$lloq <- 2
   expect_equal(
@@ -119,6 +130,33 @@ test_that(".calculateCensoredContribution uses the LLOQ of each censored value",
       cv = 0.2
     ),
     sum(-2 * log10(stats::pnorm((2 - simulatedY) / (0.2 * 2))))
+  )
+})
+
+test_that(".calculateCensoredContribution keeps a positive log-scale SD for a tiny cv", {
+  # 1 + cv^2 rounds to 1 for cv = 1e-9, so the SD must not be computed from it.
+  # A prediction at the LLOQ then has probability 0.5 of lying below it.
+  observed <- data.frame(
+    xValues = 60,
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = log(0.5),
+    lloq = log(1)
+  )
+  simulated <- data.frame(
+    xValues = 60,
+    xUnit = "min",
+    xDimension = "Time",
+    yValues = log(1)
+  )
+  expect_equal(
+    .calculateCensoredContribution(
+      observed = observed,
+      simulated = simulated,
+      scaling = "log",
+      cv = 1e-9
+    ),
+    -2 * log10(0.5)
   )
 })
 
