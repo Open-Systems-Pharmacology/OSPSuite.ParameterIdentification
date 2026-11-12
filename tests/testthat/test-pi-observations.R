@@ -205,3 +205,91 @@ test_that("PIObservations validates its input and is read-only", {
   expect_snapshot(data$observedData <- NULL, error = TRUE)
   expect_snapshot(data$outputMappings <- NULL, error = TRUE)
 })
+
+# One data set at 0, 1, 2 and 3 h with an LLOQ of 1 mg/l; the values at 1 and
+# 3 h are below it
+blqMapping <- function(yValues = c(5, 0.1, 4, 0.1)) {
+  dataSet <- ospsuite::DataSet$new(name = "blq")
+  dataSet$setValues(xValues = seq_along(yValues) - 1, yValues = yValues)
+  dataSet$xUnit <- "h"
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (mass)`
+  dataSet$yUnit <- "mg/l"
+  dataSet$molWeight <- 225.21
+  dataSet$LLOQ <- 1
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  mapping
+}
+
+test_that("blqRemove = always keeps every per-observation vector at the quantified rows", {
+  mapping <- blqMapping()
+  all <- .prepareObservedData(mapping)
+  kept <- PIObservations$new(list(mapping), "always")$observedData[[1]]
+  expect_identical(kept$dataSetIndex, c(1L, 3L))
+  for (field in setdiff(names(all), c("logEpsilon", "xUnit"))) {
+    expect_identical(kept[[field]], all[[field]][c(1, 3)], label = field)
+  }
+  expect_identical(kept$logEpsilon, all$logEpsilon)
+  expect_identical(kept$xUnit, all$xUnit)
+})
+
+test_that("blqRemove = trailingSingle drops all but the first of the trailing run", {
+  kept <- PIObservations$new(list(blqMapping()), "trailingSingle")$observedData[[1]]
+  expect_identical(kept$dataSetIndex, 1:4)
+  mapping <- blqMapping(c(5, 0.1, 4, 0.1, 0.1))
+  kept <- PIObservations$new(list(mapping), "trailingSingle")$observedData[[1]]
+  expect_identical(kept$dataSetIndex, 1:4)
+})
+
+test_that("blqRemove = none keeps the prepared data unchanged", {
+  mapping <- blqMapping()
+  expect_identical(
+    PIObservations$new(list(mapping))$observedData[[1]],
+    .prepareObservedData(mapping)
+  )
+})
+
+test_that("blqRemove that removes every observation of a mapping stops", {
+  expect_snapshot(
+    PIObservations$new(list(blqMapping(c(0.1, 0.2))), "always"),
+    error = TRUE
+  )
+})
+
+test_that("the data weights follow the kept observations", {
+  mapping <- blqMapping()
+  mapping$setDataWeights(list(blq = c(1, 2, 3, 4)))
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "lin"
+  costControl$blqMethod <- "none"
+  costControl$cv <- 0.2
+  terms <- .mappingCostTerms(
+    simulated = list(xValues = c(0, 1e4), yValues = c(1, 1)),
+    observed = PIObservations$new(list(mapping), "always")$observedData[[1]],
+    dataWeights = mapping$dataWeights,
+    costControl = costControl,
+    index = 1L
+  )
+  expect_identical(terms$userWeights, c(1, 3))
+})
+
+test_that("resample() applies blqRemove to the redrawn values", {
+  mapping <- aggregatedStudiesMapping()
+  mapping$setSubjectCount(4)
+  for (dataSet in mapping$observedDataSets) {
+    dataSet$LLOQ <- 10
+  }
+  # The means at 1 h equal the LLOQ, so the original data drop them
+  original <- PIObservations$new(list(mapping), "always")
+  expect_identical(original$observedData[[1]]$dataSetIndex, c(2L, 2L))
+  keptFirstPoint <- FALSE
+  for (seed in 1:10) {
+    redrawn <- PIObservations$new(list(mapping))$resample(seed)
+    observed <- redrawn$observedData[[1]]
+    expected <- observed$dataSetIndex[!.isBlqValues(observed$yValues, observed$lloq)]
+    kept <- original$resample(seed)$observedData[[1]]$dataSetIndex
+    expect_identical(kept, expected)
+    keptFirstPoint <- keptFirstPoint || 1L %in% kept
+  }
+  expect_true(keptFirstPoint)
+})

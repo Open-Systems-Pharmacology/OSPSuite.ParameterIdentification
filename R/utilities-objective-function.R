@@ -304,12 +304,13 @@
 ) {
   simulatedY <- simulated$yValues
   # Unless censored, simulated values below the LLOQ are replaced by LLOQ / 2
-  if (costControl$blqMethod != "m3" && observed$hasLloq) {
-    belowLloq <- simulatedY < observed$lloqMin
+  if (costControl$blqMethod != "m3" && any(is.finite(observed$lloq))) {
+    lloqMin <- min(observed$lloq, na.rm = TRUE)
+    belowLloq <- simulatedY < lloqMin
     if (anyNA(belowLloq)) {
       stop(messages$errorSimulatedValuesMissing())
     }
-    simulatedY[belowLloq] <- observed$lloqMin / 2
+    simulatedY[belowLloq] <- lloqMin / 2
   }
 
   if (costControl$scaling == "log") {
@@ -328,7 +329,8 @@
   # Data weights by data set, NA where the output mapping has none
   userWeights <- rep(NA_real_, length(observedY))
   for (dataSet in names(dataWeights)) {
-    userWeights[observed$name == dataSet] <- dataWeights[[dataSet]]
+    rows <- observed$name == dataSet
+    userWeights[rows] <- dataWeights[[dataSet]][observed$dataSetIndex[rows]]
   }
 
   keepSimulated <- .finiteValues(simulated$xValues, simulatedY)
@@ -526,9 +528,10 @@
 #' @param outputMapping A `PIOutputMapping` object.
 #'
 #' @return A list with one entry per observation in `name` (the data set),
-#'   `xValues`, `xDimension`, `yValues`, `yErrorValues`, `yErrorType` and
-#'   `lloq`, the log-transformed `logYValues` and `logLloq`, and `hasLloq`,
-#'   `lloqMin`, `logEpsilon` and `xUnit`, the unit of the x values.
+#'   `dataSetIndex` (the position of the observation in its data set, for the
+#'   data weights), `xValues`, `xDimension`, `yValues`, `yErrorValues`,
+#'   `yErrorType` and `lloq`, the log-transformed `logYValues` and `logLloq`,
+#'   and `logEpsilon` and `xUnit`, the unit of the x values.
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
@@ -543,21 +546,19 @@
     yUnit = yUnit
   )
 
-  # Values for the LLOQ rule and the log transformation, as in the data frames
   lloq <- rows$lloq
-  hasLloq <- sum(is.finite(lloq)) > 0
+  name <- as.character(rows$name)
   logEpsilon <- .logEpsilon(yDimension, yUnit)
 
   list(
-    name = as.character(rows$name),
+    name = name,
+    dataSetIndex = stats::ave(seq_along(name), name, FUN = seq_along),
     xValues = rows$xValues,
     xDimension = rows$xDimension,
     yValues = rows$yValues,
     yErrorValues = rows$yErrorValues,
     yErrorType = rows$yErrorType,
     lloq = lloq,
-    hasLloq = hasLloq,
-    lloqMin = if (hasLloq) min(lloq, na.rm = TRUE) else NA_real_,
     logYValues = ospsuite.utils::logSafe(
       rows$yValues,
       epsilon = logEpsilon,

@@ -126,7 +126,10 @@ ParameterIdentification <- R6::R6Class(
         )
       }
       if (is.null(private$.objective)) {
-        private$.data <- PIObservations$new(private$.outputMappings)
+        private$.data <- PIObservations$new(
+          private$.outputMappings,
+          private$.configuration$blqRemove
+        )
         private$.objective <- PIObjective$new(
           model = private$.model,
           data = private$.data,

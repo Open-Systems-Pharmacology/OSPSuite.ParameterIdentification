@@ -18,6 +18,33 @@ PIObservations <- R6::R6Class(
     # The prepared observed data of each output mapping (see
     # `.prepareObservedData()`)
     .observedData = NULL,
+    # `PIConfiguration$blqRemove`
+    .blqRemove = NULL,
+
+    # The prepared observed data of `mapping` without the observations that
+    # `blqRemove` removes
+    .selectObservations = function(mapping) {
+      observed <- .prepareObservedData(mapping)
+      keep <- .blqKeepMask(
+        observed$name,
+        observed$xValues,
+        observed$yValues,
+        observed$lloq,
+        private$.blqRemove
+      )
+      if (length(keep) > 0 && !any(keep)) {
+        stop(
+          messages$errorBlqRemoveEmptiesMapping(
+            mapping$quantity$path,
+            private$.blqRemove
+          ),
+          call. = FALSE
+        )
+      }
+      perObservation <- setdiff(names(observed), c("logEpsilon", "xUnit"))
+      observed[perObservation] <- lapply(observed[perObservation], `[`, keep)
+      observed
+    },
 
     # The means of an aggregated data set redrawn for `subjectCount` subjects
     # (see `.resampleDataSetValues()`), the values of other data sets
@@ -60,10 +87,17 @@ PIObservations <- R6::R6Class(
   ),
   public = list(
     # @param outputMappings List of `PIOutputMapping` objects.
-    initialize = function(outputMappings) {
+    # @param blqRemove `PIConfiguration$blqRemove`, which BLQ observations are
+    #   removed before the objective is evaluated.
+    initialize = function(outputMappings, blqRemove = "none") {
       ospsuite.utils::validateIsOfType(outputMappings, "PIOutputMapping")
+      ospsuite.utils::validateEnumValue(blqRemove, BLQRemoveModes)
       private$.outputMappings <- outputMappings
-      private$.observedData <- lapply(outputMappings, .prepareObservedData)
+      private$.blqRemove <- blqRemove
+      private$.observedData <- lapply(
+        outputMappings,
+        private$.selectObservations
+      )
     },
 
     # The data of one bootstrap replicate: the weights of the individual data
@@ -115,7 +149,7 @@ PIObservations <- R6::R6Class(
           }
         }
       })
-      PIObservations$new(mappings)
+      PIObservations$new(mappings, private$.blqRemove)
     }
   )
 )

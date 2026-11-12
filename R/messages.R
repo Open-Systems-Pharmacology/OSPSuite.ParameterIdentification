@@ -409,6 +409,12 @@ messages$errorMissingCensoredCV <- function() {
   )
 }
 
+messages$errorBlqRemoveEmptiesMapping <- function(quantityPath, blqRemove) {
+  ospsuite.utils::cliFormat(
+    "{.code blqRemove = {.val {blqRemove}}} removes every observed value of the output mapping for {.val {quantityPath}}, because all are below the LLOQ. Choose another {.arg blqRemove}."
+  )
+}
+
 messages$errorBlqRemoveWithM3 <- function() {
   ospsuite.utils::cliFormat(
     "{.code blqRemove = \"always\"} removes every BLQ observation, so {.code blqMethod = \"m3\"} has nothing to censor. Choose another {.arg blqRemove} or {.arg blqMethod}."
