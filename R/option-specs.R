@@ -32,7 +32,7 @@ CIOptionSpecs <- list(
 #' @noRd
 ObjectiveFunctionSpecs <- list(
   objectiveFunctionType = ospsuite.utils::characterOption(
-    allowedValues = c("lsq", "m3")
+    allowedValues = c("lsq")
   ),
   residualWeightingMethod = ospsuite.utils::characterOption(
     allowedValues = c("none", "error")
@@ -40,8 +40,10 @@ ObjectiveFunctionSpecs <- list(
   robustMethod = ospsuite.utils::characterOption(
     allowedValues = c("none", "huber", "bisquare")
   ),
-  scaleVar = ospsuite.utils::logicalOption(),
-  scaling = ospsuite.utils::characterOption(allowedValues = c("lin", "log")),
-  linScaleCV = ospsuite.utils::numericOption(min = 1e-9, max = 1),
-  logScaleSD = ospsuite.utils::numericOption(min = 1e-9)
+  scaleVar = ospsuite.utils::logicalOption()
+)
+
+#' @noRd
+BLQOptionSpecs <- list(
+  cv = ospsuite.utils::numericOption(min = .Machine$double.eps, max = 1)
 )

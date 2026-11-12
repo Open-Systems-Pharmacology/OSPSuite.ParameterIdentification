@@ -22,6 +22,21 @@ affecting error metrics and cost calculation. Defaults in
 \code{\link{ObjectiveFunctionOptions}}. Partial lists are merged with the current
 settings; only the provided keys are updated and validated.}
 
+    \item{\code{blqRemove}}{Mode selecting which BLQ observations enter the
+objective. See \code{\link{BLQRemoveModes}}.
+Defaults to \code{none}.}
+
+    \item{\code{blqMethod}}{Method selecting how retained BLQ observations
+contribute to the cost. See
+\code{\link{BLQMethods}}. Defaults to
+\code{lloqHalf}.}
+
+    \item{\code{blqOptions}}{Named list of parameters consumed by the \code{m3} BLQ
+method. Defaults in \code{\link{BLQOptions}}.
+Partial lists are merged with the current settings; only the provided
+keys are updated and validated. Unknown keys produce a warning and are
+ignored.}
+
     \item{\code{algorithm}}{Optimization algorithm name. See
 \code{\link{Algorithms}} for a list of
 supported algorithms. Defaults to \code{BOBYQA}. Changing the algorithm

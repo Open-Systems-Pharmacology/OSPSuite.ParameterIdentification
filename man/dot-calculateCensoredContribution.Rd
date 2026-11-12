@@ -4,13 +4,7 @@
 \alias{.calculateCensoredContribution}
 \title{Calculate Contribution of Censored Data}
 \usage{
-.calculateCensoredContribution(
-  observed,
-  simulated,
-  scaling,
-  linScaleCV = NULL,
-  logScaleSD = NULL
-)
+.calculateCensoredContribution(observed, simulated, scaling, cv = NULL)
 }
 \arguments{
 \item{observed}{Data frame containing observed data, must include 'lloq',
@@ -22,12 +16,9 @@
 \item{scaling}{Character string specifying the scaling method; should be one
 of the predefined scaling options.}
 
-\item{linScaleCV}{Numeric, coefficient used to calculate standard deviation
-for linear scaling, applied to the 'lloq' value of each censored
-observation.}
-
-\item{logScaleSD}{Numeric, standard deviation for logarithmic scaling,
-applied uniformly to all censored observations.}
+\item{cv}{Numeric, coefficient of variation of a measurement at the LLOQ.
+The standard deviation of a censored observation is \code{cv} times its LLOQ
+under linear scaling and \code{sqrt(log(1 + cv^2))} under logarithmic scaling.}
 }
 \value{
 Numeric value representing the sum of squared errors for censored
@@ -44,7 +35,7 @@ enhancing overall model cost assessment with respect to detection limits.
 }
 \examples{
 \dontrun{
-.calculateCensoredContribution(observedData, simulatedData, scaling = "lin", linScaleCV = 0.2)
+.calculateCensoredContribution(observedData, simulatedData, scaling = "lin", cv = 0.2)
 }
 }
 \keyword{internal}

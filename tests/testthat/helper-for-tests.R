@@ -148,7 +148,7 @@ currStartValues <- function(task) {
 # ospsuite.utils names the test runner's entry point as the caller, which
 # differs between devtools::test() and R CMD check.
 scrubCallerName <- function(lines) {
-  sub("`[[:alnum:]._]+[(][)]`: argument", "`<caller>()`: argument", lines)
+  sub("`[[:alnum:]._]+[(][)]`: ", "`<caller>()`: ", lines)
 }
 
 
@@ -633,7 +633,9 @@ taskObjective <- function(task, seed = NULL) {
   PIObjective$new(
     model = priv$.model,
     data = data,
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
+    blqMethod = task$configuration$blqMethod,
+    blqOptions = task$configuration$blqOptions
   )
 }
 

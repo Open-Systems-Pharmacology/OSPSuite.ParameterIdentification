@@ -7,6 +7,42 @@ test_that("evaluate() returns the modelCost of the frozen objective function", {
   expect_identical(asFrozenCost(cost), frozenObjectiveFunction(task, currVals))
 })
 
+# The task with an LLOQ of 2.5 on its first observed data set
+lloqTask <- function(blqMethod = "lloqHalf") {
+  task <- testPiTask()
+  dataSet <- task$outputMappings[[1]]$observedDataSets[[1]]
+  dataSet$LLOQ <- 2.5
+  task$configuration$blqMethod <- blqMethod
+  task
+}
+
+test_that("evaluate() with an LLOQ equals the costs recorded before the BLQ options moved", {
+  # none and lloq substitute as lloqHalf does until they get their own rules
+  for (blqMethod in c("none", "lloq", "lloqHalf")) {
+    task <- lloqTask(blqMethod)
+    expect_equal(
+      taskObjective(task)$evaluate(currStartValues(task))$modelCost,
+      870.98815201914113
+    )
+  }
+  task <- lloqTask("m3")
+  expect_equal(
+    taskObjective(task)$evaluate(currStartValues(task))$modelCost,
+    843.05727080080896
+  )
+})
+
+test_that("withData() keeps blqMethod and cv", {
+  task <- lloqTask("m3")
+  task$configuration$blqOptions$cv <- 0.5
+  objective <- taskObjective(task)
+  priv <- task$.__enclos_env__$private
+  replicate <- objective$withData(PIObservations$new(priv$.outputMappings))
+  values <- currStartValues(task)
+  expect_identical(replicate$evaluate(values), objective$evaluate(values))
+  expect_gt(objective$evaluate(values)$costVariables$M3Contribution, 0)
+})
+
 test_that("evaluate() is the same on every call and leaves the task alone", {
   task <- testPiTask()
   objective <- taskObjective(task)
@@ -23,7 +59,9 @@ test_that("evaluate() logs a failed simulation and returns the error cost struct
   objective <- PIObjective$new(
     model = priv$.model,
     data = PIObservations$new(priv$.outputMappings),
-    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions
+    objectiveFunctionOptions = task$configuration$objectiveFunctionOptions,
+    blqMethod = task$configuration$blqMethod,
+    blqOptions = task$configuration$blqOptions
   )
   suppressMessages(
     expect_message(
@@ -63,7 +101,13 @@ test_that("observedData of PIObjective is read-only", {
   priv$.batchInitialization()
   options <- task$configuration$objectiveFunctionOptions
   data <- PIObservations$new(priv$.outputMappings)
-  objective <- PIObjective$new(priv$.model, data, options)
+  objective <- PIObjective$new(
+    priv$.model,
+    data,
+    options,
+    "lloqHalf",
+    BLQOptions
+  )
   expect_snapshot(objective$observedData <- NULL, error = TRUE)
 })
 

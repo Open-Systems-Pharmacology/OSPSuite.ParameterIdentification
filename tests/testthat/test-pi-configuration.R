@@ -66,17 +66,10 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
   piConfiguration <- PIConfiguration$new()
   expect_silent(
     piConfiguration$objectiveFunctionOptions <- list(
-      objectiveFunctionType = "m3",
       residualWeightingMethod = "error",
       robustMethod = "huber",
-      scaleVar = TRUE,
-      linScaleCV = 0.5,
-      logScaleSD = 0.5
+      scaleVar = TRUE
     )
-  )
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
-    "m3"
   )
   expect_equal(
     piConfiguration$objectiveFunctionOptions$residualWeightingMethod,
@@ -87,14 +80,6 @@ test_that("objectiveFunctionOptions can be set and retrieved correctly", {
     "huber"
   )
   expect_true(piConfiguration$objectiveFunctionOptions$scaleVar)
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$linScaleCV,
-    0.5
-  )
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$logScaleSD,
-    0.5
-  )
 })
 
 test_that("algorithm can be set and retrieved correctly", {
@@ -110,15 +95,11 @@ test_that("algorithm can be set and retrieved correctly", {
 
 test_that("objectiveFunctionOptions single-field assignment is validated", {
   piConfiguration <- PIConfiguration$new()
-  piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "m3"
+  piConfiguration$objectiveFunctionOptions$residualWeightingMethod <- "error"
 
   expect_equal(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
-    "m3"
-  )
-  expect_equal(
     piConfiguration$objectiveFunctionOptions$residualWeightingMethod,
-    "none"
+    "error"
   )
   expect_equal(
     piConfiguration$objectiveFunctionOptions$scaleVar,
@@ -146,22 +127,37 @@ test_that("objectiveFunctionOptions rejects removed weighting methods std and me
   )
 })
 
-test_that("objectiveFunctionOptions rejects out-of-range numeric", {
+test_that("objectiveFunctionOptions rejects invalid scaleVar", {
   piConfiguration <- PIConfiguration$new()
   expect_error(
-    piConfiguration$objectiveFunctionOptions$linScaleCV <- 5,
-    regexp = "linScaleCV"
+    piConfiguration$objectiveFunctionOptions$scaleVar <- "yes",
+    regexp = "scaleVar"
+  )
+})
+
+test_that("objectiveFunctionType m3 stops with an error naming blqMethod", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "m3",
+    error = TRUE
+  )
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions <- list(
+      objectiveFunctionType = "m3"
+    ),
+    error = TRUE
+  )
+  expect_equal(
+    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
+    "lsq"
   )
 })
 
 test_that("objectiveFunctionOptions partial list merges with current settings", {
   piConfiguration <- PIConfiguration$new()
-  piConfiguration$objectiveFunctionOptions <- list(objectiveFunctionType = "m3")
+  piConfiguration$objectiveFunctionOptions <- list(scaleVar = TRUE)
 
-  expect_equal(
-    piConfiguration$objectiveFunctionOptions$objectiveFunctionType,
-    "m3"
-  )
+  expect_true(piConfiguration$objectiveFunctionOptions$scaleVar)
   expect_equal(
     piConfiguration$objectiveFunctionOptions$residualWeightingMethod,
     "none"
@@ -344,4 +340,139 @@ test_that("ciOptions bootstrap: nBootstrap validated and seed allows NULL", {
   expect_equal(piConfiguration$ciOptions$seed, 42L)
   piConfiguration$ciOptions <- list(seed = NULL)
   expect_null(piConfiguration$ciOptions$seed)
+})
+
+
+# BLQ configuration fields
+
+test_that("blqRemove and blqMethod have expected defaults", {
+  piConfiguration <- PIConfiguration$new()
+  expect_equal(piConfiguration$blqRemove, "none")
+  expect_equal(piConfiguration$blqMethod, "lloqHalf")
+})
+
+test_that("blqRemove accepts valid modes and rejects invalid ones", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqRemove <- "always"
+  expect_equal(piConfiguration$blqRemove, "always")
+  piConfiguration$blqRemove <- "trailingSingle"
+  expect_equal(piConfiguration$blqRemove, "trailingSingle")
+  expect_snapshot(piConfiguration$blqRemove <- "sometimes", error = TRUE)
+})
+
+test_that("blqRemove and blqMethod reject more than one value", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$blqRemove <- c("none", "always"),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_snapshot(
+    piConfiguration$blqMethod <- c("m3", "none"),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_equal(piConfiguration$blqRemove, "none")
+  expect_equal(piConfiguration$blqMethod, "lloqHalf")
+})
+
+test_that("blqMethod accepts all four methods and rejects invalid ones", {
+  piConfiguration <- PIConfiguration$new()
+  for (method in c("none", "lloq", "lloqHalf", "m3")) {
+    piConfiguration$blqMethod <- method
+    expect_equal(piConfiguration$blqMethod, method)
+  }
+  expect_snapshot(piConfiguration$blqMethod <- "censored", error = TRUE)
+})
+
+test_that("blqMethod accepts m3 without an objectiveType constraint", {
+  piConfiguration <- PIConfiguration$new()
+  expect_silent(piConfiguration$blqMethod <- "m3")
+  expect_equal(piConfiguration$blqMethod, "m3")
+})
+
+test_that("blqOptions defaults to a coefficient of variation of 0.2", {
+  piConfiguration <- PIConfiguration$new()
+  expect_equal(piConfiguration$blqOptions, list(cv = 0.2))
+})
+
+test_that("blqOptions sets cv by list and by field", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqOptions <- list(cv = 0.3)
+  expect_equal(piConfiguration$blqOptions$cv, 0.3)
+  piConfiguration$blqOptions$cv <- 1
+  expect_equal(piConfiguration$blqOptions$cv, 1)
+})
+
+test_that("blqOptions rejects a cv outside (0, 1]", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$blqOptions$cv <- 0,
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_snapshot(
+    piConfiguration$blqOptions$cv <- 1.5,
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_equal(piConfiguration$blqOptions$cv, 0.2)
+})
+
+test_that("blqOptions stops on the removed keys linScaleCV and logScaleSD", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$blqOptions <- list(linScaleCV = 0.3),
+    error = TRUE
+  )
+  expect_snapshot(
+    piConfiguration$blqOptions <- list(linScaleCV = 0.3, logScaleSD = 0.1),
+    error = TRUE
+  )
+  expect_equal(piConfiguration$blqOptions, list(cv = 0.2))
+})
+
+test_that("objectiveFunctionOptions stops on the removed keys linScaleCV and logScaleSD", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions$logScaleSD <- 0.1,
+    error = TRUE
+  )
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions <- list(linScaleCV = 0.2),
+    error = TRUE
+  )
+})
+
+test_that("blqOptions warns and ignores unknown keys", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(piConfiguration$blqOptions <- list(unknownKey = "x"))
+  expect_false("unknownKey" %in% names(piConfiguration$blqOptions))
+})
+
+test_that("blqRemove always and blqMethod m3 are rejected in either order", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqRemove <- "always"
+  expect_snapshot(piConfiguration$blqMethod <- "m3", error = TRUE)
+  expect_equal(piConfiguration$blqMethod, "lloqHalf")
+
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqMethod <- "m3"
+  expect_snapshot(piConfiguration$blqRemove <- "always", error = TRUE)
+  expect_equal(piConfiguration$blqRemove, "none")
+})
+
+test_that("blqRemove trailingSingle is allowed with blqMethod m3", {
+  piConfiguration <- PIConfiguration$new()
+  piConfiguration$blqMethod <- "m3"
+  expect_silent(piConfiguration$blqRemove <- "trailingSingle")
+  expect_equal(piConfiguration$blqRemove, "trailingSingle")
+})
+
+test_that("BLQ enums expose the documented values", {
+  expect_setequal(
+    as.character(BLQRemoveModes),
+    c("none", "always", "trailingSingle")
+  )
+  expect_setequal(as.character(BLQMethods), c("none", "lloq", "lloqHalf", "m3"))
 })

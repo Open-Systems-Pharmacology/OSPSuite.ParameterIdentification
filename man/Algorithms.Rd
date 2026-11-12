@@ -14,9 +14,9 @@ the \code{PIConfiguration} class.
 \details{
 Supported algorithms include:
 \itemize{
-\item \strong{\code{HJKB}} – Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
-\item \strong{\code{BOBYQA}} – BOBYQA algorithm from the \pkg{nloptr} package.
-\item \strong{\code{DEoptim}} – Differential evolution algorithm from the \pkg{DEoptim}
+\item \strong{\code{HJKB}} - Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
+\item \strong{\code{BOBYQA}} - BOBYQA algorithm from the \pkg{nloptr} package.
+\item \strong{\code{DEoptim}} - Differential evolution algorithm from the \pkg{DEoptim}
 package, suitable for stochastic global optimization.
 
 These algorithms can be specified and configured within the

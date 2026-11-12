@@ -152,8 +152,12 @@ outputMapping <- function(simulation, path, dataSets, scaling = "lin") {
   mapping
 }
 
+# `m3Cv` selects the M3 method with this coefficient of variation, through
+# `blqMethod` and `blqOptions` where the build has them, otherwise through the
+# objective function options of the base build
 piConfiguration <- function(
   objectiveFunctionOptions = NULL,
+  m3Cv = NULL,
   algorithm = "BOBYQA",
   algorithmOptions = NULL,
   ciMethod = "hessian",
@@ -168,6 +172,16 @@ piConfiguration <- function(
   )
   if (!is.null(objectiveFunctionOptions)) {
     configuration$objectiveFunctionOptions <- objectiveFunctionOptions
+  }
+  if (!is.null(m3Cv) && "blqMethod" %in% names(PIConfiguration$active)) {
+    configuration$blqMethod <- "m3"
+    configuration$blqOptions <- list(cv = m3Cv)
+  } else if (!is.null(m3Cv)) {
+    configuration$objectiveFunctionOptions <- list(
+      objectiveFunctionType = "m3",
+      linScaleCV = m3Cv,
+      logScaleSD = sqrt(log(1 + m3Cv^2))
+    )
   }
   if (algorithm != configuration$algorithm) {
     configuration$algorithm <- algorithm
@@ -242,14 +256,15 @@ evaluateObjective <- function(task, parameterSets, bootstrapSeed = NULL) {
 aciclovirTask <- function(
   scaling = "lin",
   objectiveFunctionOptions = NULL,
-  dataSets = laskinData()
+  dataSets = laskinData(),
+  m3Cv = NULL
 ) {
   sim <- newAciclovir()
   newTask(
     simulations = sim,
     parameters = piParameter(sim, lipophilicityPath, -0.097, -10, 10),
     mappings = outputMapping(sim, plasmaPath, dataSets, scaling = scaling),
-    configuration = piConfiguration(objectiveFunctionOptions)
+    configuration = piConfiguration(objectiveFunctionOptions, m3Cv)
   )
 }
 lipophilicitySets <- list(-0.097, 0.2, -0.4, -0.097)
@@ -375,29 +390,23 @@ cases$lloqLsqLog <- function() {
 }
 cases$lloqM3Lin <- function() {
   evaluateObjective(
-    aciclovirTask(
-      objectiveFunctionOptions = list(
-        objectiveFunctionType = "m3",
-        linScaleCV = 0.2
-      ),
-      dataSets = laskinData(lloq = 0.5)
-    ),
+    aciclovirTask(m3Cv = 0.2, dataSets = laskinData(lloq = 0.5)),
     lipophilicitySets
   )
 }
 cases$lloqM3Log <- function() {
   evaluateObjective(
+    # The CV whose log-scale SD sqrt(log(1 + cv^2)) is 0.086
     aciclovirTask(
       "log",
-      objectiveFunctionOptions = list(
-        objectiveFunctionType = "m3",
-        logScaleSD = 0.086
-      ),
+      m3Cv = sqrt(exp(0.086^2) - 1),
       dataSets = laskinData(lloq = 0.5)
     ),
     lipophilicitySets
   )
 }
+# The SD is derived from the CV, which may differ from 0.086 in the last digit
+attr(cases$lloqM3Log, "expectChange") <- TRUE
 
 # Error weighting: arithmetic SD (some are missing) and geometric SD
 cases$errorArithmetic <- function() {
@@ -691,13 +700,7 @@ cases$observedTimesBetweenCalls <- structure(
         laterData(c(1.62, 25, 50), c(1, 0.05, 0.01))
       ),
       m3 = withNewData(
-        aciclovirTask(
-          objectiveFunctionOptions = list(
-            objectiveFunctionType = "m3",
-            linScaleCV = 0.2
-          ),
-          dataSets = laskinData(lloq = 0.5)
-        ),
+        aciclovirTask(m3Cv = 0.2, dataSets = laskinData(lloq = 0.5)),
         laterData(c(1.62, 3.21, 16.87), rep(0.1, 3), lloq = 0.5)
       )
     )
