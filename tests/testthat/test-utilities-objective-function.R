@@ -75,12 +75,93 @@ test_that("blqMethod substitutes only the observed BLQ values", {
     list(blqMethod = "lloq", substitute = 1),
     list(blqMethod = "lloqHalf", substitute = 0.5)
   )) {
-    details <- .calculateCostMetrics(
-      blqDf(),
-      blqMethod = case$blqMethod
-    )$residualDetails
-    expect_identical(details$yObserved, c(5, case$substitute, 4))
-    expect_identical(details$ySimulated, c(5, 1.5, 3.5))
+    cost <- .calculateCostMetrics(blqDf(), blqMethod = case$blqMethod)
+    expect_identical(cost$residualDetails$yObserved, c(5, case$substitute, 4))
+    expect_identical(cost$residualDetails$ySimulated, c(5, 1.5, 3.5))
+    expect_equal(cost$modelCost, (1.5 - case$substitute)^2 + (3.5 - 4)^2)
+  }
+})
+
+test_that("m3 keeps the weights and error values of the kept observations", {
+  terms <- .costKernel(
+    simulatedX = c(0, 1, 2, 3),
+    simulatedY = c(6, 5, 1.5, 3.5),
+    observedX = c(1, 2, 3),
+    observedY = c(5, 0.2, 4),
+    userWeights = c(2, 3, 4),
+    yErrorValues = c(0.5, 0.1, 0.25),
+    yErrorType = rep("ArithmeticStdDev", 3),
+    residualWeightingMethod = "error",
+    robustMethod = "none",
+    scaleVar = FALSE,
+    index = 1L,
+    lloq = rep(1, 3),
+    blqMethod = "m3",
+    cv = 0.2,
+    scaling = "lin",
+    observedYLinear = c(5, 0.2, 4),
+    lloqLinear = rep(1, 3)
+  )
+  expect_identical(terms$userWeights, c(2, 4))
+  expect_identical(terms$errorWeights, c(2, 4))
+  expect_identical(terms$yObserved, c(5, 4))
+})
+
+test_that("m3 on a mapping with only censored observations gives the censored cost", {
+  allCensored <- blqDf(observedY = c(0.5, 0.2, 0.1))
+  cost <- .calculateCostMetrics(allCensored, blqMethod = "m3")
+  expect_equal(cost$costVariables$nObservations, 0)
+  expect_equal(nrow(cost$residualDetails), 0)
+  simulated <- c(5, 1.5, 3.5)
+  expect_equal(
+    cost$modelCost,
+    sum(-2 * log(stats::pnorm((1 - simulated) / 0.2)))
+  )
+})
+
+test_that("calculateCostMetrics uses the default cv of blqOptions", {
+  expect_identical(
+    .calculateCostMetrics(blqDf(), blqMethod = "m3"),
+    .calculateCostMetrics(blqDf(), blqMethod = "m3", cv = BLQOptions$cv)
+  )
+})
+
+test_that("BLQ substitution under log scaling gives error weights of the linear substituted value", {
+  dataSet <- ospsuite::DataSet$new(name = "logError")
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- "µmol/l"
+  dataSet$setValues(
+    xValues = c(60, 120, 180),
+    yValues = c(20, 15, 1.5),
+    yErrorValues = c(2, 2, 2)
+  )
+  dataSet$yErrorType <- ospsuite::DataErrorType$ArithmeticStdDev
+  dataSet$yErrorUnit <- "µmol/l"
+  dataSet$LLOQ <- 10
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "log"
+  costControl$residualWeightingMethod <- "error"
+  costControl$cv <- 0.2
+  for (case in list(
+    list(blqMethod = "lloqHalf", substitute = 5),
+    list(blqMethod = "lloq", substitute = 10)
+  )) {
+    costControl$blqMethod <- case$blqMethod
+    terms <- .mappingCostTerms(
+      simulated = list(xValues = c(60, 120, 180), yValues = c(18, 14, 4)),
+      observed = .prepareObservedData(mapping),
+      dataWeights = NULL,
+      costControl = costControl,
+      index = 1L
+    )
+    expect_equal(terms$yObserved[[3]], log(case$substitute))
+    expect_equal(
+      terms$errorWeights[[3]],
+      1 / sqrt(log(1 + (2 / case$substitute)^2))
+    )
   }
 })
 
@@ -237,6 +318,9 @@ test_that("a failed output mapping adds no observations to the combined cost", {
     lloq = rep(NA_real_, 3),
     blqMethod = "none",
     cv = NULL,
+    scaling = "lin",
+    observedYLinear = c(1.4, 2.7, 2.2),
+    lloqLinear = rep(NA_real_, 3),
     index = 1L
   )
   combined <- .combineCostTerms(
@@ -1391,6 +1475,9 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
       lloq = rep(NA_real_, 3),
       blqMethod = "none",
       cv = NULL,
+      scaling = "lin",
+      observedYLinear = c(1.4, 2.7, 2.2),
+      lloqLinear = rep(NA_real_, 3),
       index = index
     )
   }

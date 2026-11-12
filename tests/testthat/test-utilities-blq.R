@@ -88,12 +88,18 @@ test_that("observations with an NA LLOQ or an NA value are never BLQ", {
   expect_identical(keepMask(v, "always"), rep(TRUE, 4))
   expect_identical(keepMask(v, "trailingSingle"), rep(TRUE, 4))
 
-  # An NA value at time 3 ends no run and is not removed; time 4 is a single
-  # trailing BLQ observation
+  # An NA value at time 3 is not removed, and time 4 is the only BLQ
+  # observation of the trailing run
   v <- blqVectors()
   v$yValues[3] <- NA_real_
   expect_identical(keepMask(v, "always"), c(TRUE, TRUE, TRUE, FALSE))
   expect_identical(keepMask(v, "trailingSingle"), rep(TRUE, 4))
+})
+
+test_that("trailingSingle finds the trailing run past a trailing NA value", {
+  v <- blqVectors()
+  v$yValues <- c(10, 0.5, 0.5, NA)
+  expect_identical(keepMask(v, "trailingSingle"), c(TRUE, TRUE, FALSE, TRUE))
 })
 
 test_that("trailingSingle groups observations with an NA data set name", {

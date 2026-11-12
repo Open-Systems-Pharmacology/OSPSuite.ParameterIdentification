@@ -259,6 +259,15 @@ test_that("blqRemove that removes every observation of a mapping stops", {
   )
 })
 
+test_that("run() stops on a mapping that blqRemove empties", {
+  task <- testPiTask()
+  for (dataSet in task$outputMappings[[1]]$observedDataSets) {
+    dataSet$LLOQ <- 1e6
+  }
+  task$configuration$blqRemove <- "always"
+  expect_snapshot(task$run(), error = TRUE)
+})
+
 test_that("the data weights follow the kept observations", {
   mapping <- blqMapping()
   mapping$setDataWeights(list(blq = c(1, 2, 3, 4)))

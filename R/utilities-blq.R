@@ -20,8 +20,9 @@
 #' @param name,xValues,yValues,lloq Data set name, time, value and LLOQ of
 #'   each observation.
 #' @param blqRemove A `BLQRemoveModes` value. `trailingSingle` keeps, per data
-#'   set, the earliest of the BLQ observations after its last observation that
-#'   is not BLQ, and removes the others of that run.
+#'   set, the earliest of the BLQ observations after its last quantified
+#'   observation, and removes the others of that run. Missing values are
+#'   neither quantified nor removed.
 #' @return Logical vector, `TRUE` for an observation that enters the
 #'   objective, in the order of the input.
 #' @keywords internal
@@ -37,8 +38,9 @@
       groups <- split(seq_along(yValues), addNA(factor(name), ifany = TRUE))
       for (rows in groups) {
         rows <- rows[order(xValues[rows])]
-        lastQuantified <- max(c(0L, which(!isBlq[rows])))
-        trailing <- rows[seq_along(rows) > lastQuantified]
+        quantified <- !isBlq[rows] & !is.na(yValues[rows])
+        lastQuantified <- max(c(0L, which(quantified)))
+        trailing <- rows[seq_along(rows) > lastQuantified & isBlq[rows]]
         keep[trailing[-1]] <- FALSE
       }
       keep

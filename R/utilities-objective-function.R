@@ -4,9 +4,10 @@
 #' of one output mapping from a data frame of simulated and observed data, for
 #' example that of a `DataCombined` object. The objective function calculates
 #' the same cost on numeric vectors with `.mappingCostTerms()`. Both use
-#' `.costKernel()`, and the tests compare both with the calculation of version
-#' 2.2.0.9009 by `identical()` (see
-#' `tests/testthat/helper-frozen-objective-function.R`).
+#' `.costKernel()`. Without LLOQ data, the tests compare both with the
+#' calculation of version 2.2.0.9009 by `identical()` (see
+#' `tests/testthat/helper-frozen-objective-function.R`); with LLOQ data, whose
+#' handling changed since, with recorded costs.
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #'   observation. Supports dataframes created from a `DataCombined` object via
@@ -26,10 +27,12 @@
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #'   Defaults to `NA_real_`.
 #' @param scaling Scale of `yValues` and `lloq`, `"lin"` (default) or `"log"`,
-#'   for half the LLOQ and the SD of a censored observation. It is not used for
-#'   the error weights, which assume `yValues` on the linear scale.
+#'   for half the LLOQ, the SD of a censored observation and the error
+#'   weights. The error weights of `"log"` need linear values, which a data
+#'   frame on the log scale does not carry, so error weighting is meant for
+#'   `"lin"` only.
 #' @param cv Coefficient of variation of a measurement at the LLOQ, for
-#'   `blqMethod = "m3"`.
+#'   `blqMethod = "m3"`. Defaults to that of `BLQOptions`.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -65,7 +68,7 @@
   scaleVar = FALSE,
   index = NA_real_,
   scaling = "lin",
-  cv = NULL
+  cv = BLQOptions$cv
 ) {
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
@@ -130,10 +133,12 @@
     lloq = observedData$lloq %||% rep(NA_real_, nrow(observedData)),
     blqMethod = blqMethod,
     cv = cv,
-    scaling = scaling
+    scaling = scaling,
+    observedYLinear = observedData[["yValues"]],
+    lloqLinear = observedData$lloq %||% rep(NA_real_, nrow(observedData))
   )
 
-  do.call(.newModelCost, costTerms)
+  .combineCostTerms(list(costTerms))
 }
 
 #' Cost terms of one output mapping
@@ -181,9 +186,9 @@
   lloq,
   blqMethod,
   cv,
-  scaling = "lin",
-  observedYLinear = observedY,
-  lloqLinear = lloq
+  scaling,
+  observedYLinear,
+  lloqLinear
 ) {
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedX)) > 1) {
@@ -386,7 +391,8 @@
     blqMethod = costControl$blqMethod,
     cv = costControl$cv,
     scaling = costControl$scaling,
-    observedYLinear = observed$yValues[keepObserved]
+    observedYLinear = observed$yValues[keepObserved],
+    lloqLinear = observed$lloq[keepObserved]
   )
 }
 
