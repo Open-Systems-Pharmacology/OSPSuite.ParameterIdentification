@@ -1,11 +1,3 @@
-# .calculateCensoredContribution throws errors on invalid options
-
-    Code
-      .calculateCensoredContribution(observed = obsDf, simulated = predDf, scaling = "log")
-    Condition
-      Error:
-      ! The M3 contribution needs the coefficient of variation `cv` of BLQ observations.
-
 # .validateModelCost stops on an object that is not a modelCost
 
     Code

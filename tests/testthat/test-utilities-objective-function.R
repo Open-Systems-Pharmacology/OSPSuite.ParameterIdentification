@@ -9,174 +9,125 @@ obsVsPredDf <- readr::read_csv(
   show_col_types = FALSE
 )
 
-obsDf <- obsVsPredDf[obsVsPredDf$dataType == "observed", ]
-predDf <- obsVsPredDf[obsVsPredDf$dataType == "simulated", ]
-
-test_that(".calculateCensoredContribution correctly calculates result with linear scaling", {
-  obsDf$lloq <- 2.5
-  result <- .calculateCensoredContribution(
-    observed = obsDf,
-    simulated = predDf,
-    scaling = "lin",
-    cv = 0.25
-  )
-  expect_equal(result, 0.545702, tolerance = 1e-4)
-})
-
-test_that(".calculateCensoredContribution correctly calculates result with logarithmic scaling", {
-  obsVsPredDf$lloq <- 2.5
-  obsVsPredDfLog <- frozenApplyLogTransformation(obsVsPredDf)
-  obsDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "observed", ]
-  predDfLog <- obsVsPredDfLog[obsVsPredDfLog$dataType == "simulated", ]
-  result <- .calculateCensoredContribution(
-    observed = obsDfLog,
-    simulated = predDfLog,
-    scaling = "log",
-    cv = cvOfSd0086
-  )
-  expect_equal(result, 0.437086, tolerance = 1e-4)
-})
-
-test_that(".calculateCensoredContribution can handle a minimal dataset with a single censored observation", {
-  obsDf$lloq <- 2.5
-  obsDfSingle <- obsDf[1, , drop = FALSE]
-  predDfSingle <- predDf[1, , drop = FALSE]
-  result <- .calculateCensoredContribution(
-    observed = obsDfSingle,
-    simulated = predDfSingle,
-    scaling = "lin",
-    cv = 0.2
-  )
-  expect_equal(result, 0, tolerance = 1e-4)
-})
-
-test_that(".calculateCensoredContribution throws an error when LLOQ values are missing in the observed data", {
-  obsDf$lloq <- NA
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "lin",
-      cv = 0.2
-    )
-  )
-  obsDf$lloq <- NULL
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "lin",
-      cv = 0.2
-    )
+test_that(".calculateCensoredContribution sums -2 ln P with the SD of each LLOQ on the linear scale", {
+  lloq <- c(1, 1, 2, 2)
+  simulated <- c(0.1, 0.9, 1.9, 0.2)
+  expect_equal(
+    .calculateCensoredContribution(lloq, simulated, "lin", cv = 0.2),
+    sum(-2 * log(stats::pnorm((lloq - simulated) / (0.2 * lloq))))
   )
 })
 
-test_that(".calculateCensoredContribution uses the LLOQ of each censored value", {
-  # Two data sets with different LLOQs, all values censored, in the order of
-  # the data sets and not of the times
-  observed <- data.frame(
-    xValues = c(60, 180, 120, 240),
-    xUnit = "min",
-    xDimension = "Time",
-    yValues = c(0.5, 0.5, 1, 1),
-    lloq = c(1, 1, 2, 2)
+test_that(".calculateCensoredContribution uses the log-normal SD on the log scale", {
+  lloq <- log(c(1, 2))
+  simulated <- log(c(0.5, 3))
+  expect_equal(
+    .calculateCensoredContribution(lloq, simulated, "log", cv = 0.2),
+    sum(-2 * log(stats::pnorm((lloq - simulated) / sqrt(log(1 + 0.2^2)))))
   )
-  simulated <- data.frame(
-    xValues = c(60, 120, 180, 240),
-    xUnit = "min",
-    xDimension = "Time",
-    yValues = c(0.1, 1.9, 0.9, 0.2)
-  )
-  # The simulated values at the observed times
-  simulatedY <- c(0.1, 0.9, 1.9, 0.2)
-  lloq <- observed$lloq
+})
 
-  expect_equal(
-    .calculateCensoredContribution(
-      observed = observed,
-      simulated = simulated,
-      scaling = "lin",
-      cv = 0.2
-    ),
-    sum(-2 * log10(stats::pnorm((lloq - simulatedY) / (0.2 * lloq))))
+test_that(".calculateCensoredContribution is 0 without censored values", {
+  expect_identical(
+    .calculateCensoredContribution(numeric(0), numeric(0), "lin", cv = 0.2),
+    0
   )
+})
+
+test_that(".calculateCensoredContribution caps a probability of 0", {
   expect_equal(
-    .calculateCensoredContribution(
-      observed = transform(observed, yValues = log(yValues), lloq = log(lloq)),
-      simulated = transform(simulated, yValues = log(yValues)),
-      scaling = "log",
-      cv = cvOfSd0086
-    ),
-    sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / 0.086)))
-  )
-  # The default cv 0.2 gives the log-scale SD sqrt(log(1 + 0.2^2)) = 0.198042
-  sdOfDefaultCv <- sqrt(log(1 + 0.2^2))
-  expect_equal(
-    .calculateCensoredContribution(
-      observed = transform(observed, yValues = log(yValues), lloq = log(lloq)),
-      simulated = transform(simulated, yValues = log(yValues)),
-      scaling = "log",
-      cv = 0.2
-    ),
-    sum(-2 * log10(stats::pnorm((log(lloq) - log(simulatedY)) / sdOfDefaultCv)))
-  )
-  # One LLOQ for all values
-  observed$lloq <- 2
-  expect_equal(
-    .calculateCensoredContribution(
-      observed = observed,
-      simulated = simulated,
-      scaling = "lin",
-      cv = 0.2
-    ),
-    sum(-2 * log10(stats::pnorm((2 - simulatedY) / (0.2 * 2))))
+    .calculateCensoredContribution(c(1, 1), c(1e6, 1e6), "lin", cv = 0.2),
+    -2 * 2 * log(.Machine$double.xmin)
   )
 })
 
 test_that(".calculateCensoredContribution keeps a positive log-scale SD for a tiny cv", {
   # 1 + cv^2 rounds to 1 for cv = 1e-9, so the SD must not be computed from it.
   # A prediction at the LLOQ then has probability 0.5 of lying below it.
-  observed <- data.frame(
-    xValues = 60,
-    xUnit = "min",
-    xDimension = "Time",
-    yValues = log(0.5),
-    lloq = log(1)
-  )
-  simulated <- data.frame(
-    xValues = 60,
-    xUnit = "min",
-    xDimension = "Time",
-    yValues = log(1)
-  )
   expect_equal(
-    .calculateCensoredContribution(
-      observed = observed,
-      simulated = simulated,
-      scaling = "log",
-      cv = 1e-9
-    ),
-    -2 * log10(0.5)
+    .calculateCensoredContribution(log(1), log(1), "log", cv = 1e-9),
+    -2 * log(0.5)
   )
 })
 
-test_that(".calculateCensoredContribution throws errors on invalid options", {
-  obsDf$lloq <- 2.5
-  expect_error(
-    result <- .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "invalidOption",
-      cv = 0.2
-    )
+# BLQ scoring in the kernel
+
+# Simulated values at 0 to 3 h and observed values at 1, 2 and 3 h with an
+# LLOQ of 1 mg/l. The simulated values at the observed times are 5, 1.5 and
+# 3.5, and the observed value at 2 h is below the LLOQ.
+blqDf <- function(observedX = c(1, 2, 3), observedY = c(5, 0.2, 4)) {
+  tibble::tibble(
+    dataType = rep(c("simulated", "observed"), c(4, 3)),
+    xValues = c(0, 1, 2, 3, observedX),
+    yValues = c(6, 5, 1.5, 3.5, observedY),
+    xDimension = "Time",
+    yDimension = "Concentration (mass)",
+    xUnit = "h",
+    yUnit = "mg/l",
+    lloq = rep(c(NA, 1), c(4, 3)),
+    weights = NA_real_
   )
-  expect_snapshot(
-    .calculateCensoredContribution(
-      observed = obsDf,
-      simulated = predDf,
-      scaling = "log"
-    ),
-    error = TRUE
+}
+
+test_that("blqMethod substitutes only the observed BLQ values", {
+  for (case in list(
+    list(blqMethod = "none", substitute = 0.2),
+    list(blqMethod = "lloq", substitute = 1),
+    list(blqMethod = "lloqHalf", substitute = 0.5)
+  )) {
+    details <- .calculateCostMetrics(
+      blqDf(),
+      blqMethod = case$blqMethod
+    )$residualDetails
+    expect_identical(details$yObserved, c(5, case$substitute, 4))
+    expect_identical(details$ySimulated, c(5, 1.5, 3.5))
+  }
+})
+
+test_that("m3 scores censored values once, outside the residuals", {
+  cost <- .calculateCostMetrics(blqDf(), blqMethod = "m3", cv = 0.2)
+  expect_identical(cost$residualDetails$x, c(1, 3))
+  expect_equal(cost$costVariables$nObservations, 2)
+  censored <- -2 * log(stats::pnorm((1 - 1.5) / 0.2))
+  expect_equal(cost$costVariables$M3Contribution, censored)
+  expect_equal(cost$modelCost, (5 - 5)^2 + (3.5 - 4)^2 + censored)
+})
+
+test_that("m3 scores a censored value at a time that is not a simulated time", {
+  cost <- .calculateCostMetrics(
+    blqDf(observedX = c(1, 2.123456789, 3)),
+    blqMethod = "m3",
+    cv = 0.2
+  )
+  expect_true(is.finite(cost$modelCost))
+  expect_gt(cost$costVariables$M3Contribution, 0)
+})
+
+test_that("m3 under log scaling ignores the stored value of a censored observation", {
+  dataSet <- ospsuite::DataSet$new(name = "storedZero")
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- "µmol/l"
+  dataSet$setValues(xValues = c(60, 120, 180), yValues = c(10, 5, 0))
+  dataSet$LLOQ <- 2
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "log"
+  costControl$blqMethod <- "m3"
+  costControl$cv <- 0.2
+  terms <- .mappingCostTerms(
+    simulated = list(xValues = c(60, 120, 180), yValues = c(9, 4, 1)),
+    observed = .prepareObservedData(mapping),
+    dataWeights = NULL,
+    costControl = costControl,
+    index = 1L
+  )
+  expect_identical(terms$x, c(60, 120))
+  expect_equal(
+    terms$modelCost,
+    log(9 / 10)^2 + log(4 / 5)^2 +
+      -2 * log(stats::pnorm((log(2) - log(1)) / sqrt(log(1 + 0.2^2))))
   )
 })
 
@@ -282,7 +233,9 @@ test_that("a failed output mapping adds no observations to the combined cost", {
     residualWeightingMethod = "none",
     robustMethod = "none",
     scaleVar = FALSE,
-    censoredContribution = 0,
+    lloq = rep(NA_real_, 3),
+    blqMethod = "none",
+    cv = NULL,
     index = 1L
   )
   combined <- .combineCostTerms(
@@ -1357,7 +1310,9 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
       residualWeightingMethod = "none",
       robustMethod = "huber",
       scaleVar = FALSE,
-      censoredContribution = 0,
+      lloq = rep(NA_real_, 3),
+      blqMethod = "none",
+      cv = NULL,
       index = index
     )
   }
@@ -1478,34 +1433,23 @@ test_that("LLOQ, scaling and weights changed between calls take effect", {
   expect_identical(after, gridSearch(freshTask))
 })
 
-test_that("the LLOQ rule stops when simulated values are missing", {
+test_that("a missing simulated value is left out with an LLOQ", {
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"
   costControl$blqMethod <- "lloqHalf"
   costControl$cv <- 0.2
-  costTerms <- function(lloq) {
-    dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-    if (!is.null(lloq)) {
-      dataSet$LLOQ <- lloq
-    }
-    mapping <- PIOutputMapping$new(quantity = testQuantity())
-    mapping$addObservedDataSets(dataSet)
-    .mappingCostTerms(
-      simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
-      observed = .prepareObservedData(mapping),
-      dataWeights = mapping$dataWeights,
-      costControl = costControl,
-      index = 1L
-    )
-  }
-
-  expect_error(
-    costTerms(lloq = 0.5),
-    messages$errorSimulatedValuesMissing(),
-    fixed = TRUE
+  dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  dataSet$LLOQ <- 0.5
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  terms <- .mappingCostTerms(
+    simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
+    observed = .prepareObservedData(mapping),
+    dataWeights = mapping$dataWeights,
+    costControl = costControl,
+    index = 1L
   )
-  # Without an LLOQ, a missing simulated value is left out
-  expect_true(is.finite(costTerms(lloq = NULL)$modelCost))
+  expect_true(is.finite(terms$modelCost))
 })
 
 # .computeErrorWeights

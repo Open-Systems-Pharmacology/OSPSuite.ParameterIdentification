@@ -167,13 +167,6 @@ messages$errorNoDataForCost <- function(
   text
 }
 
-messages$errorSimulatedValuesMissing <- function() {
-  paste0(
-    "Simulated values are missing, so the LLOQ of the observed data cannot ",
-    "be applied to them."
-  )
-}
-
 messages$profilesNotSupplied <- function() {
   "Supply the result of the calculateOFVProfiles() method as the argument to the plotOFVProfiles() method."
 }
@@ -400,12 +393,6 @@ messages$errorRemovedBlqOption <- function(keys) {
 messages$errorM3ObjectiveFunctionType <- function() {
   ospsuite.utils::cliFormat(
     "{.val m3} is no longer an {.arg objectiveFunctionType}. Set {.code blqMethod = \"m3\"} instead."
-  )
-}
-
-messages$errorMissingCensoredCV <- function() {
-  ospsuite.utils::cliFormat(
-    "The M3 contribution needs the coefficient of variation {.arg cv} of BLQ observations."
   )
 }
 
