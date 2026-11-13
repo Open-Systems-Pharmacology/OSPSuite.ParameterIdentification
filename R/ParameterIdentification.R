@@ -126,7 +126,10 @@ ParameterIdentification <- R6::R6Class(
         )
       }
       if (is.null(private$.objective)) {
-        private$.data <- PIObservations$new(private$.outputMappings)
+        private$.data <- PIObservations$new(
+          private$.outputMappings,
+          private$.configuration$blqRemove
+        )
         private$.objective <- PIObjective$new(
           model = private$.model,
           data = private$.data,
@@ -281,13 +284,16 @@ ParameterIdentification <- R6::R6Class(
       lower <- sapply(private$.piParameters, `[[`, "minValue")
       upper <- sapply(private$.piParameters, `[[`, "maxValue")
 
+      # The objective reads the observed data, whose errors come before a
+      # simulation
+      objective <- private$.objectiveFor()
       private$.checkStartSimulation(startValues)
 
       optimizer <- Optimizer$new(configuration = private$.configuration)
 
       optimResult <- optimizer$run(
         par = startValues,
-        fn = private$.evaluationClosure(private$.objectiveFor()),
+        fn = private$.evaluationClosure(objective),
         lower = lower,
         upper = upper
       )

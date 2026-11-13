@@ -22,3 +22,19 @@
       Error:
       ! Property $outputMappings is readonly
 
+# blqRemove that removes every observation of a mapping stops
+
+    Code
+      PIObservations$new(list(blqMapping(c(0.1, 0.2))), "always")
+    Condition
+      Error:
+      ! `blqRemove = "always"` removes every observed value of the output mapping for "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)", because all are below the LLOQ. Choose another `blqRemove`.
+
+# run() stops on a mapping that blqRemove empties
+
+    Code
+      task$run()
+    Condition
+      Error:
+      ! `blqRemove = "always"` removes every observed value of the output mapping for "Organism|PeripheralVenousBlood|Aciclovir|Plasma (Peripheral Venous Blood)", because all are below the LLOQ. Choose another `blqRemove`.
+
