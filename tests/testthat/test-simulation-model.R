@@ -141,6 +141,23 @@ test_that(".observedTimes() applies the x transformations in min", {
   expect_identical(before, hours * 60)
 })
 
+test_that(".observedTimes() applies the x transformations of each data set", {
+  mapping <- testPiTask()$outputMappings[[1]]
+  mapping$addObservedDataSets(syntheticObservedData()[[1]])
+  first <- seq_along(mapping$observedDataSets[[1]]$xValues)
+  second <- mapping$observedDataSets[[2]]
+  before <- .observedTimes(mapping)
+  mapping$setDataTransformations(xOffsets = setNames(1, second$name))
+  after <- .observedTimes(mapping)
+  offset <- ospsuite::toBaseUnit(
+    ospsuite::ospDimensions$Time,
+    values = 1,
+    unit = second$xUnit
+  )
+  expect_identical(after[first], before[first])
+  expect_equal(after[-first], before[-first] + offset)
+})
+
 test_that("logFailure() counts the failures and shortens repeated reasons", {
   model <- taskModel(testPiTask())
   cond <- .simulationsFailedError("A", 1L, "negative values at t=3\nAciclovir")

@@ -13,9 +13,15 @@ instances to align and compare simulation outputs with empirical data.
   \if{html}{\out{<div class="r6-active-bindings">}}
   \describe{
     \item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for
-comparison with simulation outcomes.}
+comparison with simulation outcomes. Stops if a data set was renamed
+after it was added, because its weights and transformations are kept
+under the name it was added with.}
 
-    \item{\code{dataTransformations}}{A named list of factors and offsets.}
+    \item{\code{dataTransformations}}{A list with the numeric vectors \code{xOffsets},
+\code{yOffsets}, \code{xFactors} and \code{yFactors}. Each vector has one value per
+observed data set, named by the data set and in the order of
+\code{observedDataSets}. A data set without transformations has offsets of
+0 and factors of 1.}
 
     \item{\code{dataWeights}}{A named list of y-value weights.}
 
@@ -95,7 +101,9 @@ names must match the names of the observed datasets.}
     \if{html}{\out{</div>}}
   }
   \subsection{Details}{
-    Replaces any existing dataset with the same label.
+    Replaces any existing dataset with the same label. A replaced
+data set keeps its weights and transformations, and loses its subject
+count.
   }
 }
 
@@ -103,7 +111,8 @@ names must match the names of the observed datasets.}
 \if{html}{\out{<a id="method-PIOutputMapping-removeObservedDataSet"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-removeObservedDataSet}{}}}
 \subsection{\code{PIOutputMapping$removeObservedDataSet()}}{
-  Removes specified observed data series.
+  Removes specified observed data series, together with its
+weights, transformations and subject count.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$removeObservedDataSet(label)}
@@ -122,27 +131,28 @@ names must match the names of the observed datasets.}
 \if{html}{\out{<a id="method-PIOutputMapping-setDataTransformations"></a>}}
 \if{latex}{\out{\hypertarget{method-PIOutputMapping-setDataTransformations}{}}}
 \subsection{\code{PIOutputMapping$setDataTransformations()}}{
-  Configures transformations for datasets.
+  Sets offsets and factors that transform the observed data
+before they are compared with the simulation. The x-values become
+\code{(x + xOffset) * xFactor} and the y-values \code{(y + yOffset) * yFactor},
+with offsets in the units of the data set.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{PIOutputMapping$setDataTransformations(
-  labels = NULL,
-  xOffsets = 0,
-  yOffsets = 0,
-  xFactors = 1,
-  yFactors = 1
+  xOffsets = NULL,
+  yOffsets = NULL,
+  xFactors = NULL,
+  yFactors = NULL
 )}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{labels}}{List of dataset labels for targeted transformations.
-Absence of labels applies transformations globally.}
-      \item{\code{xOffsets}}{Numeric list/value for X-offset adjustments.}
-      \item{\code{yOffsets}}{Numeric list/value for Y-offset adjustments.}
-      \item{\code{xFactors}}{Numeric list/value for X-scaling factors.}
-      \item{\code{yFactors}}{Numeric list/value for Y-scaling factors.}
+      \item{\code{xOffsets, yOffsets, xFactors, yFactors}}{\code{NULL} (default) to keep the
+current values, one unnamed number for every observed data set, or a
+numeric vector named by observed data sets. Named values change only
+the named data sets and keep the values of the others. All values must
+be finite.}
     }
     \if{html}{\out{</div>}}
   }

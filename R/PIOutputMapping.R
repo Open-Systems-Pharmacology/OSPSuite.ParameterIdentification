@@ -10,19 +10,44 @@ PIOutputMapping <- R6::R6Class(
   cloneable = TRUE,
   active = list(
     #' @field observedDataSets A named list containing `DataSet` objects for
-    #'   comparison with simulation outcomes.
+    #'   comparison with simulation outcomes. Stops if a data set was renamed
+    #'   after it was added, because its weights and transformations are kept
+    #'   under the name it was added with.
     observedDataSets = function(value) {
       if (missing(value)) {
-        as.list(private$.observedDataSets)
+        dataSets <- private$.observedDataSets
+        currentNames <- vapply(dataSets, function(dataSet) dataSet$name, "")
+        isRenamed <- names(dataSets) != currentNames
+        if (any(isRenamed)) {
+          stop(messages$errorRenamedDataSets(
+            names(dataSets)[isRenamed],
+            unname(currentNames[isRenamed])
+          ))
+        }
+        as.list(dataSets)
       } else {
         stop(messages$errorPropertyReadOnly("observedDataSets"))
       }
     },
 
-    #' @field dataTransformations A named list of factors and offsets.
+    #' @field dataTransformations A list with the numeric vectors `xOffsets`,
+    #'   `yOffsets`, `xFactors` and `yFactors`. Each vector has one value per
+    #'   observed data set, named by the data set and in the order of
+    #'   `observedDataSets`. A data set without transformations has offsets of
+    #'   0 and factors of 1.
     dataTransformations = function(value) {
       if (missing(value)) {
-        private$.dataTransformations
+        dataSetNames <- names(private$.observedDataSets)
+        identity <- c(xOffsets = 0, yOffsets = 0, xFactors = 1, yFactors = 1)
+        transformations <- list()
+        for (key in names(identity)) {
+          values <- rep(identity[[key]], length(dataSetNames))
+          names(values) <- dataSetNames
+          stored <- private$.dataTransformations[[key]]
+          values[names(stored)] <- stored
+          transformations[[key]] <- values
+        }
+        transformations
       } else {
         stop(messages$errorPropertyReadOnly(
           "dataTransformations",
@@ -129,17 +154,14 @@ PIOutputMapping <- R6::R6Class(
       private$.quantity <- quantity
       private$.simId <- .getSimulationContainer(quantity)$id
       private$.observedDataSets <- list()
-      private$.dataTransformations <- list(
-        xOffsets = 0,
-        yOffsets = 0,
-        xFactors = 1,
-        yFactors = 1
-      )
+      private$.dataTransformations <- list()
       private$.scaling <- "lin"
     },
 
     #' @description Adds or updates observed data using `DataSet` objects.
-    #' @details Replaces any existing dataset with the same label.
+    #' @details Replaces any existing dataset with the same label. A replaced
+    #'   data set keeps its weights and transformations, and loses its subject
+    #'   count.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
     #' @param weights A named list of numeric values or numeric vectors. The
@@ -150,7 +172,7 @@ PIOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
 
-      if (!is.null(private$.dataWeights)) {
+      if (length(private$.dataWeights) > 0) {
         existingLabels <- names(private$.dataWeights)
         newLabels <- sapply(data, `[[`, "name")
         if (any(!newLabels %in% existingLabels)) {
@@ -203,70 +225,70 @@ PIOutputMapping <- R6::R6Class(
       return(invisible(self))
     },
 
-    #' @description Removes specified observed data series.
+    #' @description Removes specified observed data series, together with its
+    #'   weights, transformations and subject count.
     #' @param label The label of the observed data series to remove.
     removeObservedDataSet = function(label) {
       private$.dropSubjectCount(label)
+      private$.dataWeights <- private$.dataWeights[
+        names(private$.dataWeights) != label
+      ]
+      private$.dataTransformations <- lapply(
+        private$.dataTransformations,
+        function(values) values[names(values) != label]
+      )
       private$.observedDataSets[[label]] <- NULL
       invisible(self)
     },
 
-    #' @description Configures transformations for datasets.
-    #' @param labels List of dataset labels for targeted transformations.
-    #'   Absence of labels applies transformations globally.
-    #' @param xOffsets Numeric list/value for X-offset adjustments.
-    #' @param yOffsets Numeric list/value for Y-offset adjustments.
-    #' @param xFactors Numeric list/value for X-scaling factors.
-    #' @param yFactors Numeric list/value for Y-scaling factors.
+    #' @description Sets offsets and factors that transform the observed data
+    #'   before they are compared with the simulation. The x-values become
+    #'   `(x + xOffset) * xFactor` and the y-values `(y + yOffset) * yFactor`,
+    #'   with offsets in the units of the data set.
+    #'
+    #' @param xOffsets,yOffsets,xFactors,yFactors `NULL` (default) to keep the
+    #'   current values, one unnamed number for every observed data set, or a
+    #'   numeric vector named by observed data sets. Named values change only
+    #'   the named data sets and keep the values of the others. All values must
+    #'   be finite.
     setDataTransformations = function(
-      labels = NULL,
-      xOffsets = 0,
-      yOffsets = 0,
-      xFactors = 1,
-      yFactors = 1
+      xOffsets = NULL,
+      yOffsets = NULL,
+      xFactors = NULL,
+      yFactors = NULL
     ) {
-      ospsuite.utils::validateIsString(labels, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xOffsets, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(xFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yFactors, nullAllowed = TRUE)
-      ospsuite.utils::validateIsNumeric(yOffsets, nullAllowed = TRUE)
-
-      if (missing(labels)) {
-        # If no labels are given, reuse parameters across datasets
-        private$.dataTransformations$xFactors <- xFactors
-        private$.dataTransformations$yFactors <- yFactors
-        private$.dataTransformations$xOffsets <- xOffsets
-        private$.dataTransformations$yOffsets <- yOffsets
-        return(invisible(self))
+      dataSetNames <- names(private$.observedDataSets)
+      if (length(dataSetNames) == 0) {
+        stop(messages$errorNoObservedDataSetsForTransformations())
       }
 
-      # Otherwise, apply transformations only to labeled data
-      for (idx in seq_along(labels)) {
-        if (length(xFactors) == 1) {
-          xFactors <- rep(xFactors, length(labels))
+      values <- list(
+        xOffsets = xOffsets,
+        yOffsets = yOffsets,
+        xFactors = xFactors,
+        yFactors = yFactors
+      )
+      transformations <- private$.dataTransformations
+      for (key in names(values)) {
+        value <- values[[key]]
+        if (is.null(value)) {
+          next
         }
-        if (length(xOffsets) == 1) {
-          xOffsets <- rep(xOffsets, length(labels))
+        if (
+          !is.numeric(value) || length(value) == 0 || !all(is.finite(value))
+        ) {
+          stop(messages$errorTransformationValues(key))
         }
-        if (length(yFactors) == 1) {
-          yFactors <- rep(yFactors, length(labels))
+        labels <- names(value)
+        if (is.null(labels) && length(value) == 1) {
+          labels <- dataSetNames
         }
-        if (length(yOffsets) == 1) {
-          yOffsets <- rep(yOffsets, length(labels))
+        if (is.null(labels) || any(!labels %in% dataSetNames)) {
+          stop(messages$errorTransformationNames(key, dataSetNames))
         }
-        private$.dataTransformations$xFactors[[labels[[idx]]]] <- xFactors[[
-          idx
-        ]]
-        private$.dataTransformations$yFactors[[labels[[idx]]]] <- yFactors[[
-          idx
-        ]]
-        private$.dataTransformations$xOffsets[[labels[[idx]]]] <- xOffsets[[
-          idx
-        ]]
-        private$.dataTransformations$yOffsets[[labels[[idx]]]] <- yOffsets[[
-          idx
-        ]]
+        transformations[[key]][labels] <- unname(value)
       }
+      private$.dataTransformations <- transformations
       invisible(self)
     },
 

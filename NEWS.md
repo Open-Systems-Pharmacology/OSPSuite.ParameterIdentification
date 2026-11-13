@@ -6,6 +6,9 @@
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
 - `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
 
+- `PIOutputMapping$setDataTransformations()` no longer has a `labels` argument. Each of `xOffsets`, `yOffsets`, `xFactors` and `yFactors` takes one number for all data sets or a vector named by data set, and keeps the values of data sets it does not name. Transformations for single data sets now work instead of failing or reaching the wrong data set, and `dataTransformations` holds one value per data set (#311).
+- `PIOutputMapping$removeObservedDataSet()` also removes the weights and transformations of the data set, and `observedDataSets` stops with an error when a data set was renamed after it was added, instead of silently dropping its weights and transformations.
+
 ## Major changes
 
 - `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, as one number for all data sets of a mapping or a vector named by data set, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).

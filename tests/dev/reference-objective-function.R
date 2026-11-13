@@ -331,29 +331,26 @@ cases$dataSetsLog <- function() {
     lipophilicitySets
   )
 }
-# Transformations for single data sets fail on the base commit (#311), in the
-# batch initialization or in the evaluation. When they fail in the batch
-# initialization, they must fail the same way
-cases$labelledTransformationOne <- function() {
-  task <- aciclovirTask(dataSets = twoDataSets())
-  task$outputMappings[[1]]$setDataTransformations(
-    labels = "dataSet2",
-    xOffsets = 0.2,
-    yFactors = 0.8
-  )
-  evaluateObjective(task, lipophilicitySets[1])
-}
-# The base commit reports the error of the data transformations as a failed
-# simulation ("Initial simulation failed."). The observed data are now
-# prepared before the simulations run, so the evaluation stops with the error
-# itself
+# Transformations for single data sets (#311). The base commit has no named
+# values, applies a named value to every data set or fails, so the results
+# change
+cases$labelledTransformationOne <- structure(
+  function() {
+    task <- aciclovirTask(dataSets = twoDataSets())
+    task$outputMappings[[1]]$setDataTransformations(
+      xOffsets = c(dataSet2 = 0.2),
+      yFactors = c(dataSet2 = 0.8)
+    )
+    evaluateObjective(task, lipophilicitySets[1])
+  },
+  expectChange = TRUE
+)
 cases$labelledTransformationAll <- structure(
   function() {
     task <- aciclovirTask(dataSets = twoDataSets())
     task$outputMappings[[1]]$setDataTransformations(
-      labels = c("dataSet1", "dataSet2"),
-      xOffsets = c(0, 0.2),
-      yFactors = c(1, 0.8)
+      xOffsets = c(dataSet1 = 0, dataSet2 = 0.2),
+      yFactors = c(dataSet1 = 1, dataSet2 = 0.8)
     )
     evaluateObjective(task, lipophilicitySets[1])
   },

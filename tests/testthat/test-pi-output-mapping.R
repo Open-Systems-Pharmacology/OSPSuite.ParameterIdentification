@@ -9,7 +9,6 @@ test_that("PIOutputMapping object is correctly created", {
   outputMapping <- PIOutputMapping$new(quantity = testQuantity)
   expect_s3_class(outputMapping, "PIOutputMapping")
   expect_equal(outputMapping$observedDataSets, list())
-  expect_length(outputMapping$dataTransformations, 4)
   expect_equal(outputMapping$quantity, testQuantity)
   expect_equal(outputMapping$scaling, "lin")
   expect_equal(outputMapping$transformResultsFunction, NULL)
@@ -53,50 +52,160 @@ test_that("PIOutputMapping allows scaling to be changed to predefined values", {
   )
 })
 
-test_that("PIOutputMapping applies global x-offsets to datasets", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  outputMapping$setDataTransformations(xOffsets = -5)
-  expect_equal(outputMapping$dataTransformations$xOffsets, -5)
-})
+twoStudyMapping <- function() {
+  studyA <- DataSet$new(name = "studyA")
+  studyA$setValues(xValues = c(1, 2, 3, 4), yValues = c(10, 20, 30, 40))
+  studyB <- DataSet$new(name = "studyB")
+  studyB$setValues(xValues = c(1, 2, 3), yValues = c(20, 30, 40))
+  mapping <- PIOutputMapping$new(quantity = testQuantity)
+  mapping$addObservedDataSets(list(studyA, studyB))
+  mapping
+}
 
-test_that("PIOutputMapping sets default values for offsets and factors correctly", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-
-  expect_equal(outputMapping$dataTransformations$xFactors, 1)
-  expect_equal(outputMapping$dataTransformations$yFactors, 1)
-  expect_equal(outputMapping$dataTransformations$xOffsets, 0)
-  expect_equal(outputMapping$dataTransformations$yOffsets, 0)
-})
-
-test_that("PIOutputMapping applies global x-factors to datasets", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  outputMapping$setDataTransformations(xFactors = 2)
-
-  expect_equal(outputMapping$dataTransformations$xFactors, 2)
-})
-
-test_that("PIOutputMapping sets global x-offsets and x-factors simultaneously", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  outputMapping$setDataTransformations(xFactors = 2, xOffsets = 5)
-  expect_equal(outputMapping$dataTransformations$xFactors, 2)
-  expect_equal(outputMapping$dataTransformations$xOffsets, 5)
-})
-
-test_that("PIOutputMapping sets x-factors in a dataset-specific manner with labels", {
-  outputMapping <- PIOutputMapping$new(quantity = testQuantity)
-  outputMapping$setDataTransformations(
-    labels = c("data1", "data2"),
-    xFactors = c(2, 3)
+test_that("dataTransformations gives no transformation to every data set", {
+  expect_identical(
+    twoStudyMapping()$dataTransformations,
+    list(
+      xOffsets = c(studyA = 0, studyB = 0),
+      yOffsets = c(studyA = 0, studyB = 0),
+      xFactors = c(studyA = 1, studyB = 1),
+      yFactors = c(studyA = 1, studyB = 1)
+    )
   )
+})
 
-  expect_equal(outputMapping$dataTransformations$xFactors[["data1"]], 2)
-  expect_equal(outputMapping$dataTransformations$xFactors[["data2"]], 3)
-  expect_equal(outputMapping$dataTransformations$yFactors[["data1"]], 1)
-  expect_equal(outputMapping$dataTransformations$yFactors[["data2"]], 1)
-  expect_equal(outputMapping$dataTransformations$xOffsets[["data1"]], 0)
-  expect_equal(outputMapping$dataTransformations$xOffsets[["data2"]], 0)
-  expect_equal(outputMapping$dataTransformations$yOffsets[["data1"]], 0)
-  expect_equal(outputMapping$dataTransformations$yOffsets[["data2"]], 0)
+test_that("dataTransformations is empty without observed data sets", {
+  transformations <- PIOutputMapping$new(
+    quantity = testQuantity
+  )$dataTransformations
+  expect_named(
+    transformations,
+    c("xOffsets", "yOffsets", "xFactors", "yFactors")
+  )
+  expect_true(all(lengths(transformations) == 0))
+})
+
+test_that("setDataTransformations() applies one unnamed value to every data set", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(xOffsets = -5, yFactors = 0.8)
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = -5, studyB = -5)
+  )
+  expect_identical(
+    mapping$dataTransformations$yFactors,
+    c(studyA = 0.8, studyB = 0.8)
+  )
+  expect_identical(
+    mapping$dataTransformations$xFactors,
+    c(studyA = 1, studyB = 1)
+  )
+})
+
+test_that("setDataTransformations() sets named data sets and keeps the others", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(xOffsets = 0.5)
+  mapping$setDataTransformations(
+    xOffsets = c(studyB = 0.2),
+    yFactors = c(studyB = 0.8)
+  )
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = 0.5, studyB = 0.2)
+  )
+  expect_identical(
+    mapping$dataTransformations$yFactors,
+    c(studyA = 1, studyB = 0.8)
+  )
+})
+
+test_that("setDataTransformations() orders the values as the data sets", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(yOffsets = c(studyB = 2, studyA = 1))
+  expect_identical(
+    mapping$dataTransformations$yOffsets,
+    c(studyA = 1, studyB = 2)
+  )
+})
+
+test_that("setDataTransformations() keeps the arguments it is not given", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(xFactors = 2)
+  mapping$setDataTransformations(yOffsets = 3)
+  expect_identical(
+    mapping$dataTransformations$xFactors,
+    c(studyA = 2, studyB = 2)
+  )
+})
+
+test_that("setDataTransformations() rejects invalid values and changes nothing", {
+  expect_snapshot(
+    PIOutputMapping$new(quantity = testQuantity)$setDataTransformations(
+      xOffsets = 1
+    ),
+    error = TRUE
+  )
+  mapping <- twoStudyMapping()
+  expect_snapshot(
+    mapping$setDataTransformations(xOffsets = c(studyC = 1)),
+    error = TRUE
+  )
+  expect_snapshot(
+    mapping$setDataTransformations(xOffsets = c(1, 2)),
+    error = TRUE
+  )
+  expect_snapshot(
+    mapping$setDataTransformations(yFactors = NA_real_),
+    error = TRUE
+  )
+  expect_snapshot(mapping$setDataTransformations(yFactors = Inf), error = TRUE)
+  expect_snapshot(
+    mapping$setDataTransformations(yFactors = numeric()),
+    error = TRUE
+  )
+  expect_snapshot(
+    mapping$setDataTransformations(xOffsets = 1, yFactors = c(studyC = 1)),
+    error = TRUE
+  )
+  expect_identical(
+    mapping$dataTransformations,
+    twoStudyMapping()$dataTransformations
+  )
+})
+
+test_that("replacing a data set keeps its transformations and weights", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(xOffsets = c(studyB = 0.2))
+  mapping$setDataWeights(list(studyB = 2))
+  mapping$addObservedDataSets(mapping$observedDataSets$studyB)
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = 0, studyB = 0.2)
+  )
+  expect_identical(mapping$dataWeights, list(studyB = c(2, 2, 2)))
+})
+
+test_that("removing a data set drops its transformations and weights", {
+  mapping <- twoStudyMapping()
+  studyB <- mapping$observedDataSets$studyB
+  mapping$setDataTransformations(xOffsets = 0.2)
+  mapping$setDataWeights(list(studyA = 2, studyB = 3))
+  mapping$removeObservedDataSet("studyB")
+  expect_identical(mapping$dataTransformations$xOffsets, c(studyA = 0.2))
+  expect_named(mapping$dataWeights, "studyA")
+  expect_snapshot(mapping$addObservedDataSets(studyB))
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = 0.2, studyB = 0)
+  )
+  expect_named(mapping$dataWeights, "studyA")
+})
+
+test_that("observedDataSets stops when a data set was renamed after adding it", {
+  mapping <- twoStudyMapping()
+  dataSet <- mapping$observedDataSets$studyB
+  dataSet$name <- "studyB revised"
+  expect_snapshot(mapping$observedDataSets, error = TRUE)
 })
 
 test_that("PIOutputMapping errors when non-function passed to transformResultsFunction", {
