@@ -44,6 +44,30 @@ messages$errorSubjectCountNames <- function(dataSetNames) {
   )
 }
 
+messages$errorNoObservedDataSetsForTransformations <- function() {
+  ospsuite.utils::cliFormat(
+    "Cannot set data transformations: no observed data sets defined. Add the data sets with {.fn PIOutputMapping$addObservedDataSets} first."
+  )
+}
+
+messages$errorTransformationValues <- function(argument) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argument}} must contain finite numbers."
+  )
+}
+
+messages$errorTransformationNames <- function(argument, dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argument}} must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}."
+  )
+}
+
+messages$errorRenamedDataSets <- function(oldNames, newNames) {
+  ospsuite.utils::cliFormat(
+    "The observed data set(s) {.val {oldNames}} were renamed to {.val {newNames}} after they were added to the output mapping. Remove them with {.fn PIOutputMapping$removeObservedDataSet} under the old name and add them again."
+  )
+}
+
 messages$errorMissingSubjectCount <- function(dataSetNames) {
   ospsuite.utils::cliFormat(
     "The aggregated data set(s) {.val {dataSetNames}} have no subject count. Bootstrap confidence intervals redraw the means of aggregated data from their mean and SD divided by the square root of the number of subjects, so call {.fn PIOutputMapping$setSubjectCount} on their output mapping with that number."

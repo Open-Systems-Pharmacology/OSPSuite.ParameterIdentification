@@ -785,6 +785,19 @@ test_that("observed data equal the observed rows of a full evaluation", {
   expect_identical(observed$logLloq, logged$lloq[isObserved])
 })
 
+test_that("observed data apply the transformations of each data set to its rows", {
+  mapping <- testPiTask()$outputMappings[[1]]
+  mapping$addObservedDataSets(syntheticObservedData()[[1]])
+  second <- names(mapping$observedDataSets)[[2]]
+  before <- .prepareObservedData(mapping)
+  mapping$setDataTransformations(yFactors = setNames(0.8, second))
+  after <- .prepareObservedData(mapping)
+  isSecond <- before$name == second
+  expect_identical(after$name, before$name)
+  expect_identical(after$yValues[!isSecond], before$yValues[!isSecond])
+  expect_equal(after$yValues[isSecond], 0.8 * before$yValues[isSecond])
+})
+
 # The objective function against that of 2.2.0.9009, which calculated the
 # cost on data frames (`frozenObjectiveFunction()`, see
 # helper-frozen-objective-function.R). Each test builds one task and applies

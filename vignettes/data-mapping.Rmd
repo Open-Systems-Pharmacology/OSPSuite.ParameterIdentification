@@ -226,20 +226,29 @@ outputMapping$setDataWeights(list(
 ## Transformations
 
 Observed data can be adjusted through transformations to improve comparability
-with the corresponding simulation output. This is done per dataset or globally
-for all datasets in the mapping. Transformations allow offsets and scaling
-factors to be applied to x- and y-values, for example to account for systematic
-shifts between experiments or to align starting points across datasets.
+with the corresponding simulation output, for example to account for systematic
+shifts between experiments or to align starting points across datasets. Each
+dataset has its own offsets and factors for the x- and y-values. The x-values
+become $(x + x_{offset}) \cdot x_{factor}$ and the y-values
+$(y + y_{offset}) \cdot y_{factor}$, with the offsets in the units of the dataset.
+A dataset without transformations has offsets of 0 and factors of 1.
+
+Like weights, transformations are set by dataset name with
+`setDataTransformations()`. A named vector changes the named datasets and keeps
+the values of the others. A single unnamed number applies to every dataset of
+the mapping. Arguments that are not given keep their current values.
 
 ```{r set-transformations}
 outputMapping$setDataTransformations(
-  labels   = "Aciclovir_Profiles.Vergin 1995.Iv.250 mg",
-  xOffsets = 0.5, yOffsets = 0,
-  xFactors = 1,   yFactors = 1
+  xOffsets = c("Aciclovir_Profiles.Vergin 1995.Iv.250 mg" = 0.5)
 )
 
 outputMapping$dataTransformations
 ```
+
+The `dataTransformations` field holds one value per dataset for each of
+`xOffsets`, `yOffsets`, `xFactors` and `yFactors`. Removing a dataset with
+`removeObservedDataSet()` also removes its weights and transformations.
 
 
 ## Practical tips
