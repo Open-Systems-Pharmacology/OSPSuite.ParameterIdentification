@@ -27,6 +27,14 @@ test_that(".calculateCensoredContribution uses the log-normal SD on the log scal
   )
 })
 
+test_that(".calculateCensoredContribution keeps the SD positive for a negative LLOQ", {
+  # A y offset can move an LLOQ below 0 on the linear scale
+  expect_equal(
+    .calculateCensoredContribution(-1, -2, "lin", cv = 0.2),
+    -2 * log(stats::pnorm(5))
+  )
+})
+
 test_that(".calculateCensoredContribution is 0 without censored values", {
   expect_identical(
     .calculateCensoredContribution(numeric(0), numeric(0), "lin", cv = 0.2),

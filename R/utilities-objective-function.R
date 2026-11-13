@@ -892,7 +892,7 @@ plot.modelCost <- function(x, legpos = "topright", ...) {
   if (length(lloq) == 0) {
     return(0)
   }
-  stDev <- if (scaling == "lin") cv * lloq else sqrt(log1p(cv^2))
+  stDev <- if (scaling == "lin") abs(cv * lloq) else sqrt(log1p(cv^2))
   probabilities <- stats::pnorm((lloq - simulated) / stDev)
   probabilities[probabilities == 0] <- .Machine$double.xmin
   sum(-2 * log(probabilities))
