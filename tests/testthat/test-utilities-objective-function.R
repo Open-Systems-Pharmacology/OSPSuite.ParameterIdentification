@@ -1331,8 +1331,17 @@ test_that("objective function equals 2.2.0.9009 for several data sets", {
 })
 
 test_that("objective function for several data sets with LLOQs gives the recorded costs", {
+  task <- severalDataSetsTask()
+  # Whether the LLOQ and geometric SDs follow the y transformations depends on
+  # the ospsuite version, so the recorded costs use the data untransformed in y
+  task$outputMappings[[1]]$setDataTransformations(yOffsets = 0, yFactors = 1)
+  task$outputMappings[[2]]$setDataTransformations(
+    xOffsets = 2,
+    xFactors = 1.5,
+    yFactors = 1
+  )
   costs <- recordedCosts(
-    severalDataSetsTask(),
+    task,
     list(
       list(),
       list(scaling = "log"),
@@ -1352,18 +1361,18 @@ test_that("objective function for several data sets with LLOQs gives the recorde
   expect_equal(
     costs,
     c(
-      4077.93639166568664223,
-      2220.13733736031144872,
-      20.50730380080133486,
-      12.23819518709304610,
-      3710.13862599347294235,
-      2040.35768618197107571,
-      4077.71183943283313056,
-      2220.03992715807862623,
-      17.76494123913684930,
-      11.16899597451127946,
-      0.20227508624352725,
-      0.32456224250170529
+      3737.97005154714361197,
+      2036.85337632925234175,
+      12.89016745191842261,
+      10.41685644516104325,
+      3428.44038882649010702,
+      1846.48875580170351896,
+      3737.82127370319267357,
+      2036.80073593813403932,
+      10.71670653017191022,
+      9.69057967005259080,
+      0.30434990899737097,
+      0.31129713507553064
     )
   )
 })
