@@ -57,5 +57,8 @@ VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Encoding: UTF-8
+Remotes:
+    ospsuite=Open-Systems-Pharmacology/OSPSuite-R,
+    ospsuite.utils=Open-Systems-Pharmacology/OSPSuite.RUtils
 Additional_repositories:
     https://open-systems-pharmacology.r-universe.dev
