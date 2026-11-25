@@ -236,7 +236,7 @@ test_that(".createErrorCostStructure counts no observations", {
   expect_equal(.createErrorCostStructure()$costVariables$nObservations, 0)
 })
 
-test_that("a failed output mapping adds no observations to the combined cost", {
+test_that("a mapping whose cost cannot be computed adds no observations to the combined cost", {
   threeObservations <- .costKernel(
     simulatedX = c(0, 1, 2, 3),
     simulatedY = c(1, 2, 3, 2),
