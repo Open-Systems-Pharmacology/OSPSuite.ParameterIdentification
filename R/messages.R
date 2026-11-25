@@ -312,13 +312,13 @@ messages$errorHessianCostVariables <- function(fields) {
 
 messages$errorNotModelCost <- function(class) {
   ospsuite.utils::cliFormat(
-    "The cost details must be a {.cls modelCost} object, not {.cls {class}}."
+    "Internal error: the cost details passed to the result are {.cls {class}}, not the expected cost structure."
   )
 }
 
 messages$errorModelCostFieldsMissing <- function(fields) {
   ospsuite.utils::cliFormat(
-    "The cost details lack the field{?s} {.field {fields}} of a {.cls modelCost} object."
+    "Internal error: the cost details passed to the result lack the field{?s} {.field {fields}}."
   )
 }
 
