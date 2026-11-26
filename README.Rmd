@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
   <!-- badges: start -->
 
-[![Main-Workflow](https://img.shields.io/github/actions/workflow/status/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/Main-Workflow.yaml?branch=main&label=Build)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/Main-Workflow.yaml)
+[![Build](https://img.shields.io/github/actions/workflow/status/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/merge-to-main.yaml?branch=main&label=Build)](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/actions/workflows/merge-to-main.yaml)
 [![codecov](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/graph/badge.svg?token=FL1AEQ7316)](https://codecov.io/gh/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification)
 
   <!-- badges: end -->

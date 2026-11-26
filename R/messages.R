@@ -334,6 +334,18 @@ messages$errorHessianCostVariables <- function(fields) {
   )
 }
 
+messages$errorNotModelCost <- function(class) {
+  ospsuite.utils::cliFormat(
+    "Internal error: the cost details passed to the result are {.cls {class}}, not the expected cost structure. Please report this at {.url https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues}."
+  )
+}
+
+messages$errorModelCostFieldsMissing <- function(fields) {
+  ospsuite.utils::cliFormat(
+    "Internal error: the cost details passed to the result lack the field{?s} {.field {fields}}. Please report this at {.url https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues}."
+  )
+}
+
 messages$errorBootstrapReplicateMissing <- function() {
   ospsuite.utils::cliFormat(
     "The bootstrap method needs {.arg replicate}, a {.code function(seed)} that returns the objective function of one bootstrap replicate."

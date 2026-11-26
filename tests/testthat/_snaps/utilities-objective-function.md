@@ -1,3 +1,27 @@
+# .validateModelCost stops on an object that is not a modelCost
+
+    Code
+      .validateModelCost(list(modelCost = 1))
+    Condition
+      Error in `.validateModelCost()`:
+      ! Internal error: the cost details passed to the result are <list>, not the expected cost structure. Please report this at <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues>.
+
+# .validateModelCost names the missing fields
+
+    Code
+      .validateModelCost(cost)
+    Condition
+      Error in `.validateModelCost()`:
+      ! Internal error: the cost details passed to the result lack the fields minLogProbability, costVariables$weightedSSR, and residualDetails$totalWeights. Please report this at <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues>.
+
+# .validateModelCost names a missing table once, without its columns
+
+    Code
+      .validateModelCost(cost)
+    Condition
+      Error in `.validateModelCost()`:
+      ! Internal error: the cost details passed to the result lack the field residualDetails. Please report this at <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues>.
+
 # calculateCostMetrics returns correct cost metric values for default parameters
 
     structure(list(modelCost = 677.390283322667, minLogProbability = 348.803465526585, 

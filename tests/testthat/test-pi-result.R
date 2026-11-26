@@ -14,6 +14,25 @@ test_that("PIResult can be initialized with optimization results only", {
   expect_s3_class(piResult, "R6")
 })
 
+test_that("PIResult stops on cost details without the documented structure", {
+  optimResult <- list(
+    par = -0.097,
+    value = 778.129,
+    startValues = -0.097,
+    convergence = TRUE,
+    iterations = 3,
+    fnEvaluations = 3,
+    algorithm = "BOBYQA",
+    elapsed = 1.51
+  )
+  costDetails <- .createErrorCostStructure()
+  costDetails$costVariables$nObservations <- NULL
+  expect_snapshot(
+    PIResult$new(optimResult, costDetails = costDetails),
+    error = TRUE
+  )
+})
+
 test_that("toDataFrame() errors clearly when PIResult has no parameter metadata", {
   optimResult <- list(
     par = -0.097,

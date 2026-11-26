@@ -1,3 +1,11 @@
+# PIResult stops on cost details without the documented structure
+
+    Code
+      PIResult$new(optimResult, costDetails = costDetails)
+    Condition
+      Error in `.validateModelCost()`:
+      ! Internal error: the cost details passed to the result lack the field costVariables$nObservations. Please report this at <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues>.
+
 # toList() produces expected output
 
     Code
