@@ -270,7 +270,7 @@ test_that(".createErrorCostStructure counts no observations", {
   expect_equal(.createErrorCostStructure()$costVariables$nObservations, 0)
 })
 
-test_that("a failed output mapping adds no observations to the combined cost", {
+test_that("a mapping whose cost cannot be computed adds no observations to the combined cost", {
   threeObservations <- .costKernel(
     simulatedX = c(0, 1, 2, 3),
     simulatedY = c(1, 2, 3, 2),
@@ -644,10 +644,7 @@ test_that("simulatedOutputs() returns the simulated rows of a full evaluation", 
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(
-    priv$.model$simulate(currVals),
-    task$outputMappings
-  )[[1]]$toDataFrame()
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
   fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
@@ -886,10 +883,7 @@ test_that("observed data equal the observed rows of a full evaluation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(
-    priv$.model$simulate(currVals),
-    task$outputMappings
-  )[[1]]$toDataFrame()
+  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
   converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),

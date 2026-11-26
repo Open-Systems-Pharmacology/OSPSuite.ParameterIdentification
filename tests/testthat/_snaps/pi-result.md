@@ -4,7 +4,7 @@
       PIResult$new(optimResult, costDetails = costDetails)
     Condition
       Error in `.validateModelCost()`:
-      ! The cost details lack the field costVariables$nObservations of a <modelCost> object.
+      ! Internal error: the cost details passed to the result lack the field costVariables$nObservations. Please report this at <https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues>.
 
 # toList() produces expected output
 

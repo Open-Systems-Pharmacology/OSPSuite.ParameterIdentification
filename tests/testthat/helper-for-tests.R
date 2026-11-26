@@ -659,8 +659,8 @@ pkMapping <- function(simulation = testSimulation()) {
 # A `modelCost` object in the convention of version 2.2.0.9009, for comparing
 # it with the frozen objective function (helper-frozen-objective-function.R):
 # that version rounded the weights in `residualDetails` to two decimals and
-# counted one observation for each failed output mapping, which has one row
-# of `NA` values in `residualDetails`.
+# counted one observation for each output mapping whose cost cannot be computed,
+# which has one row of `NA` values in `residualDetails`.
 asFrozenCost <- function(cost) {
   details <- cost$residualDetails
   for (field in c("errorWeights", "robustWeights", "totalWeights")) {

@@ -312,13 +312,13 @@ messages$errorHessianCostVariables <- function(fields) {
 
 messages$errorNotModelCost <- function(class) {
   ospsuite.utils::cliFormat(
-    "The cost details must be a {.cls modelCost} object, not {.cls {class}}."
+    "Internal error: the cost details passed to the result are {.cls {class}}, not the expected cost structure. Please report this at {.url https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues}."
   )
 }
 
 messages$errorModelCostFieldsMissing <- function(fields) {
   ospsuite.utils::cliFormat(
-    "The cost details lack the field{?s} {.field {fields}} of a {.cls modelCost} object."
+    "Internal error: the cost details passed to the result lack the field{?s} {.field {fields}}. Please report this at {.url https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues}."
   )
 }
 
