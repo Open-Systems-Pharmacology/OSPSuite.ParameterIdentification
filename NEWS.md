@@ -7,17 +7,16 @@
 - `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
 - The M3 method for data below the limit of quantification (BLQ) is set with `PIConfiguration$blqMethod <- "m3"`, and `objectiveFunctionOptions$objectiveFunctionType = "m3"` stops with an error (#248).
 - `PIConfiguration$blqOptions$cv` replaces `linScaleCV` and `logScaleSD` of `objectiveFunctionOptions`, which now stop with an error. Under log scaling the M3 standard deviation is derived from `cv` in natural logarithms, so M3 costs with log scaling change at the default (#375, #333).
-- `PIConfiguration$blqRemove` now removes observations below the limit of quantification (BLQ) before the fit. `"always"` removes all of them, and `"trailingSingle"` keeps only the first observation of each data set's trailing BLQ run (#249).
-- `PIConfiguration$blqMethod` now replaces only the observed BLQ values, with the LLOQ (`"lloq"`) or half the LLOQ (`"lloqHalf"`, the default), and no longer sets simulated values below the LLOQ to half the LLOQ. With `"m3"`, censored observations no longer also enter the sum of squared residuals and their contribution uses natural logarithms, so all costs with LLOQ data change (#250, #251, #334, #337).
+- Costs change for data with an LLOQ, because `PIConfiguration$blqMethod` now substitutes BLQ values on the observed side only, and `"none"`, `"lloq"` and `"lloqHalf"` are distinct. Simulated values below the LLOQ are no longer set to half the LLOQ (#250).
 
 ## Major changes
 
+- `PIConfiguration$blqRemove` now removes observations below the limit of quantification (BLQ) before the fit. `"always"` removes all of them, and `"trailingSingle"` keeps only the first observation of each data set's trailing BLQ run (#249).
 - `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, as one number for all data sets of a mapping or a vector named by data set, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).
 
 ## Minor improvements and bug fixes
 
 - A missing simulated value no longer stops the objective function when the observed data have an LLOQ. It is left out, as without an LLOQ (#376).
-- With `blqMethod = "m3"`, a censored observation at a time that is not a simulated time no longer gives an infinite cost (#320).
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 - `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE` (#371).
 - `ParameterIdentification$new()` stops when any simulation of the task has no parameter to vary, also for `pkOutputMappings` mode. Previously, this check was only performed for `outputMappings` mode. (#330)

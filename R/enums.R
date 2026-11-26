@@ -258,8 +258,7 @@ BLQRemoveModes <- ospsuite.utils::enum(c(
 #' - **`none`** - Use the BLQ value as stored, with no special handling.
 #' - **`lloq`** - Substitute the observed value with the LLOQ (PK-Sim default).
 #' - **`lloqHalf`** - Substitute the observed value with half the LLOQ (Beal M5).
-#' - **`m3`** - Leave the observation out of the residuals and add its
-#'   censored-likelihood contribution instead (Beal M3).
+#' - **`m3`** - Add the censored-likelihood contribution (Beal M3).
 #'
 #' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQMethods <- ospsuite.utils::enum(c(

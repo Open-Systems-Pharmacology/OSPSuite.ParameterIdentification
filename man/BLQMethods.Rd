@@ -15,8 +15,7 @@ The available methods are:
 \item \strong{\code{none}} - Use the BLQ value as stored, with no special handling.
 \item \strong{\code{lloq}} - Substitute the observed value with the LLOQ (PK-Sim default).
 \item \strong{\code{lloqHalf}} - Substitute the observed value with half the LLOQ (Beal M5).
-\item \strong{\code{m3}} - Leave the observation out of the residuals and add its
-censored-likelihood contribution instead (Beal M3).
+\item \strong{\code{m3}} - Add the censored-likelihood contribution (Beal M3).
 }
 }
 \seealso{

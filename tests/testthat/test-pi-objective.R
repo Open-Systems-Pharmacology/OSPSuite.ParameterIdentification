@@ -21,7 +21,7 @@ test_that("evaluate() with an LLOQ gives the recorded cost of each blqMethod", {
     none = 778.1292477241019,
     lloq = 1113.5973312932574,
     lloqHalf = 1174.3753775817763,
-    m3 = 197.34426527257293
+    m3 = 843.05727080080896
   )
   for (blqMethod in names(recorded)) {
     task <- lloqTask(blqMethod)

@@ -396,6 +396,12 @@ messages$errorM3ObjectiveFunctionType <- function() {
   )
 }
 
+messages$errorMissingCensoredCV <- function() {
+  ospsuite.utils::cliFormat(
+    "The M3 contribution needs the coefficient of variation {.arg cv} of BLQ observations."
+  )
+}
+
 messages$errorBlqRemoveEmptiesMapping <- function(quantityPath, blqRemove) {
   ospsuite.utils::cliFormat(
     "{.code blqRemove = {.val {blqRemove}}} removes every observed value of the output mapping for {.val {quantityPath}}, because all are below the LLOQ. Choose another {.arg blqRemove}."

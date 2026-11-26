@@ -64,11 +64,9 @@ A BLQ measurement is known only to lie between zero and the LLOQ. An observation
 - **`none`**: the observed value is used as stored.
 - **`lloq`**: the observed value is replaced by its LLOQ.
 - **`lloqHalf`** (default): the observed value is replaced by half its LLOQ (Beal's M5 method).
-- **`m3`**: the observation is censored (Beal's M3 method). It leaves the sum of squared residuals and adds instead $-2 \ln P$, where $P$ is the probability that a measurement of the simulated value falls below the LLOQ. A simulated value well below the LLOQ adds almost nothing, and one above it adds more the further it lies above. The probability needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
+- **`m3`**: the observation is censored (Beal's M3 method). It stays in the sum of squared residuals with its stored value and adds $-2 \log_{10} P$, where $P$ is the probability that a measurement of the simulated value falls below the LLOQ. The probability needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
 
 The substitutions change only the observed value. With `residualWeightingMethod = "error"`, the substituted value is also the one its error weight is computed from.
-
-The censored terms and the squared residuals are on a common scale only when the residuals are weighted by the measurement error (`residualWeightingMethod = "error"`), because then a squared weighted residual is, up to a constant, $-2 \ln$ of the likelihood of a quantified observation, as $-2 \ln P$ is for a censored one. Without error weighting, the squared residuals are in squared units of the data, so the balance between the two terms depends on those units.
 
 ```{r, eval=FALSE}
 piConfiguration$blqRemove <- "trailingSingle"
