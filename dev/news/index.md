@@ -62,6 +62,14 @@
 - `gridSearch()` uses the full grid size when `totalEvaluations` is a
   perfect power, for example 5 points per parameter for 125 evaluations
   of 3 parameters instead of 4.
+- `PIResult$toList()` reports the `errorWeights`, `robustWeights` and
+  `totalWeights` of `costDetails$residualDetails` unrounded, so they
+  reproduce the weighted residuals
+  ([\#383](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/383)).
+- `PIResult$toList()` counts no observations in
+  `costDetails$costVariables$nObservations` when the simulation fails or
+  the cost of an output mapping cannot be computed, instead of one
+  ([\#383](https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/383)).
 
 ## ospsuite.parameteridentification 2.3.0
 

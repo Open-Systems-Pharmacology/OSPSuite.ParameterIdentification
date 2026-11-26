@@ -81,6 +81,10 @@
 <code>gridSearch(setStartValue = TRUE)</code> keeps the start values and warns when every grid point fails, instead of setting them to the first grid point.</li>
 <li>
 <code>gridSearch()</code> uses the full grid size when <code>totalEvaluations</code> is a perfect power, for example 5 points per parameter for 125 evaluations of 3 parameters instead of 4.</li>
+<li>
+<code>PIResult$toList()</code> reports the <code>errorWeights</code>, <code>robustWeights</code> and <code>totalWeights</code> of <code>costDetails$residualDetails</code> unrounded, so they reproduce the weighted residuals (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/383" class="external-link">#383</a>).</li>
+<li>
+<code>PIResult$toList()</code> counts no observations in <code>costDetails$costVariables$nObservations</code> when the simulation fails or the cost of an output mapping cannot be computed, instead of one (<a href="https://github.com/Open-Systems-Pharmacology/OSPSuite.ParameterIdentification/issues/383" class="external-link">#383</a>).</li>
 </ul></div>
 </div>
     <div class="section level2">
