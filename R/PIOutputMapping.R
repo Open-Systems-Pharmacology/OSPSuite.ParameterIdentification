@@ -11,8 +11,8 @@ PIOutputMapping <- R6::R6Class(
   active = list(
     #' @field observedDataSets A named list containing `DataSet` objects for
     #'   comparison with simulation outcomes. Stops if a data set was renamed
-    #'   after it was added, because its weights and transformations are kept
-    #'   under the name it was added with.
+    #'   after it was added, because its weights, transformations and subject
+    #'   count are kept under the name it was added with.
     observedDataSets = function(value) {
       if (missing(value)) {
         dataSets <- private$.observedDataSets
@@ -161,7 +161,8 @@ PIOutputMapping <- R6::R6Class(
     #' @description Adds or updates observed data using `DataSet` objects.
     #' @details Replaces any existing dataset with the same label. A replaced
     #'   data set keeps its weights and transformations, and loses its subject
-    #'   count.
+    #'   count. Warns when a data set with a new name is added after weights or
+    #'   transformations were set, because the new data set has none.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
     #' @param weights A named list of numeric values or numeric vectors. The
@@ -172,12 +173,19 @@ PIOutputMapping <- R6::R6Class(
       ospsuite.utils::validateIsOfType(data, "DataSet")
       data <- ospsuite.utils::toList(data)
 
+      newLabels <- sapply(data, `[[`, "name")
       if (length(private$.dataWeights) > 0) {
         existingLabels <- names(private$.dataWeights)
-        newLabels <- sapply(data, `[[`, "name")
         if (any(!newLabels %in% existingLabels)) {
           warning(messages$warningDataWeightsPresent())
         }
+      }
+      addedLabels <- setdiff(newLabels, names(private$.observedDataSets))
+      if (
+        length(addedLabels) > 0 &&
+          any(lengths(private$.dataTransformations) > 0)
+      ) {
+        warning(messages$warningDataTransformationsPresent(addedLabels))
       }
 
       for (idx in seq_along(data)) {
@@ -229,6 +237,9 @@ PIOutputMapping <- R6::R6Class(
     #'   weights, transformations and subject count.
     #' @param label The label of the observed data series to remove.
     removeObservedDataSet = function(label) {
+      if (!is.character(label) || length(label) != 1 || is.na(label)) {
+        stop(messages$errorDataSetLabel())
+      }
       private$.dropSubjectCount(label)
       private$.dataWeights <- private$.dataWeights[
         names(private$.dataWeights) != label
@@ -249,8 +260,9 @@ PIOutputMapping <- R6::R6Class(
     #' @param xOffsets,yOffsets,xFactors,yFactors `NULL` (default) to keep the
     #'   current values, one unnamed number for every observed data set, or a
     #'   numeric vector named by observed data sets. Named values change only
-    #'   the named data sets and keep the values of the others. All values must
-    #'   be finite.
+    #'   the named data sets and keep the values of the others. One unnamed
+    #'   number reaches the data sets present at the call, not data sets added
+    #'   later. All values must be finite.
     setDataTransformations = function(
       xOffsets = NULL,
       yOffsets = NULL,
@@ -283,7 +295,11 @@ PIOutputMapping <- R6::R6Class(
         if (is.null(labels) && length(value) == 1) {
           labels <- dataSetNames
         }
-        if (is.null(labels) || any(!labels %in% dataSetNames)) {
+        if (
+          is.null(labels) ||
+            any(!labels %in% dataSetNames) ||
+            anyDuplicated(labels) > 0
+        ) {
           stop(messages$errorTransformationNames(key, dataSetNames))
         }
         transformations[[key]][labels] <- unname(value)
@@ -371,7 +387,9 @@ PIOutputMapping <- R6::R6Class(
         labels <- names(private$.observedDataSets)
       }
       if (
-        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
+        is.null(labels) ||
+          any(!labels %in% names(private$.observedDataSets)) ||
+          anyDuplicated(labels) > 0
       ) {
         stop(messages$errorSubjectCountNames(names(private$.observedDataSets)))
       }

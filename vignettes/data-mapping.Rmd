@@ -225,18 +225,9 @@ outputMapping$setDataWeights(list(
 
 ## Transformations
 
-Observed data can be adjusted through transformations to improve comparability
-with the corresponding simulation output, for example to account for systematic
-shifts between experiments or to align starting points across datasets. Each
-dataset has its own offsets and factors for the x- and y-values. The x-values
-become $(x + x_{offset}) \cdot x_{factor}$ and the y-values
-$(y + y_{offset}) \cdot y_{factor}$, with the offsets in the units of the dataset.
-A dataset without transformations has offsets of 0 and factors of 1.
+Observed data can be adjusted through transformations to improve comparability with the corresponding simulation output, for example to account for systematic shifts between experiments or to align starting points across datasets. Each dataset has its own offsets and factors for the x- and y-values. The x-values become $(x + x_{offset}) \cdot x_{factor}$ and the y-values $(y + y_{offset}) \cdot y_{factor}$, with the offsets in the units of the dataset. A dataset without transformations has offsets of 0 and factors of 1.
 
-Like weights, transformations are set by dataset name with
-`setDataTransformations()`. A named vector changes the named datasets and keeps
-the values of the others. A single unnamed number applies to every dataset of
-the mapping. Arguments that are not given keep their current values.
+Like weights, transformations are set by dataset name with `setDataTransformations()`. A named vector changes the named datasets and keeps the values of the others. A single unnamed number applies to every dataset that the mapping holds at that moment. A dataset added later starts without transformations, and `addObservedDataSets()` warns about it. Arguments that are not given keep their current values.
 
 ```{r set-transformations}
 outputMapping$setDataTransformations(
@@ -246,9 +237,7 @@ outputMapping$setDataTransformations(
 outputMapping$dataTransformations
 ```
 
-The `dataTransformations` field holds one value per dataset for each of
-`xOffsets`, `yOffsets`, `xFactors` and `yFactors`. Removing a dataset with
-`removeObservedDataSet()` also removes its weights and transformations.
+The `dataTransformations` field holds one value per dataset for each of `xOffsets`, `yOffsets`, `xFactors` and `yFactors`. Removing a dataset with `removeObservedDataSet()` also removes its weights and transformations.
 
 
 ## Practical tips

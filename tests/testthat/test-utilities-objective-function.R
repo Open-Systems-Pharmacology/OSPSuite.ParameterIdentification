@@ -855,14 +855,38 @@ test_that("observed data equal the observed rows of a full evaluation", {
 test_that("observed data apply the transformations of each data set to its rows", {
   mapping <- testPiTask()$outputMappings[[1]]
   mapping$addObservedDataSets(syntheticObservedData()[[1]])
-  second <- names(mapping$observedDataSets)[[2]]
+  dataSet <- mapping$observedDataSets[[2]]
+  second <- dataSet$name
   before <- .prepareObservedData(mapping)
-  mapping$setDataTransformations(yFactors = setNames(0.8, second))
+  mapping$setDataTransformations(
+    xOffsets = setNames(1, second),
+    xFactors = setNames(2, second),
+    yOffsets = setNames(0.5, second),
+    yFactors = setNames(0.8, second)
+  )
   after <- .prepareObservedData(mapping)
   isSecond <- before$name == second
   expect_identical(after$name, before$name)
+  expect_identical(after$xValues[!isSecond], before$xValues[!isSecond])
   expect_identical(after$yValues[!isSecond], before$yValues[!isSecond])
-  expect_equal(after$yValues[isSecond], 0.8 * before$yValues[isSecond])
+  expect_equal(
+    after$xValues[isSecond],
+    ospsuite::toBaseUnit(
+      ospsuite::ospDimensions$Time,
+      values = (dataSet$xValues + 1) * 2,
+      unit = dataSet$xUnit
+    )
+  )
+  expect_equal(
+    after$yValues[isSecond],
+    ospsuite::toBaseUnit(
+      mapping$quantity,
+      values = (dataSet$yValues + 0.5) * 0.8,
+      unit = dataSet$yUnit,
+      molWeight = dataSet$molWeight,
+      molWeightUnit = "g/mol"
+    )
+  )
 })
 
 # The objective function against that of 2.2.0.9009, which calculated the

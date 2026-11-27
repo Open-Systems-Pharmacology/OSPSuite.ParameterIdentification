@@ -167,6 +167,14 @@ test_that("setDataTransformations() rejects invalid values and changes nothing",
     mapping$setDataTransformations(xOffsets = 1, yFactors = c(studyC = 1)),
     error = TRUE
   )
+  expect_snapshot(
+    mapping$setDataTransformations(xOffsets = list(studyB = 0.2)),
+    error = TRUE
+  )
+  expect_snapshot(
+    mapping$setDataTransformations(xOffsets = c(studyA = 1, studyA = 2)),
+    error = TRUE
+  )
   expect_identical(
     mapping$dataTransformations,
     twoStudyMapping()$dataTransformations
@@ -183,6 +191,35 @@ test_that("replacing a data set keeps its transformations and weights", {
     c(studyA = 0, studyB = 0.2)
   )
   expect_identical(mapping$dataWeights, list(studyB = c(2, 2, 2)))
+})
+
+test_that("adding a data set warns only when transformations were set before", {
+  studyC <- DataSet$new(name = "studyC")
+  studyC$setValues(xValues = c(1, 2), yValues = c(15, 25))
+  mapping <- twoStudyMapping()
+  expect_no_warning(mapping$addObservedDataSets(studyC))
+  mapping$removeObservedDataSet("studyC")
+  mapping$setDataTransformations(xOffsets = 0.5)
+  expect_snapshot(mapping$addObservedDataSets(studyC))
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = 0.5, studyB = 0.5, studyC = 0)
+  )
+})
+
+test_that("removeObservedDataSet() rejects anything but one string and changes nothing", {
+  mapping <- twoStudyMapping()
+  mapping$setDataTransformations(xOffsets = 0.5)
+  mapping$setDataWeights(list(studyA = 2))
+  expect_snapshot(mapping$removeObservedDataSet(1), error = TRUE)
+  expect_snapshot(mapping$removeObservedDataSet(character()), error = TRUE)
+  expect_snapshot(mapping$removeObservedDataSet(NA_character_), error = TRUE)
+  expect_named(mapping$observedDataSets, c("studyA", "studyB"))
+  expect_identical(
+    mapping$dataTransformations$xOffsets,
+    c(studyA = 0.5, studyB = 0.5)
+  )
+  expect_named(mapping$dataWeights, "studyA")
 })
 
 test_that("removing a data set drops its transformations and weights", {
@@ -476,6 +513,11 @@ test_that("setSubjectCount() rejects invalid counts and the binding is read-only
   expect_snapshot(mapping$setSubjectCount(numeric()), error = TRUE)
   expect_snapshot(mapping$setSubjectCount(c(3, 4)), error = TRUE)
   expect_snapshot(mapping$setSubjectCount(c(unknownStudy = 12)), error = TRUE)
+  label <- names(mapping$observedDataSets)[[1]]
+  expect_snapshot(
+    mapping$setSubjectCount(setNames(c(12, 13), c(label, label))),
+    error = TRUE
+  )
   expect_snapshot(mapping$setSubjectCount(1e10), error = TRUE)
   expect_snapshot(mapping$subjectCount <- 5, error = TRUE)
 })

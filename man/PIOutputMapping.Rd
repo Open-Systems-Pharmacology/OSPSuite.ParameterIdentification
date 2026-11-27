@@ -14,8 +14,8 @@ instances to align and compare simulation outputs with empirical data.
   \describe{
     \item{\code{observedDataSets}}{A named list containing \code{DataSet} objects for
 comparison with simulation outcomes. Stops if a data set was renamed
-after it was added, because its weights and transformations are kept
-under the name it was added with.}
+after it was added, because its weights, transformations and subject
+count are kept under the name it was added with.}
 
     \item{\code{dataTransformations}}{A list with the numeric vectors \code{xOffsets},
 \code{yOffsets}, \code{xFactors} and \code{yFactors}. Each vector has one value per
@@ -103,7 +103,8 @@ names must match the names of the observed datasets.}
   \subsection{Details}{
     Replaces any existing dataset with the same label. A replaced
 data set keeps its weights and transformations, and loses its subject
-count.
+count. Warns when a data set with a new name is added after weights or
+transformations were set, because the new data set has none.
   }
 }
 
@@ -151,8 +152,9 @@ with offsets in the units of the data set.
       \item{\code{xOffsets, yOffsets, xFactors, yFactors}}{\code{NULL} (default) to keep the
 current values, one unnamed number for every observed data set, or a
 numeric vector named by observed data sets. Named values change only
-the named data sets and keep the values of the others. All values must
-be finite.}
+the named data sets and keep the values of the others. One unnamed
+number reaches the data sets present at the call, not data sets added
+later. All values must be finite.}
     }
     \if{html}{\out{</div>}}
   }

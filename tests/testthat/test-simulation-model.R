@@ -147,15 +147,18 @@ test_that(".observedTimes() applies the x transformations of each data set", {
   first <- seq_along(mapping$observedDataSets[[1]]$xValues)
   second <- mapping$observedDataSets[[2]]
   before <- .observedTimes(mapping)
-  mapping$setDataTransformations(xOffsets = setNames(1, second$name))
+  mapping$setDataTransformations(
+    xOffsets = setNames(1, second$name),
+    xFactors = setNames(2, second$name)
+  )
   after <- .observedTimes(mapping)
-  offset <- ospsuite::toBaseUnit(
+  expected <- ospsuite::toBaseUnit(
     ospsuite::ospDimensions$Time,
-    values = 1,
+    values = (second$xValues + 1) * 2,
     unit = second$xUnit
   )
   expect_identical(after[first], before[first])
-  expect_equal(after[-first], before[-first] + offset)
+  expect_equal(after[-first], expected)
 })
 
 test_that("logFailure() counts the failures and shortens repeated reasons", {
