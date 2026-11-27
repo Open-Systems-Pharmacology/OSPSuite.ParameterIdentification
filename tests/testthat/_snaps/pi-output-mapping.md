@@ -132,6 +132,154 @@
       Error:
       ! The observed data set(s) "studyB" were renamed to "studyB revised" after they were added to the output mapping. Remove them with `PIOutputMapping$removeObservedDataSet()` under the old name and add them again, then set their weights, transformations and subject count again.
 
+# PIOutputMapping cannot set weights with invalid input
+
+    Code
+      outputMapping$setDataWeights(weights)
+    Condition
+      Error in `outputMapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+
+# PIOutputMapping cannot set weights with invalid dataset label
+
+    Code
+      outputMapping$setDataWeights(weights)
+    Condition
+      Error in `outputMapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+
+---
+
+    Code
+      outputMapping$setDataWeights(weights)
+    Condition
+      Error in `outputMapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+
+# PIOutputMapping fails with unknown label in weights for multiple datasets
+
+    Code
+      outputMapping$setDataWeights(weights)
+    Condition
+      Error in `outputMapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "dataSet1" and "dataSet2", with each name used once.
+
+# setDataWeights() rejects invalid names and changes nothing
+
+    Code
+      mapping$setDataWeights(list(2))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(list(1, 2))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(c(1, 2))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(c(studyC = 1))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(c(studyA = 1, studyA = 2))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(stats::setNames(c(1, 2), c("studyA", "")))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+    Code
+      mapping$setDataWeights(list(studyB = 3, studyC = 1))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+
+# setDataWeights() rejects invalid values and changes nothing
+
+    Code
+      mapping$setDataWeights("2")
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(NULL)
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(NA)
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(NA_real_)
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(Inf)
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(-1)
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(numeric())
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list())
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list(studyA = "2"))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list(studyA = list(1)))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list(studyA = numeric()))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(c(studyA = NaN))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(c(studyB = -0.5))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list(studyB = 3, studyA = c(1, NA, 1, 1)))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+    Code
+      mapping$setDataWeights(list(studyB = 3, studyA = c(1, 2)))
+    Condition
+      Error in `mapping$setDataWeights()`:
+      ! Weights for 'studyA' must have length 4 matching y-values, but got 2.
+
 # setSubjectCount() rejects invalid counts and the binding is read-only
 
     Code

@@ -12,8 +12,16 @@ messages$errorNoObservedDataSets <- function() {
   "Cannot assign weights: no observed data sets defined."
 }
 
-messages$errorWeightsNames <- function() {
-  "All weights must be a named list with names matching observed data set names."
+messages$errorWeightsNames <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets {.val {dataSetNames}}, with each name used once."
+  )
+}
+
+messages$errorWeightsValues <- function() {
+  ospsuite.utils::cliFormat(
+    "Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors."
+  )
 }
 
 messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {

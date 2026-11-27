@@ -330,39 +330,51 @@ PIOutputMapping <- R6::R6Class(
     #'   beforehand and provide the combined result as a single numeric vector
     #'   per dataset.
     setDataWeights = function(weights) {
-      # Return early if no datasets are present
-      if (length(private$.observedDataSets) == 0) {
+      dataSetNames <- names(private$.observedDataSets)
+      if (length(dataSetNames) == 0) {
         stop(messages$errorNoObservedDataSets())
       }
 
-      ospsuite.utils::validateIsOfType(weights, "list")
-      lapply(weights, ospsuite.utils::validateIsNumeric, FALSE)
-
-      labels <- names(weights)
-      if (
-        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
-      ) {
-        stop(messages$errorWeightsNames())
-      }
-
-      for (label in labels) {
-        yLength <- length(private$.observedDataSets[[label]]$yValues)
-        weightsVec <- weights[[label]]
-
-        if (length(weightsVec) == 1) {
-          weightsVec <- rep(weightsVec, yLength)
+      if (is.numeric(weights)) {
+        if (is.null(names(weights)) && length(weights) == 1) {
+          weights <- rep(weights, length(dataSetNames))
+          names(weights) <- dataSetNames
         }
+        weights <- as.list(weights)
+      }
+      if (!is.list(weights) || length(weights) == 0) {
+        stop(messages$errorWeightsValues())
+      }
+      private$.validateLabels(
+        names(weights),
+        messages$errorWeightsNames(dataSetNames)
+      )
 
-        if (length(weightsVec) != yLength) {
+      newWeights <- list()
+      for (label in names(weights)) {
+        value <- weights[[label]]
+        if (
+          !is.numeric(value) ||
+            length(value) == 0 ||
+            !all(is.finite(value)) ||
+            any(value < 0)
+        ) {
+          stop(messages$errorWeightsValues())
+        }
+        yLength <- length(private$.observedDataSets[[label]]$yValues)
+        if (length(value) == 1) {
+          value <- rep(value, yLength)
+        }
+        if (length(value) != yLength) {
           stop(messages$errorWeightsVectorLengthMismatch(
             label,
             yLength,
-            length(weightsVec)
+            length(value)
           ))
         }
-
-        private$.dataWeights[[label]] <- weightsVec
+        newWeights[[label]] <- value
       }
+      private$.dataWeights[names(newWeights)] <- newWeights
 
       invisible(self)
     },
