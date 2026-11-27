@@ -130,7 +130,7 @@
       mapping$addObservedDataSets(shortStudyB())
     Condition
       Warning in `mapping$addObservedDataSets()`:
-      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+      The weights of "studyB" were removed, because its number of y-values changed. Set them again with `PIOutputMapping$setDataWeights()`.
 
 # replacing a data set warns when the call passes weights for another data set only
 
@@ -138,7 +138,7 @@
       mapping$addObservedDataSets(shortStudyB(), weights = c(studyA = 3))
     Condition
       Warning in `mapping$addObservedDataSets()`:
-      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+      The weights of "studyB" were removed, because its number of y-values changed. Set them again with `PIOutputMapping$setDataWeights()`.
 
 # replacing a data set with invalid weights warns about the dropped weights
 
@@ -147,7 +147,7 @@
         2))), silent = TRUE)
     Condition
       Warning in `mapping$addObservedDataSets()`:
-      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+      The weights of "studyB" were removed, because its number of y-values changed. Set them again with `PIOutputMapping$setDataWeights()`.
 
 # one number in addObservedDataSets() replaces the weights of all data sets
 
@@ -163,7 +163,7 @@
       mapping$addObservedDataSets(studyC)
     Condition
       Warning in `mapping$addObservedDataSets()`:
-      The weights of the data set "studyC" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+      The weights of "studyC" were removed, because its number of y-values changed. Set them again with `PIOutputMapping$setDataWeights()`.
 
 # observedDataSets stops when a data set was renamed after adding it
 
@@ -179,7 +179,7 @@
       outputMapping$setDataWeights(weights)
     Condition
       Error in `outputMapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", each used once.
 
 # PIOutputMapping cannot set weights with invalid dataset label
 
@@ -187,7 +187,7 @@
       outputMapping$setDataWeights(weights)
     Condition
       Error in `outputMapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", each used once.
 
 ---
 
@@ -195,7 +195,7 @@
       outputMapping$setDataWeights(weights)
     Condition
       Error in `outputMapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "AciclovirLaskinData.Laskin 1982.Group A", each used once.
 
 # PIOutputMapping fails with unknown label in weights for multiple datasets
 
@@ -203,7 +203,7 @@
       outputMapping$setDataWeights(weights)
     Condition
       Error in `outputMapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "dataSet1" and "dataSet2", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "dataSet1" and "dataSet2", each used once.
 
 # setDataWeights() rejects invalid names and changes nothing
 
@@ -211,37 +211,37 @@
       mapping$setDataWeights(list(2))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(list(1, 2))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(c(1, 2))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(c(studyC = 1))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(c(studyA = 1, studyA = 2))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(stats::setNames(c(1, 2), c("studyA", "")))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
     Code
       mapping$setDataWeights(list(studyB = 3, studyC = 1))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets "studyA" and "studyB", with each name used once.
+      ! Weights must be one unnamed number, or be named by the observed data sets "studyA" and "studyB", each used once.
 
 # setDataWeights() rejects invalid values and changes nothing
 
@@ -249,72 +249,72 @@
       mapping$setDataWeights("2")
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(NULL)
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(NA)
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(NA_real_)
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(Inf)
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(-1)
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(numeric())
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list())
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list(studyA = "2"))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list(studyA = list(1)))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list(studyA = numeric()))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(c(studyA = NaN))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(c(studyB = -0.5))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list(studyB = 3, studyA = c(1, NA, 1, 1)))
     Condition
       Error in `mapping$setDataWeights()`:
-      ! Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors.
+      ! Weights must be finite numbers that are not negative.
     Code
       mapping$setDataWeights(list(studyB = 3, studyA = c(1, 2)))
     Condition

@@ -14,13 +14,13 @@ messages$errorNoObservedDataSets <- function() {
 
 messages$errorWeightsNames <- function(dataSetNames) {
   ospsuite.utils::cliFormat(
-    "Weights must be one unnamed number for all data sets, or a vector or list named by the observed data sets {.val {dataSetNames}}, with each name used once."
+    "Weights must be one unnamed number, or be named by the observed data sets {.val {dataSetNames}}, each used once."
   )
 }
 
 messages$errorWeightsValues <- function() {
   ospsuite.utils::cliFormat(
-    "Weights must be finite numbers that are not negative, given as one number, a numeric vector or a list of numbers and numeric vectors."
+    "Weights must be finite numbers that are not negative."
   )
 }
 
@@ -106,7 +106,7 @@ messages$warningDataWeightsPresent <- function() {
 
 messages$warningDataWeightsDropped <- function(label) {
   ospsuite.utils::cliFormat(
-    "The weights of the data set {.val {label}} were removed, because the new data set has a different number of y-values. Set them again with {.fn PIOutputMapping$setDataWeights}."
+    "The weights of {.val {label}} were removed, because its number of y-values changed. Set them again with {.fn PIOutputMapping$setDataWeights}."
   )
 }
 
