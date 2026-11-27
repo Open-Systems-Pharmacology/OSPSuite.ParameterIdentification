@@ -40,7 +40,43 @@ messages$errorNoObservedDataSetsForSubjectCount <- function() {
 
 messages$errorSubjectCountNames <- function(dataSetNames) {
   ospsuite.utils::cliFormat(
-    "Subject counts must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}."
+    "Subject counts must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}, with each name used once."
+  )
+}
+
+messages$errorNoObservedDataSetsForTransformations <- function() {
+  ospsuite.utils::cliFormat(
+    "Cannot set data transformations: no observed data sets defined. Add the data sets with {.fn PIOutputMapping$addObservedDataSets} first."
+  )
+}
+
+messages$errorTransformationValues <- function(argument) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argument}} must be a numeric vector of finite numbers."
+  )
+}
+
+messages$errorTransformationNames <- function(argument, dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "{.arg {argument}} must be one unnamed number for all data sets, or a vector named by the observed data sets {.val {dataSetNames}}, with each name used once."
+  )
+}
+
+messages$errorRenamedDataSets <- function(oldNames, newNames) {
+  ospsuite.utils::cliFormat(
+    "The observed data set(s) {.val {oldNames}} were renamed to {.val {newNames}} after they were added to the output mapping. Remove them with {.fn PIOutputMapping$removeObservedDataSet} under the old name and add them again, then set their weights, transformations and subject count again."
+  )
+}
+
+messages$errorDataSetLabel <- function() {
+  ospsuite.utils::cliFormat(
+    "{.arg label} must be the name of one observed data set, given as a single string."
+  )
+}
+
+messages$warningDataTransformationsPresent <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "Data transformations have already been set. The added data set(s) {.val {dataSetNames}} have none, so set them with {.fn PIOutputMapping$setDataTransformations} if they need any."
   )
 }
 

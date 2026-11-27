@@ -377,19 +377,13 @@ SimulationModel <- R6::R6Class(
 #' @keywords internal
 #' @noRd
 .observedTimes <- function(outputMapping) {
+  transformations <- outputMapping$dataTransformations
   times <- lapply(outputMapping$observedDataSets, function(dataset) {
     label <- dataset$name
-    xFactor <- outputMapping$dataTransformations$xFactors
-    if (length(xFactor) != 1) {
-      xFactor <- xFactor[[label]]
-    }
-    xOffset <- outputMapping$dataTransformations$xOffsets
-    if (length(xOffset) != 1) {
-      xOffset <- xOffset[[label]]
-    }
     ospsuite::toBaseUnit(
       ospsuite::ospDimensions$Time,
-      values = (dataset$xValues + xOffset) * xFactor,
+      values = (dataset$xValues + transformations$xOffsets[[label]]) *
+        transformations$xFactors[[label]],
       unit = dataset$xUnit
     )
   })
