@@ -14,7 +14,7 @@ deviation of the censored-likelihood contribution. Configured via the
 \details{
 Settings include:
 \itemize{
-\item \strong{\code{cv}} - Coefficient of variation of a measurement at the LLOQ, a number
+\item \strong{\code{cv}}: Coefficient of variation of a measurement at the LLOQ, a number
 greater than 0 and at most 1. Default is \code{0.2}. Under linear scaling the
 standard deviation of a censored observation is \code{cv} times its LLOQ, under
 logarithmic scaling it is \code{sqrt(log(1 + cv^2))}.

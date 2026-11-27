@@ -1220,9 +1220,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
-  # The M3 contribution with the data sets in the given output mappings. The
-  # frozen objective function uses `.calculateCensoredContribution()` of the
-  # package, so this compares with output mappings of one LLOQ each instead.
+  # The M3 contribution with the data sets in the given output mappings
   m3Contribution <- function(dataSetsByMapping, scaling, blq) {
     sim <- freshSimulation()
     task <- ParameterIdentification$new(

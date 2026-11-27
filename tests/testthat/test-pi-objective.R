@@ -62,6 +62,16 @@ test_that("withData() keeps blqMethod and cv", {
   expect_gt(objective$evaluate(values)$costVariables$M3Contribution, 0)
 })
 
+test_that("the objective of a task uses blqMethod and cv of its configuration", {
+  task <- lloqTask("m3")
+  task$configuration$blqOptions$cv <- 0.5
+  values <- currStartValues(task)
+  expected <- taskObjective(task)$evaluate(values)
+  cost <- objectiveClosure(task)(values)
+  expect_identical(cost, expected)
+  expect_gt(cost$costVariables$M3Contribution, 0)
+})
+
 test_that("evaluate() is the same on every call and leaves the task alone", {
   task <- testPiTask()
   objective <- taskObjective(task)
@@ -145,6 +155,30 @@ test_that("PIObjective validates the model and the data", {
     PIObjective$new(priv$.model, list(1), options),
     messages$errorWrongType("data", "list", "PIObservations"),
     fixed = TRUE
+  )
+})
+
+test_that("PIObjective validates its options", {
+  task <- testPiTask()
+  priv <- task$.__enclos_env__$private
+  priv$.batchInitialization()
+  options <- task$configuration$objectiveFunctionOptions
+  data <- PIObservations$new(priv$.outputMappings)
+  expect_snapshot(
+    PIObjective$new(priv$.model, data, options, "censored", BLQOptions),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  expect_snapshot(
+    PIObjective$new(priv$.model, data, options, "m3", list(cv = 0)),
+    error = TRUE,
+    transform = scrubCallerName
+  )
+  options$robustMethod <- "tukey"
+  expect_snapshot(
+    PIObjective$new(priv$.model, data, options, "m3", BLQOptions),
+    error = TRUE,
+    transform = scrubCallerName
   )
 })
 

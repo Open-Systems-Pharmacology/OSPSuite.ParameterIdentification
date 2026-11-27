@@ -123,6 +123,22 @@
       Warning:
       Unknown option for blqOptions: "unknownKey". Ignored.
 
+# blqOptions and objectiveFunctionOptions stop on elements without a name
+
+    Code
+      piConfiguration$blqOptions <- list(0.3)
+    Condition
+      Error:
+      ! Every element of blqOptions must be named.
+
+---
+
+    Code
+      piConfiguration$objectiveFunctionOptions <- list(scaleVar = TRUE, "huber")
+    Condition
+      Error:
+      ! Every element of objectiveFunctionOptions must be named.
+
 # blqRemove always and blqMethod m3 are rejected in either order
 
     Code

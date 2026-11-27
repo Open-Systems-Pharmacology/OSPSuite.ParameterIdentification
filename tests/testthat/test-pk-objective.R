@@ -151,7 +151,10 @@ test_that("ParameterIdentification stops when a simulation has no parameter of t
     ParameterIdentification$new(
       simulations = simulations,
       parameters = testPKParameters(simulations[[1]]),
-      pkOutputMappings = list(pkMapping(simulations[[1]]), pkMapping(simulations[[2]]))
+      pkOutputMappings = list(
+        pkMapping(simulations[[1]]),
+        pkMapping(simulations[[2]])
+      )
     ),
     error = TRUE,
     transform = function(lines) gsub("[[:alnum:]_-]{22}", "<id>", lines)
@@ -164,7 +167,9 @@ test_that(".evaluationClosure() in PK mode counts a failed evaluation and gives 
   task <- pkTask(simulation)
   priv <- task$.__enclos_env__$private
   expect_error(suppressMessages(task$run()), class = "initialSimulationError")
-  cost <- suppressMessages(objectiveClosure(task)(currStartValues(task))$modelCost)
+  cost <- suppressMessages(
+    objectiveClosure(task)(currStartValues(task))$modelCost
+  )
   expect_identical(cost, Inf)
   expect_identical(priv$.failedEvaluations, 1)
   expect_identical(priv$.fnEvaluations, 1)

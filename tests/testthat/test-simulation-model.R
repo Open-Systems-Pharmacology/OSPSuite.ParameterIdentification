@@ -29,11 +29,19 @@ test_that("the model builds the batches and buckets of the task", {
   # parameters bucket, both with their start values in base units
   expect_identical(
     model$variableParameters[[simId]],
-    c("Aciclovir|Lipophilicity" = .toBaseValue(task$parameters[[2]], currStartValues(task)[[2]]))
+    c(
+      "Aciclovir|Lipophilicity" = .toBaseValue(
+        task$parameters[[2]],
+        currStartValues(task)[[2]]
+      )
+    )
   )
   expect_identical(
     model$variableMolecules[[simId]],
-    stats::setNames(.toBaseValue(task$parameters[[1]], currStartValues(task)[[1]]), stateVariableParameterPath)
+    stats::setNames(
+      .toBaseValue(task$parameters[[1]], currStartValues(task)[[1]]),
+      stateVariableParameterPath
+    )
   )
   expect_identical(
     model$parameterTargets,
@@ -86,7 +94,11 @@ test_that("the constructor leaves the simulations unchanged in PK mode", {
     pkMappings = list(pkMapping(simulation))
   )
   expect_identical(outputState(simulation), before)
-  results <- model$simulate(vapply(parameters, function(p) p$startValue, numeric(1)))
+  results <- model$simulate(vapply(
+    parameters,
+    function(p) p$startValue,
+    numeric(1)
+  ))
   expect_identical(
     results[[simulation$root$id]][[1]]$allQuantityPaths,
     testQuantity(simulation)$path
@@ -175,8 +187,14 @@ test_that("simulate() routes the state-variable value into the molecule bucket",
   simId <- names(task$simulations)[[1]]
   # The state-variable parameter comes first, the constant one second
   model$simulate(c(0.06, -0.1))
-  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.06)
-  expect_equal(model$variableParameters[[simId]][["Aciclovir|Lipophilicity"]], -0.1)
+  expect_equal(
+    model$variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.06
+  )
+  expect_equal(
+    model$variableParameters[[simId]][["Aciclovir|Lipophilicity"]],
+    -0.1
+  )
 })
 
 test_that("simulate() converts a non-base state-variable unit into the base unit", {
@@ -201,10 +219,18 @@ test_that("simulate() converts a non-base state-variable unit into the base unit
   model <- taskModel(task)
   simId <- names(task$simulations)[[1]]
 
-  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.045)
+  expect_equal(
+    model$variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.045
+  )
   model$simulate(50)
-  expect_equal(model$variableMolecules[[simId]][[stateVariableParameterPath]], 0.05)
-  expect_false(stateVariableParameterPath %in% names(model$variableParameters[[simId]]))
+  expect_equal(
+    model$variableMolecules[[simId]][[stateVariableParameterPath]],
+    0.05
+  )
+  expect_false(
+    stateVariableParameterPath %in% names(model$variableParameters[[simId]])
+  )
 })
 
 test_that("simulate() seeds a grouped parameter of two simulations in base units", {
@@ -215,7 +241,9 @@ test_that("simulate() seeds a grouped parameter of two simulations in base units
     simplify = FALSE
   )
   piParameter <- PIParameters$new(
-    parameters = lapply(simulations, function(sim) getParameter(clPath, container = sim))
+    parameters = lapply(simulations, function(sim) {
+      getParameter(clPath, container = sim)
+    })
   )
   piParameter$unit <- ospUnits$`Inversed time`$`1/h`
   piParameter$startValue <- 6
@@ -297,14 +325,23 @@ test_that("simulate() fills the buckets of grouped parameters by position", {
     batch <- model$simulationBatches[[simId]]
     expect_equal(
       model$variableParameters[[simId]],
-      stats::setNames(expected[[idx]]$parameters, expected[[idx]]$parameterPaths)
+      stats::setNames(
+        expected[[idx]]$parameters,
+        expected[[idx]]$parameterPaths
+      )
     )
     expect_equal(
       model$variableMolecules[[simId]],
       stats::setNames(values[[4]], stateVariableParameterPath)
     )
-    expect_identical(batch$getVariableParameters(), names(model$variableParameters[[simId]]))
-    expect_identical(batch$getVariableMolecules(), names(model$variableMolecules[[simId]]))
+    expect_identical(
+      batch$getVariableParameters(),
+      names(model$variableParameters[[simId]])
+    )
+    expect_identical(
+      batch$getVariableMolecules(),
+      names(model$variableMolecules[[simId]])
+    )
   }
 })
 

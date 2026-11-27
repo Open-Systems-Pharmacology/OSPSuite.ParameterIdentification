@@ -7,9 +7,9 @@
 #' @export
 #' @name Algorithms
 #' @details Supported algorithms include:
-#' - **`HJKB`** - Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
-#' - **`BOBYQA`** - BOBYQA algorithm from the \pkg{nloptr} package.
-#' - **`DEoptim`** - Differential evolution algorithm from the \pkg{DEoptim}
+#' - **`HJKB`**: Hooke-Jeeves algorithm from the \pkg{dfoptim} package.
+#' - **`BOBYQA`**: BOBYQA algorithm from the \pkg{nloptr} package.
+#' - **`DEoptim`**: Differential evolution algorithm from the \pkg{DEoptim}
 #'   package, suitable for stochastic global optimization.
 #'
 #'   These algorithms can be specified and configured within the
@@ -84,9 +84,9 @@ AlgorithmDefaults <- list(
 #' @export
 #' @name CIMethods
 #' @details Supported methods:
-#' - **`hessian`** - Hessian-based approximation using the Fisher Information Matrix.
-#' - **`PL`** - Profile likelihood estimation, iterating over each parameter.
-#' - **`bootstrap`** - Bootstrap resampling to estimate parameter uncertainty.
+#' - **`hessian`**: Hessian-based approximation using the Fisher Information Matrix.
+#' - **`PL`**: Profile likelihood estimation, iterating over each parameter.
+#' - **`bootstrap`**: Bootstrap resampling to estimate parameter uncertainty.
 #'
 #'   These methods can be specified and configured within the `PIConfiguration`
 #'   class to customize confidence interval estimation.
@@ -191,13 +191,13 @@ CIDefaults <- list(
 #' @export
 #' @name ObjectiveFunctionOptions
 #' @details Settings include:
-#' - **`objectiveFunctionType`** - Type of objective function used. Default is
+#' - **`objectiveFunctionType`**: Type of objective function used. Default is
 #'   `lsq` (least squares), influencing error calculation.
-#' - **`residualWeightingMethod`** - Method for residual weighting. Default is
+#' - **`residualWeightingMethod`**: Method for residual weighting. Default is
 #'   `none`.
-#' - **`robustMethod`** - Method for robust outlier handling. Default is `none`
+#' - **`robustMethod`**: Method for robust outlier handling. Default is `none`
 #'   (standard analysis).
-#' - **`scaleVar`** - Whether residual scaling is applied. Default is `FALSE`.
+#' - **`scaleVar`**: Whether residual scaling is applied. Default is `FALSE`.
 #'
 #'   These options are configurable in `PIConfiguration` and define how the
 #'   objective function of `ParameterIdentification` calculates the model cost.
@@ -216,8 +216,8 @@ ObjectiveFunctionOptions <- ospsuite.utils::enum(list(
 #' @export
 #' @name ScalingOptions
 #' @details Available scaling options:
-#' - **`lin`** - Linear scaling (default).
-#' - **`log`** - Logarithmic scaling, used when data spans several orders of
+#' - **`lin`**: Linear scaling (default).
+#' - **`log`**: Logarithmic scaling, used when data spans several orders of
 #'   magnitude.
 ScalingOptions <- ospsuite.utils::enum(c(
   "lin",
@@ -232,9 +232,9 @@ ScalingOptions <- ospsuite.utils::enum(c(
 #' @export
 #' @name BLQRemoveModes
 #' @details The available modes are:
-#' - **`none`** - Keep all BLQ observations (default).
-#' - **`always`** - Remove all BLQ observations (Beal M1, PK-Sim "Always").
-#' - **`trailingSingle`** - Keep the first point of each trailing BLQ run per
+#' - **`none`**: Keep all BLQ observations (default).
+#' - **`always`**: Remove all BLQ observations (Beal M1, PK-Sim "Always").
+#' - **`trailingSingle`**: Keep the first point of each trailing BLQ run per
 #'   dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing"). With
 #'   `blqMethod = "m3"` the kept first point of each trailing run is censored.
 #'
@@ -255,10 +255,10 @@ BLQRemoveModes <- ospsuite.utils::enum(c(
 #' @export
 #' @name BLQMethods
 #' @details The available methods are:
-#' - **`none`** - Use the BLQ value as stored, with no special handling.
-#' - **`lloq`** - Substitute the observed value with the LLOQ (PK-Sim default).
-#' - **`lloqHalf`** - Substitute the observed value with half the LLOQ (Beal M5).
-#' - **`m3`** - Add the censored-likelihood contribution (Beal M3).
+#' - **`none`**: Use the BLQ value as stored, with no special handling.
+#' - **`lloq`**: Substitute the observed value with the LLOQ (PK-Sim default).
+#' - **`lloqHalf`**: Substitute the observed value with half the LLOQ (Beal M5).
+#' - **`m3`**: Add the censored-likelihood contribution (Beal M3).
 #'
 #' @seealso The `error-calculation` vignette for the Beal (2001) method taxonomy.
 BLQMethods <- ospsuite.utils::enum(c(
@@ -277,7 +277,7 @@ BLQMethods <- ospsuite.utils::enum(c(
 #' @export
 #' @name BLQOptions
 #' @details Settings include:
-#' - **`cv`** - Coefficient of variation of a measurement at the LLOQ, a number
+#' - **`cv`**: Coefficient of variation of a measurement at the LLOQ, a number
 #'   greater than 0 and at most 1. Default is `0.2`. Under linear scaling the
 #'   standard deviation of a censored observation is `cv` times its LLOQ, under
 #'   logarithmic scaling it is `sqrt(log(1 + cv^2))`.
@@ -293,8 +293,8 @@ BLQOptions <- ospsuite.utils::enum(list(
 #' @export
 #' @name residualWeightingOptions
 #' @details The methods include:
-#' - **`none`** - No weighting applied, treating all residuals equally.
-#' - **`error`** - Weights based on error estimates for the dependent variable
+#' - **`none`**: No weighting applied, treating all residuals equally.
+#' - **`error`**: Weights based on error estimates for the dependent variable
 #'   in observed data.
 residualWeightingOptions <- ospsuite.utils::enum(c(
   "none",
@@ -309,9 +309,9 @@ residualWeightingOptions <- ospsuite.utils::enum(c(
 #' @export
 #' @name robustMethodOptions
 #' @details The available methods are:
-#' - **`none`** - No robust weighting applied.
-#' - **`huber`** - Huber weighting for moderate outliers.
-#' - **`bisquare`** - Bisquare (Tukey's biweight) weighting for severe outliers.
+#' - **`none`**: No robust weighting applied.
+#' - **`huber`**: Huber weighting for moderate outliers.
+#' - **`bisquare`**: Bisquare (Tukey's biweight) weighting for severe outliers.
 robustMethodOptions <- ospsuite.utils::enum(c(
   "none",
   "huber",
@@ -325,7 +325,7 @@ robustMethodOptions <- ospsuite.utils::enum(c(
 #'
 #' @name ModelCostFields
 #' @details The available field is:
-#' - **`modelCost`** - Accesses the RSS-based model cost value (currently the
+#' - **`modelCost`**: Accesses the RSS-based model cost value (currently the
 #'   only supported option).
 #'
 #' @keywords internal

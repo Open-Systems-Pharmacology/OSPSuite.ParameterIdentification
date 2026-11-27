@@ -33,7 +33,7 @@ contribute to the cost. See
 
     \item{\code{blqOptions}}{Named list of parameters consumed by the \code{m3} BLQ
 method. Defaults in \code{\link{BLQOptions}}.
-Partial lists are merged with the current settings; only the provided
+Partial lists are merged with the current settings. Only the provided
 keys are updated and validated. Unknown keys produce a warning and are
 ignored.}
 

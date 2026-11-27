@@ -390,6 +390,12 @@ messages$errorRemovedBlqOption <- function(keys) {
   )
 }
 
+messages$errorUnnamedOptions <- function(fieldName) {
+  ospsuite.utils::cliFormat(
+    "Every element of {.field {fieldName}} must be named."
+  )
+}
+
 messages$errorM3ObjectiveFunctionType <- function() {
   ospsuite.utils::cliFormat(
     "{.val m3} is no longer an {.arg objectiveFunctionType}. Set {.code blqMethod = \"m3\"} instead."
