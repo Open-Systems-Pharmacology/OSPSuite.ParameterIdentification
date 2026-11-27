@@ -644,7 +644,10 @@ test_that("simulatedOutputs() returns the simulated rows of a full evaluation", 
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   fullSimulated <- full[full$dataType == "simulated", , drop = FALSE]
   simulated <- priv$.model$simulatedOutputs(currVals, task$outputMappings)
 
@@ -883,7 +886,10 @@ test_that("observed data equal the observed rows of a full evaluation", {
   priv$.batchInitialization()
   currVals <- currStartValues(task)
 
-  full <- .observedVsPredicted(priv$.model$simulate(currVals), task$outputMappings)[[1]]$toDataFrame()
+  full <- .observedVsPredicted(
+    priv$.model$simulate(currVals),
+    task$outputMappings
+  )[[1]]$toDataFrame()
   converted <- ospsuite:::.unitConverter(
     full,
     xUnit = ospsuite::getBaseUnit("Time"),
@@ -1090,9 +1096,7 @@ test_that("censored values contribute alike in one or in two output mappings", {
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
-  # The M3 contribution with the data sets in the given output mappings. The
-  # frozen objective function uses `.calculateCensoredContribution()` of the
-  # package, so this compares with output mappings of one LLOQ each instead.
+  # The M3 contribution with the data sets in the given output mappings
   m3Contribution <- function(dataSetsByMapping, scaling, blq) {
     sim <- freshSimulation()
     task <- ParameterIdentification$new(
