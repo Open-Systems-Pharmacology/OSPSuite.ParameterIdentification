@@ -400,10 +400,12 @@ test_that("pkValues() routes a state-variable parameter as a molecule", {
   })
 
   expect_true(
-    stateVariableParameterPath %in% names(priv$.model$variableMolecules[[simId]])
+    stateVariableParameterPath %in%
+      names(priv$.model$variableMolecules[[simId]])
   )
   expect_false(
-    stateVariableParameterPath %in% names(priv$.model$variableParameters[[simId]])
+    stateVariableParameterPath %in%
+      names(priv$.model$variableParameters[[simId]])
   )
   expect_true(is.finite(pkValues[[1]]))
 })

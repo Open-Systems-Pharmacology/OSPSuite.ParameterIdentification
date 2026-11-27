@@ -110,7 +110,9 @@ optimResultFor <- function(...) {
 }
 
 test_that("PIResult reports one logical convergence", {
-  convergenceOf <- function(...) PIResult$new(optimResultFor(...))$toList()$convergence
+  convergenceOf <- function(...) {
+    PIResult$new(optimResultFor(...))$toList()$convergence
+  }
   expect_identical(convergenceOf(convergence = NULL), FALSE)
   expect_identical(convergenceOf(convergence = NA), FALSE)
   expect_identical(convergenceOf(value = Inf), FALSE)

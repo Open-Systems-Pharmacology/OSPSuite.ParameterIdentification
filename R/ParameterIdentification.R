@@ -130,7 +130,9 @@ ParameterIdentification <- R6::R6Class(
         private$.objective <- PIObjective$new(
           model = private$.model,
           data = private$.data,
-          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions
+          objectiveFunctionOptions = private$.configuration$objectiveFunctionOptions,
+          blqMethod = private$.configuration$blqMethod,
+          blqOptions = private$.configuration$blqOptions
         )
       }
       private$.objective
@@ -198,7 +200,11 @@ ParameterIdentification <- R6::R6Class(
 
         #  Optionally print evaluation feedback
         if (private$.configuration$printEvaluationFeedback) {
-          cat(messages$evaluationFeedback(private$.fnEvaluations, currVals, currCost))
+          cat(messages$evaluationFeedback(
+            private$.fnEvaluations,
+            currVals,
+            currCost
+          ))
         }
 
         return(runningCost)

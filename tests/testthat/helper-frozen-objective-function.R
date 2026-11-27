@@ -8,8 +8,9 @@
 # not change it: the tests compare the objective function with it by
 # `identical()`. The functions it calls that are unchanged since that version
 # are those of the package: `.newModelCost()`, `.computeErrorWeights()`,
-# `.calculateHuberWeights()`, `.calculateBisquareWeights()` and
-# `.calculateCensoredContribution()`. `.computeErrorWeights()` has the argument
+# `.calculateHuberWeights()` and `.calculateBisquareWeights()`.
+# `.calculateCensoredContribution()` is frozen below as it was before its
+# arguments became `blqMethod` and `cv`. `.computeErrorWeights()` has the argument
 # `scaling` since #325; with its default `"lin"`, it calculates the weights as
 # 2.2.0.9009 did, also from the log values on the log scale, except for
 # geometric SDs, whose y is the geometric mean since #332.
@@ -88,10 +89,7 @@ frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
       )
     )
     # Apply LLOQ handling for LSQ
-    if (
-      private$.configuration$objectiveFunctionOptions$objectiveFunctionType ==
-        "lsq"
-    ) {
+    if (private$.configuration$blqMethod != "m3") {
       # replace values < LLOQ with LLOQ/2 in simulated data
       if (sum(is.finite(obsVsPredDf$lloq)) > 0) {
         lloq <- min(obsVsPredDf$lloq, na.rm = TRUE)
@@ -122,10 +120,11 @@ frozenObjectiveFunction <- function(task, currVals, bootstrapSeed = NULL) {
     # Extract cost function options
     costControl <- private$.configuration$objectiveFunctionOptions
     costControl$scaling <- outputMappings[[idx]]$scaling
-    ospsuite.utils::validateIsOption(
-      options = costControl,
-      validOptions = ObjectiveFunctionSpecs
-    )
+    costControl <- frozenCostArguments(c(
+      costControl,
+      blqMethod = private$.configuration$blqMethod,
+      private$.configuration$blqOptions
+    ))
 
     # Compute cost for current output mapping
     costSummary <- frozenCalculateCostMetrics(
@@ -216,7 +215,7 @@ frozenCalculateCostMetrics <- function(
   # Applying M3 method for censored error calculation
   censoredContribution <- 0
   if (objectiveFunctionType == "m3") {
-    censoredContribution <- .calculateCensoredContribution(
+    censoredContribution <- frozenCalculateCensoredContribution(
       observed = observedData,
       simulated = simulatedData,
       scaling = additionalArgs$scaling,
@@ -380,4 +379,82 @@ frozenSummarizeCostLists <- function(list1, list2) {
   return(mergedList)
 }
 
+frozenCalculateCensoredContribution <- function(
+  observed,
+  simulated,
+  scaling,
+  linScaleCV = NULL,
+  logScaleSD = NULL
+) {
+  ospsuite.utils::validateIsIncluded(c("lloq", "xValues"), colnames(observed))
+  ospsuite.utils::validateIsNumeric(c(linScaleCV, logScaleSD))
+  ospsuite.utils::validateEnumValue(scaling, ScalingOptions)
+
+  lloq <- unique(stats::na.omit(observed$lloq))
+  ospsuite.utils::validateIsNumeric(lloq)
+
+  if (length(lloq) == 0) {
+    stop("LLOQ value not provided with the data.")
+  } else if (any(is.na(observed$lloq))) {
+    observed$lloq[is.na(observed$lloq)] <- min(lloq, na.rm = TRUE)
+  }
+
+  # Identify censored and uncensored observations based on LLOQ
+  observedUncensored <- observed[
+    is.na(observed$lloq) |
+      (observed$yValues > observed$lloq),
+  ]
+  observedCensored <- observed[
+    !is.na(observed$lloq) &
+      (observed$yValues <= observed$lloq),
+  ]
+  # `merge()` sorts the rows by time, so the LLOQ of each censored value is
+  # merged along with it, to stay with the simulated value at its time when
+  # the data sets of an output mapping have different LLOQs
+  keys <- c("xValues", "xUnit", "xDimension")
+  simulatedCensored <- merge(
+    observedCensored[c(keys, "lloq")],
+    simulated[c(keys, "yValues")],
+    by = keys,
+    all.x = TRUE
+  )
+
+  # No censored data to process
+  if (nrow(simulatedCensored) == 0) {
+    return(0)
+  }
+
+  if (scaling == "lin" && !is.null(linScaleCV)) {
+    stDev <- abs(linScaleCV * simulatedCensored$lloq)
+  } else if (scaling == "log" && !is.null(logScaleSD)) {
+    stDev <- logScaleSD
+  } else {
+    stop("Scaling method and scaling parameters are not compatible.")
+  }
+
+  censoredProbabilities <- stats::pnorm(
+    (simulatedCensored$lloq - simulatedCensored$yValues) / stDev
+  )
+  censoredProbabilities[censoredProbabilities == 0] <- .Machine$double.xmin
+  censoredErrorVector <- -2 * log(censoredProbabilities, base = 10)
+  censoredErrorVector <- sqrt(censoredErrorVector)
+
+  return(sum(censoredErrorVector^2))
+}
+
 # nolint end
+
+# The arguments of the frozen functions from those of the package: the
+# objective function type from `blqMethod`, and the linear-scale CV and the
+# log-scale SD of the censored contribution from `cv`, as
+# `.calculateCensoredContribution()` derives them.
+frozenCostArguments <- function(args) {
+  if (!is.null(args$blqMethod)) {
+    args$objectiveFunctionType <- if (args$blqMethod == "m3") "m3" else "lsq"
+  }
+  if (!is.null(args$cv)) {
+    args$linScaleCV <- args$cv
+    args$logScaleSD <- sqrt(log1p(args$cv^2))
+  }
+  args[setdiff(names(args), c("blqMethod", "cv"))]
+}

@@ -395,4 +395,3 @@ SimulationModel <- R6::R6Class(
   })
   unlist(times, use.names = FALSE)
 }
-

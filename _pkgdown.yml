@@ -47,6 +47,9 @@ reference:
       - residualWeightingOptions
       - robustMethodOptions
       - ScalingOptions
+      - BLQMethods
+      - BLQRemoveModes
+      - BLQOptions
       - CIMethods
       - contains("CIOptions")
   - title: Internal functions

@@ -39,10 +39,8 @@ test_that("ParameterIdentification configuration can be modified without errors"
     piTask$configuration$objectiveFunctionOptions$robustMethod,
     "huber"
   )
-  expect_no_error(
-    piTask$configuration$objectiveFunctionOptions$linScaleCV <- 0.3
-  )
-  expect_equal(piTask$configuration$objectiveFunctionOptions$linScaleCV, 0.3)
+  expect_no_error(piTask$configuration$blqOptions$cv <- 0.3)
+  expect_equal(piTask$configuration$blqOptions$cv, 0.3)
 })
 
 test_that("ParameterIdentification instance prints expected output", {
