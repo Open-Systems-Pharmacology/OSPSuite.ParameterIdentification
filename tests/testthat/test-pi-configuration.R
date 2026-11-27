@@ -450,6 +450,17 @@ test_that("blqOptions warns and ignores unknown keys", {
   expect_false("unknownKey" %in% names(piConfiguration$blqOptions))
 })
 
+test_that("blqOptions and objectiveFunctionOptions stop on elements without a name", {
+  piConfiguration <- PIConfiguration$new()
+  expect_snapshot(piConfiguration$blqOptions <- list(0.3), error = TRUE)
+  expect_snapshot(
+    piConfiguration$objectiveFunctionOptions <- list(scaleVar = TRUE, "huber"),
+    error = TRUE
+  )
+  expect_equal(piConfiguration$blqOptions, list(cv = 0.2))
+  expect_false(piConfiguration$objectiveFunctionOptions$scaleVar)
+})
+
 test_that("blqRemove always and blqMethod m3 are rejected in either order", {
   piConfiguration <- PIConfiguration$new()
   piConfiguration$blqRemove <- "always"

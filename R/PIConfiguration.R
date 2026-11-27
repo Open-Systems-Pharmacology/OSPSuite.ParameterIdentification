@@ -65,6 +65,7 @@ PIConfiguration <- R6::R6Class(
         private$.objectiveFunctionOptions
       } else {
         ospsuite.utils::validateIsOfType(value, "list")
+        .stopOnUnnamedOptions(value, "objectiveFunctionOptions")
         .stopOnRemovedBlqKeys(names(value))
         if (identical(value$objectiveFunctionType, "m3")) {
           stop(messages$errorM3ObjectiveFunctionType(), call. = FALSE)
@@ -131,7 +132,7 @@ PIConfiguration <- R6::R6Class(
 
     #' @field blqOptions Named list of parameters consumed by the `m3` BLQ
     #'   method. Defaults in [`ospsuite.parameteridentification::BLQOptions`].
-    #'   Partial lists are merged with the current settings; only the provided
+    #'   Partial lists are merged with the current settings. Only the provided
     #'   keys are updated and validated. Unknown keys produce a warning and are
     #'   ignored.
     blqOptions = function(value) {
@@ -139,6 +140,7 @@ PIConfiguration <- R6::R6Class(
         private$.blqOptions
       } else {
         ospsuite.utils::validateIsOfType(value, "list")
+        .stopOnUnnamedOptions(value, "blqOptions")
         .stopOnRemovedBlqKeys(names(value))
         unknownKeys <- setdiff(names(value), names(BLQOptionSpecs))
         if (length(unknownKeys) > 0) {
@@ -351,6 +353,20 @@ PIConfiguration <- R6::R6Class(
     }
   )
 )
+
+#' Stop on option elements without a name
+#'
+#' @param value List of options being set.
+#' @param fieldName Name of the `PIConfiguration` field being set.
+#' @keywords internal
+#' @noRd
+.stopOnUnnamedOptions <- function(value, fieldName) {
+  if (
+    length(value) > 0 && (is.null(names(value)) || !all(nzchar(names(value))))
+  ) {
+    stop(messages$errorUnnamedOptions(fieldName), call. = FALSE)
+  }
+}
 
 #' Stop on the BLQ keys replaced by `blqOptions$cv`
 #'
