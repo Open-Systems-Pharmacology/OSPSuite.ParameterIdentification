@@ -209,7 +209,7 @@ objectiveFunction <- function(private, bootstrapSeed = NULL) {
     objective <- objective$withData(private$.data$resample(bootstrapSeed))
   }
   evaluate <- private$.evaluationClosure(objective)
-  function(par) private$.withPKOutputs(evaluate(par))
+  function(par) private$.withPKOutputs(function() evaluate(par))
 }
 
 # The PK objective function of a task, which returns the cost as a number
@@ -226,7 +226,7 @@ pkValues <- function(private, dose) {
   if (is.function(private$.getPKValues)) {
     return(private$.getPKValues(dose))
   }
-  private$.withPKOutputs(private$.objectiveFor()$pkValues(dose))
+  private$.withPKOutputs(function() private$.objectiveFor()$pkValues(dose))
 }
 
 # Evaluates the objective function for each parameter set, in this order, on
@@ -331,7 +331,7 @@ cases$dataSetsLog <- function() {
     lipophilicitySets
   )
 }
-# Transformations for single data sets (#311). The base commit has no named
+# Transformations for single data sets. The base commit has no named
 # values, applies a named value to every data set or fails, so the results
 # change
 cases$labelledTransformationOne <- structure(
