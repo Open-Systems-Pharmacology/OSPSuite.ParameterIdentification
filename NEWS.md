@@ -6,7 +6,7 @@
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
 - `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
 - The M3 method for data below the limit of quantification (BLQ) is set with `PIConfiguration$blqMethod <- "m3"`, and `objectiveFunctionOptions$objectiveFunctionType = "m3"` stops with an error (#248).
-- `PIConfiguration$blqOptions$cv` replaces `linScaleCV` and `logScaleSD` of `objectiveFunctionOptions`, which now stop with an error. Under log scaling the M3 standard deviation is derived from `cv` in natural logarithms, so M3 costs with log scaling change at the default (#375, #333).
+- `PIConfiguration$blqOptions$cv` replaces `linScaleCV` and `logScaleSD` of `objectiveFunctionOptions`, which now stop with an error. `cv` is at most 1, which limits the M3 standard deviation under log scaling to about 0.83. Under log scaling the M3 standard deviation is derived from `cv` in natural logarithms, so M3 costs with log scaling change at the default (#375, #333).
 
 ## Major changes
 

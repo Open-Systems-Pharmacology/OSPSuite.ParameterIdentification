@@ -13,9 +13,9 @@ the objective function.
 \details{
 The available modes are:
 \itemize{
-\item \strong{\code{none}} - Keep all BLQ observations (default).
-\item \strong{\code{always}} - Remove all BLQ observations (Beal M1, PK-Sim "Always").
-\item \strong{\code{trailingSingle}} - Keep the first point of each trailing BLQ run per
+\item \strong{\code{none}}: Keep all BLQ observations (default).
+\item \strong{\code{always}}: Remove all BLQ observations (Beal M1, PK-Sim "Always").
+\item \strong{\code{trailingSingle}}: Keep the first point of each trailing BLQ run per
 dataset and remove the rest (Beal M6, PK-Sim "Reduce trailing"). With
 \code{blqMethod = "m3"} the kept first point of each trailing run is censored.
 }

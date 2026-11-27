@@ -12,11 +12,11 @@ Methods selecting how the retained BLQ observations contribute to the cost.
 \details{
 The available methods are:
 \itemize{
-\item \strong{\code{none}} - Use the BLQ value as stored, with no special handling.
-\item \strong{\code{lloq}} - Clamp both observed and simulated values to the LLOQ (PK-Sim
+\item \strong{\code{none}}: Use the BLQ value as stored, with no special handling.
+\item \strong{\code{lloq}}: Clamp both observed and simulated values to the LLOQ (PK-Sim
 default).
-\item \strong{\code{lloqHalf}} - Substitute the observed value with half the LLOQ (Beal M5).
-\item \strong{\code{m3}} - Add the censored-likelihood contribution (Beal M3).
+\item \strong{\code{lloqHalf}}: Substitute the observed value with half the LLOQ (Beal M5).
+\item \strong{\code{m3}}: Add the censored-likelihood contribution (Beal M3).
 }
 
 Note: \code{none}, \code{lloq} and \code{lloqHalf} are not yet distinguished at runtime.

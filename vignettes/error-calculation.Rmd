@@ -20,7 +20,7 @@ knitr::opts_knit$set(
 
 ## Introduction
 
-In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` and `blqRemove` control how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
+In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` controls how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
 
 
 ## Error Model
@@ -51,20 +51,15 @@ piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 
 ## Handling Data Below the Quantification Limit (BLQ)
 
-A BLQ measurement is known only to lie between zero and the LLOQ. Two `PIConfiguration` settings control how such observations are treated.
-
-`blqMethod` selects how a BLQ observation contributes to the error:
+A BLQ measurement is known only to lie between zero and the LLOQ. The `blqMethod` setting of `PIConfiguration` selects how such an observation contributes to the error:
 
 - **`lloqHalf`** (default): simulated values below the LLOQ are set to half the LLOQ, and the observed values are used as stored. This is a variant of Beal's M5 method.
-- **`m3`**: the BLQ observation is scored by the likelihood that the prediction falls below the LLOQ (Beal's M3 method). The likelihood needs the spread of a measurement at the LLOQ, which you give as a coefficient of variation in `blqOptions$cv` (default `0.2`, at most `1`). Under linear scaling the standard deviation of a censored observation is `cv` times its LLOQ. Under logarithmic scaling it is $\sqrt{\log(1 + cv^2)}$, the standard deviation of the log values of a log-normal measurement with that coefficient of variation.
-- **`lloq`** and **`none`** are accepted and currently behave as `lloqHalf`.
+- **`m3`**: the BLQ observation keeps its residual, and a term for the probability that the prediction lies below the LLOQ is added to the cost. This is a variant of Beal's M3 method. `blqOptions$cv` sets the coefficient of variation of a measurement at the LLOQ (default `0.2`, at most `1`).
 
 ```{r, eval=FALSE}
 piConfiguration$blqMethod <- "m3"
 piConfiguration$blqOptions <- list(cv = 0.2)
 ```
-
-`blqRemove` selects which BLQ observations enter the fit: `none` (default), `always` or `trailingSingle`. It is validated and stored, but does not yet remove observations during optimization. `always` cannot be combined with `m3`, because no BLQ observation would be left to censor.
 
 The method numbers refer to the strategies catalogued by Beal (2001), listed in the References section.
 
