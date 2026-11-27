@@ -23,7 +23,8 @@ observed data set, named by the data set and in the order of
 \code{observedDataSets}. A data set without transformations has offsets of
 0 and factors of 1.}
 
-    \item{\code{dataWeights}}{A named list of y-value weights.}
+    \item{\code{dataWeights}}{A named list of y-value weights that holds the data
+sets with weights, \code{NULL} when no data set has weights.}
 
     \item{\code{subjectCount}}{Named integer vector with the number of subjects
 behind each observed data set, \code{NULL} until set with
@@ -95,16 +96,20 @@ with keys \code{xVals} and \code{yVals}.}
     \describe{
       \item{\code{data}}{A \code{DataSet} object or a list thereof, matching the simulation
 quantity dimensions.}
-      \item{\code{weights}}{A named list of numeric values or numeric vectors. The
-names must match the names of the observed datasets.}
+      \item{\code{weights}}{\code{NULL} (default) to set no weights, or weights that are
+passed to \verb{$setDataWeights()} and take the same forms. One unnamed
+number also replaces the weights of the data sets that the mapping
+already holds.}
     }
     \if{html}{\out{</div>}}
   }
   \subsection{Details}{
     Replaces any existing dataset with the same label. A replaced
 data set keeps its weights and transformations, and loses its subject
-count. Warns when a data set with a new name is added after weights or
-transformations were set, because the new data set has none.
+count. Its weights are removed with a warning when the number of
+y-values changed and the call passes no new weights for it. Warns when
+a data set with a new name is added after weights or transformations
+were set, because the new data set has none.
   }
 }
 
@@ -174,15 +179,18 @@ during parameter identification.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{weights}}{A named list of numeric values or numeric vectors. The
-names must match the names of the observed datasets.
-
-Each element in the list can be:
+      \item{\code{weights}}{One of the following forms:
 \itemize{
-\item a scalar, which will be broadcast to all y-values of the
-corresponding dataset,
-\item or a numeric vector matching the number of y-values for that dataset.
+\item one unnamed number, which applies to every y-value of every observed
+data set present at the call,
+\item a numeric vector named by observed data sets, where each number
+applies to every y-value of the named data set,
+\item a list named by observed data sets, where each element is one number
+or a numeric vector with one weight per y-value of the named data set.
 }
+
+Named values change only the named data sets and keep the weights of
+the others. All weights must be finite and not negative.
 
 To apply both dataset-level and point-level weights, multiply them
 beforehand and provide the combined result as a single numeric vector

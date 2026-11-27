@@ -8,6 +8,7 @@
 - `PIOutputMapping$setDataTransformations()` no longer has a `labels` argument. Each of `xOffsets`, `yOffsets`, `xFactors` and `yFactors` takes one number for all data sets or a vector named by data set, and `dataTransformations` holds one value per data set (#311).
 - `PIOutputMapping$setDataTransformations()` with one unnamed number reaches only the data sets present at the call. `addObservedDataSets()` warns when a data set is added afterwards.
 - `PIOutputMapping$observedDataSets` stops with an error when a data set was renamed after it was added, instead of silently dropping its weights and transformations.
+- `PIOutputMapping$setDataWeights()` stops for weights that are `NA`, infinite or negative and for a data set named twice.
 
 ## Major changes
 
@@ -17,6 +18,8 @@
 
 - `PIOutputMapping$setDataTransformations()` with values for single data sets now works instead of failing or reaching the wrong data set (#311).
 - `PIOutputMapping$removeObservedDataSet()` also removes the weights and transformations of the data set (#311).
+- `PIOutputMapping$setDataWeights()` also accepts a vector named by data set and one number for all data sets.
+- `PIOutputMapping$addObservedDataSets()` removes the weights of a replaced data set with a warning when its number of y-values changed.
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 - `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE` (#371).
 - `ParameterIdentification$new()` stops when any simulation of the task has no parameter to vary, also for `pkOutputMappings` mode. Previously, this check was only performed for `outputMappings` mode. (#330)

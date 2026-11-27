@@ -12,8 +12,16 @@ messages$errorNoObservedDataSets <- function() {
   "Cannot assign weights: no observed data sets defined."
 }
 
-messages$errorWeightsNames <- function() {
-  "All weights must be a named list with names matching observed data set names."
+messages$errorWeightsNames <- function(dataSetNames) {
+  ospsuite.utils::cliFormat(
+    "Weights must be one unnamed number, or be named by the observed data sets {.val {dataSetNames}}, each used once."
+  )
+}
+
+messages$errorWeightsValues <- function() {
+  ospsuite.utils::cliFormat(
+    "Weights must be finite numbers that are not negative."
+  )
 }
 
 messages$errorWeightsVectorLengthMismatch <- function(label, expected, actual) {
@@ -94,6 +102,12 @@ messages$statusAggregatedWithoutErrors <- function(dataSetName) {
 
 messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
+}
+
+messages$warningDataWeightsDropped <- function(label) {
+  ospsuite.utils::cliFormat(
+    "The weights of {.val {label}} were removed, because its number of y-values changed. Set them again with {.fn PIOutputMapping$setDataWeights}."
+  )
 }
 
 messages$errorNotAFunction <- function() {

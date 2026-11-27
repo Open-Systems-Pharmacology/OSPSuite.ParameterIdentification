@@ -238,6 +238,105 @@ test_that("removing a data set drops its transformations and weights", {
   expect_named(mapping$dataWeights, "studyA")
 })
 
+test_that("dataWeights is NULL after the last weighted data set was removed", {
+  mapping <- twoStudyMapping()
+  studyA <- mapping$observedDataSets$studyA
+  mapping$setDataWeights(c(studyA = 2))
+  mapping$removeObservedDataSet("studyA")
+  expect_null(mapping$dataWeights)
+
+  unweighted <- twoStudyMapping()
+  unweighted$removeObservedDataSet("studyA")
+  expect_identical(
+    capture.output(print(mapping)),
+    capture.output(print(unweighted))
+  )
+  expect_no_warning(mapping$addObservedDataSets(studyA))
+})
+
+shortStudyB <- function() {
+  studyB <- DataSet$new(name = "studyB")
+  studyB$setValues(xValues = c(1, 2), yValues = c(20, 30))
+  studyB
+}
+
+test_that("replacing a data set with another number of y-values drops its weights", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(mapping$addObservedDataSets(shortStudyB()))
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
+})
+
+test_that("replacing a data set with new weights does not warn", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_no_warning(
+    mapping$addObservedDataSets(shortStudyB(), weights = c(studyB = 3))
+  )
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(2, 2, 2, 2), studyB = c(3, 3))
+  )
+
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyB = c(1, 0, 2)))
+  expect_no_warning(mapping$addObservedDataSets(shortStudyB(), weights = 3))
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(3, 3, 3, 3), studyB = c(3, 3))
+  )
+})
+
+test_that("replacing a data set warns when the call passes weights for another data set only", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(
+    mapping$addObservedDataSets(shortStudyB(), weights = c(studyA = 3))
+  )
+  expect_identical(mapping$dataWeights, list(studyA = c(3, 3, 3, 3)))
+})
+
+test_that("replacing a data set with invalid weights warns about the dropped weights", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(try(
+    mapping$addObservedDataSets(
+      shortStudyB(),
+      weights = list(studyB = c(1, 0, 2))
+    ),
+    silent = TRUE
+  ))
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
+})
+
+test_that("one number in addObservedDataSets() replaces the weights of all data sets", {
+  studyC <- DataSet$new(name = "studyC")
+  studyC$setValues(xValues = c(1, 2), yValues = c(15, 25))
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = c(1, 1, 0, 2)))
+  expect_snapshot(mapping$addObservedDataSets(studyC, weights = 0.5))
+  expect_identical(
+    mapping$dataWeights,
+    list(
+      studyA = c(0.5, 0.5, 0.5, 0.5),
+      studyB = c(0.5, 0.5, 0.5),
+      studyC = c(0.5, 0.5)
+    )
+  )
+})
+
+test_that("a data set without values takes empty weights and loses them when it gets values", {
+  mapping <- twoStudyMapping()
+  mapping$addObservedDataSets(DataSet$new(name = "studyC"))
+  mapping$setDataWeights(list(studyC = numeric()))
+  expect_identical(mapping$dataWeights, list(studyC = numeric()))
+
+  studyC <- DataSet$new(name = "studyC")
+  studyC$setValues(xValues = c(1, 2), yValues = c(15, 25))
+  expect_snapshot(mapping$addObservedDataSets(studyC))
+  expect_null(mapping$dataWeights)
+})
+
 test_that("observedDataSets stops when a data set was renamed after adding it", {
   mapping <- twoStudyMapping()
   dataSet <- mapping$observedDataSets$studyB
@@ -273,11 +372,7 @@ test_that("PIOutputMapping cannot set weights with invalid input", {
   outputMapping$addObservedDataSets(testObservedData())
 
   weights <- c(1, 2, 3)
-  expect_error(
-    outputMapping$setDataWeights(weights),
-    messages$errorWrongType("weights", "numeric", "list"),
-    fixed = TRUE
-  )
+  expect_snapshot(outputMapping$setDataWeights(weights), error = TRUE)
 })
 
 test_that("PIOutputMapping cannot set weights with invalid dataset label", {
@@ -285,17 +380,11 @@ test_that("PIOutputMapping cannot set weights with invalid dataset label", {
   outputMapping$addObservedDataSets(testObservedData())
 
   weights <- list(invalidLabel = c(1, 2))
-  expect_error(
-    outputMapping$setDataWeights(weights),
-    messages$errorWeightsNames()
-  )
+  expect_snapshot(outputMapping$setDataWeights(weights), error = TRUE)
 
   weights <- list(c(1, 2), c(2, 3))
   names(weights) <- c(outputMapping$observedDataSets[[1]]$name, "invalidLabel")
-  expect_error(
-    outputMapping$setDataWeights(weights),
-    messages$errorWeightsNames()
-  )
+  expect_snapshot(outputMapping$setDataWeights(weights), error = TRUE)
 })
 
 test_that("PIOutputMapping cannot set weights when lengths do not match y-values", {
@@ -356,10 +445,7 @@ test_that("PIOutputMapping fails with unknown label in weights for multiple data
     dataSet3 = rep(2, 3) # incorrect label
   )
 
-  expect_error(
-    outputMapping$setDataWeights(weights),
-    messages$errorWeightsNames()
-  )
+  expect_snapshot(outputMapping$setDataWeights(weights), error = TRUE)
 })
 
 test_that("PIOutputMapping fails with wrong weight length for one of multiple datasets", {
@@ -413,6 +499,79 @@ test_that("PIOutputMapping can set weight vectors correctly through `addObserved
     outputMapping$addObservedDataSets(testObservedData(), weights = weights)
   )
   expect_equal(outputMapping$dataWeights[[label]], weights[[1]])
+})
+
+test_that("setDataWeights() gives the same weights for all three forms", {
+  expected <- list(studyA = c(2, 2, 2, 2), studyB = c(2, 2, 2))
+  expect_identical(twoStudyMapping()$setDataWeights(2)$dataWeights, expected)
+  expect_identical(
+    twoStudyMapping()$setDataWeights(c(studyA = 2, studyB = 2))$dataWeights,
+    expected
+  )
+  expect_identical(
+    twoStudyMapping()$setDataWeights(list(studyA = 2, studyB = 2))$dataWeights,
+    expected
+  )
+})
+
+test_that("setDataWeights() changes only the named data sets", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = c(1, 1, 0, 2)))
+  mapping$setDataWeights(c(studyB = 0.5))
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(1, 1, 0, 2), studyB = c(0.5, 0.5, 0.5))
+  )
+  mapping$setDataWeights(c(studyA = 2L))
+  expect_identical(mapping$dataWeights$studyA, c(2L, 2L, 2L, 2L))
+})
+
+test_that("addObservedDataSets() passes one number to the data sets of the call", {
+  dataSets <- twoStudyMapping()$observedDataSets
+  mapping <- PIOutputMapping$new(quantity = testQuantity)
+  mapping$addObservedDataSets(dataSets, weights = 2)
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(2, 2, 2, 2), studyB = c(2, 2, 2))
+  )
+})
+
+test_that("setDataWeights() rejects invalid names and changes nothing", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2))
+  expect_snapshot(error = TRUE, {
+    mapping$setDataWeights(list(2))
+    mapping$setDataWeights(list(1, 2))
+    mapping$setDataWeights(c(1, 2))
+    mapping$setDataWeights(c(studyC = 1))
+    mapping$setDataWeights(c(studyA = 1, studyA = 2))
+    mapping$setDataWeights(stats::setNames(c(1, 2), c("studyA", "")))
+    mapping$setDataWeights(list(studyB = 3, studyC = 1))
+  })
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
+})
+
+test_that("setDataWeights() rejects invalid values and changes nothing", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2))
+  expect_snapshot(error = TRUE, {
+    mapping$setDataWeights("2")
+    mapping$setDataWeights(NULL)
+    mapping$setDataWeights(NA)
+    mapping$setDataWeights(NA_real_)
+    mapping$setDataWeights(Inf)
+    mapping$setDataWeights(-1)
+    mapping$setDataWeights(numeric())
+    mapping$setDataWeights(list())
+    mapping$setDataWeights(list(studyA = "2"))
+    mapping$setDataWeights(list(studyA = list(1)))
+    mapping$setDataWeights(list(studyA = numeric()))
+    mapping$setDataWeights(c(studyA = NaN))
+    mapping$setDataWeights(c(studyB = -0.5))
+    mapping$setDataWeights(list(studyB = 3, studyA = c(1, NA, 1, 1)))
+    mapping$setDataWeights(list(studyB = 3, studyA = c(1, 2)))
+  })
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
 })
 
 test_that("PIOutputMapping adds data without molecular weight and retrieves it", {

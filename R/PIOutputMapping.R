@@ -56,10 +56,11 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field dataWeights A named list of y-value weights.
+    #' @field dataWeights A named list of y-value weights that holds the data
+    #'   sets with weights, `NULL` when no data set has weights.
     dataWeights = function(value) {
       if (missing(value)) {
-        private$.dataWeights
+        if (length(private$.dataWeights) > 0) private$.dataWeights
       } else {
         stop(messages$errorPropertyReadOnly(
           "dataWeights",
@@ -143,6 +144,16 @@ PIOutputMapping <- R6::R6Class(
       private$.subjectCount <- private$.subjectCount[
         names(private$.subjectCount) != label
       ]
+    },
+    .validateLabels = function(labels, message) {
+      if (
+        is.null(labels) ||
+          any(!labels %in% names(private$.observedDataSets)) ||
+          anyDuplicated(labels) > 0
+      ) {
+        # The error names the setter the user called, not this helper
+        stop(simpleError(message, call = sys.call(-1)))
+      }
     }
   ),
   public = list(
@@ -161,12 +172,16 @@ PIOutputMapping <- R6::R6Class(
     #' @description Adds or updates observed data using `DataSet` objects.
     #' @details Replaces any existing dataset with the same label. A replaced
     #'   data set keeps its weights and transformations, and loses its subject
-    #'   count. Warns when a data set with a new name is added after weights or
-    #'   transformations were set, because the new data set has none.
+    #'   count. Its weights are removed with a warning when the number of
+    #'   y-values changed and the call passes no new weights for it. Warns when
+    #'   a data set with a new name is added after weights or transformations
+    #'   were set, because the new data set has none.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
-    #' @param weights A named list of numeric values or numeric vectors. The
-    #'   names must match the names of the observed datasets.
+    #' @param weights `NULL` (default) to set no weights, or weights that are
+    #'   passed to `$setDataWeights()` and take the same forms. One unnamed
+    #'   number also replaces the weights of the data sets that the mapping
+    #'   already holds.
     #'
     #' @export
     addObservedDataSets = function(data, weights = NULL) {
@@ -187,6 +202,14 @@ PIOutputMapping <- R6::R6Class(
       ) {
         warning(messages$warningDataTransformationsPresent(addedLabels))
       }
+
+      # Warns also when the new weights are rejected at the end of the call
+      droppedLabels <- character()
+      on.exit(
+        for (label in setdiff(droppedLabels, names(private$.dataWeights))) {
+          warning(messages$warningDataWeightsDropped(label))
+        }
+      )
 
       for (idx in seq_along(data)) {
         # Verify if the data's dimension can match the quantity's dimension in
@@ -221,8 +244,17 @@ PIOutputMapping <- R6::R6Class(
           }
         }
 
-        private$.dropSubjectCount(data[[idx]]$name)
-        private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
+        label <- data[[idx]]$name
+        if (
+          label %in%
+            names(private$.dataWeights) &&
+            length(private$.dataWeights[[label]]) != length(data[[idx]]$yValues)
+        ) {
+          private$.dataWeights[[label]] <- NULL
+          droppedLabels <- c(droppedLabels, label)
+        }
+        private$.dropSubjectCount(label)
+        private$.observedDataSets[[label]] <- data[[idx]]
       }
 
       # Handle optional weights
@@ -295,13 +327,10 @@ PIOutputMapping <- R6::R6Class(
         if (is.null(labels) && length(value) == 1) {
           labels <- dataSetNames
         }
-        if (
-          is.null(labels) ||
-            any(!labels %in% dataSetNames) ||
-            anyDuplicated(labels) > 0
-        ) {
-          stop(messages$errorTransformationNames(key, dataSetNames))
-        }
+        private$.validateLabels(
+          labels,
+          messages$errorTransformationNames(key, dataSetNames)
+        )
         transformations[[key]][labels] <- unname(value)
       }
       private$.dataTransformations <- transformations
@@ -311,51 +340,66 @@ PIOutputMapping <- R6::R6Class(
     #' @description Assigns weights to observed data sets for residual weighting
     #'   during parameter identification.
     #'
-    #' @param weights A named list of numeric values or numeric vectors. The
-    #'   names must match the names of the observed datasets.
+    #' @param weights One of the following forms:
+    #'   - one unnamed number, which applies to every y-value of every observed
+    #'   data set present at the call,
+    #'   - a numeric vector named by observed data sets, where each number
+    #'   applies to every y-value of the named data set,
+    #'   - a list named by observed data sets, where each element is one number
+    #'   or a numeric vector with one weight per y-value of the named data set.
     #'
-    #'   Each element in the list can be:
-    #'   - a scalar, which will be broadcast to all y-values of the
-    #'   corresponding dataset,
-    #'   - or a numeric vector matching the number of y-values for that dataset.
+    #'   Named values change only the named data sets and keep the weights of
+    #'   the others. All weights must be finite and not negative.
     #'
     #'   To apply both dataset-level and point-level weights, multiply them
     #'   beforehand and provide the combined result as a single numeric vector
     #'   per dataset.
     setDataWeights = function(weights) {
-      # Return early if no datasets are present
-      if (length(private$.observedDataSets) == 0) {
+      dataSetNames <- names(private$.observedDataSets)
+      if (length(dataSetNames) == 0) {
         stop(messages$errorNoObservedDataSets())
       }
 
-      ospsuite.utils::validateIsOfType(weights, "list")
-      lapply(weights, ospsuite.utils::validateIsNumeric, FALSE)
-
-      labels <- names(weights)
-      if (
-        is.null(labels) || any(!labels %in% names(private$.observedDataSets))
-      ) {
-        stop(messages$errorWeightsNames())
-      }
-
-      for (label in labels) {
-        yLength <- length(private$.observedDataSets[[label]]$yValues)
-        weightsVec <- weights[[label]]
-
-        if (length(weightsVec) == 1) {
-          weightsVec <- rep(weightsVec, yLength)
+      if (is.numeric(weights)) {
+        if (is.null(names(weights)) && length(weights) == 1) {
+          weights <- rep(weights, length(dataSetNames))
+          names(weights) <- dataSetNames
         }
+        weights <- as.list(weights)
+      }
+      if (!is.list(weights) || length(weights) == 0) {
+        stop(messages$errorWeightsValues())
+      }
+      private$.validateLabels(
+        names(weights),
+        messages$errorWeightsNames(dataSetNames)
+      )
 
-        if (length(weightsVec) != yLength) {
+      newWeights <- list()
+      for (label in names(weights)) {
+        value <- weights[[label]]
+        yLength <- length(private$.observedDataSets[[label]]$yValues)
+        if (
+          !is.numeric(value) ||
+            (length(value) == 0 && yLength > 0) ||
+            !all(is.finite(value)) ||
+            any(value < 0)
+        ) {
+          stop(messages$errorWeightsValues())
+        }
+        if (length(value) == 1) {
+          value <- rep(value, yLength)
+        }
+        if (length(value) != yLength) {
           stop(messages$errorWeightsVectorLengthMismatch(
             label,
             yLength,
-            length(weightsVec)
+            length(value)
           ))
         }
-
-        private$.dataWeights[[label]] <- weightsVec
+        newWeights[[label]] <- value
       }
+      private$.dataWeights[names(newWeights)] <- newWeights
 
       invisible(self)
     },
@@ -386,13 +430,10 @@ PIOutputMapping <- R6::R6Class(
       if (is.null(labels) && length(n) == 1) {
         labels <- names(private$.observedDataSets)
       }
-      if (
-        is.null(labels) ||
-          any(!labels %in% names(private$.observedDataSets)) ||
-          anyDuplicated(labels) > 0
-      ) {
-        stop(messages$errorSubjectCountNames(names(private$.observedDataSets)))
-      }
+      private$.validateLabels(
+        labels,
+        messages$errorSubjectCountNames(names(private$.observedDataSets))
+      )
 
       private$.subjectCount[labels] <- as.integer(n)
       invisible(self)
@@ -405,7 +446,7 @@ PIOutputMapping <- R6::R6Class(
         list(
           "Output path" = private$.quantity$path,
           "Observed data labels" = names(private$.observedDataSets),
-          "Data weight labels" = names(private$.dataWeights),
+          "Data weight labels" = names(self$dataWeights),
           "Scaling" = private$.scaling
         ),
         print_empty = TRUE
