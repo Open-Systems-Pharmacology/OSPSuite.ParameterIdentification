@@ -177,8 +177,8 @@ PIOutputMapping <- R6::R6Class(
     #'   were set, because the new data set has none.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
-    #' @param weights A named list of numeric values or numeric vectors. The
-    #'   names must match the names of the observed datasets.
+    #' @param weights `NULL` (default) to set no weights, or weights that are
+    #'   passed to `$setDataWeights()` and take the same forms.
     #'
     #' @export
     addObservedDataSets = function(data, weights = NULL) {
@@ -331,13 +331,16 @@ PIOutputMapping <- R6::R6Class(
     #' @description Assigns weights to observed data sets for residual weighting
     #'   during parameter identification.
     #'
-    #' @param weights A named list of numeric values or numeric vectors. The
-    #'   names must match the names of the observed datasets.
+    #' @param weights One of the following forms:
+    #'   - one unnamed number, which applies to every y-value of every observed
+    #'   data set present at the call,
+    #'   - a numeric vector named by observed data sets, where each number
+    #'   applies to every y-value of the named data set,
+    #'   - a list named by observed data sets, where each element is one number
+    #'   or a numeric vector with one weight per y-value of the named data set.
     #'
-    #'   Each element in the list can be:
-    #'   - a scalar, which will be broadcast to all y-values of the
-    #'   corresponding dataset,
-    #'   - or a numeric vector matching the number of y-values for that dataset.
+    #'   Named values change only the named data sets and keep the weights of
+    #'   the others. All weights must be finite and not negative.
     #'
     #'   To apply both dataset-level and point-level weights, multiply them
     #'   beforehand and provide the combined result as a single numeric vector

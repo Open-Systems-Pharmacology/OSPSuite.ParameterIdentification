@@ -108,10 +108,7 @@ outputMapping$scaling <- "log"
 
 ## Setting weights
 
-Weights control the relative influence of observed data on the optimization.  
-They can be supplied directly when datasets are added to a mapping, or they can be
-set or updated later with `setDataWeights()`. In both cases, weights are passed as
-a named list where the names must match the dataset labels.
+Weights control the relative influence of observed data on the optimization. They can be supplied directly when datasets are added to a mapping, or they can be set or updated later with `setDataWeights()`. In both cases, weights are passed as one number for all datasets, as a vector named by dataset, or as a list named by dataset. Named weights change only the named datasets and keep the weights of the others. Weights must be finite and not negative, and a data point with a weight of 0 adds nothing to the sum of squared residuals.
 
 
 ### Adding weights directly
@@ -180,12 +177,12 @@ The examples below illustrate the different ways weights can be specified.
 
 #### Dataset-level weights 
 
-A scalar weight is broadcast to all points of a dataset:
+A vector named by dataset gives one weight to all points of each named dataset. A single unnamed number, such as `setDataWeights(0.5)`, gives that weight to all points of every dataset.
 
 ```{r example-2, eval=FALSE}
 ## Not run: example only
 outputMapping$setDataWeights(
-  list(
+  c(
     "StudyA" = 1.0,  # full influence
     "StudyB" = 0.5   # down-weight entire dataset
   )
@@ -196,7 +193,7 @@ outputMapping$setDataWeights(
 
 #### Point-level weights
 
-A numeric vector with the same length as the dataset’s y-values:
+One weight per data point needs a list, with a numeric vector of the same length as the dataset’s y-values:
 
 ```{r example-3, eval=FALSE}
 ## Not run: example only
