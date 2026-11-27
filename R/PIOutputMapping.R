@@ -143,6 +143,16 @@ PIOutputMapping <- R6::R6Class(
       private$.subjectCount <- private$.subjectCount[
         names(private$.subjectCount) != label
       ]
+    },
+    .validateLabels = function(labels, message) {
+      if (
+        is.null(labels) ||
+          any(!labels %in% names(private$.observedDataSets)) ||
+          anyDuplicated(labels) > 0
+      ) {
+        # The error names the setter the user called, not this helper
+        stop(simpleError(message, call = sys.call(-1)))
+      }
     }
   ),
   public = list(
@@ -295,13 +305,10 @@ PIOutputMapping <- R6::R6Class(
         if (is.null(labels) && length(value) == 1) {
           labels <- dataSetNames
         }
-        if (
-          is.null(labels) ||
-            any(!labels %in% dataSetNames) ||
-            anyDuplicated(labels) > 0
-        ) {
-          stop(messages$errorTransformationNames(key, dataSetNames))
-        }
+        private$.validateLabels(
+          labels,
+          messages$errorTransformationNames(key, dataSetNames)
+        )
         transformations[[key]][labels] <- unname(value)
       }
       private$.dataTransformations <- transformations
@@ -386,13 +393,10 @@ PIOutputMapping <- R6::R6Class(
       if (is.null(labels) && length(n) == 1) {
         labels <- names(private$.observedDataSets)
       }
-      if (
-        is.null(labels) ||
-          any(!labels %in% names(private$.observedDataSets)) ||
-          anyDuplicated(labels) > 0
-      ) {
-        stop(messages$errorSubjectCountNames(names(private$.observedDataSets)))
-      }
+      private$.validateLabels(
+        labels,
+        messages$errorSubjectCountNames(names(private$.observedDataSets))
+      )
 
       private$.subjectCount[labels] <- as.integer(n)
       invisible(self)
