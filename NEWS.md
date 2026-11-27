@@ -5,18 +5,18 @@
 - `estimateCI()` with `ciMethod = "bootstrap"` no longer fits Gaussian process models to aggregated data sets, so results with aggregated data change, `DiceKriging` is no longer a dependency, and aggregated data now require `PIOutputMapping$setSubjectCount()` (#355, #312, #318).
 - `estimateCI()` with `ciMethod = "bootstrap"` gives different results also for individual data, because a data set drawn `k` times now counts `k` times instead of `k²` and the output mappings of a task are drawn independently of each other (#203).
 - `PIResult$toDataFrame()` with `ciMethod = "PL"` reports the standard error `se` and the relative standard error `rse` instead of the `sd` and `cv` columns, and `toList()` and `print()` also show them (#370).
-
-- `PIOutputMapping$setDataTransformations()` no longer has a `labels` argument. Each of `xOffsets`, `yOffsets`, `xFactors` and `yFactors` takes one number for all data sets or a vector named by data set.
-- `PIOutputMapping$setDataTransformations()` with values for single data sets now works instead of failing or reaching the wrong data set, and `dataTransformations` holds one value per data set (#311).
-- `PIOutputMapping$setDataTransformations()` with one unnamed number reaches only the data sets present at the call. `addObservedDataSets()` warns when a data set is added afterwards, because it starts without transformations.
-- `PIOutputMapping$removeObservedDataSet()` also removes the weights and transformations of the data set (#311).
+- `PIOutputMapping$setDataTransformations()` no longer has a `labels` argument. Each of `xOffsets`, `yOffsets`, `xFactors` and `yFactors` takes one number for all data sets or a vector named by data set, and `dataTransformations` holds one value per data set (#311).
+- `PIOutputMapping$setDataTransformations()` with one unnamed number reaches only the data sets present at the call. `addObservedDataSets()` warns when a data set is added afterwards.
 - `PIOutputMapping$observedDataSets` stops with an error when a data set was renamed after it was added, instead of silently dropping its weights and transformations.
+
 ## Major changes
 
 - `PIOutputMapping$setSubjectCount()` sets the number of subjects `n` behind aggregated data, as one number for all data sets of a mapping or a vector named by data set, and bootstrap confidence intervals redraw their means from the reported mean and `SD / sqrt(n)`. See `vignette("confidence-intervals")` (#203).
 
 ## Minor improvements and bug fixes
 
+- `PIOutputMapping$setDataTransformations()` with values for single data sets now works instead of failing or reaching the wrong data set (#311).
+- `PIOutputMapping$removeObservedDataSet()` also removes the weights and transformations of the data set (#311).
 - `ParameterIdentification$run()` and `estimateCI()` now report in `ciError` why the Hessian confidence interval estimation failed when the Hessian calculation or its inversion fails, for example for a singular Hessian. Previously they returned `NA` standard deviations and confidence intervals without an error message (#360).
 - `estimateCI()` reports the cost details of the fit that `run()` produced instead of the best cost seen during the interval estimation, also in `run()` with `autoEstimateCI = TRUE` (#371).
 - `ParameterIdentification$new()` stops when any simulation of the task has no parameter to vary, also for `pkOutputMappings` mode. Previously, this check was only performed for `outputMappings` mode. (#330)
