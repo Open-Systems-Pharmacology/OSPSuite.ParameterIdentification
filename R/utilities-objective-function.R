@@ -4,9 +4,10 @@
 #' of one output mapping from a data frame of simulated and observed data, for
 #' example that of a `DataCombined` object. The objective function calculates
 #' the same cost on numeric vectors with `.mappingCostTerms()`. Both use
-#' `.costKernel()`, and the tests compare both with the calculation of version
-#' 2.2.0.9009 by `identical()` (see
-#' `tests/testthat/helper-frozen-objective-function.R`).
+#' `.costKernel()`. Without LLOQ data, the tests compare both with the
+#' calculation of version 2.2.0.9009 by `identical()` (see
+#' `tests/testthat/helper-frozen-objective-function.R`); with LLOQ data, whose
+#' handling changed since, with recorded costs.
 #'
 #' @param df A dataframe containing the combined data for simulation and
 #'   observation. Supports dataframes created from a `DataCombined` object via
@@ -14,9 +15,9 @@
 #'   `yValues`, and optionally `yErrorValues` and `yErrorType` if
 #'   `residualWeightingMethod = "error"`. The error type must be one of
 #'   `"ArithmeticStdDev"`, `"GeometricStdDev"`.
-#' @param blqMethod A string selecting how BLQ observations contribute to the
-#'   cost. `"m3"` adds the censored contribution, and any other value adds
-#'   none. Defaults to `"none"`.
+#' @param blqMethod A `BLQMethods` value selecting how observations at or
+#'   below their LLOQ (column `lloq`) contribute to the cost. Defaults to
+#'   `"none"`.
 #' @param residualWeightingMethod A string indicating the method to weight the
 #'   residuals. Options include `"none"` (default) and `"error"`.
 #' @param robustMethod A string indicating the robust method to apply to the
@@ -25,9 +26,13 @@
 #'   of observations. Defaults to `FALSE`.
 #' @param index Output-mapping index stored on every `residualDetails` row.
 #'   Defaults to `NA_real_`.
-#' @param ... Additional arguments passed to `.calculateCensoredContribution`,
-#'   `scaling` and `cv`. `scaling` is not
-#'   used for the error weights, which assume `yValues` on the linear scale.
+#' @param scaling Scale of `yValues` and `lloq`, `"lin"` (default) or `"log"`,
+#'   for half the LLOQ, the SD of a censored observation and the error
+#'   weights. The error weights of `"log"` need linear values, which a data
+#'   frame on the log scale does not carry, so error weighting is meant for
+#'   `"lin"` only.
+#' @param cv Coefficient of variation of a measurement at the LLOQ, for
+#'   `blqMethod = "m3"`. Defaults to that of `BLQOptions`.
 #'
 #' @details The function calculates the residuals between the simulated and
 #' observed values, applies the specified weighting method, and computes the
@@ -62,10 +67,9 @@
   robustMethod = "none",
   scaleVar = FALSE,
   index = NA_real_,
-  ...
+  scaling = "lin",
+  cv = BLQOptions$cv
 ) {
-  additionalArgs <- list(...)
-
   # Validate input dataframe structure
   ospsuite.utils::validateIsOfType(df, "tbl_df")
   ospsuite.utils::validateIsIncluded(
@@ -120,8 +124,8 @@
     censoredContribution <- .calculateCensoredContribution(
       observed = observedData,
       simulated = simulatedData,
-      scaling = additionalArgs$scaling,
-      cv = additionalArgs$cv
+      scaling = scaling,
+      cv = cv
     )
   }
 
@@ -137,10 +141,15 @@
     robustMethod = robustMethod,
     scaleVar = scaleVar,
     censoredContribution = censoredContribution,
-    index = index
+    index = index,
+    lloq = observedData$lloq %||% rep(NA_real_, nrow(observedData)),
+    blqMethod = blqMethod,
+    scaling = scaling,
+    observedYLinear = observedData[["yValues"]],
+    lloqLinear = observedData$lloq %||% rep(NA_real_, nrow(observedData))
   )
 
-  do.call(.newModelCost, costTerms)
+  .combineCostTerms(list(costTerms))
 }
 
 #' Cost terms of one output mapping
@@ -160,10 +169,14 @@
 #' @param censoredContribution Contribution of the censored observations
 #'   (M3 method), 0 otherwise.
 #' @param index Output-mapping index stored on every `residualDetails` row.
-#' @param scaling Scale of `simulatedY` and `observedY`, `"lin"` or `"log"`,
-#'   for the error weights.
-#' @param observedYLinear Observed values on the linear scale, for the error
-#'   weights. The same as `observedY` for `scaling = "lin"`.
+#' @param lloq LLOQ of the observations on the scale of `observedY`, `NA` for
+#'   none.
+#' @param blqMethod A `BLQMethods` value. `lloq` and `lloqHalf` substitute the
+#'   observed values at or below the LLOQ, `none` and `m3` keep them.
+#' @param scaling Scale of `simulatedY` and `observedY`, `"lin"` or `"log"`.
+#' @param observedYLinear,lloqLinear Observed values and LLOQ on the linear
+#'   scale, for the error weights. The same as `observedY` and `lloq` for
+#'   `scaling = "lin"`.
 #'
 #' @return A list of the arguments of `.newModelCost()`. When the model cost
 #'   is `NA`, a warning and the terms of `.createErrorCostStructure()`.
@@ -182,8 +195,11 @@
   scaleVar,
   censoredContribution,
   index,
-  scaling = "lin",
-  observedYLinear = observedY
+  lloq,
+  blqMethod,
+  scaling,
+  observedYLinear,
+  lloqLinear
 ) {
   # Interpolating simulated Y values based on observed X values if applicable
   if (length(unique(simulatedX)) > 1) {
@@ -195,6 +211,15 @@
   } else {
     simulatedYApprox <- simulatedY[match(observedX, simulatedX)]
   }
+
+  # Substitute on both scales; the linear values give the error weights
+  observedYLinear <- .applyBlqSubstitution(
+    observedYLinear,
+    lloqLinear,
+    blqMethod,
+    "lin"
+  )
+  observedY <- .applyBlqSubstitution(observedY, lloq, blqMethod, scaling)
 
   # Calculate raw residuals
   rawResiduals <- simulatedYApprox - observedY
@@ -273,11 +298,9 @@
 
 #' Cost terms of one output mapping in the objective function
 #'
-#' @description Applies the LLOQ rule, the log transformation and the data
-#'   weights to the simulated values and the prepared observed data of one
-#'   output mapping and calculates its cost terms with `.costKernel()`, in the
-#'   same order as the objective function of version 2.2.0.9009 did on data
-#'   frames before `.calculateCostMetrics()`.
+#' @description Applies the log transformation and the data weights to the
+#'   simulated values and the prepared observed data of one output mapping and
+#'   calculates its cost terms, BLQ handling included, with `.costKernel()`.
 #'
 #' @param simulated A list with `xValues` and `yValues`, the simulated values
 #'   in base units (see `.simulatedValues()`).
@@ -303,15 +326,6 @@
   quantityPath = NULL
 ) {
   simulatedY <- simulated$yValues
-  # Unless censored, simulated values below the LLOQ are replaced by LLOQ / 2
-  if (costControl$blqMethod != "m3" && observed$hasLloq) {
-    belowLloq <- simulatedY < observed$lloqMin
-    if (anyNA(belowLloq)) {
-      stop(messages$errorSimulatedValuesMissing())
-    }
-    simulatedY[belowLloq] <- observed$lloqMin / 2
-  }
-
   if (costControl$scaling == "log") {
     simulatedY <- ospsuite.utils::logSafe(
       simulatedY,
@@ -328,7 +342,8 @@
   # Data weights by data set, NA where the output mapping has none
   userWeights <- rep(NA_real_, length(observedY))
   for (dataSet in names(dataWeights)) {
-    userWeights[observed$name == dataSet] <- dataWeights[[dataSet]]
+    rows <- observed$name == dataSet
+    userWeights[rows] <- dataWeights[[dataSet]][observed$dataSetIndex[rows]]
   }
 
   keepSimulated <- .finiteValues(simulated$xValues, simulatedY)
@@ -387,8 +402,11 @@
     scaleVar = costControl$scaleVar,
     censoredContribution = censoredContribution,
     index = index,
+    lloq = lloq[keepObserved],
+    blqMethod = costControl$blqMethod,
     scaling = costControl$scaling,
-    observedYLinear = observed$yValues[keepObserved]
+    observedYLinear = observed$yValues[keepObserved],
+    lloqLinear = observed$lloq[keepObserved]
   )
 }
 
@@ -526,9 +544,10 @@
 #' @param outputMapping A `PIOutputMapping` object.
 #'
 #' @return A list with one entry per observation in `name` (the data set),
-#'   `xValues`, `xDimension`, `yValues`, `yErrorValues`, `yErrorType` and
-#'   `lloq`, the log-transformed `logYValues` and `logLloq`, and `hasLloq`,
-#'   `lloqMin`, `logEpsilon` and `xUnit`, the unit of the x values.
+#'   `dataSetIndex` (the position of the observation in its data set, for the
+#'   data weights), `xValues`, `xDimension`, `yValues`, `yErrorValues`,
+#'   `yErrorType` and `lloq`, the log-transformed `logYValues` and `logLloq`,
+#'   and `logEpsilon` and `xUnit`, the unit of the x values.
 #' @keywords internal
 #' @noRd
 .prepareObservedData <- function(outputMapping) {
@@ -543,21 +562,19 @@
     yUnit = yUnit
   )
 
-  # Values for the LLOQ rule and the log transformation, as in the data frames
   lloq <- rows$lloq
-  hasLloq <- sum(is.finite(lloq)) > 0
+  name <- as.character(rows$name)
   logEpsilon <- .logEpsilon(yDimension, yUnit)
 
   list(
-    name = as.character(rows$name),
+    name = name,
+    dataSetIndex = stats::ave(seq_along(name), name, FUN = seq_along),
     xValues = rows$xValues,
     xDimension = rows$xDimension,
     yValues = rows$yValues,
     yErrorValues = rows$yErrorValues,
     yErrorType = rows$yErrorType,
     lloq = lloq,
-    hasLloq = hasLloq,
-    lloqMin = if (hasLloq) min(lloq, na.rm = TRUE) else NA_real_,
     logYValues = ospsuite.utils::logSafe(
       rows$yValues,
       epsilon = logEpsilon,

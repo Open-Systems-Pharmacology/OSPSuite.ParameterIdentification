@@ -20,7 +20,7 @@ knitr::opts_knit$set(
 
 ## Introduction
 
-In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` controls how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
+In the parameter identification (PI) process, measuring the discrepancy between simulated results and observed data is crucial. `ospsuite.parameteridentification` controls this through two independent settings on `PIConfiguration`: `objectiveFunctionType` selects the error model that scores the fit, while `blqMethod` and `blqRemove` control how measurements below the limit of quantification (BLQ) contribute to that score. The error calculation runs within each `PIOutputMapping` and is aggregated across all mappings to drive the optimization.
 
 
 ## Error Model
@@ -37,7 +37,7 @@ $$
 E = \sum_{i=1}^{n} \left( \hat{y}(t_i) - y_i \right)^2 ,
 $$
 
-where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$, and BLQ handling can substitute $\hat{y}(t_i)$ or $y_i$ before the difference is taken.
+where $\hat{y}(t_i)$ is the simulated value interpolated to the observation time $t_i$. The total objective driving the optimization is the sum of $E$ over all mappings. Residual weighting and robust adjustment (described below) multiply each residual before it is squared. Under logarithmic scaling the residual is formed between log-transformed values, so it becomes $\log \hat{y}(t_i) - \log y_i$, and BLQ handling can substitute $y_i$ before the difference is taken. The simulated value is never changed.
 
 Set it via the `objectiveFunctionType` attribute in `objectiveFunctionOptions`:
 
@@ -51,15 +51,30 @@ piConfiguration$objectiveFunctionOptions$objectiveFunctionType <- "lsq"
 
 ## Handling Data Below the Quantification Limit (BLQ)
 
-A BLQ measurement is known only to lie between zero and the LLOQ. The `blqMethod` setting of `PIConfiguration` selects how such an observation contributes to the error:
+A BLQ measurement is known only to lie between zero and the LLOQ. An observation counts as BLQ when it has an LLOQ and its value is at or below that LLOQ. Each observation is compared with the LLOQ of its own data set. Two `PIConfiguration` settings control how BLQ observations are treated.
 
-- **`lloqHalf`** (default): simulated values below the LLOQ are set to half the LLOQ, and the observed values are used as stored. This is a variant of Beal's M5 method.
+`blqRemove` selects which BLQ observations enter the fit. The selection is made once, before the first simulation, and the removed observations are left out of every evaluation:
+
+- **`none`** (default): all BLQ observations are kept.
+- **`always`**: all BLQ observations are removed (Beal's M1 method). If this leaves an output mapping without observations, the parameter identification stops with an error that names the mapping.
+- **`trailingSingle`**: in each data set, the BLQ observations after the last quantified observation form a trailing run. The earliest observation of that run is kept and the others are removed (Beal's M6 method). BLQ observations between quantified ones are kept.
+
+`blqMethod` selects how each kept BLQ observation contributes to the error:
+
+- **`none`**: the observed value is used as stored.
+- **`lloq`**: the observed value is replaced by its LLOQ.
+- **`lloqHalf`** (default): the observed value is replaced by half its LLOQ (Beal's M5 method).
 - **`m3`**: the BLQ observation keeps its residual, and a term for the probability that the prediction lies below the LLOQ is added to the cost. This is a variant of Beal's M3 method. `blqOptions$cv` sets the coefficient of variation of a measurement at the LLOQ (default `0.2`, at most `1`).
 
+The substitutions change only the observed value. With `residualWeightingMethod = "error"`, the substituted value is also the one its error weight is computed from.
+
 ```{r, eval=FALSE}
+piConfiguration$blqRemove <- "trailingSingle"
 piConfiguration$blqMethod <- "m3"
 piConfiguration$blqOptions <- list(cv = 0.2)
 ```
+
+`always` cannot be combined with `m3`, because no BLQ observation would be left to censor. With `trailingSingle`, the kept first observation of each trailing run is censored.
 
 The method numbers refer to the strategies catalogued by Beal (2001), listed in the References section.
 

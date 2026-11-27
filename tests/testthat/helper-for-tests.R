@@ -626,7 +626,10 @@ objectiveClosure <- function(task, seed = NULL) {
 taskObjective <- function(task, seed = NULL) {
   priv <- task$.__enclos_env__$private
   priv$.batchInitialization()
-  data <- PIObservations$new(priv$.outputMappings)
+  data <- PIObservations$new(
+    priv$.outputMappings,
+    task$configuration$blqRemove
+  )
   if (!is.null(seed)) {
     data <- data$resample(seed)
   }

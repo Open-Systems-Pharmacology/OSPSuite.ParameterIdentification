@@ -180,6 +180,77 @@ test_that(".calculateCensoredContribution throws errors on invalid options", {
   )
 })
 
+# BLQ scoring in the kernel
+
+# Simulated values at 0 to 3 h and observed values at 1, 2 and 3 h with an
+# LLOQ of 1 mg/l. The simulated values at the observed times are 5, 1.5 and
+# 3.5, and the observed value at 2 h is below the LLOQ.
+blqDf <- function(observedX = c(1, 2, 3), observedY = c(5, 0.2, 4)) {
+  tibble::tibble(
+    dataType = rep(c("simulated", "observed"), c(4, 3)),
+    xValues = c(0, 1, 2, 3, observedX),
+    yValues = c(6, 5, 1.5, 3.5, observedY),
+    xDimension = "Time",
+    yDimension = "Concentration (mass)",
+    xUnit = "h",
+    yUnit = "mg/l",
+    lloq = rep(c(NA, 1), c(4, 3)),
+    weights = NA_real_
+  )
+}
+
+test_that("blqMethod substitutes only the observed BLQ values", {
+  for (case in list(
+    list(blqMethod = "none", substitute = 0.2),
+    list(blqMethod = "lloq", substitute = 1),
+    list(blqMethod = "lloqHalf", substitute = 0.5)
+  )) {
+    cost <- .calculateCostMetrics(blqDf(), blqMethod = case$blqMethod)
+    expect_identical(cost$residualDetails$yObserved, c(5, case$substitute, 4))
+    expect_identical(cost$residualDetails$ySimulated, c(5, 1.5, 3.5))
+    expect_equal(cost$modelCost, (1.5 - case$substitute)^2 + (3.5 - 4)^2)
+  }
+})
+
+test_that("BLQ substitution under log scaling gives error weights of the linear substituted value", {
+  dataSet <- ospsuite::DataSet$new(name = "logError")
+  dataSet$xUnit <- ospsuite::ospUnits$Time$min
+  dataSet$yDimension <- ospsuite::ospDimensions$`Concentration (molar)`
+  dataSet$yUnit <- "µmol/l"
+  dataSet$setValues(
+    xValues = c(60, 120, 180),
+    yValues = c(20, 15, 1.5),
+    yErrorValues = c(2, 2, 2)
+  )
+  dataSet$yErrorType <- ospsuite::DataErrorType$ArithmeticStdDev
+  dataSet$yErrorUnit <- "µmol/l"
+  dataSet$LLOQ <- 10
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  costControl <- PIConfiguration$new()$objectiveFunctionOptions
+  costControl$scaling <- "log"
+  costControl$residualWeightingMethod <- "error"
+  costControl$cv <- 0.2
+  for (case in list(
+    list(blqMethod = "lloqHalf", substitute = 5),
+    list(blqMethod = "lloq", substitute = 10)
+  )) {
+    costControl$blqMethod <- case$blqMethod
+    terms <- .mappingCostTerms(
+      simulated = list(xValues = c(60, 120, 180), yValues = c(18, 14, 4)),
+      observed = .prepareObservedData(mapping),
+      dataWeights = NULL,
+      costControl = costControl,
+      index = 1L
+    )
+    expect_equal(terms$yObserved[[3]], log(case$substitute))
+    expect_equal(
+      terms$errorWeights[[3]],
+      1 / sqrt(log(1 + (2 / case$substitute)^2))
+    )
+  }
+})
+
 # .newModelCost
 
 test_that(".newModelCost builds the canonical schema with index owned by the constructor", {
@@ -283,6 +354,11 @@ test_that("a mapping whose cost cannot be computed adds no observations to the c
     robustMethod = "none",
     scaleVar = FALSE,
     censoredContribution = 0,
+    lloq = rep(NA_real_, 3),
+    blqMethod = "none",
+    scaling = "lin",
+    observedYLinear = c(1.4, 2.7, 2.2),
+    lloqLinear = rep(NA_real_, 3),
     index = 1L
   )
   combined <- .combineCostTerms(
@@ -516,11 +592,11 @@ test_that("least squares and M3 methods produce different model costs", {
   expect_true(result_lsq$modelCost != result_m3$modelCost)
 })
 
-test_that("kernel costs with an LLOQ equal those recorded before the BLQ options moved", {
+test_that("kernel costs with an LLOQ equal the recorded values", {
   obsVsPredDf$lloq <- 2.5
   expect_equal(
     .calculateCostMetrics(obsVsPredDf, blqMethod = "lloqHalf")$modelCost,
-    677.39028332266685
+    679.97101306389038
   )
   expect_equal(
     .calculateCostMetrics(
@@ -984,6 +1060,24 @@ expectFrozenForSettings <- function(task, settings, values) {
   }
 }
 
+# The model costs for each setting and parameter value, in this order. The
+# objective function of 2.2.0.9009 handled BLQ data differently, so data with
+# an LLOQ are compared with costs recorded when the BLQ handling moved into
+# the kernel.
+recordedCosts <- function(task, settings, values) {
+  costs <- numeric(0)
+  for (setting in settings) {
+    do.call(applyCostSetting, c(list(task), setting))
+    objective <- taskObjective(task)
+    for (value in values) {
+      # The warnings are compared with 2.2.0.9009 on the data without LLOQs
+      cost <- suppressWarnings(objective$evaluate(value))
+      costs <- c(costs, cost$modelCost)
+    }
+  }
+  costs
+}
+
 aciclovirPlasmaPaths <- c(
   paste0(
     "Organism|PeripheralVenousBlood|Aciclovir|",
@@ -1057,12 +1151,27 @@ test_that("objective function equals 2.2.0.9009 with data weights", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with an LLOQ", {
+test_that("objective function with an LLOQ gives the recorded costs", {
+  costs <- recordedCosts(
+    twoOutputsTask(lloq = 0.5),
+    list(list(), list(scaling = "log")),
+    lipophilicityValues
+  )
+  expect_equal(
+    costs,
+    c(
+      1220.2393362842672104,
+      657.4726692176054712,
+      16.3816363783996124,
+      10.3372856741677115
+    )
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 with an LLOQ and m3", {
   expectFrozenForSettings(
     twoOutputsTask(lloq = 0.5),
     list(
-      list(),
-      list(scaling = "log"),
       list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
@@ -1073,15 +1182,30 @@ test_that("objective function equals 2.2.0.9009 with an LLOQ", {
   )
 })
 
-test_that("objective function equals 2.2.0.9009 with two LLOQs in an output mapping", {
+test_that("objective function with two LLOQs in an output mapping gives the recorded costs", {
   dataSets <- testObservedDataMultiple()
   dataSets$dataSet1$LLOQ <- 0.5
   dataSets$dataSet2$LLOQ <- 2
+  task <- aciclovirTask(
+    stats::setNames(list(dataSets), aciclovirPlasmaPaths[[1]])
+  )
+  costs <- recordedCosts(
+    task,
+    list(list(), list(scaling = "log")),
+    lipophilicityValues
+  )
+  expect_equal(
+    costs,
+    c(
+      1412.6285263451634364,
+      868.3906019359211541,
+      12.9622061142714955,
+      9.0495445371042802
+    )
+  )
   expectFrozenForSettings(
-    aciclovirTask(stats::setNames(list(dataSets), aciclovirPlasmaPaths[[1]])),
+    task,
     list(
-      list(),
-      list(scaling = "log"),
       list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
@@ -1198,14 +1322,17 @@ molarDataSet <- function(name, lloq = NULL) {
 # y transformations: the data of Laskin 1982 (mg/l, arithmetic SD) with a data
 # weight, the same data times 1.5 without the last point, with an LLOQ and a
 # data weight per point, and molar data. The second output has molar data
-# with an LLOQ, with x and y transformations.
-severalDataSetsTask <- function() {
+# with an LLOQ, with x and y transformations. Without `lloq`, no data set has
+# an LLOQ.
+severalDataSetsTask <- function(lloq = TRUE) {
   dataSets <- testObservedDataMultiple()
-  dataSets$dataSet2$LLOQ <- 1
+  if (lloq) {
+    dataSets$dataSet2$LLOQ <- 1
+  }
   task <- aciclovirTask(stats::setNames(
     list(
       c(dataSets, dataSet3 = molarDataSet("dataSet3")),
-      molarDataSet("dataSet4", lloq = 1000)
+      molarDataSet("dataSet4", lloq = if (lloq) 1000)
     ),
     aciclovirPlasmaPaths
   ))
@@ -1232,19 +1359,66 @@ severalDataSetsTask <- function() {
 # `.computeErrorWeights()`
 test_that("objective function equals 2.2.0.9009 for several data sets", {
   expectFrozenForSettings(
-    severalDataSetsTask(),
+    severalDataSetsTask(lloq = FALSE),
     list(
       list(),
       list(scaling = "log"),
       list(options = list(residualWeightingMethod = "error")),
+      list(
+        scaling = c("lin", "log"),
+        options = list(robustMethod = "huber", scaleVar = TRUE)
+      )
+    ),
+    lipophilicityValues
+  )
+})
+
+test_that("objective function for several data sets with LLOQs gives the recorded costs", {
+  task <- severalDataSetsTask()
+  # Whether the LLOQ and geometric SDs follow the y transformations depends on
+  # the ospsuite version, so the recorded costs use the data untransformed in y
+  task$outputMappings[[1]]$setDataTransformations(yOffsets = 0, yFactors = 1)
+  task$outputMappings[[2]]$setDataTransformations(
+    xOffsets = 2,
+    xFactors = 1.5,
+    yFactors = 1
+  )
+  costs <- recordedCosts(
+    task,
+    list(
+      list(),
+      list(scaling = "log"),
+      list(options = list(residualWeightingMethod = "error")),
+      list(
+        scaling = c("lin", "log"),
+        options = list(robustMethod = "huber", scaleVar = TRUE)
+      )
+    ),
+    lipophilicityValues
+  )
+  expect_equal(
+    costs,
+    c(
+      3737.97005154714361197,
+      2036.85337632925234175,
+      12.89016745191842261,
+      10.41685644516104325,
+      3428.44038882649010702,
+      1846.48875580170351896,
+      0.30434990899737097,
+      0.31129713507553064
+    )
+  )
+})
+
+test_that("objective function equals 2.2.0.9009 for several data sets with m3", {
+  expectFrozenForSettings(
+    severalDataSetsTask(),
+    list(
       list(blq = list(blqMethod = "m3")),
       list(
         scaling = "log",
         blq = list(blqMethod = "m3", blqOptions = list(cv = cvOfSd0086))
-      ),
-      list(
-        scaling = c("lin", "log"),
-        options = list(robustMethod = "huber", scaleVar = TRUE)
       )
     ),
     lipophilicityValues
@@ -1356,6 +1530,11 @@ test_that(".combineCostTerms equals the sum of the costs of 2.2.0.9009", {
       robustMethod = "huber",
       scaleVar = FALSE,
       censoredContribution = 0,
+      lloq = rep(NA_real_, 3),
+      blqMethod = "none",
+      scaling = "lin",
+      observedYLinear = c(1.4, 2.7, 2.2),
+      lloqLinear = rep(NA_real_, 3),
       index = index
     )
   }
@@ -1402,7 +1581,6 @@ test_that("calculateCostMetrics equals 2.2.0.9009 in the settings above", {
     list(df = geometricDf, residualWeightingMethod = "error"),
     list(df = obsVsPredDf, robustMethod = "huber"),
     list(df = obsVsPredDf, robustMethod = "bisquare"),
-    list(df = lloqDf, blqMethod = "lloqHalf"),
     list(
       df = lloqDf,
       blqMethod = "m3",
@@ -1476,34 +1654,23 @@ test_that("LLOQ, scaling and weights changed between calls take effect", {
   expect_identical(after, gridSearch(freshTask))
 })
 
-test_that("the LLOQ rule stops when simulated values are missing", {
+test_that("a missing simulated value is left out with an LLOQ", {
   costControl <- PIConfiguration$new()$objectiveFunctionOptions
   costControl$scaling <- "lin"
   costControl$blqMethod <- "lloqHalf"
   costControl$cv <- 0.2
-  costTerms <- function(lloq) {
-    dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
-    if (!is.null(lloq)) {
-      dataSet$LLOQ <- lloq
-    }
-    mapping <- PIOutputMapping$new(quantity = testQuantity())
-    mapping$addObservedDataSets(dataSet)
-    .mappingCostTerms(
-      simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
-      observed = .prepareObservedData(mapping),
-      dataWeights = mapping$dataWeights,
-      costControl = costControl,
-      index = 1L
-    )
-  }
-
-  expect_error(
-    costTerms(lloq = 0.5),
-    messages$errorSimulatedValuesMissing(),
-    fixed = TRUE
+  dataSet <- testObservedData()$`AciclovirLaskinData.Laskin 1982.Group A`
+  dataSet$LLOQ <- 0.5
+  mapping <- PIOutputMapping$new(quantity = testQuantity())
+  mapping$addObservedDataSets(dataSet)
+  terms <- .mappingCostTerms(
+    simulated = list(xValues = c(0, 60, 1e4), yValues = c(0, NA, 1)),
+    observed = .prepareObservedData(mapping),
+    dataWeights = mapping$dataWeights,
+    costControl = costControl,
+    index = 1L
   )
-  # Without an LLOQ, a missing simulated value is left out
-  expect_true(is.finite(costTerms(lloq = NULL)$modelCost))
+  expect_true(is.finite(terms$modelCost))
 })
 
 # .computeErrorWeights
