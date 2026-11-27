@@ -37,11 +37,19 @@ test_that("resample() is a function of the data and the seed", {
   expect_false(identical(first[[1]]$weights, first[[2]]$weights))
   expect_false(identical(first[[1]]$means, first[[2]]$means))
   expect_identical(summary(data$resample(4)), first)
-  expect_identical(data$resample(4L)$observedData, data$resample(4)$observedData)
-  expect_false(identical(data$resample(5)$observedData, data$resample(4)$observedData))
+  expect_identical(
+    data$resample(4L)$observedData,
+    data$resample(4)$observedData
+  )
+  expect_false(identical(
+    data$resample(5)$observedData,
+    data$resample(4)$observedData
+  ))
   # Individual data keep their values, only their weights move
   expect_identical(
-    data$resample(4)$outputMappings[[1]]$observedDataSets[[individualName]]$yValues,
+    data$resample(4)$outputMappings[[1]]$observedDataSets[[
+      individualName
+    ]]$yValues,
     mappings[[1]]$observedDataSets[[individualName]]$yValues
   )
 })
@@ -64,7 +72,10 @@ test_that("resample() leaves the data, the DataSet objects and the random state 
   expect_identical(mappings[[1]]$dataWeights, weightsBefore)
   expect_identical(data$observedData, observedBefore)
   expect_identical(data$outputMappings, mappings)
-  expect_false(identical(resampled$observedData[[1]]$yValues, observedBefore[[1]]$yValues))
+  expect_false(identical(
+    resampled$observedData[[1]]$yValues,
+    observedBefore[[1]]$yValues
+  ))
   expect_setequal(
     names(resampled$outputMappings[[1]]$dataWeights),
     names(mappings[[1]]$observedDataSets)
@@ -103,9 +114,15 @@ test_that("resample() draws only the weights of a mapping without a subject coun
   mapping$addObservedDataSets(syntheticObservedData())
   data <- PIObservations$new(list(mapping))
   resampled <- data$resample(2)
-  expect_identical(resampled$outputMappings[[1]]$observedDataSets, mapping$observedDataSets)
+  expect_identical(
+    resampled$outputMappings[[1]]$observedDataSets,
+    mapping$observedDataSets
+  )
   expect_identical(resampled$observedData, data$observedData)
-  expect_false(identical(resampled$outputMappings[[1]]$dataWeights, .completeDataWeights(mapping)))
+  expect_false(identical(
+    resampled$outputMappings[[1]]$dataWeights,
+    .completeDataWeights(mapping)
+  ))
 })
 
 test_that("resample() redraws each data set with its own subject count", {
@@ -129,8 +146,14 @@ test_that("resample() redraws only the data sets with a subject count and keeps 
   mapping$setSubjectCount(c(studyA = 12))
   resampled <- PIObservations$new(list(mapping))$resample(3)$outputMappings[[1]]
   original <- mapping$observedDataSets
-  expect_false(identical(resampled$observedDataSets$studyA$yValues, original$studyA$yValues))
-  expect_identical(resampled$observedDataSets$studyB$yValues, original$studyB$yValues)
+  expect_false(identical(
+    resampled$observedDataSets$studyA$yValues,
+    original$studyA$yValues
+  ))
+  expect_identical(
+    resampled$observedDataSets$studyB$yValues,
+    original$studyB$yValues
+  )
   expect_identical(resampled$subjectCount, c(studyA = 12L))
 })
 
@@ -140,7 +163,10 @@ test_that("resample() keeps the weights of aggregated data sets in every replica
   data <- PIObservations$new(list(mapping))
   for (seed in 1:20) {
     resampled <- data$resample(seed)
-    expect_identical(resampled$outputMappings[[1]]$dataWeights, .completeDataWeights(mapping))
+    expect_identical(
+      resampled$outputMappings[[1]]$dataWeights,
+      .completeDataWeights(mapping)
+    )
   }
 })
 
@@ -163,7 +189,11 @@ test_that("resample() draws only the weights of individual data sets when data a
 
 test_that(".copyDataSet() prepares like the original and takes new y values", {
   aggregated <- ospsuite::DataSet$new(name = "aggregated")
-  aggregated$setValues(xValues = c(1, 2), yValues = c(10, 20), yErrorValues = c(2000, 4000))
+  aggregated$setValues(
+    xValues = c(1, 2),
+    yValues = c(10, 20),
+    yErrorValues = c(2000, 4000)
+  )
   aggregated$yDimension <- ospsuite::ospDimensions$`Concentration (mass)`
   aggregated$yUnit <- "mg/l"
   aggregated$yErrorType <- "ArithmeticStdDev"
@@ -175,7 +205,10 @@ test_that(".copyDataSet() prepares like the original and takes new y values", {
     mapping$addObservedDataSets(dataSet)
     copied <- mapping$clone()
     copied$addObservedDataSets(.copyDataSet(dataSet))
-    expect_identical(.prepareObservedData(copied), .prepareObservedData(mapping))
+    expect_identical(
+      .prepareObservedData(copied),
+      .prepareObservedData(mapping)
+    )
   }
   yBefore <- aggregated$yValues
   doubled <- .copyDataSet(aggregated, yValues = 2 * yBefore)
@@ -191,8 +224,14 @@ test_that(".completeDataWeights() fills the data sets without weights with 1", {
   mapping$setDataWeights(stats::setNames(list(2), names[[2]]))
   weights <- .completeDataWeights(mapping)
   expect_identical(names(weights), names)
-  expect_identical(weights[[2]], rep(2, length(mapping$observedDataSets[[2]]$yValues)))
-  expect_identical(weights[[1]], rep(1, length(mapping$observedDataSets[[1]]$yValues)))
+  expect_identical(
+    weights[[2]],
+    rep(2, length(mapping$observedDataSets[[2]]$yValues))
+  )
+  expect_identical(
+    weights[[1]],
+    rep(1, length(mapping$observedDataSets[[1]]$yValues))
+  )
 })
 
 test_that("PIObservations validates its input and is read-only", {

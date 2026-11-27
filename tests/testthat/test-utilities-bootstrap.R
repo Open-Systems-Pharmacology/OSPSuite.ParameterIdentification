@@ -89,7 +89,10 @@ test_that(".resampleDataSetValues() redraws arithmetic means with mean mu and SD
   sigma <- c(3, 3, 2)
   draws <- .withSeed(
     1,
-    replicate(4000, .resampleDataSetValues(yValues, sigma, "ArithmeticStdDev", 13))
+    replicate(
+      4000,
+      .resampleDataSetValues(yValues, sigma, "ArithmeticStdDev", 13)
+    )
   )
   # Without the - s2 / 2 term the means are off by about 1 percent
   expect_equal(rowMeans(draws), yValues, tolerance = 0.003)

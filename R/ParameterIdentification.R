@@ -200,7 +200,11 @@ ParameterIdentification <- R6::R6Class(
 
         #  Optionally print evaluation feedback
         if (private$.configuration$printEvaluationFeedback) {
-          cat(messages$evaluationFeedback(private$.fnEvaluations, currVals, currCost))
+          cat(messages$evaluationFeedback(
+            private$.fnEvaluations,
+            currVals,
+            currCost
+          ))
         }
 
         return(runningCost)
