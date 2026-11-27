@@ -238,6 +238,55 @@ test_that("removing a data set drops its transformations and weights", {
   expect_named(mapping$dataWeights, "studyA")
 })
 
+test_that("dataWeights is NULL after the last weighted data set was removed", {
+  mapping <- twoStudyMapping()
+  studyA <- mapping$observedDataSets$studyA
+  mapping$setDataWeights(c(studyA = 2))
+  mapping$removeObservedDataSet("studyA")
+  expect_null(mapping$dataWeights)
+
+  unweighted <- twoStudyMapping()
+  unweighted$removeObservedDataSet("studyA")
+  expect_identical(
+    capture.output(print(mapping)),
+    capture.output(print(unweighted))
+  )
+  expect_no_warning(mapping$addObservedDataSets(studyA))
+})
+
+shortStudyB <- function() {
+  studyB <- DataSet$new(name = "studyB")
+  studyB$setValues(xValues = c(1, 2), yValues = c(20, 30))
+  studyB
+}
+
+test_that("replacing a data set with another number of y-values drops its weights", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(mapping$addObservedDataSets(shortStudyB()))
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
+})
+
+test_that("replacing a data set with new weights does not warn", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_no_warning(
+    mapping$addObservedDataSets(shortStudyB(), weights = c(studyB = 3))
+  )
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(2, 2, 2, 2), studyB = c(3, 3))
+  )
+
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyB = c(1, 0, 2)))
+  expect_no_warning(mapping$addObservedDataSets(shortStudyB(), weights = 3))
+  expect_identical(
+    mapping$dataWeights,
+    list(studyA = c(3, 3, 3, 3), studyB = c(3, 3))
+  )
+})
+
 test_that("observedDataSets stops when a data set was renamed after adding it", {
   mapping <- twoStudyMapping()
   dataSet <- mapping$observedDataSets$studyB

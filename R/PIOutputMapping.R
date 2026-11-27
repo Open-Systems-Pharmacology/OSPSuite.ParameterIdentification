@@ -59,7 +59,7 @@ PIOutputMapping <- R6::R6Class(
     #' @field dataWeights A named list of y-value weights.
     dataWeights = function(value) {
       if (missing(value)) {
-        private$.dataWeights
+        if (length(private$.dataWeights) > 0) private$.dataWeights
       } else {
         stop(messages$errorPropertyReadOnly(
           "dataWeights",
@@ -171,8 +171,10 @@ PIOutputMapping <- R6::R6Class(
     #' @description Adds or updates observed data using `DataSet` objects.
     #' @details Replaces any existing dataset with the same label. A replaced
     #'   data set keeps its weights and transformations, and loses its subject
-    #'   count. Warns when a data set with a new name is added after weights or
-    #'   transformations were set, because the new data set has none.
+    #'   count. Its weights are removed with a warning when the number of
+    #'   y-values changed and the call passes no new weights for it. Warns when
+    #'   a data set with a new name is added after weights or transformations
+    #'   were set, because the new data set has none.
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
     #' @param weights A named list of numeric values or numeric vectors. The
@@ -231,8 +233,19 @@ PIOutputMapping <- R6::R6Class(
           }
         }
 
-        private$.dropSubjectCount(data[[idx]]$name)
-        private$.observedDataSets[[data[[idx]]$name]] <- data[[idx]]
+        label <- data[[idx]]$name
+        nWeights <- length(private$.dataWeights[[label]])
+        if (nWeights > 0 && nWeights != length(data[[idx]]$yValues)) {
+          private$.dataWeights[[label]] <- NULL
+          if (
+            is.null(weights) ||
+              !(is.null(names(weights)) || label %in% names(weights))
+          ) {
+            warning(messages$warningDataWeightsDropped(label))
+          }
+        }
+        private$.dropSubjectCount(label)
+        private$.observedDataSets[[label]] <- data[[idx]]
       }
 
       # Handle optional weights
@@ -421,7 +434,7 @@ PIOutputMapping <- R6::R6Class(
         list(
           "Output path" = private$.quantity$path,
           "Observed data labels" = names(private$.observedDataSets),
-          "Data weight labels" = names(private$.dataWeights),
+          "Data weight labels" = names(self$dataWeights),
           "Scaling" = private$.scaling
         ),
         print_empty = TRUE

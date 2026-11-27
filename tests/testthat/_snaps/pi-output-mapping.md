@@ -124,6 +124,14 @@
       Warning in `mapping$addObservedDataSets()`:
       Data transformations have already been set. The added data set(s) "studyB" have none, so set them with `PIOutputMapping$setDataTransformations()` if they need any.
 
+# replacing a data set with another number of y-values drops its weights
+
+    Code
+      mapping$addObservedDataSets(shortStudyB())
+    Condition
+      Warning in `mapping$addObservedDataSets()`:
+      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+
 # observedDataSets stops when a data set was renamed after adding it
 
     Code

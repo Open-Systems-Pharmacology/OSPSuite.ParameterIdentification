@@ -104,6 +104,12 @@ messages$warningDataWeightsPresent <- function() {
   "Data weights have already been set. Check if they are still valid after adding new datasets."
 }
 
+messages$warningDataWeightsDropped <- function(label) {
+  ospsuite.utils::cliFormat(
+    "The weights of the data set {.val {label}} were removed, because the new data set has a different number of y-values. Set them again with {.fn PIOutputMapping$setDataWeights}."
+  )
+}
+
 messages$errorNotAFunction <- function() {
   "The assigned value must be a function with arguments 'xVals' and 'yVals'!"
 }
