@@ -56,7 +56,8 @@ PIOutputMapping <- R6::R6Class(
       }
     },
 
-    #' @field dataWeights A named list of y-value weights.
+    #' @field dataWeights A named list of y-value weights that holds the data
+    #'   sets with weights, `NULL` when no data set has weights.
     dataWeights = function(value) {
       if (missing(value)) {
         if (length(private$.dataWeights) > 0) private$.dataWeights
@@ -178,7 +179,9 @@ PIOutputMapping <- R6::R6Class(
     #' @param data A `DataSet` object or a list thereof, matching the simulation
     #'   quantity dimensions.
     #' @param weights `NULL` (default) to set no weights, or weights that are
-    #'   passed to `$setDataWeights()` and take the same forms.
+    #'   passed to `$setDataWeights()` and take the same forms. One unnamed
+    #'   number also replaces the weights of the data sets that the mapping
+    #'   already holds.
     #'
     #' @export
     addObservedDataSets = function(data, weights = NULL) {
@@ -199,6 +202,14 @@ PIOutputMapping <- R6::R6Class(
       ) {
         warning(messages$warningDataTransformationsPresent(addedLabels))
       }
+
+      # Warns also when the new weights are rejected at the end of the call
+      droppedLabels <- character()
+      on.exit(
+        for (label in setdiff(droppedLabels, names(private$.dataWeights))) {
+          warning(messages$warningDataWeightsDropped(label))
+        }
+      )
 
       for (idx in seq_along(data)) {
         # Verify if the data's dimension can match the quantity's dimension in
@@ -234,15 +245,13 @@ PIOutputMapping <- R6::R6Class(
         }
 
         label <- data[[idx]]$name
-        nWeights <- length(private$.dataWeights[[label]])
-        if (nWeights > 0 && nWeights != length(data[[idx]]$yValues)) {
+        if (
+          label %in%
+            names(private$.dataWeights) &&
+            length(private$.dataWeights[[label]]) != length(data[[idx]]$yValues)
+        ) {
           private$.dataWeights[[label]] <- NULL
-          if (
-            is.null(weights) ||
-              !(is.null(names(weights)) || label %in% names(weights))
-          ) {
-            warning(messages$warningDataWeightsDropped(label))
-          }
+          droppedLabels <- c(droppedLabels, label)
         }
         private$.dropSubjectCount(label)
         private$.observedDataSets[[label]] <- data[[idx]]
@@ -369,15 +378,15 @@ PIOutputMapping <- R6::R6Class(
       newWeights <- list()
       for (label in names(weights)) {
         value <- weights[[label]]
+        yLength <- length(private$.observedDataSets[[label]]$yValues)
         if (
           !is.numeric(value) ||
-            length(value) == 0 ||
+            (length(value) == 0 && yLength > 0) ||
             !all(is.finite(value)) ||
             any(value < 0)
         ) {
           stop(messages$errorWeightsValues())
         }
-        yLength <- length(private$.observedDataSets[[label]]$yValues)
         if (length(value) == 1) {
           value <- rep(value, yLength)
         }

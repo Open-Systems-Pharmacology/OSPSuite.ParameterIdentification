@@ -287,6 +287,56 @@ test_that("replacing a data set with new weights does not warn", {
   )
 })
 
+test_that("replacing a data set warns when the call passes weights for another data set only", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(
+    mapping$addObservedDataSets(shortStudyB(), weights = c(studyA = 3))
+  )
+  expect_identical(mapping$dataWeights, list(studyA = c(3, 3, 3, 3)))
+})
+
+test_that("replacing a data set with invalid weights warns about the dropped weights", {
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = 2, studyB = c(1, 0, 2)))
+  expect_snapshot(try(
+    mapping$addObservedDataSets(
+      shortStudyB(),
+      weights = list(studyB = c(1, 0, 2))
+    ),
+    silent = TRUE
+  ))
+  expect_identical(mapping$dataWeights, list(studyA = c(2, 2, 2, 2)))
+})
+
+test_that("one number in addObservedDataSets() replaces the weights of all data sets", {
+  studyC <- DataSet$new(name = "studyC")
+  studyC$setValues(xValues = c(1, 2), yValues = c(15, 25))
+  mapping <- twoStudyMapping()
+  mapping$setDataWeights(list(studyA = c(1, 1, 0, 2)))
+  expect_snapshot(mapping$addObservedDataSets(studyC, weights = 0.5))
+  expect_identical(
+    mapping$dataWeights,
+    list(
+      studyA = c(0.5, 0.5, 0.5, 0.5),
+      studyB = c(0.5, 0.5, 0.5),
+      studyC = c(0.5, 0.5)
+    )
+  )
+})
+
+test_that("a data set without values takes empty weights and loses them when it gets values", {
+  mapping <- twoStudyMapping()
+  mapping$addObservedDataSets(DataSet$new(name = "studyC"))
+  mapping$setDataWeights(list(studyC = numeric()))
+  expect_identical(mapping$dataWeights, list(studyC = numeric()))
+
+  studyC <- DataSet$new(name = "studyC")
+  studyC$setValues(xValues = c(1, 2), yValues = c(15, 25))
+  expect_snapshot(mapping$addObservedDataSets(studyC))
+  expect_null(mapping$dataWeights)
+})
+
 test_that("observedDataSets stops when a data set was renamed after adding it", {
   mapping <- twoStudyMapping()
   dataSet <- mapping$observedDataSets$studyB

@@ -23,7 +23,8 @@ observed data set, named by the data set and in the order of
 \code{observedDataSets}. A data set without transformations has offsets of
 0 and factors of 1.}
 
-    \item{\code{dataWeights}}{A named list of y-value weights.}
+    \item{\code{dataWeights}}{A named list of y-value weights that holds the data
+sets with weights, \code{NULL} when no data set has weights.}
 
     \item{\code{subjectCount}}{Named integer vector with the number of subjects
 behind each observed data set, \code{NULL} until set with
@@ -96,7 +97,9 @@ with keys \code{xVals} and \code{yVals}.}
       \item{\code{data}}{A \code{DataSet} object or a list thereof, matching the simulation
 quantity dimensions.}
       \item{\code{weights}}{\code{NULL} (default) to set no weights, or weights that are
-passed to \verb{$setDataWeights()} and take the same forms.}
+passed to \verb{$setDataWeights()} and take the same forms. One unnamed
+number also replaces the weights of the data sets that the mapping
+already holds.}
     }
     \if{html}{\out{</div>}}
   }

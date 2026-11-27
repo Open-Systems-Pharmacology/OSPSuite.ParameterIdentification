@@ -132,6 +132,39 @@
       Warning in `mapping$addObservedDataSets()`:
       The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
 
+# replacing a data set warns when the call passes weights for another data set only
+
+    Code
+      mapping$addObservedDataSets(shortStudyB(), weights = c(studyA = 3))
+    Condition
+      Warning in `mapping$addObservedDataSets()`:
+      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+
+# replacing a data set with invalid weights warns about the dropped weights
+
+    Code
+      try(mapping$addObservedDataSets(shortStudyB(), weights = list(studyB = c(1, 0,
+        2))), silent = TRUE)
+    Condition
+      Warning in `mapping$addObservedDataSets()`:
+      The weights of the data set "studyB" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+
+# one number in addObservedDataSets() replaces the weights of all data sets
+
+    Code
+      mapping$addObservedDataSets(studyC, weights = 0.5)
+    Condition
+      Warning in `mapping$addObservedDataSets()`:
+      Data weights have already been set. Check if they are still valid after adding new datasets.
+
+# a data set without values takes empty weights and loses them when it gets values
+
+    Code
+      mapping$addObservedDataSets(studyC)
+    Condition
+      Warning in `mapping$addObservedDataSets()`:
+      The weights of the data set "studyC" were removed, because the new data set has a different number of y-values. Set them again with `PIOutputMapping$setDataWeights()`.
+
 # observedDataSets stops when a data set was renamed after adding it
 
     Code

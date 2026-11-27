@@ -108,7 +108,7 @@ outputMapping$scaling <- "log"
 
 ## Setting weights
 
-Weights control the relative influence of observed data on the optimization. They can be supplied directly when datasets are added to a mapping, or they can be set or updated later with `setDataWeights()`. In both cases, weights are passed as one number for all datasets, as a vector named by dataset, or as a list named by dataset. Named weights change only the named datasets and keep the weights of the others. Weights must be finite and not negative, and a data point with a weight of 0 adds nothing to the sum of squared residuals.
+Weights control the relative influence of observed data on the optimization. They can be supplied directly when datasets are added to a mapping, or they can be set or updated later with `setDataWeights()`. In both cases, weights are passed as one number for all datasets, as a vector named by dataset, or as a list named by dataset. Named weights change only the named datasets and keep the weights of the others. Weights must be finite and not negative, and a data point with a weight of 0 adds nothing to the sum of squared residuals. Weights do not apply to the term that the M3 objective adds for data points below the lower limit of quantification.
 
 
 ### Adding weights directly
